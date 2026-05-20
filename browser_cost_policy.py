@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 
 FLASH_COST = 0.001
-PRO_COST = 0.01
+PREMIUM_COST = 0.006
 DEFAULT_BROWSER_BUDGET = 0.05
 
 
@@ -30,7 +30,7 @@ def escalation_decision(
 ) -> BrowserCostDecision:
     lowered = reason.lower()
     if careful or confidence < 0.6 or any(word in lowered for word in ("tiny text", "low confidence", "double check")):
-        return _gate("gemini_pro", PRO_COST, current_cost, "careful visual browser check")
+        return _gate("gemini_premium", PREMIUM_COST, current_cost, "careful visual browser check")
     if any(word in lowered for word in ("messy", "visual", "compare", "screen", "cluttered")):
         return _gate("gemini_flash", FLASH_COST, current_cost, "summarize messy visible browser page")
     return local_decision()

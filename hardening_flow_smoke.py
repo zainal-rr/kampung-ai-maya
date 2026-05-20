@@ -12,7 +12,7 @@ from project_store import active_project, project_notes
 from route_tracker import init_route_db
 from routine_store import init_routine_db
 from session_memory_store import init_session_memory_db
-from skill_store import init_skill_db, list_skill_proposals
+from skill_store import find_skill, init_skill_db, list_skill_proposals
 from storage import init_db
 from weekly_memory_store import init_weekly_memory_db
 from workflow_store import init_workflow_db
@@ -83,6 +83,9 @@ async def main() -> None:
         _require("hotel" not in still_hidden.lower(), "approved skill leaked before activation")
         activated = await maya.handle_text("activate skill hotel booking", "telegram")
         _require("activation test" in activated.lower(), "untested skill should not activate")
+        skill = await find_skill(db_path, "hotel booking")
+        _require(skill and skill.get("scaffold_path"), "skill scaffold path missing")
+        _write_reviewed_scaffold(Path(str(skill["scaffold_path"])))
         tested = await maya.handle_text("test skill hotel booking", "telegram")
         _require("recorded" in tested.lower(), "skill activation test missing")
         activated = await maya.handle_text("activate skill hotel booking", "telegram")
@@ -111,6 +114,34 @@ async def _init(db_path: str) -> None:
 def _require(condition: bool, message: str) -> None:
     if not condition:
         raise AssertionError(message)
+
+
+def _write_reviewed_scaffold(path: Path) -> None:
+    path.write_text(
+        """# hotel booking
+
+## Trigger Phrases
+- trigger: book a hotel after Zainal asks for booking help
+- non-trigger: general travel chat without booking intent
+
+## Safety
+- hard no: no payment, passport, OTP, or login storage
+- confirmation: stop before booking submission
+
+## Outputs
+- success: shortlisted hotel options and confirmation question
+
+## Implementation Notes
+- happy path: search, compare, ask before booking
+- failure path: cancel safely and explain blocker
+- rollback: close browser workflow without booking
+
+## Tests
+- regression: booking intent pauses before payment
+- expected: no sensitive action without approval
+""",
+        "utf-8",
+    )
 
 
 if __name__ == "__main__":

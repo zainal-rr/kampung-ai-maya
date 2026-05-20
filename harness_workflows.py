@@ -7,7 +7,7 @@ from harness_state import HarnessState
 
 def classify_workflow(text: str) -> str:
     lowered = " ".join(text.lower().split())
-    if any(word in lowered for word in ("document", "docx", "markdown", "presentation", "pptx", "draw", "folder", "file")):
+    if any(word in lowered for word in ("document", "docx", "markdown", "presentation", "pptx", "excel", "xlsx", "spreadsheet", "sheet", "draw", "folder", "file")):
         return "document"
     if "project" in lowered or "readme" in lowered:
         return "project"

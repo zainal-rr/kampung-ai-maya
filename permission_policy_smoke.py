@@ -5,7 +5,8 @@ import tempfile
 from pathlib import Path
 
 from file_actions import FileActionRouter
-from permission_policy import action_permission, contains_sensitive_info, is_private_exposure
+from permission_policy import action_permission, contains_sensitive_info, is_private_exposure, path_needs_confirmation
+from workspace_paths import workspace_dir
 
 
 async def main() -> None:
@@ -28,6 +29,11 @@ async def main() -> None:
     _require(contains_sensitive_info("my password is abc"), "password marker was missed")
     _require(is_private_exposure("show my bank account"), "private exposure was not blocked")
     _require(not is_private_exposure("do not show my password"), "safety rule was mistaken for exposure")
+    _require(path_needs_confirmation(Path.home() / ".ssh" / "config"), "SSH config should need confirmation")
+    _require(
+        path_needs_confirmation(Path.home() / "Library" / "LaunchAgents" / "x.plist"),
+        "LaunchAgents should need confirmation",
+    )
     await _file_write_checks()
     print("permission_policy_smoke: ok")
 
@@ -44,8 +50,10 @@ async def _file_write_checks() -> None:
         _require("wrote" in written.lower() and target.read_text() == "updated", "file was not written")
         denied = await router.handle(f"write file {target} with my password is abc", "telegram")
         _require("sensitive private" in denied.lower(), "sensitive content was not blocked")
+        sensitive = await router.handle("write file ~/.zshrc with export MAYA=1", "telegram")
+        _require("sensitive" in sensitive.lower() and "confirm" in sensitive.lower(), "sensitive path was not gated")
         default_path = router._resolve_path("maya-note.txt")
-        _require(default_path == Path.home() / "Downloads" / "maya-note.txt", "relative files should default to Downloads")
+        _require(default_path == workspace_dir("") / "maya-note.txt", "relative files should default to Desktop Maya")
 
 
 def _require(condition: bool, message: str) -> None:

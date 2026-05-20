@@ -4,20 +4,24 @@ import asyncio
 import re
 from pathlib import Path
 
-from office_files import create_docx, create_pptx, presentation_outline, safe_slug
+from office_files import create_docx, create_pptx, create_xlsx, presentation_outline, safe_slug, spreadsheet_rows
+from harness_artifact_store import record_structured_artifact
+from harness_models import local_artifact
 from permission_policy import action_permission, contains_sensitive_info, hard_no_private_exposure_text, path_allowed
 from project_store import active_project, remember_project_note
 from storage import get_preference, upsert_preference
 from utils import OSBridge
+from workspace_paths import workspace_dir
 
 
 LAST_DOC_KEY = "maya_last_document_path"
+DIRECT_DOC_RUN_ID = "direct_document_actions"
 
 
 class DocumentActionRouter:
     def __init__(self, db_path: str, workspace: Path | None = None, bridge: OSBridge | None = None):
         self.db_path = db_path
-        self.workspace = workspace or Path.home() / "Downloads" / "Kampung AI"
+        self.workspace = workspace or workspace_dir("")
         self.bridge = bridge or OSBridge()
 
     async def handle(self, text: str, channel: str) -> str | None:
@@ -38,6 +42,8 @@ class DocumentActionRouter:
             return await self._create_markdown(topic, project_scoped, channel)
         if kind == "docx":
             return await self._create_word(topic, project_scoped, channel)
+        if kind == "xlsx":
+            return await self._create_excel(topic, project_scoped, channel)
         return await self._create_powerpoint(topic, channel)
 
     async def _create_markdown(self, topic: str, project_scoped: bool, channel: str) -> str:
@@ -66,6 +72,15 @@ class DocumentActionRouter:
         await upsert_preference(self.db_path, LAST_DOC_KEY, str(path), source="document")
         return await self._done("PowerPoint draft", path, channel, "Microsoft PowerPoint")
 
+    async def _create_excel(self, topic: str, project_scoped: bool, channel: str) -> str:
+        path = await self._path("xlsx", topic, project_scoped)
+        if not path_allowed(path):
+            return f"I can't write to {path}."
+        headers, rows = spreadsheet_rows(topic)
+        await asyncio.to_thread(create_xlsx, path, topic.title(), headers, rows)
+        await self._remember(path, "Created Excel draft", project_scoped)
+        return await self._done("Excel draft", path, channel, "Microsoft Excel")
+
     async def _update_markdown(self, note: str, channel: str) -> str:
         path = await self._markdown_target()
         if path is None:
@@ -83,17 +98,23 @@ class DocumentActionRouter:
         project = await active_project(self.db_path) if project_scoped else None
         if project:
             return project.path / "docs" / f"{safe_slug(topic)}.{kind}"
-        folder = "notes" if kind == "md" else "documents"
+        folder = {"md": "notes", "docx": "documents", "xlsx": "spreadsheets"}.get(kind, "documents")
         return self.workspace / folder / f"{safe_slug(topic)}.{kind}"
 
     async def _remember(self, path: Path, action: str, project_scoped: bool) -> None:
         await upsert_preference(self.db_path, LAST_DOC_KEY, str(path), source="document")
+        await record_structured_artifact(
+            self.db_path,
+            DIRECT_DOC_RUN_ID,
+            local_artifact(_artifact_kind(path), str(path), action, "document_actions"),
+        )
         project = await active_project(self.db_path) if project_scoped else None
         if project:
             await remember_project_note(self.db_path, project.path, "document", f"{action}: {path.name}")
 
     async def _done(self, label: str, path: Path, channel: str, app_name: str | None) -> str:
-        message = f"Done. I created a {label} at {path}."
+        article = "an" if label.lower().startswith("excel") else "a"
+        message = f"Done. I created {article} {label} at {path}."
         if channel == "imac":
             try:
                 await asyncio.to_thread(self.bridge.open_file, str(path), app_name)
@@ -112,6 +133,7 @@ def _document_request(text: str) -> tuple[str, str, bool] | None:
     patterns = (
         (r"^(?:create|make|write)\s+(?:an?\s+)?(?:md|markdown)(?: file| note)?(?: for this project)?\s+(?:about|on|for)?\s*(.+)$", "md"),
         (r"^(?:create|make|write)\s+(?:a\s+)?(?:word document|docx|document)(?: for this project)?\s+(?:about|on|for)?\s*(.+)$", "docx"),
+        (r"^(?:create|make|write)\s+(?:an?\s+)?(?:excel|xlsx|spreadsheet|sheet)(?: file| tracker)?(?: for this project)?\s+(?:about|on|for)?\s*(.+)$", "xlsx"),
         (r"^(?:make|create|craft)\s+(?:a\s+)?(?:presentation|pptx|slides)\s+(?:on|about|for)\s+(.+)$", "pptx"),
     )
     for pattern, kind in patterns:
@@ -151,3 +173,16 @@ def _append_text(path: Path, text: str) -> None:
 
 def _attach(message: str, path: Path, channel: str) -> str:
     return f"{message}\n[file:{path}]" if channel == "telegram" else message
+
+
+def _artifact_kind(path: Path) -> str:
+    suffix = path.suffix.lower()
+    if suffix == ".xlsx":
+        return "spreadsheet"
+    if suffix == ".pptx":
+        return "presentation"
+    if suffix == ".docx":
+        return "document"
+    if suffix == ".md":
+        return "note"
+    return "file"

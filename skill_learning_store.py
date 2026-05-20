@@ -6,6 +6,9 @@ import aiosqlite
 
 from skill_store import init_skill_db
 
+REQUIRED_SKILL_TESTS = {"trigger", "non_trigger", "safety", "happy_path", "failure_path", "regression", "approval"}
+EVALUATION_TESTS = REQUIRED_SKILL_TESTS - {"approval"}
+
 
 async def init_skill_learning_db(db_path: str) -> None:
     await init_skill_db(db_path)
@@ -34,12 +37,17 @@ async def init_skill_learning_db(db_path: str) -> None:
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 skill_id TEXT NOT NULL,
                 command TEXT NOT NULL,
+                test_type TEXT DEFAULT 'legacy_smoke',
                 status TEXT NOT NULL,
                 notes TEXT DEFAULT '',
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
             """
         )
+        try:
+            await db.execute("ALTER TABLE skill_activation_tests ADD COLUMN test_type TEXT DEFAULT 'legacy_smoke'")
+        except aiosqlite.OperationalError:
+            pass
         await db.commit()
 
 
@@ -86,12 +94,23 @@ async def upsert_skill_metadata(db_path: str, skill_id: str, **fields) -> None:
         await db.commit()
 
 
-async def record_skill_test(db_path: str, skill_id: str, command: str, status: str, notes: str = "") -> None:
+async def record_skill_test(
+    db_path: str,
+    skill_id: str,
+    command: str,
+    status: str,
+    notes: str = "",
+    test_type: str = "legacy_smoke",
+) -> None:
     await init_skill_learning_db(db_path)
+    clean_type = test_type if test_type in REQUIRED_SKILL_TESTS else test_type or "legacy_smoke"
     async with aiosqlite.connect(db_path) as db:
         await db.execute(
-            "INSERT INTO skill_activation_tests (skill_id, command, status, notes) VALUES (?, ?, ?, ?)",
-            (skill_id, command, status, notes[:500]),
+            """
+            INSERT INTO skill_activation_tests (skill_id, command, test_type, status, notes)
+            VALUES (?, ?, ?, ?, ?)
+            """,
+            (skill_id, command, clean_type, status, notes[:500]),
         )
         await db.commit()
 
@@ -104,6 +123,28 @@ async def skill_has_passing_test(db_path: str, skill_id: str) -> bool:
             (skill_id,),
         )
         return await cursor.fetchone() is not None
+
+
+async def skill_has_required_tests(db_path: str, skill_id: str) -> bool:
+    await init_skill_learning_db(db_path)
+    return not await missing_required_tests(db_path, skill_id)
+
+
+async def missing_required_tests(db_path: str, skill_id: str) -> list[str]:
+    await init_skill_learning_db(db_path)
+    async with aiosqlite.connect(db_path) as db:
+        cursor = await db.execute(
+            """
+            SELECT test_type, status
+            FROM skill_activation_tests
+            WHERE skill_id = ?
+            ORDER BY id ASC
+            """,
+            (skill_id,),
+        )
+        rows = await cursor.fetchall()
+    latest = {str(test_type): str(status) for test_type, status in rows}
+    return sorted(test for test in REQUIRED_SKILL_TESTS if latest.get(test) != "passed")
 
 
 async def mark_skill_disabled(db_path: str, skill_id: str, reason: str) -> None:

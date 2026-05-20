@@ -49,8 +49,8 @@ async def main() -> None:
 
     local = local_decision()
     _require(local.lane == "local" and local.estimated_cost == 0, "local path should be free")
-    pro = escalation_decision(reason="double check tiny text", confidence=0.4, careful=True)
-    _require(pro.lane == "gemini_pro" and pro.allowed, "Pro escalation rule failed")
+    premium = escalation_decision(reason="double check tiny text", confidence=0.4, careful=True)
+    _require(premium.lane == "gemini_premium" and premium.allowed, "premium escalation rule failed")
 
     with tempfile.TemporaryDirectory(prefix="maya-browser-agent-") as tmp:
         db_path = str(Path(tmp) / "smoke.db")

@@ -18,12 +18,13 @@ from project_store import (
     save_pending_project_choices,
     set_active_project,
 )
+from workspace_paths import workspace_dir
 
 
 class ProjectActionRouter:
     def __init__(self, db_path: str, create_root: Path | None = None):
         self.db_path = db_path
-        self.create_root = create_root or Path.home() / "Downloads" / "Kampung AI" / "Projects"
+        self.create_root = create_root or workspace_dir("Projects")
 
     async def handle(self, text: str, channel: str) -> str | None:
         selected = await resolve_pending_project_choice(self.db_path, text)

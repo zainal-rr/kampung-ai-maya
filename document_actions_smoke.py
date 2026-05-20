@@ -27,6 +27,7 @@ class FakeBridge:
 
 async def main() -> None:
     with tempfile.TemporaryDirectory(prefix="maya-doc-actions-") as tmp:
+        os.environ["MAYA_WORKSPACE_ROOT"] = str(Path(tmp) / "Maya")
         db_path = str(Path(tmp) / "smoke.db")
         root = Path(tmp) / "projects"
         (root / "orchid-lab").mkdir(parents=True)
@@ -35,7 +36,7 @@ async def main() -> None:
         assistant = KampungAssistant(db_path)
         bridge = FakeBridge()
         assistant.commands.documents.bridge = bridge
-        assistant.commands.documents.workspace = Path(tmp) / "Kampung AI"
+        assistant.commands.documents.workspace = Path(tmp) / "Maya"
 
         md = await assistant.handle_text("create an md file about router setup", "telegram")
         _, md_files = split_file_markers(md)
@@ -54,7 +55,10 @@ async def main() -> None:
         _require(project is not None, "project did not open")
         scoped = await assistant.handle_text("create an md file for this project about setup", "telegram")
         _, scoped_files = split_file_markers(scoped)
-        _require(scoped_files and scoped_files[0].parent == project.path / "docs", "project md not in docs")
+        _require(
+            scoped_files and scoped_files[0].parent.resolve() == (project.path / "docs").resolve(),
+            "project md not in docs",
+        )
 
         updated = await assistant.handle_text("update this markdown with add cable notes", "telegram")
         _require("updated the Markdown file" in updated, "markdown update failed")

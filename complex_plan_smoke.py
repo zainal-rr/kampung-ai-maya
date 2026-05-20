@@ -9,9 +9,11 @@ from assistant_model_lanes import ModelLanes
 class FakeMind:
     def __init__(self):
         self.reasoning_effort = ""
+        self.messages = []
 
     async def chat(self, messages, reasoning_effort=None):
         self.reasoning_effort = reasoning_effort or ""
+        self.messages = messages
         return "Summary\nPlan body"
 
 
@@ -20,16 +22,24 @@ class FakeSteward:
         return "Review body"
 
 
+class FakePremiumSight:
+    async def chat(self, messages):
+        return "Research context body"
+
+
 async def main() -> None:
     old_openai = os.environ.get("OPENAI_API_KEY")
     old_anthropic = os.environ.get("ANTHROPIC_API_KEY")
+    old_google = os.environ.get("GOOGLE_API_KEY")
     old_effort = os.environ.get("OPENAI_COMPLEX_REASONING_EFFORT")
     os.environ["OPENAI_API_KEY"] = "test"
     os.environ["ANTHROPIC_API_KEY"] = "test"
+    os.environ["GOOGLE_API_KEY"] = "test"
     os.environ["OPENAI_COMPLEX_REASONING_EFFORT"] = "xhigh"
     lanes = ModelLanes()
     lanes.mind = FakeMind()
     lanes.steward = FakeSteward()
+    lanes.premium_sight = FakePremiumSight()
     try:
         _require(not lanes.should_use_complex_path("architecture strategy"), "silent complex escalation")
         _require(lanes.should_use_complex_path("this is complex architecture strategy"), "explicit complex missed")
@@ -39,8 +49,10 @@ async def main() -> None:
     finally:
         _restore("OPENAI_API_KEY", old_openai)
         _restore("ANTHROPIC_API_KEY", old_anthropic)
+        _restore("GOOGLE_API_KEY", old_google)
         _restore("OPENAI_COMPLEX_REASONING_EFFORT", old_effort)
     _require("Plan body" in reply, "GPT plan missing")
+    _require("Research context body" in str(lanes.mind.messages), "Gemini premium research context missing")
     _require("Steward review" in reply and "Review body" in reply, "Claude review missing")
     _require("Review body" in post, "post implementation review missing")
     _require(lanes.mind.reasoning_effort == "xhigh", "GPT plan did not use xhigh")

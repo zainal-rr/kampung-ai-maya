@@ -12,6 +12,7 @@ from office_files import create_docx, create_pptx, presentation_outline, safe_sl
 from permission_policy import action_permission
 from storage import delete_preference, get_preference, upsert_preference
 from utils import OSBridge
+from workspace_paths import workspace_dir
 
 SENSITIVE_BROWSER_WORDS = ("buy", "book", "pay", "checkout", "purchase", "submit", "passport", "card", "confirm")
 MISSING_SKILL_WORDS = ("hotel", "calendar", "shopping", "shop", "account", "design review", "security review")
@@ -23,7 +24,7 @@ class ImacWorkflowRouter:
         self.bridge = bridge or OSBridge()
         self.browser = BrowserController(self.bridge)
         self.human_browser = HumanBrowserWorkflowRouter(db_path, self.bridge)
-        self.workspace = workspace or Path.home() / "Downloads" / "Kampung AI"
+        self.workspace = workspace or workspace_dir("")
 
     async def handle(self, text: str, channel: str) -> str | None:
         return (
@@ -142,7 +143,7 @@ class ImacWorkflowRouter:
         if action_permission("network_check") != "allow":
             return "I need your confirmation before checking the network."
         results = await asyncio.to_thread(run_network_diagnostics)
-        path = self.workspace / "network" / "network-troubleshooting.docx"
+        path = self.workspace / "reports" / "network-troubleshooting.docx"
         sections = network_doc_sections(results)
         await asyncio.to_thread(create_docx, path, "Network Troubleshooting Notes", sections)
         try:

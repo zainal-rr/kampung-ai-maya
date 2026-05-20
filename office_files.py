@@ -49,6 +49,18 @@ def create_pptx(path: Path, title: str, slides: list[tuple[str, list[str]]]) -> 
     return path
 
 
+def create_xlsx(path: Path, title: str, headers: list[str], rows: list[list[str]]) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with ZipFile(path, "w", ZIP_DEFLATED) as book:
+        book.writestr("[Content_Types].xml", _xlsx_content_types())
+        book.writestr("_rels/.rels", _xlsx_root_rels())
+        book.writestr("xl/workbook.xml", _xlsx_workbook())
+        book.writestr("xl/_rels/workbook.xml.rels", _xlsx_workbook_rels())
+        book.writestr("xl/styles.xml", _xlsx_styles())
+        book.writestr("xl/worksheets/sheet1.xml", _xlsx_sheet(title, headers, rows))
+    return path
+
+
 def presentation_outline(topic: str) -> list[tuple[str, list[str]]]:
     topic_title = topic.strip().title()
     return [
@@ -58,6 +70,27 @@ def presentation_outline(topic: str) -> list[tuple[str, list[str]]]:
         ("Practical Uses", ["Real world use cases", "Risks or limits", "What to watch next"]),
         ("Discussion", ["Main takeaway", "Questions to decide", "Next research step"]),
     ]
+
+
+def spreadsheet_rows(topic: str) -> tuple[list[str], list[list[str]]]:
+    lowered = topic.lower()
+    if any(word in lowered for word in ("budget", "cost", "money", "expense")):
+        return (
+            ["Item", "Category", "Estimated Cost", "Actual Cost", "Notes"],
+            [
+                ["Example item", "Planning", "0", "", "Replace with real value"],
+                ["Total", "", "=SUM(C3:C3)", "=SUM(D3:D3)", "Draft formula"],
+            ],
+        )
+    if any(word in lowered for word in ("flight", "compare", "comparison")):
+        return (
+            ["Option", "Provider", "Date", "Price", "Pros", "Cons"],
+            [["Option 1", "", "", "", "Add advantage", "Add tradeoff"]],
+        )
+    return (
+        ["Topic", "Detail", "Status", "Owner", "Notes"],
+        [[topic.strip().title(), "Draft entry", "To review", "Zainal", "Created by Maya"]],
+    )
 
 
 def _paragraph(text: str, style: str | None = None) -> str:
@@ -179,3 +212,57 @@ def _rels(items: list[tuple[str, str, str]], office: bool = False) -> str:
 
 def _theme_xml() -> str:
     return '<a:theme xmlns:a="http://schemas.openxmlformats.org/drawingml/2006/main" name="Maya"><a:themeElements><a:clrScheme name="Maya"/></a:themeElements></a:theme>'
+
+
+def _xlsx_content_types() -> str:
+    return (
+        '<?xml version="1.0" encoding="UTF-8"?>'
+        '<Types xmlns="http://schemas.openxmlformats.org/package/2006/content-types">'
+        '<Default Extension="rels" ContentType="application/vnd.openxmlformats-package.relationships+xml"/>'
+        '<Default Extension="xml" ContentType="application/xml"/>'
+        '<Override PartName="/xl/workbook.xml" '
+        'ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.sheet.main+xml"/>'
+        '<Override PartName="/xl/worksheets/sheet1.xml" '
+        'ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.worksheet+xml"/>'
+        '<Override PartName="/xl/styles.xml" '
+        'ContentType="application/vnd.openxmlformats-officedocument.spreadsheetml.styles+xml"/>'
+        "</Types>"
+    )
+
+
+def _xlsx_root_rels() -> str:
+    return _rels([("rId1", "officeDocument", "xl/workbook.xml")])
+
+
+def _xlsx_workbook_rels() -> str:
+    return _rels([("rId1", "worksheet", "worksheets/sheet1.xml"), ("rId2", "styles", "styles.xml")], True)
+
+
+def _xlsx_workbook() -> str:
+    return (
+        '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
+        'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
+        '<sheets><sheet name="Maya Draft" sheetId="1" r:id="rId1"/></sheets></workbook>'
+    )
+
+
+def _xlsx_styles() -> str:
+    return '<styleSheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><cellXfs count="1"><xf numFmtId="0"/></cellXfs></styleSheet>'
+
+
+def _xlsx_sheet(title: str, headers: list[str], rows: list[list[str]]) -> str:
+    all_rows = [[title], [], headers] + rows
+    body = "".join(_xlsx_row(index, row) for index, row in enumerate(all_rows, start=1))
+    return f'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>{body}</sheetData></worksheet>'
+
+
+def _xlsx_row(index: int, values: list[str]) -> str:
+    cells = "".join(_xlsx_cell(index, col, value) for col, value in enumerate(values, start=1))
+    return f'<row r="{index}">{cells}</row>'
+
+
+def _xlsx_cell(row: int, col: int, value: str) -> str:
+    ref = f"{chr(64 + col)}{row}"
+    if value.startswith("="):
+        return f'<c r="{ref}"><f>{escape(value[1:])}</f></c>'
+    return f'<c r="{ref}" t="inlineStr"><is><t>{escape(value)}</t></is></c>'

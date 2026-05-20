@@ -1,3 +1,4 @@
+import os
 import subprocess
 
 
@@ -50,6 +51,8 @@ class OSBridge:
 
     def switch_app(self, name: str):
         """Launches the app, brings it forward, and opens a window when needed."""
+        if _test_mode():
+            return
         try:
             self._launch_app(name)
             self._activate_app(name)
@@ -116,6 +119,8 @@ class OSBridge:
 
     def open_url(self, url: str, app_name: str = "Google Chrome"):
         """Opens a URL in the preferred browser and brings it forward."""
+        if _test_mode():
+            return
         safe_url = url.replace("\\", "\\\\").replace('"', "%22")
         script = (
             f'tell application "{app_name}" to activate\n'
@@ -127,6 +132,8 @@ class OSBridge:
 
     def open_file(self, path: str, app_name: str | None = None):
         """Opens a local file, optionally with a specific app."""
+        if _test_mode():
+            return
         command = ["open", path] if not app_name else ["open", "-a", app_name, path]
         try:
             subprocess.run(command, capture_output=True, text=True, check=True)
@@ -138,6 +145,8 @@ class OSBridge:
 
     def press_shortcut(self, shortcut: str):
         """Presses a keyboard shortcut in the frontmost app."""
+        if _test_mode():
+            return
         key, modifiers = _parse_shortcut(shortcut)
         if key in SPECIAL_KEYS:
             script = f'tell application "System Events" to key code {SPECIAL_KEYS[key]}{_modifier_clause(modifiers)}'
@@ -148,26 +157,38 @@ class OSBridge:
 
     def type_text(self, text: str):
         """Types text into the frontmost app."""
+        if _test_mode():
+            return
         safe_text = text.replace("\\", "\\\\").replace('"', '\\"')
         self._run_applescript(f'tell application "System Events" to keystroke "{safe_text}"')
 
     def get_frontmost_app(self) -> str:
         """Returns the name of the application currently in focus."""
+        if _test_mode():
+            return "Test Mode"
         script = 'tell application "System Events" to get name of first process whose frontmost is true'
         return self._run_applescript(script)
 
     def list_running_apps(self) -> list[str]:
+        if _test_mode():
+            return []
         script = 'tell application "System Events" to get name of (every process whose background only is false)'
         apps = self._run_applescript(script)
         return [item.strip() for item in apps.split(",") if item.strip()]
 
     def notify(self, title: str, message: str):
         """Displays a macOS system notification."""
+        if _test_mode():
+            return
         # Escaping double quotes in message and title for AppleScript
         safe_title = title.replace('"', '\\"')
         safe_message = message.replace('"', '\\"')
         script = f'display notification "{safe_message}" with title "{safe_title}"'
         self._run_applescript(script)
+
+
+def _test_mode() -> bool:
+    return os.getenv("MAYA_TEST_MODE", "0") == "1"
 
 
 SPECIAL_KEYS = {

@@ -72,8 +72,11 @@ class FakeScreen:
 
 async def main() -> None:
     with tempfile.TemporaryDirectory(prefix="maya-imac-workflows-") as tmp:
+        import os
+
         db_path = str(Path(tmp) / "smoke.db")
-        workspace = Path(tmp) / "workspace"
+        workspace = Path(tmp) / "Maya"
+        os.environ["MAYA_WORKSPACE_ROOT"] = str(workspace)
         await _init(db_path)
         bridge = FakeBridge()
         assistant = KampungAssistant(db_path=db_path)

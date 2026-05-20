@@ -22,3 +22,9 @@ backups/
 *.wav
 *.mp3
 *.mp4
+maya_skills/active/*.md
+maya_skills/proposed/*.md
+maya_skills/disabled/*.md
+maya_skills/research_notes/*.md
+maya_skills/tests/*.md
+!maya_skills/**/.gitkeep

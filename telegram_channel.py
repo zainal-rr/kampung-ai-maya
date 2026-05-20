@@ -5,12 +5,11 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filters
 
 from assistant import KampungAssistant
-from storage import upsert_preference
+from channel_gateway import channel_envelope
 from telegram_audit import record_telegram_command
 from telegram_commands import bot_commands, command_to_text, parse_command, voice_enabled
 from telegram_delivery import send_speech, send_text
 from telegram_voice_input import transcribe_telegram_voice
-from route_tracker import record_route
 
 
 class TelegramChannel:
@@ -44,7 +43,6 @@ class TelegramChannel:
         command_text = await command_to_text(self.assistant.db_path, parsed)
         result_type = "direct" if self._is_direct_command_reply(command_text) else "mapped"
         await self._record_command(update, parsed.name, parsed.args, command_text, result_type)
-        await self._record_route_command(parsed.name, result_type)
         if self._is_direct_command_reply(command_text):
             await self._send_response(update, context, command_text)
             return
@@ -88,25 +86,14 @@ class TelegramChannel:
             result_type=result_type,
         )
 
-    async def _record_route_command(self, command: str, result_type: str) -> None:
-        if command == "route":
-            return
-        if result_type == "direct":
-            await record_route(self.assistant.db_path, "command", "command", f"/{command}", False)
-
     async def _handle_text(self, update: Update, context: ContextTypes.DEFAULT_TYPE, text: str, input_type: str = "text"):
-        if update.effective_chat:
-            await upsert_preference(
-                self.assistant.db_path,
-                key="telegram_chat_id",
-                value=str(update.effective_chat.id),
-                source="telegram",
-            )
+        envelope = channel_envelope("telegram", text)
         response = await self.assistant.handle_text(
-            text,
+            str(envelope.get("text", text)),
             channel="telegram",
             speak_reply=False,
             input_type=input_type,
+            channel_external_id=str(update.effective_chat.id) if update.effective_chat else "",
         )
         await self._send_response(update, context, response)
 

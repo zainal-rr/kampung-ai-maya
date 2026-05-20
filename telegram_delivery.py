@@ -7,11 +7,14 @@ from telegram import Bot
 
 from voice import VoiceNode, spoken_preview
 from vision_markup import split_image_marker
+from workspace_paths import legacy_workspace_root, maya_workspace_root, project_roots
 
 
 MAX_TELEGRAM_TEXT = 3900
 MAX_TELEGRAM_CAPTION = 1024
 FILE_MARKER = re.compile(r"^\[file:(?P<path>/[^\]\n]+)\]\s*$", re.MULTILINE)
+ALLOWED_FILE_ROOTS = (maya_workspace_root, legacy_workspace_root)
+ALLOWED_DOWNLOAD_PREFIXES = ("maya-", "kampung-")
 
 
 async def send_text(bot: Bot, chat_id: int, text: str) -> None:
@@ -86,6 +89,39 @@ def _chunk_text(text: str) -> list[str]:
 
 
 def split_file_markers(text: str) -> tuple[str, list[Path]]:
-    paths = [Path(match.group("path")).expanduser() for match in FILE_MARKER.finditer(text)]
+    paths = [
+        path
+        for match in FILE_MARKER.finditer(text)
+        if (path := _allowed_file_marker(Path(match.group("path")).expanduser())) is not None
+    ]
     clean = FILE_MARKER.sub("", text).strip()
     return clean, paths
+
+
+def _allowed_file_marker(path: Path) -> Path | None:
+    try:
+        resolved = path.resolve()
+    except OSError:
+        return None
+    if any(_within(resolved, root()) for root in ALLOWED_FILE_ROOTS):
+        return resolved
+    if _allowed_download_file(resolved) or _allowed_project_doc(resolved):
+        return resolved
+    return None
+
+
+def _within(path: Path, root: Path) -> bool:
+    try:
+        path.relative_to(root.expanduser().resolve())
+        return True
+    except ValueError:
+        return False
+
+
+def _allowed_download_file(path: Path) -> bool:
+    downloads = Path.home() / "Downloads"
+    return _within(path, downloads) and path.name.lower().startswith(ALLOWED_DOWNLOAD_PREFIXES)
+
+
+def _allowed_project_doc(path: Path) -> bool:
+    return path.parent.name == "docs" and any(_within(path, root) for root in project_roots())

@@ -28,7 +28,7 @@ def split_wake_phrase(text: str) -> tuple[bool, str]:
 
 class WakeWindow:
     def __init__(self, seconds: int | None = None):
-        self.seconds = seconds if seconds is not None else int(os.getenv("MAYA_WAKE_WINDOW_SECONDS", "10"))
+        self.seconds = seconds if seconds is not None else int(os.getenv("MAYA_WAKE_WINDOW_SECONDS", "5"))
         self.active_until = 0.0
 
     @property

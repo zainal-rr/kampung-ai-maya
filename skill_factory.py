@@ -5,6 +5,7 @@ import os
 import re
 from pathlib import Path
 
+from skill_library import ensure_skill_library, proposed_path, test_path
 from skill_store import create_skill_proposal, upsert_skill
 from skill_learning_store import upsert_skill_metadata
 
@@ -13,17 +14,18 @@ class SkillFactory:
     def __init__(self, db_path: str):
         self.db_path = db_path
         self.skill_dir = Path(os.getenv("MAYA_SKILL_DIR", "maya_skills"))
-        self.skill_dir.mkdir(parents=True, exist_ok=True)
+        ensure_skill_library(self.skill_dir)
 
     async def scaffold_skill(self, request_text: str) -> dict[str, str]:
         skill_id = self._slug(request_text)
         title = self._title(request_text)
         research_hint = self._research_hint(request_text)
         summary = f"Draft skill for: {request_text}"
-        scaffold_path = str((self.skill_dir / f"{skill_id}.md").resolve())
+        scaffold_path = str(proposed_path(skill_id, self.skill_dir).resolve())
         content = self._template(title, request_text, research_hint)
 
         await asyncio.to_thread(Path(scaffold_path).write_text, content, "utf-8")
+        await asyncio.to_thread(test_path(skill_id, self.skill_dir).write_text, self._test_template(skill_id), "utf-8")
         await upsert_skill(
             self.db_path,
             skill_id=skill_id,
@@ -144,4 +146,17 @@ Proposed scaffold created by Maya. Human review required before activation.
 - Tests pass
 - Documentation updated
 - Skill status changed to active only after approval
+"""
+
+    @staticmethod
+    def _test_template(skill_id: str) -> str:
+        return f"""# {skill_id} Skill Tests
+
+- [ ] trigger
+- [ ] non_trigger
+- [ ] safety
+- [ ] happy_path
+- [ ] failure_path
+- [ ] regression
+- [ ] approval
 """

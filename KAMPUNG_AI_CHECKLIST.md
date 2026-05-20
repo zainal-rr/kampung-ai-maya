@@ -13,7 +13,7 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] **Telegram:** Token secured in .env.
     - [ ] **OpenAI:** Maya strategic lane (GPT-5.5).
     - [ ] **Anthropic:** The Steward review lane (Claude Sonnet 4.6).
-    - [ ] **Google:** The Sight (Gemini 3.1 Pro).
+    - [ ] **Google:** The Sight default and premium lanes (Gemini 3.1 Flash and Gemini 3.5 Flash).
     - [x] **Moonshot:** The Artisan (Kimi k2.6). [Secured in .env]
     - [ ] **xAI:** The Pulse (Grok 3).
     - [ ] **xAI:** Grok Voice Agent, Ara voice notes, STT, and pulse/news lane.
@@ -40,7 +40,7 @@ This document tracks the technical and operational roadmap for building the stan
     - [ ] Make Grok the default live iMac conversation model.
     - [ ] Make Ara the default Maya voice identity on the iMac.
     - [ ] Keep the iMac path optimized for fluid spoken interaction.
-    - [x] Lock the voice agent budget rule: wake phrase starts it, 10 seconds of silence closes it, and it is never open all day.
+    - [x] Lock the voice agent budget rule: wake phrase starts it, 5 seconds of silence closes it, and it is never open all day.
     - [x] Set local no-cost wake phrases to `Hey Maya`, `Good morning Maya`, `Hello Maya`, and `Maya`.
     - [x] Add a bounded Grok Voice Agent session manager with stub transport for pre-key testing.
     - [x] Track Grok Voice Agent route and active seconds for `/route` and `/cost`.
@@ -49,6 +49,7 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Prevent the real iMac voice-agent path from falling back to separate TTS after wake.
     - [x] Add iMac voice policy so short Malay/Manglish can stay on Grok while longer or style-sensitive Malay/Manglish routes to Gemini plus Ara.
     - [x] Add natural Ara thinking fillers for slower Malay/Manglish quality turns.
+    - [x] Record the long-work handoff rule: acknowledge by voice, idle or close paid speech-to-speech while background work runs, then reopen voice for follow-up or final delivery.
     - [ ] Live-test the real xAI websocket adapter after the xAI key arrives.
 - [ ] **2.2. The Mind (GPT-5.5)**
     - [x] Implement "Escalation Logic" for high-complexity strategy.
@@ -56,11 +57,12 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add GPT Plan Mode for explicit complex planning without execution.
     - [x] Add Claude pre-implementation review for GPT plans.
     - [x] Add a post-implementation Claude review hook for approved implementation workflows.
-- [ ] **2.3. The Sight (Gemini Flash with Pro escalation)**
-    - [ ] Use Gemini Flash as the primary Telegram text/research model.
+- [ ] **2.3. The Sight (Gemini 3.1 Flash with 3.5 Flash premium escalation)**
+    - [ ] Use Gemini 3.1 Flash as the primary Telegram text/research model.
+    - [x] Use Gemini 3.5 Flash as the premium Sight lane and remove the old Pro branch.
     - [ ] Use Gemini for Omi summarization and memory distillation.
     - [ ] Add a source-aware Gemini research workflow after API keys arrive.
-    - [x] Use Gemini Flash for normal camera snapshots and escalate to Pro only when Pro can plausibly help.
+    - [x] Use Gemini 3.1 Flash for normal camera snapshots and escalate to Gemini 3.5 Flash only when premium sight can plausibly help.
 - [ ] **2.4. The Steward (Claude Sonnet 4.6)**
     - [x] Add the Claude Steward lane for careful review requests.
     - [x] Route natural review, critique, audit, hidden-risk, and check-this-plan prompts without adding a new command.
@@ -131,7 +133,7 @@ This document tracks the technical and operational roadmap for building the stan
     - [ ] Route live voice turns through Grok Voice Agent first.
     - [ ] Escalate to GPT-5.5 only when needed.
     - [ ] Speak replies locally through the iMac speakers with Ara.
-    - [x] Set the wake window to 10 seconds so live voice does not stay open after silence.
+    - [x] Set the wake window to 5 seconds so live voice does not stay open after silence.
     - [x] Let the iMac channel hand wake-session turns to the bounded Grok Voice Agent manager when enabled.
     - [x] Keep wake detection on a local transcript path so idle listening is free from provider API cost.
 
@@ -154,7 +156,7 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Make `/see` only confirm activation and make `/closeimac` close the local preview.
     - [x] Capture one safe Cisco frame for guided visual help.
     - [x] Route visible frames to the vision model for practical step-by-step guidance.
-    - [x] Default vision snapshots to Gemini Flash, with Pro escalation for blurry labels, tiny text, risky hardware questions, low confidence, or explicit careful review.
+    - [x] Default vision snapshots to Gemini 3.1 Flash, with Gemini 3.5 Flash escalation for blurry labels, tiny text, risky hardware questions, low confidence, or explicit careful review.
     - [x] Support clean visual marks: circles for exact points, rectangles for areas, and one grouped rectangle when many circles would be messy.
     - [x] Apply calibrated desk orientation so Maya answers from Zainal's side, not camera side.
     - [x] Report honestly when vision is disabled, not in iMac work location, permission blocked, or privacy block closed.
@@ -169,7 +171,7 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add `/screen off` and `/closeimac` shutdown behavior for screen sight.
     - [x] Support `/screen question` for one-shot Telegram screen questions.
     - [x] Support natural iMac phrases like `look at my screen` and `explain this slide`.
-    - [x] Route screen snapshots through Gemini Flash with Pro escalation for tiny text, complex diagrams, low confidence, or careful review.
+    - [x] Route screen snapshots through Gemini 3.1 Flash with Gemini 3.5 Flash escalation for tiny text, complex diagrams, low confidence, or careful review.
     - [x] Record last screen sight status for `/status`.
     - [x] Add `screen_command_smoke.py` for no-key screen sight behavior.
     - [x] Keep screen follow-ups like Safari, Codex, and open-app questions on the screen sight route.
@@ -213,7 +215,8 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add `/forget` for specific memory removal.
     - [x] Add `/memorycleanup` for stale compacted context cleanup.
     - [x] Add `memory_control_smoke.py` and include it in launch rehearsal.
-    - [ ] Let Gemini Flash summarize weekly raw logs and remove conversational noise.
+    - [ ] Let Gemini 3.1 Flash summarize weekly raw logs and remove conversational noise.
+    - [ ] Let Gemini 3.5 Flash handle premium weekly synthesis when the week is dense, ambiguous, or needs stronger language quality.
     - [ ] Let Claude review weekly memory candidates for overreach, false assumptions, vague preferences, and unsafe memory.
     - [ ] Use GPT-5.5 only for high-value weekly memory shaping when the summary needs stricter judgement.
     - [ ] Promote dry-run weekly facts into local preferences, lessons, and tasks after provider review is available.
@@ -348,7 +351,7 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add pattern-based secret detection for common key shapes, private key headers, card-like numbers, and OTP phrases.
     - [x] Add `secret_detection_smoke.py`.
 - [x] **12.3a. Codex Style Project Mode**
-    - [x] Resolve projects by name from `/Users/zainalabidinjamal/projects` and `~/Downloads/Kampung AI/Projects`.
+    - [x] Resolve projects by name from `/Users/zainalabidinjamal/projects`, `~/Desktop/Maya/Projects`, and legacy `~/Downloads/Kampung AI/Projects`.
     - [x] Persist one active project across Telegram and iMac until Zainal closes or switches it.
     - [x] Let follow-ups like `make a README for this project` use the active project.
     - [x] Ask when project matches are ambiguous instead of guessing.
@@ -492,12 +495,15 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add `browser_agent_maturity_smoke.py` for dynamic-page verification, cost gates, browser state, and sensitive-click pause behavior.
 - [ ] **14.3. Office Work**
     - [x] Add general document creation v1 for Markdown, Word, and PowerPoint drafts.
-    - [x] Put Markdown notes under `~/Downloads/Kampung AI/notes`.
-    - [x] Put Word drafts under `~/Downloads/Kampung AI/documents`.
-    - [x] Put PowerPoint drafts under `~/Downloads/Kampung AI/presentations`.
+    - [x] Put Markdown notes under `~/Desktop/Maya/notes`.
+    - [x] Put Word drafts under `~/Desktop/Maya/documents`.
+    - [x] Put PowerPoint drafts under `~/Desktop/Maya/presentations`.
+    - [x] Put Excel drafts under `~/Desktop/Maya/spreadsheets`.
+    - [x] Add general Excel `.xlsx` creation v1 for trackers, comparisons, and simple tables.
     - [x] Put `this project` Markdown and Word drafts under the active project's `docs` folder.
     - [x] Support v1 Markdown append/update when the target is clear.
     - [x] Let Maya create a starter PowerPoint deck from structured chat instructions.
+    - [x] Record artifact-first PowerPoint creation: create editable `.pptx` directly, open it in PowerPoint for review, and avoid click-building every slide unless UI repair is needed.
     - [x] Let Maya create a general Word draft beyond network troubleshooting.
     - [x] Send generated Office files back through Telegram when the request comes from Telegram.
     - [x] Open generated documents locally when the request comes from the iMac.
@@ -507,11 +513,11 @@ This document tracks the technical and operational roadmap for building the stan
     - [ ] Add visual QA before Maya calls Word or PowerPoint output polished.
     - [ ] Use Word and PowerPoint as normal iMac apps when that is more natural than a separate UI.
 - [x] **14.4. Workspace Creation**
-    - [x] Create folders under `~/Downloads/Kampung AI` by default.
-    - [x] Create projects under `~/Downloads/Kampung AI/Projects` by default.
+    - [x] Create folders under `~/Desktop/Maya` by default.
+    - [x] Create projects under `~/Desktop/Maya/Projects` by default.
     - [x] Add starter `docs`, `src`, `assets`, and `README.md` for new projects.
 - [x] **14.5. Drawing and Image Output**
-    - [x] Create simple local SVG drawings under `~/Downloads/Kampung AI/drawings`.
+    - [x] Create simple local SVG drawings under `~/Desktop/Maya/drawings`.
     - [x] Send drawing files in Telegram and open them on the iMac depending on the active channel.
     - [x] Add an optional Gemini image-generation path through `GEMINI_IMAGE_MODEL` and `ENABLE_GEMINI_IMAGE_GENERATION`.
     - [x] Add `workspace_drawing_smoke.py` and include it in launch rehearsal.
@@ -526,8 +532,9 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Open the generated document in Word for review.
     - [x] Add `imac_workflows_smoke.py` for flight, presentation, and network workflow coverage.
 - [x] **14.8. Default Output Location**
-    - [x] Put Maya-created workflow files under `~/Downloads/Kampung AI` unless Zainal specifies another folder.
-    - [x] Make simple relative file writes default to `~/Downloads`.
+    - [x] Put Maya-created workflow files under `~/Desktop/Maya` unless Zainal specifies another folder.
+    - [x] Make simple relative file writes default to `~/Desktop/Maya`.
+    - [x] Keep legacy `~/Downloads/Kampung AI` generated files readable and sendable.
 
 ## 🧭 Phase 15: Maya Agent Harness
 *Goal: Make Maya's work persistent, resumable, and inspectable through local LangGraph checkpoints.*
@@ -561,9 +568,16 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Keep browser sensitive-click approval owned by the browser workflow so old guided-click behavior still works.
 - [x] **15.7. Skill Learning Loop**
     - [x] Store skill metadata: triggers, non-triggers, tools, provider lane, safety boundary, tests, review notes, usage, failures, and disable reason.
-    - [x] Require approval plus a passing activation test before a proposed skill becomes active.
+    - [x] Require approval plus trigger, non-trigger, safety, happy-path, failure-path, and regression tests before a proposed skill becomes active.
     - [x] Add natural commands for testing and improving skills.
     - [x] Keep proposed, approved-but-untested, draft, and disabled skills out of active prompt context.
+    - [x] Add `skill_outcome_events` so Maya can record skill outcomes, failures, corrections, missing steps, and workflow references.
+    - [x] Add per-skill memory for what worked, what failed, preferences, examples, tests, safe data notes, and blocked data notes.
+    - [x] Add the private skill library layout under `maya_skills/active`, `proposed`, `disabled`, `research_notes`, and `tests`.
+    - [x] Add weekly no-key skill review summaries for usage, failures, stale skills, proposals, disabled skills, and new candidates.
+    - [x] Add safe user-model storage with source, confidence, allowed categories, and hard sensitive-data blocks.
+    - [x] Add channel adapter contracts so Telegram, iMac voice, Omi, Mudra, and future channels translate input/output without owning personality, skills, safety, or routing.
+    - [x] Add honest self-improvement language checks so Maya cannot claim learning, proposal updates, or active skill improvement without inspectable evidence.
 - [x] **15.8. Self-Heal Loop**
     - [x] Add self-heal stage logging for detected, isolated, proposed, closed, and future repair states.
     - [x] Add self-heal inspection answers for what broke, tests, patch direction, restart safety, and repair reports.
@@ -598,6 +612,40 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add document, skill, self-heal, and background replay smokes.
     - [x] Run checkpoint and idempotency cases three times inside their smoke tests.
     - [x] Add the new checkpoint/replay smokes to `may1_rehearsal.py`.
+
+## 🧭 Phase 16: Everyday Use and Desktop Maya Workspace
+*Goal: Make Maya's everyday output visible on the Desktop and make daily work easier to inspect.*
+
+- [x] **16.1. Desktop Maya Workspace**
+    - [x] Add a shared workspace helper with `~/Desktop/Maya` as the default root.
+    - [x] Create standard folders for documents, notes, presentations, spreadsheets, drawings, projects, artifacts, screenshots, reports, and inbox.
+    - [x] Keep legacy `~/Downloads/Kampung AI` readable for older generated artifacts.
+    - [x] Keep source code separate from user-facing output.
+- [x] **16.2. Excel and Office Output**
+    - [x] Add Excel `.xlsx` draft creation.
+    - [x] Route Excel files to `~/Desktop/Maya/spreadsheets`.
+    - [x] Open Excel drafts on the iMac when requested from iMac.
+    - [x] Send Excel drafts through Telegram when requested from Telegram.
+    - [x] Block sensitive spreadsheet content.
+- [x] **16.3. Workflow Desk**
+    - [x] Add a conversational workflow desk summary.
+    - [x] Show active workflows, active project, and latest artifacts.
+    - [x] Add background workflow listing.
+    - [x] Add latest artifact opening.
+    - [x] Allow matching workflow cancellation through natural language.
+- [x] **16.4. Everyday Layer**
+    - [x] Add daily cockpit answers for what today looks like.
+    - [x] Add focus recommendations from tasks and blockers.
+    - [x] Add waiting-on tracker using the task table.
+    - [x] Add approval inbox aggregation.
+    - [x] Add project cockpit.
+    - [x] Add quiet mode preference.
+- [x] **16.5. Tests**
+    - [x] Add Desktop workspace and Excel smoke coverage.
+    - [x] Add waiting-on smoke coverage.
+    - [x] Add daily cockpit smoke coverage.
+    - [x] Add workflow desk smoke coverage.
+    - [x] Keep all `.py` files under 300 lines.
 
 ---
 *Updated May 20, 2026*

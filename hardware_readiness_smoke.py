@@ -27,7 +27,7 @@ def main() -> None:
         _require("hey maya" in wake_phrases(), "wake phrase missing")
         woke, command = split_wake_phrase("Hey Maya check my day")
         _require(woke and command == "check my day", "wake split failed")
-        window = WakeWindow(seconds=10)
+        window = WakeWindow(seconds=5)
         _require(window.apply("Hello Maya")[0] and window.apply("continue")[0], "wake window failed")
         _require("Sensitive private exposure is blocked" in permission_summary(), "permission summary missing boundary")
         print("hardware_readiness_smoke: ok")

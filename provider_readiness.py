@@ -7,7 +7,7 @@ from dotenv import load_dotenv
 
 
 KEYS = (
-    ("GOOGLE_API_KEY", "Gemini Flash, screen, sight, Omi, memory shaping"),
+    ("GOOGLE_API_KEY", "Gemini 3.1 Flash default, Gemini 3.5 Flash premium sight, Omi, memory shaping"),
     ("KIMI_API_KEY", "The Artisan coding and repo maintenance"),
     ("OPENAI_API_KEY", "GPT-5.5 complex lane through /complex"),
     ("ANTHROPIC_API_KEY", "Claude Sonnet steward review lane"),
@@ -15,8 +15,8 @@ KEYS = (
     ("TELEGRAM_BOT_TOKEN", "Telegram channel"),
 )
 MODEL_VARS = (
-    ("GEMINI_FLASH_MODEL", "gemini-3-flash-preview"),
-    ("GEMINI_PRO_MODEL", "gemini-3.1-pro"),
+    ("GEMINI_FLASH_MODEL", "gemini-3.1-flash"),
+    ("GEMINI_PREMIUM_MODEL", "gemini-3.5-flash"),
     ("GEMINI_IMAGE_MODEL", "gemini-2.5-flash-image"),
     ("OPENAI_COMPLEX_REASONING_EFFORT", "xhigh"),
     ("CLAUDE_STEWARD_MODEL", "claude-sonnet-4-6"),

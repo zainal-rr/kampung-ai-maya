@@ -22,11 +22,11 @@ def setup_telegram_bot(token):
     return application
 
 if __name__ == "__main__":
-    token = os.getenv("TELEGRAM_BOT_TOKEN", "YOUR_TELEGRAM_BOT_TOKEN")
+    token = os.getenv("TELEGRAM_BOT_TOKEN")
     
-    if token == "YOUR_TELEGRAM_BOT_TOKEN":
+    if not token:
         print("ERROR: Please set TELEGRAM_BOT_TOKEN in your .env file.")
     else:
         app = setup_telegram_bot(token)
-        print(f"Starting bot with token: {token[:10]}...")
+        print("Starting Telegram bot.")
         asyncio.run(app.run_polling())

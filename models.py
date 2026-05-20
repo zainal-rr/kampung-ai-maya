@@ -39,7 +39,7 @@ class TheSenses(BaseAgent):
     def __init__(self, api_key: str, model: str | None = None):
         super().__init__("TheSenses")
         self.client = genai.Client(api_key=api_key)
-        self.model = model or os.getenv("GEMINI_FLASH_MODEL", "gemini-3-flash-preview")
+        self.model = model or os.getenv("GEMINI_FLASH_MODEL", "gemini-3.1-flash")
 
     async def chat(self, messages: List[Dict[str, str]]) -> str:
         prompt = "\n".join(

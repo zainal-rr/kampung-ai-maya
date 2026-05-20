@@ -40,6 +40,19 @@ CONFIRMATION_ACTIONS = {
     "deploy_repair",
 }
 HARD_DENY_ACTIONS = {"expose_private_info"}
+SENSITIVE_PATH_PARTS = {
+    ".ssh",
+    ".gnupg",
+    ".aws",
+    ".config/gcloud",
+    ".docker",
+    "Library/LaunchAgents",
+    "Library/LaunchDaemons",
+    ".zshrc",
+    ".zprofile",
+    ".bashrc",
+    ".bash_profile",
+}
 SENSITIVE_MARKERS = (
     "password",
     "passcode",
@@ -87,8 +100,13 @@ EXPOSURE_STARTERS = (
 
 
 def path_allowed(path: str | Path) -> bool:
-    Path(path).expanduser().resolve()
-    return True
+    return not path_needs_confirmation(path)
+
+
+def path_needs_confirmation(path: str | Path) -> bool:
+    resolved = Path(path).expanduser().resolve(strict=False)
+    text = str(resolved)
+    return any(part in text for part in SENSITIVE_PATH_PARTS)
 
 
 def contains_sensitive_info(text: str) -> bool:

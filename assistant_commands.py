@@ -10,6 +10,7 @@ from assistant_confirmation_helpers import resolve_pending_confirmation
 from assistant_skill_helpers import queue_skill_scaffold
 from assistant_task_helpers import create_sensitive_send_task, format_open_tasks, parse_task_delete_request
 from document_actions import DocumentActionRouter
+from everyday_commands import EverydayCommandRouter
 from file_actions import FileActionRouter
 from drawing_actions import DrawingActionRouter
 from imac_workflows import ImacWorkflowRouter
@@ -42,6 +43,7 @@ class AssistantCommandRouter:
         self.workflows = ImacWorkflowRouter(db_path)
         self.web = WebActionRouter()
         self.routines = RoutineCommandRouter(db_path)
+        self.everyday = EverydayCommandRouter(db_path)
 
     async def handle(self, clean_text: str, channel: str) -> str | None:
         if is_private_exposure(clean_text):
@@ -58,6 +60,7 @@ class AssistantCommandRouter:
             self._handle_activation_command,
             self._handle_summary_task,
             self._handle_weekly_reflection,
+            self._handle_everyday_commands,
             self._handle_document_actions,
             self._handle_imac_workflows,
             self._handle_local_creation_actions,
@@ -120,6 +123,9 @@ class AssistantCommandRouter:
 
     async def _handle_weekly_reflection(self, text: str, channel: str) -> str | None:
         return await handle_weekly_reflection(self.db_path, text, channel)
+
+    async def _handle_everyday_commands(self, text: str, channel: str) -> str | None:
+        return await self.everyday.handle(text, channel)
 
     async def _handle_send_to_telegram(self, text: str, channel: str) -> str | None:
         match = re.match(r"^(?:send|share)\s+(.+?)\s+to telegram$", text, re.IGNORECASE)

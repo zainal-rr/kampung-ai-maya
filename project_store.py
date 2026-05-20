@@ -9,6 +9,7 @@ from pathlib import Path
 import aiosqlite
 
 from storage import delete_preference, get_preference, upsert_preference
+from workspace_paths import project_roots as default_project_roots
 
 
 ACTIVE_PROJECT_PATH = "active_project_path"
@@ -24,7 +25,7 @@ class ProjectMatch:
 
 def project_roots() -> tuple[Path, ...]:
     raw = os.getenv("MAYA_PROJECT_ROOTS", "")
-    roots = [Path.home() / "projects", Path.home() / "Downloads" / "Kampung AI" / "Projects"]
+    roots = list(default_project_roots())
     for item in raw.split(","):
         if item.strip():
             roots.append(Path(item.strip()).expanduser())

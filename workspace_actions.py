@@ -6,11 +6,12 @@ from pathlib import Path
 
 from office_files import safe_slug
 from permission_policy import action_permission, path_allowed
+from workspace_paths import ensure_workspace_tree, workspace_dir
 
 
 class WorkspaceActionRouter:
     def __init__(self, workspace: Path | None = None):
-        self.workspace = workspace or Path.home() / "Downloads" / "Kampung AI"
+        self.workspace = workspace or workspace_dir("")
         self.projects_root = self.workspace / "Projects"
 
     async def handle(self, text: str, channel: str) -> str | None:
@@ -23,6 +24,7 @@ class WorkspaceActionRouter:
         return None
 
     async def _create_folder(self, name: str) -> str:
+        ensure_workspace_tree()
         path = self.workspace / safe_slug(name)
         if action_permission("create_file") != "allow" or not path_allowed(path):
             return f"I need confirmation before creating {path}."
@@ -30,6 +32,7 @@ class WorkspaceActionRouter:
         return f"Done. I created the folder at {path}."
 
     async def _create_project(self, name: str) -> str:
+        ensure_workspace_tree()
         path = self.projects_root / safe_slug(name)
         if action_permission("create_file") != "allow" or not path_allowed(path):
             return f"I need confirmation before creating {path}."

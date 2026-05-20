@@ -186,6 +186,8 @@ def _kind_for_path(path: str, fallback: str) -> str:
     lowered = path.lower()
     if lowered.endswith(".pptx"):
         return "presentation"
+    if lowered.endswith(".xlsx"):
+        return "spreadsheet"
     if lowered.endswith(".docx"):
         return "document"
     if lowered.endswith(".svg"):

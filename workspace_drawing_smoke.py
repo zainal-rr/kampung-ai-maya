@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 import tempfile
 from pathlib import Path
 
@@ -28,8 +29,9 @@ class FakeBridge:
 
 async def main() -> None:
     with tempfile.TemporaryDirectory(prefix="maya-workspace-drawing-") as tmp:
+        os.environ["MAYA_WORKSPACE_ROOT"] = str(Path(tmp) / "Maya")
         db_path = str(Path(tmp) / "smoke.db")
-        workspace = Path(tmp) / "Kampung AI"
+        workspace = Path(tmp) / "Maya"
         await _init(db_path)
         assistant = KampungAssistant(db_path)
         bridge = FakeBridge()

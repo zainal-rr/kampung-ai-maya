@@ -24,9 +24,13 @@ from self_heal_store import init_self_heal_db
 from sieve import SieveNode
 from skill_store import init_skill_db
 from skill_learning_store import init_skill_learning_db
+from skill_memory_store import init_skill_memory_db
+from skill_outcome_store import init_skill_outcome_db
 from storage import init_db
 from telegram_channel import TelegramChannel
 from weekly_memory_store import init_weekly_memory_db
+from weekly_skill_review import init_skill_review_db
+from user_model_store import init_user_model_db
 from workflow_store import init_workflow_db
 
 
@@ -39,6 +43,10 @@ async def main():
     await init_lesson_db(db_path)
     await init_skill_db(db_path)
     await init_skill_learning_db(db_path)
+    await init_skill_memory_db(db_path)
+    await init_skill_outcome_db(db_path)
+    await init_skill_review_db(db_path)
+    await init_user_model_db(db_path)
     await init_routine_db(db_path)
     await init_route_db(db_path)
     await init_weekly_memory_db(db_path)

@@ -11,6 +11,7 @@ from lesson_store import (
     list_lessons,
 )
 from permission_policy import contains_sensitive_info, hard_no_private_exposure_text
+from self_improvement_policy import verified_learning_message
 from storage import get_preference, upsert_preference
 from storage import list_preferences
 
@@ -59,7 +60,7 @@ class LearningPipeline:
         )
         if not await self._verified(lesson_id, preference_key, rule):
             return "I tried to save that, but I could not verify it yet."
-        return f"Got it. I saved that: {rule}"
+        return f"{verified_learning_message('preference', True)} {rule}"
 
     async def _ask_to_save(
         self,
@@ -100,7 +101,7 @@ class LearningPipeline:
         await clear_pending_lesson(self.db_path, pending_id)
         if not await self._verified(lesson_id, key, rule):
             return "I tried to save that, but I could not verify it yet."
-        return f"Saved. I will remember: {rule}"
+        return f"{verified_learning_message('preference', True)} {rule}"
 
     async def _inspect_lessons(self) -> str:
         lessons = await list_lessons(self.db_path, limit=6)

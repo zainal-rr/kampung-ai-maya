@@ -54,11 +54,11 @@ class ScreenResponder:
         self.context_provider = context_provider or ScreenContextProvider()
         self.senses = senses or TheSenses(
             os.getenv("GOOGLE_API_KEY", "dummy"),
-            os.getenv("GEMINI_FLASH_MODEL", "gemini-3-flash-preview"),
+            os.getenv("GEMINI_FLASH_MODEL", "gemini-3.1-flash"),
         )
-        self.pro_senses = senses or TheSenses(
+        self.premium_senses = senses or TheSenses(
             os.getenv("GOOGLE_API_KEY", "dummy"),
-            os.getenv("GEMINI_PRO_MODEL", "gemini-3.1-pro"),
+            os.getenv("GEMINI_PREMIUM_MODEL", "gemini-3.5-flash"),
         )
 
     async def handle(self, text: str, channel: str) -> str | None:
@@ -183,9 +183,9 @@ class ScreenResponder:
             return self._fallback_description(context)
         if self._should_escalate(request, answer):
             try:
-                pro_answer = await self.pro_senses.describe_image(snapshot.image_bytes, prompt)
-                await record_usage(self.db_path, "gemini_pro_vision_calls", 1, "screen escalation")
-                answer = pro_answer.strip() or answer
+                premium_answer = await self.premium_senses.describe_image(snapshot.image_bytes, prompt)
+                await record_usage(self.db_path, "gemini_premium_vision_calls", 1, "screen escalation")
+                answer = premium_answer.strip() or answer
             except Exception as exc:
                 logging.warning("Screen vision escalation failed: %s", exc)
         clean = self._remove_confidence(answer)

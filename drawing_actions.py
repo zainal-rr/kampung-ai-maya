@@ -9,11 +9,12 @@ from pathlib import Path
 from gemini_image import generate_gemini_image
 from office_files import safe_slug
 from utils import OSBridge
+from workspace_paths import workspace_dir
 
 
 class DrawingActionRouter:
     def __init__(self, workspace: Path | None = None, bridge: OSBridge | None = None):
-        self.workspace = workspace or Path.home() / "Downloads" / "Kampung AI" / "drawings"
+        self.workspace = workspace or workspace_dir("drawings")
         self.bridge = bridge or OSBridge()
 
     async def handle(self, text: str, channel: str) -> str | None:

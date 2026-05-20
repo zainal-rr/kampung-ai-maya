@@ -34,11 +34,11 @@ class VisionResponder:
         self.capture_service = capture_service or CiscoVisionService()
         self.senses = senses or TheSenses(
             os.getenv("GOOGLE_API_KEY", "dummy"),
-            os.getenv("GEMINI_FLASH_MODEL", "gemini-3-flash-preview"),
+            os.getenv("GEMINI_FLASH_MODEL", "gemini-3.1-flash"),
         )
-        self.pro_senses = senses or TheSenses(
+        self.premium_senses = senses or TheSenses(
             os.getenv("GOOGLE_API_KEY", "dummy"),
-            os.getenv("GEMINI_PRO_MODEL", "gemini-3.1-pro"),
+            os.getenv("GEMINI_PREMIUM_MODEL", "gemini-3.5-flash"),
         )
 
     async def handle(self, text: str, channel: str) -> str | None:
@@ -102,7 +102,7 @@ class VisionResponder:
         await record_usage(self.db_path, "gemini_flash_vision_calls", 1, "camera snapshot")
         if not description:
             return "I can see, but I could not work out the next step clearly."
-        description = await self._maybe_escalate_to_pro(request, snapshot.image_bytes, prompt, description)
+        description = await self._maybe_escalate_to_premium(request, snapshot.image_bytes, prompt, description)
         clean = remove_target_line(description)
         clean = self._remove_confidence_line(clean)
         targets = self._safe_targets(request, clean, parse_targets(description))
@@ -116,23 +116,24 @@ class VisionResponder:
             clear_preview_target()
         return f"I see. {clean}{marker}"
 
-    async def _maybe_escalate_to_pro(
+    async def _maybe_escalate_to_premium(
         self,
         request: str,
         image_bytes: bytes,
         prompt: str,
         flash_answer: str,
     ) -> str:
-        if not self._pro_may_help(request, flash_answer, self._confidence(flash_answer)):
+        if not self._premium_may_help(request, flash_answer, self._confidence(flash_answer)):
             return flash_answer
-        pro_prompt = (
+        premium_prompt = (
             f"{prompt} "
-            "Flash may be uncertain here. Only improve the answer if the image contains enough detail. "
-            "If higher reasoning will not help because the frame is blurry or blocked, say what to change instead."
+            "The default sight model may be uncertain here. Only improve the answer if the image "
+            "contains enough detail. If a stronger model will not help because the frame is blurry "
+            "or blocked, say what to change instead."
         )
-        pro_answer = (await self.pro_senses.describe_image(image_bytes, pro_prompt)).strip()
-        await record_usage(self.db_path, "gemini_pro_vision_calls", 1, "camera escalation")
-        return pro_answer or flash_answer
+        premium_answer = (await self.premium_senses.describe_image(image_bytes, premium_prompt)).strip()
+        await record_usage(self.db_path, "gemini_premium_vision_calls", 1, "camera escalation")
+        return premium_answer or flash_answer
 
     async def _record_snapshot(self, snapshot: VisionSnapshot) -> None:
         visible = "visible" if snapshot.visible else "not visible"
@@ -189,7 +190,7 @@ class VisionResponder:
         return re.sub(r"\s*CONFIDENCE:\s*\d{1,3}", "", text, flags=re.IGNORECASE).strip()
 
     @staticmethod
-    def _pro_may_help(request: str, answer: str, confidence: int | None) -> bool:
+    def _premium_may_help(request: str, answer: str, confidence: int | None) -> bool:
         lowered_request = request.lower()
         lowered_answer = answer.lower()
         if "look carefully" in lowered_request or "double check" in lowered_request:

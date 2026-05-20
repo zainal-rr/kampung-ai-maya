@@ -4,9 +4,10 @@ from provider_capabilities import CAPABILITIES, capability_context, review_trigg
 
 
 def main() -> None:
-    required = {"sight", "mind", "steward", "artisan", "pulse"}
+    required = {"sight", "sight_premium", "mind", "steward", "artisan", "pulse"}
     _require(required.issubset(CAPABILITIES), "missing provider capabilities")
     _require(CAPABILITIES["sight"].can_write_memory, "Gemini should own memory first pass")
+    _require(CAPABILITIES["sight_premium"].default_model == "gemini-3.5-flash", "premium Gemini model wrong")
     _require(not CAPABILITIES["steward"].can_write_memory, "Claude should review, not write memory")
     _require(CAPABILITIES["artisan"].owner == "The Artisan", "Kimi owner wrong")
     _require("/complex" in CAPABILITIES["mind"].triggers, "GPT complex trigger missing")

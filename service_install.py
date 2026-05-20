@@ -13,15 +13,11 @@ PLIST_PATH = Path.home() / "Library" / "LaunchAgents" / f"{LABEL}.plist"
 
 
 def build_plist() -> dict:
-    command = (
-        f'cd "{ROOT}" && set -a && source .env && set +a && '
-        f'exec "{ROOT / "venv/bin/python"}" "{ROOT / "main.py"}"'
-    )
     logs = ROOT / "logs"
     logs.mkdir(parents=True, exist_ok=True)
     return {
         "Label": LABEL,
-        "ProgramArguments": ["/bin/zsh", "-lc", command],
+        "ProgramArguments": [str(ROOT / "venv/bin/python"), str(ROOT / "main.py")],
         "WorkingDirectory": str(ROOT),
         "RunAtLoad": True,
         "KeepAlive": True,

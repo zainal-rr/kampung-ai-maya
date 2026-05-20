@@ -26,7 +26,7 @@ async def main() -> None:
     old_enabled = os.environ.get("ENABLE_XAI_VOICE_AGENT")
     old_idle = os.environ.get("XAI_VOICE_AGENT_IDLE_SECONDS")
     os.environ["ENABLE_XAI_VOICE_AGENT"] = "1"
-    os.environ["XAI_VOICE_AGENT_IDLE_SECONDS"] = "10"
+    os.environ["XAI_VOICE_AGENT_IDLE_SECONDS"] = "5"
     try:
         await _run()
     finally:
@@ -52,7 +52,7 @@ async def _run() -> None:
         route = await last_route_text(db_path)
         _require("wake phrase" in route, "start route was not recorded")
 
-        clock.advance(9)
+        clock.advance(4)
         closed = await session.close_if_idle()
         _require(not closed and session.active, "session closed too early")
 
@@ -60,7 +60,7 @@ async def _run() -> None:
         closed = await session.close_if_idle()
         _require(closed and not session.active, "session did not close after idle")
         summary = await usage_summary_text(db_path)
-        _require("Grok Voice Agent: 0.2 min" in summary, "voice agent usage was not tracked")
+        _require("Grok Voice Agent: 0.1 min" in summary, "voice agent usage was not tracked")
         route = await last_route_text(db_path)
         _require("cost recorded: yes" in route, "close route did not record cost flag")
         print("voice_agent_session_smoke: ok")

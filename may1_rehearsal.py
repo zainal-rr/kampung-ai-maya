@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -70,14 +71,26 @@ BASE_CHECKS = (
     Check("web actions", ("web_actions_smoke.py",)),
     Check("iMac workflows", ("imac_workflows_smoke.py",)),
     Check("document actions", ("document_actions_smoke.py",)),
+    Check("Desktop workspace and Excel", ("desktop_workspace_excel_smoke.py",)),
+    Check("waiting-on tracker", ("waiting_on_smoke.py",)),
+    Check("daily cockpit", ("daily_cockpit_smoke.py",)),
+    Check("workflow desk", ("workflow_desk_smoke.py",)),
     Check("workspace and drawing actions", ("workspace_drawing_smoke.py",)),
     Check("hardware readiness", ("hardware_readiness_smoke.py",)),
     Check("Mudra prepared only", ("mudra_prepare_smoke.py",)),
     Check("Omi prepared only", ("omi_prepare_smoke.py",)),
     Check("permission policy", ("permission_policy_smoke.py",)),
+    Check("security smoke", ("security_smoke.py",)),
     Check("secret detection", ("secret_detection_smoke.py",)),
     Check("skill usage", ("skill_usage_smoke.py",)),
     Check("skill learning loop", ("skill_learning_loop_smoke.py",)),
+    Check("skill outcome", ("skill_outcome_smoke.py",)),
+    Check("skill memory", ("skill_memory_smoke.py",)),
+    Check("skill library", ("skill_library_smoke.py",)),
+    Check("weekly skill review", ("weekly_skill_review_smoke.py",)),
+    Check("channel adapters", ("channel_adapter_smoke.py",)),
+    Check("honest self improvement", ("honest_self_improvement_smoke.py",)),
+    Check("user model boundary", ("user_model_boundary_smoke.py",)),
     Check("memory soak", ("memory_soak_smoke.py",)),
     Check("screen permission probe", ("screen_probe.py",), optional=True),
     Check("task lifecycle", ("task_smoke.py",)),
@@ -113,9 +126,12 @@ def main() -> int:
 
 def _run(check: Check) -> subprocess.CompletedProcess[str]:
     command = (sys.executable, *check.command)
+    env = os.environ.copy()
+    env.setdefault("MAYA_TEST_MODE", "1")
     return subprocess.run(
         command,
         cwd=Path(__file__).resolve().parent,
+        env=env,
         capture_output=True,
         text=True,
         check=False,

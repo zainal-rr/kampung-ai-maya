@@ -7,6 +7,7 @@ from learning_pipeline import LearningPipeline
 from assistant_model_lanes import ModelLanes
 from assistant_reply_paths import prepare_input
 from assistant_routes import AssistantRouter, RouteResult
+from channel_gateway import remember_channel_identity
 from harness_router import HarnessRouter
 from memory_service import MemoryService
 from models import TheSenses
@@ -19,6 +20,7 @@ from route_tracker import record_route
 from screen_responder import ScreenResponder
 from session_compactor import build_session_context, compact_if_needed
 from skill_registry import SkillRegistry
+from self_improvement_policy import enforce_honest_claims
 from storage import get_history, save_history_message
 from topic_context import format_topic_context, recent_topic_history
 from voice import VoiceNode, spoken_preview
@@ -94,10 +96,13 @@ class KampungAssistant:
         speak_reply: bool = False,
         user_id: int = PRIMARY_USER_ID,
         input_type: str = "text",
+        channel_external_id: str = "",
     ) -> str:
         clean_text = strip_wake_prefix(text)
         if not clean_text:
             return "Send me something real and I'll take it from there."
+        if channel_external_id:
+            await remember_channel_identity(self.db_path, channel, channel_external_id)
 
         complex_route = self._is_complex_route(clean_text)
         sight_route = self._is_sight_route(clean_text)
@@ -189,7 +194,8 @@ class KampungAssistant:
                 topic_context=topic_context,
             )
 
-        response = await apply_reply_preferences(self.db_path, clean_model_text(result.response))
+        response = await apply_reply_preferences(self.db_path, enforce_honest_claims(clean_model_text(result.response)))
+        await self.skills.record_latest_outcome(clean_text, channel, result.lane, response)
         await record_route(self.db_path, input_type, result.lane, result.reason, result.cost_recorded)
         await save_history_message(self.db_path, user_id, "user", clean_text)
         await save_history_message(self.db_path, user_id, "assistant", response)

@@ -37,7 +37,7 @@ async def main() -> None:
         woke, command = split_wake_phrase("Maya, what do you see")
         _require(woke and command == "what do you see", "plain Maya wake phrase failed")
 
-        window = WakeWindow(seconds=10)
+        window = WakeWindow(seconds=5)
         active, command = window.apply("Hello Maya")
         _require(active and command == "", "wake-only phrase did not activate")
         active, command = window.apply("what are my tasks")

@@ -16,7 +16,7 @@ Keep the system conservative before the keys are tested.
 8) `ENABLE_MUDRA_ADAPTER=0`
 9) `ENABLE_AGENT_RUNTIME=1`
 10) `ENABLE_ROUTINES=1`
-11) `MAYA_WAKE_WINDOW_SECONDS=10`
+11) `MAYA_WAKE_WINDOW_SECONDS=5`
 12) `ENABLE_XAI_VOICE_AGENT=0` until the dedicated live speech-to-speech path is tested.
 13) `ENABLE_OMI_ADAPTER=0` and `ENABLE_MUDRA_ADAPTER=0` stay off until the real hardware is present.
 
@@ -126,7 +126,7 @@ Only after text and provider smoke pass:
 4) Set `ENABLE_IMAC_CHANNEL=1` only when you are ready to test local speech.
 5) Set `ENABLE_XAI_VOICE_AGENT=1` and `XAI_VOICE_AGENT_MODE=real` only for the live speech-to-speech test.
 6) Say a local wake phrase, then speak the actual request into the Grok Voice Agent session.
-7) Keep Grok Voice Agent as an active wake session only: local wake detection listens for `Hey Maya`, `Good morning Maya`, `Hello Maya`, and `Maya`; the paid session starts only after the wake phrase, stays in the same conversation if Zainal speaks again within 10 seconds, closes after 10 seconds of silence, and reopens on the next wake phrase.
+7) Keep Grok Voice Agent as an active wake session only: local wake detection listens for `Hey Maya`, `Good morning Maya`, `Hello Maya`, and `Maya`; the paid session starts only after the wake phrase, stays in the same conversation if Zainal speaks again within 5 seconds, closes after 5 seconds of silence, and reopens on the next wake phrase.
 8) Keep `XAI_VOICE_AGENT_MODE=stub` until the prepared real websocket transport has been tested with the live xAI key.
 9) If latency or voice quality is bad, set `ENABLE_IMAC_CHANNEL=0` again and keep testing through Telegram.
 

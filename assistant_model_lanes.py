@@ -15,6 +15,10 @@ class ModelLanes:
         self.mind = TheMind(os.getenv("OPENAI_API_KEY", "dummy"))
         self.artisan = TheHands(os.getenv("KIMI_API_KEY", "dummy"))
         self.pulse = TheNews(os.getenv("XAI_API_KEY", "dummy"))
+        self.premium_sight = TheSenses(
+            os.getenv("GOOGLE_API_KEY", "dummy"),
+            os.getenv("GEMINI_PREMIUM_MODEL", "gemini-3.5-flash"),
+        )
         self.steward = TheSteward(
             os.getenv("ANTHROPIC_API_KEY", "dummy"),
             os.getenv("CLAUDE_STEWARD_MODEL", CAPABILITIES["steward"].default_model),
@@ -75,17 +79,33 @@ class ModelLanes:
     async def complex_plan_response(self, text: str, memory_context: str, skill_context: str) -> str:
         if not os.getenv("OPENAI_API_KEY"):
             return "The complex planning lane is not available yet. Add the strategic API key first."
+        research = await self._complex_research_context(text, memory_context, skill_context)
+        combined_context = "\n\n".join(block for block in (memory_context, research) if block)
         plan_prompt = self._prompt(
             MIND_ESCALATION_PROMPT + "\nProduce a Codex-style plan only. Do not execute. Include Summary, Key Changes, Test Plan, Assumptions, and Approval Needed.",
             text,
-            memory_context,
+            combined_context,
             skill_context,
         )
         effort = os.getenv("OPENAI_COMPLEX_REASONING_EFFORT", "xhigh")
         plan = await self.mind.chat(plan_prompt, reasoning_effort=effort)
-        review = await self._review_plan(text, plan, memory_context, skill_context)
+        review = await self._review_plan(text, plan, combined_context, skill_context)
         await record_usage(self.db_path, "gpt_complex_calls", 1, "complex plan")
         return _merge_plan_review(plan, review)
+
+    async def _complex_research_context(self, text: str, memory_context: str, skill_context: str) -> str:
+        if not os.getenv("GOOGLE_API_KEY"):
+            return ""
+        prompt = self._prompt(
+            "You are Maya's premium research lane. Prepare concise research context for GPT planning. "
+            "Separate facts, assumptions, risks, and unknowns. Do not make the plan and do not execute.",
+            text,
+            memory_context,
+            skill_context,
+        )
+        reply = await self.premium_sight.chat(prompt)
+        await record_usage(self.db_path, "gemini_premium_text_calls", 1, "complex research context")
+        return f"Premium research context:\n{reply.strip()}" if reply.strip() else ""
 
     async def artisan_response(self, text: str, memory_context: str, skill_context: str) -> str:
         if not os.getenv("KIMI_API_KEY"):

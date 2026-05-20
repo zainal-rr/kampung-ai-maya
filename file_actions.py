@@ -4,7 +4,8 @@ import asyncio
 import re
 from pathlib import Path
 
-from permission_policy import action_permission, hard_no_private_exposure_text, path_allowed
+from permission_policy import action_permission, hard_no_private_exposure_text, path_allowed, path_needs_confirmation
+from workspace_paths import workspace_dir
 
 
 KNOWN_HOME_DIRS = {
@@ -24,6 +25,8 @@ class FileActionRouter:
             return hard_no_private_exposure_text()
 
         path = self._resolve_path(raw_path)
+        if path_needs_confirmation(path):
+            return f"That path is sensitive. Confirm before I write to {path}."
         if not path_allowed(path):
             return f"I can't write to {path}."
         if action == "create" and path.exists():
@@ -58,4 +61,4 @@ class FileActionRouter:
         parts = path.parts
         if parts and parts[0].lower() in KNOWN_HOME_DIRS:
             return Path.home() / KNOWN_HOME_DIRS[parts[0].lower()] / Path(*parts[1:])
-        return Path.home() / "Downloads" / path
+        return workspace_dir("") / path

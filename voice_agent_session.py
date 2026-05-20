@@ -42,7 +42,7 @@ class GrokVoiceAgentSession:
         self.db_path = db_path
         self.transport_factory = transport_factory or _transport_factory
         self.now = now or time.monotonic
-        self.idle_seconds = idle_seconds or int(os.getenv("XAI_VOICE_AGENT_IDLE_SECONDS", "10"))
+        self.idle_seconds = idle_seconds or int(os.getenv("XAI_VOICE_AGENT_IDLE_SECONDS", "5"))
         self.transport = None
         self.started_at = 0.0
         self.last_activity = 0.0
