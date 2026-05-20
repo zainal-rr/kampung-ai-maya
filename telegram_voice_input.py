@@ -1,0 +1,89 @@
+from __future__ import annotations
+
+import asyncio
+import os
+import shutil
+import subprocess
+import tempfile
+from pathlib import Path
+
+from cost_tracker import record_usage
+from xai_stt import xai_transcribe_file
+
+
+async def transcribe_telegram_voice(update, context, db_path: str) -> str:
+    message = update.message
+    attachment = getattr(message, "voice", None) or getattr(message, "audio", None)
+    if not attachment:
+        return ""
+    with tempfile.TemporaryDirectory(prefix="maya-telegram-voice-") as tmp:
+        input_path = Path(tmp) / "telegram_audio"
+        wav_path = Path(tmp) / "telegram_audio.wav"
+        telegram_file = await context.bot.get_file(attachment.file_id)
+        await telegram_file.download_to_drive(custom_path=str(input_path))
+        await _convert_to_wav(input_path, wav_path)
+        duration = float(getattr(attachment, "duration", 0) or 0)
+        transcript, paid_stt = await _transcribe_wav(wav_path)
+        if paid_stt:
+            await record_usage(db_path, "xai_stt_seconds", duration, "telegram voice note")
+        return transcript.strip()
+
+
+async def _convert_to_wav(input_path: Path, wav_path: Path) -> None:
+    if not shutil.which("ffmpeg"):
+        raise RuntimeError("ffmpeg is required to process Telegram voice notes.")
+    process = await asyncio.create_subprocess_exec(
+        "ffmpeg",
+        "-y",
+        "-i",
+        str(input_path),
+        "-ac",
+        "1",
+        "-ar",
+        "16000",
+        str(wav_path),
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+    )
+    _, stderr = await process.communicate()
+    if process.returncode != 0:
+        message = stderr.decode("utf-8", errors="ignore").strip()
+        raise RuntimeError(message or "Telegram voice conversion failed")
+
+
+async def _transcribe_wav(wav_path: Path) -> tuple[str, bool]:
+    api_key = os.getenv("XAI_API_KEY")
+    if api_key:
+        text = await asyncio.to_thread(xai_transcribe_file, api_key, wav_path, "en")
+        return text, True
+    return await _transcribe_with_whisper(wav_path), False
+
+
+async def _transcribe_with_whisper(wav_path: Path) -> str:
+    if not shutil.which("whisper"):
+        raise RuntimeError("No xAI key or local whisper command available for Telegram voice notes.")
+    process = await asyncio.create_subprocess_exec(
+        "whisper",
+        str(wav_path),
+        "--model",
+        os.getenv("WHISPER_MODEL", "tiny"),
+        "--language",
+        os.getenv("WHISPER_LANGUAGE", "en"),
+        "--fp16",
+        "False",
+        "--condition_on_previous_text",
+        "False",
+        "--temperature",
+        "0",
+        "--output_format",
+        "txt",
+        "--output_dir",
+        str(wav_path.parent),
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.PIPE,
+    )
+    _, stderr = await process.communicate()
+    if process.returncode != 0:
+        message = stderr.decode("utf-8", errors="ignore").strip()
+        raise RuntimeError(message or "whisper transcription failed")
+    return wav_path.with_suffix(".txt").read_text(encoding="utf-8")

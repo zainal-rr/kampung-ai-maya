@@ -1,0 +1,32 @@
+from __future__ import annotations
+
+import asyncio
+import tempfile
+
+from harness_router import HarnessRouter
+from harness_store import get_active_run, init_harness_db
+from storage import init_db
+
+
+def _require(condition: bool, message: str) -> None:
+    if not condition:
+        raise AssertionError(message)
+
+
+async def main() -> None:
+    with tempfile.NamedTemporaryFile() as tmp:
+        db_path = tmp.name
+        await init_db(db_path)
+        await init_harness_db(db_path)
+        router = HarnessRouter(db_path)
+        first = await router.handle("book flight to Penang tomorrow", "telegram")
+        _require(first and "confirmation" in first.lower(), "sensitive click did not pause")
+        active = await get_active_run(db_path, "telegram")
+        _require(active and active["status"] == "paused", "paused run missing")
+        second = await HarnessRouter(db_path).handle("no", "telegram")
+        _require(second and "won't do" in second.lower(), "decline did not cancel")
+    print("harness_resume_smoke: ok")
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

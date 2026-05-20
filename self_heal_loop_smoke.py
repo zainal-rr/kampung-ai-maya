@@ -1,0 +1,37 @@
+from __future__ import annotations
+
+import asyncio
+import tempfile
+from pathlib import Path
+
+from self_heal_commands import handle_self_heal_status
+from self_heal_store import init_self_heal_db, latest_self_heal_stages
+from self_healing import self_heal_text
+from storage import init_db
+
+
+async def main() -> None:
+    with tempfile.TemporaryDirectory(prefix="maya-self-heal-loop-") as tmp:
+        root = Path(tmp)
+        (root / "logs").mkdir()
+        (root / "logs" / "error.log").write_text("Traceback: simulated failure\n", encoding="utf-8")
+        db_path = str(root / "smoke.db")
+        await init_db(db_path)
+        await init_self_heal_db(db_path)
+        await self_heal_text(db_path, root)
+        stages = await latest_self_heal_stages(db_path)
+        _require([item["status"] for item in stages][-1] == "proposed", "proposal stage missing")
+        report = await handle_self_heal_status(db_path, "show the repair report")
+        _require(report and "Patch direction:" in report, "repair report missing")
+        restart = await handle_self_heal_status(db_path, "is it safe to restart")
+        _require(restart and "explicit approval" in restart, "restart boundary missing")
+    print("self_heal_loop_smoke: ok")
+
+
+def _require(condition: bool, message: str) -> None:
+    if not condition:
+        raise AssertionError(message)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())
