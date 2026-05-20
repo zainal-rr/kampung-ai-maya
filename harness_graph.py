@@ -5,6 +5,7 @@ from typing import Literal
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langgraph.graph import END, START, StateGraph
 
+from browser_agent_state import task_type_for
 from harness_state import HarnessState
 from harness_artifact_store import record_structured_artifact
 from harness_checkpoint_migration import snapshot_or_migrate
@@ -157,6 +158,8 @@ class HarnessGraphRunner:
             await record_structured_artifact(self.db_path, state["run_id"], artifact)
         if result.observation:
             state["last_observation"] = result.observation.as_dict()
+            if state.get("workflow_type") == "browser":
+                state["browser_state"] = _browser_state(state, result.observation.as_dict())
             await record_observation(self.db_path, state["run_id"], result.observation)
         if result.requires_approval:
             state["graph_status"] = "waiting_approval"
@@ -235,3 +238,21 @@ def _resume_message(state: HarnessState) -> str:
 
 def _config(thread_id: str) -> dict:
     return {"configurable": {"thread_id": thread_id}}
+
+
+def _browser_state(state: HarnessState, observation: dict) -> dict:
+    previous = dict(state.get("browser_state") or {})
+    steps = list(previous.get("steps") or [])
+    if state.get("last_successful_step"):
+        steps.append(str(state["last_successful_step"]))
+    previous.update({
+        "goal": state.get("goal") or state.get("user_text", ""),
+        "task_type": task_type_for(state.get("goal") or state.get("user_text", "")),
+        "current_url": observation.get("url", ""),
+        "page_title": observation.get("page_title", ""),
+        "search_query": state.get("user_text", ""),
+        "last_observation_id": observation.get("text_hash", ""),
+        "confidence": observation.get("confidence", 0),
+        "steps": steps[-12:],
+    })
+    return previous

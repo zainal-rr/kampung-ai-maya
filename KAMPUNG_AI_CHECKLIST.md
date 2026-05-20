@@ -485,6 +485,11 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add simple non-sensitive browser form filling by visible field label or placeholder.
     - [x] Combine DOM page inspection, clickable/fillable target inspection, and screen-capture availability in browser inspection replies.
     - [x] Add smoke coverage for browser DOM plus screen-grounding availability.
+    - [x] Add structured browser-agent state for task type, URL, title, query, filters, compared options, confidence, retry count, estimated cost, and pending sensitive action.
+    - [x] Add a cost-safe browser policy that keeps local DOM and screen paths free, gates Gemini Flash and Pro browser-understanding calls, and keeps Claude/GPT out of normal browser execution.
+    - [x] Strengthen browser click verification with DOM text hash, modal markers, target presence, URL, and title.
+    - [x] Store browser observations as structured harness evidence with URL, title, text hash, click/fill targets, screen status, confidence, and provenance.
+    - [x] Add `browser_agent_maturity_smoke.py` for dynamic-page verification, cost gates, browser state, and sensitive-click pause behavior.
 - [ ] **14.3. Office Work**
     - [x] Add general document creation v1 for Markdown, Word, and PowerPoint drafts.
     - [x] Put Markdown notes under `~/Downloads/Kampung AI/notes`.

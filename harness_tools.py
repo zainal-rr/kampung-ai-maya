@@ -79,6 +79,16 @@ class HarnessTools:
         observation = _browser_observation()
         result = _result(reply, "browser")
         result.observation = observation
+        if observation and observation.url:
+            result.structured_artifacts.append(
+                HarnessArtifact(
+                    kind="browser_page",
+                    url=observation.url,
+                    summary=observation.page_title or "browser page",
+                    source_tool="browser_control",
+                    exists_status="observed",
+                )
+            )
         result.keep_open = True
         return result
 
@@ -215,6 +225,8 @@ def _browser_observation() -> GroundedObservation | None:
         page_title=page.title,
         url=page.url,
         text_summary=page_summary(page, max_lines=6),
+        text_hash=page.text_hash,
+        modal_state=page.modal_state,
         clickable_targets=clickable[:8],
         fillable_targets=fillable[:8],
         screenshot_status=screen.status if screen.visible else f"unavailable: {screen.status}",

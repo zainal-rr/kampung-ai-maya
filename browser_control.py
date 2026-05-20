@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import hashlib
 from dataclasses import dataclass
 from urllib.parse import quote_plus
 
@@ -12,6 +13,8 @@ class BrowserPage:
     title: str
     url: str
     text: str
+    text_hash: str = ""
+    modal_state: str = ""
 
 
 @dataclass(frozen=True)
@@ -29,6 +32,11 @@ class BrowserClickResult:
     before_url: str
     after_title: str
     after_url: str
+    before_hash: str = ""
+    after_hash: str = ""
+    before_modal: str = ""
+    after_modal: str = ""
+    target_present_after: bool = False
 
     @property
     def clicked(self) -> bool:
@@ -36,7 +44,14 @@ class BrowserClickResult:
 
     @property
     def changed(self) -> bool:
-        return (self.before_title, self.before_url) != (self.after_title, self.after_url)
+        return (
+            (self.before_title, self.before_url, self.before_hash, self.before_modal)
+            != (self.after_title, self.after_url, self.after_hash, self.after_modal)
+        )
+
+    @property
+    def verified(self) -> bool:
+        return self.clicked and (self.changed or not self.target_present_after)
 
 
 class BrowserController:
@@ -92,10 +107,17 @@ class BrowserController:
         before = self.inspect_page(max_chars=1200)
         raw = self.click_text(target)
         after = self.inspect_page(max_chars=1200)
+        present_after = self.target_visible(target)
         if not raw.startswith("CLICKED:"):
-            return BrowserClickResult("not_found", target, "", before.title, before.url, after.title, after.url)
+            return BrowserClickResult(
+                "not_found", target, "", before.title, before.url, after.title, after.url,
+                before.text_hash, after.text_hash, before.modal_state, after.modal_state, present_after,
+            )
         label = raw.split(":", 1)[1].strip()
-        return BrowserClickResult("clicked", target, label, before.title, before.url, after.title, after.url)
+        return BrowserClickResult(
+            "clicked", target, label, before.title, before.url, after.title, after.url,
+            before.text_hash, after.text_hash, before.modal_state, after.modal_state, present_after,
+        )
 
     def fill_field(self, target: str, value: str) -> str:
         script = (
@@ -107,6 +129,17 @@ class BrowserController:
             "end tell"
         )
         return self.bridge._run_applescript(script)
+
+    def target_visible(self, target: str) -> bool:
+        script = (
+            f'tell application "{self.app_name}"\n'
+            "activate\n"
+            "if (count of windows) is 0 then error \"No browser window is open\"\n"
+            f"set visibleResult to execute active tab of front window javascript {_as_string(_target_visible_js(target))}\n"
+            "return visibleResult\n"
+            "end tell"
+        )
+        return self.bridge._run_applescript(script).strip().lower() == "true"
 
 
 def page_summary(page: BrowserPage, max_lines: int = 8) -> str:
@@ -127,7 +160,8 @@ def element_summary(elements: list[BrowserElement], max_items: int = 8) -> str:
 def _parse_page(raw: str) -> BrowserPage:
     title, _, rest = raw.partition("\n---URL---\n")
     url, _, text = rest.partition("\n---TEXT---\n")
-    return BrowserPage(title.strip(), url.strip(), text.strip())
+    clean_text = text.strip()
+    return BrowserPage(title.strip(), url.strip(), clean_text, _text_hash(clean_text), _modal_state(clean_text))
 
 
 def _as_string(script: str) -> str:
@@ -157,6 +191,20 @@ def _click_js(target: str) -> str:
         "match.scrollIntoView({block: 'center', inline: 'center'});"
         "match.click();"
         "return 'CLICKED: ' + label(match).slice(0, 120);"
+        "})()"
+    )
+
+
+def _target_visible_js(target: str) -> str:
+    return (
+        "(() => {"
+        f"const target = {json.dumps(target.lower())};"
+        "const norm = s => (s || '').toLowerCase().replace(/\\s+/g, ' ').trim();"
+        "const visible = e => { const r = e.getBoundingClientRect();"
+        "return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== 'hidden'; };"
+        "const label = e => norm(e.innerText || e.value || e.getAttribute('aria-label') || e.title || '');"
+        "const nodes = [...document.querySelectorAll('a,button,input,[role=button],[role=link],select,summary')];"
+        "return nodes.some(e => visible(e) && label(e).includes(target));"
         "})()"
     )
 
@@ -192,3 +240,13 @@ def _fill_js(target: str, value: str) -> str:
         "return 'FILLED: '+(label(match)||target).slice(0,120);"
         "})()"
     )
+
+
+def _text_hash(text: str) -> str:
+    return hashlib.sha256(text.encode("utf-8", errors="ignore")).hexdigest()[:16]
+
+
+def _modal_state(text: str) -> str:
+    lowered = text.lower()
+    markers = ("cookie", "accept", "dialog", "modal", "continue", "confirm")
+    return ",".join(marker for marker in markers if marker in lowered)[:120]

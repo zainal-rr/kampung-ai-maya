@@ -66,6 +66,7 @@ BASE_CHECKS = (
     Check("app interaction", ("app_interaction_smoke.py",)),
     Check("app command full path", ("app_command_fullpath_smoke.py",)),
     Check("browser control", ("browser_control_smoke.py",)),
+    Check("browser agent maturity", ("browser_agent_maturity_smoke.py",)),
     Check("web actions", ("web_actions_smoke.py",)),
     Check("iMac workflows", ("imac_workflows_smoke.py",)),
     Check("document actions", ("document_actions_smoke.py",)),

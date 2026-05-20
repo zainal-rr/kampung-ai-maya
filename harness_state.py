@@ -20,6 +20,7 @@ class HarnessState(TypedDict, total=False):
     last_user_instruction: str
     user_turn_id: str
     last_observation: dict
+    browser_state: dict
     keep_open: bool
     observations: list[str]
     artifacts: list[str]
@@ -56,6 +57,7 @@ def initial_harness_state(
         "last_user_instruction": user_text,
         "user_turn_id": f"{run_id}:0",
         "last_observation": {},
+        "browser_state": {},
         "keep_open": False,
         "observations": [],
         "artifacts": [],

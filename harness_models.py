@@ -36,6 +36,8 @@ class GroundedObservation:
     page_title: str = ""
     url: str = ""
     text_summary: str = ""
+    text_hash: str = ""
+    modal_state: str = ""
     clickable_targets: tuple[str, ...] = ()
     fillable_targets: tuple[str, ...] = ()
     screenshot_status: str = ""
@@ -51,6 +53,8 @@ class GroundedObservation:
             "page_title": self.page_title,
             "url": self.url,
             "text_summary": self.text_summary,
+            "text_hash": self.text_hash,
+            "modal_state": self.modal_state,
             "clickable_targets": list(self.clickable_targets),
             "fillable_targets": list(self.fillable_targets),
             "screenshot_status": self.screenshot_status,

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import asyncio
-import json
 import re
-from dataclasses import dataclass, field
 
+from browser_agent_state import BrowserAgentState, observation_id, task_type_for
 from browser_control import BrowserController, element_summary, page_summary
+from browser_cost_policy import escalation_decision, local_decision
 from permission_policy import action_permission, contains_sensitive_info, hard_no_private_exposure_text
 from screen_service import MacScreenService
 from storage import delete_preference, get_preference, upsert_preference
@@ -14,27 +14,12 @@ from utils import OSBridge
 
 STATE_KEY = "maya_browser_workflow"
 PENDING_CLICK_KEY = "maya_pending_browser_click"
-SENSITIVE_WORDS = ("buy", "book", "pay", "checkout", "purchase", "submit", "passport", "card", "confirm")
+SENSITIVE_WORDS = (
+    "buy", "book", "pay", "checkout", "purchase", "submit", "passport",
+    "card", "confirm", "login", "password", "otp", "2fa", "upload", "send",
+    "private account", "change account",
+)
 MISSING_SKILL_WORDS = ("hotel", "calendar", "shopping", "shop", "account", "design review", "security review")
-
-
-@dataclass
-class BrowserTask:
-    goal: str
-    query: str
-    kind: str = "web"
-    steps: list[str] = field(default_factory=list)
-
-    def to_json(self) -> str:
-        return json.dumps({"goal": self.goal, "query": self.query, "kind": self.kind, "steps": self.steps[-8:]})
-
-    @classmethod
-    def from_json(cls, raw: str) -> "BrowserTask | None":
-        try:
-            data = json.loads(raw)
-        except json.JSONDecodeError:
-            return None
-        return cls(str(data.get("goal", "")), str(data.get("query", "")), str(data.get("kind", "web")), list(data.get("steps", [])))
 
 
 class HumanBrowserWorkflowRouter:
@@ -67,30 +52,41 @@ class HumanBrowserWorkflowRouter:
     async def _start(self, text: str) -> str | None:
         if not _is_browser_start(text):
             return None
-        kind = "flight" if "flight" in text.lower() else "web"
-        task = BrowserTask(text.strip(), text.strip(), kind, ["opened search"])
-        if action_permission("travel_search" if kind == "flight" else "browse_web") != "allow":
+        task_type = task_type_for(text)
+        state = BrowserAgentState(text.strip(), text.strip(), task_type, steps=["opened search"])
+        if action_permission("travel_search" if task_type == "flight_search" else "browse_web") != "allow":
             return "I need your confirmation before browsing for that."
-        await asyncio.to_thread(self.browser.open_search, task.query)
-        await self._save(task)
-        if kind == "flight":
+        await asyncio.to_thread(self.browser.open_search, state.query)
+        await self._save(state)
+        if task_type == "flight_search":
             return "I opened Chrome with flight options. I can compare, change filters, and shortlist, but I will stop before booking or payment."
         return "I opened Chrome for that. I can inspect the page, click visible results, fill simple fields, and verify what changed."
 
     async def _status(self, text: str) -> str | None:
-        if _clean(text) not in {"browser status", "what are you browsing", "what is the browser task"}:
+        if _clean(text) not in {
+            "browser status", "what are you browsing", "what is the browser task",
+            "what are you comparing", "which page did you use",
+        }:
             return None
         task = await self._task()
         if not task:
             return "No active browser task right now."
-        return f"Browser task: {task.goal}\nLast query: {task.query}\nSteps: " + ", ".join(task.steps[-5:])
+        return (
+            f"Browser task: {task.goal}\n"
+            f"Task type: {task.task_type}\n"
+            f"Current page: {task.page_title or 'not inspected yet'}\n"
+            f"Last query: {task.query}\n"
+            f"Estimated browser model cost: ${task.estimated_cost:.3f}\n"
+            f"Steps: " + ", ".join(task.steps[-5:])
+        )
 
     async def _inspect(self, text: str) -> str | None:
         lowered = _clean(text)
         active = await self._task()
         markers = (
             "inspect browser", "read browser", "what is in chrome", "what is on chrome",
-            "compare results", "compare visible", "compare options",
+            "compare results", "compare visible", "compare options", "what are you comparing",
+            "which page did you use", "double check browser", "look carefully browser",
         )
         if not active and not any(marker in lowered for marker in markers):
             return None
@@ -105,10 +101,17 @@ class HumanBrowserWorkflowRouter:
         except Exception as exc:
             return f"I could not inspect Chrome yet: {exc}"
         if active:
+            active.current_url = page.url
+            active.page_title = page.title
+            active.last_observation_id = observation_id(page.title, page.url, page.text_hash)
+            active.compared_options = _options_from_text(page.text)
+            active.confidence = 0.75 if page.text else 0.35
             active.steps.append(f"inspected {page.title}")
-            await self._save(active)
         visual = "Screen view is available." if screen.visible else f"Screen view unavailable: {screen.status}"
-        return "I inspected Chrome.\n" + page_summary(page) + "\n" + element_summary(elements) + f"\n{visual}"
+        cost = _cost_note(lowered, active)
+        if active:
+            await self._save(active)
+        return "I inspected Chrome.\n" + page_summary(page) + "\n" + element_summary(elements) + f"\n{visual}{cost}"
 
     async def _filter_followup(self, text: str) -> str | None:
         task = await self._task()
@@ -122,7 +125,11 @@ class HumanBrowserWorkflowRouter:
         filter_words = ("cheaper", "earlier", "later", "date", "tomorrow", "baggage", "direct", "nonstop", "filter", "sort")
         if not any(word in lowered for word in filter_words):
             return None
+        if task.retry_count >= 4:
+            return "I have tried a few browser refinements already. Tell me the exact filter or site you want next."
         task.query = f"{task.goal} {text}"
+        task.filters.append(text)
+        task.retry_count += 1
         task.steps.append(f"searched follow-up: {text}")
         await asyncio.to_thread(self.browser.open_search, task.query)
         await self._save(task)
@@ -150,6 +157,7 @@ class HumanBrowserWorkflowRouter:
             return None
         if any(word in _clean(f"{text} {target}") for word in SENSITIVE_WORDS):
             await upsert_preference(self.db_path, PENDING_CLICK_KEY, target, source="workflow")
+            await self._set_pending(target)
             return f"This looks sensitive. Say yes if you want me to click `{target}` in Chrome."
         return await self._click_target(target, sensitive=False)
 
@@ -167,21 +175,32 @@ class HumanBrowserWorkflowRouter:
         if not result.clicked:
             return f"I could not find `{target}` as a visible clickable item in Chrome."
         await self._add_step(f"clicked {target}")
-        state = "The page changed after the click." if result.changed else "The page stayed on the same visible result."
+        if result.verified:
+            state = "I verified a visible change after the click."
+        elif result.clicked:
+            state = "I clicked it, but I cannot confirm the result yet."
+        else:
+            state = "The page stayed on the same visible result."
         suffix = " I will still stop before booking, payment, submission, or private details." if sensitive else ""
         return f"I clicked {target} in Chrome and verified the result. {state}{suffix}"
 
-    async def _task(self) -> BrowserTask | None:
+    async def _task(self) -> BrowserAgentState | None:
         raw = await get_preference(self.db_path, STATE_KEY)
-        return BrowserTask.from_json(raw) if raw else None
+        return BrowserAgentState.from_json(raw) if raw else None
 
-    async def _save(self, task: BrowserTask) -> None:
+    async def _save(self, task: BrowserAgentState) -> None:
         await upsert_preference(self.db_path, STATE_KEY, task.to_json(), source="workflow")
 
     async def _add_step(self, step: str) -> None:
         task = await self._task()
         if task:
             task.steps.append(step)
+            await self._save(task)
+
+    async def _set_pending(self, target: str) -> None:
+        task = await self._task()
+        if task:
+            task.pending_sensitive_action = target
             await self._save(task)
 
 
@@ -201,3 +220,28 @@ def _click_target(text: str) -> str | None:
 
 def _clean(text: str) -> str:
     return " ".join(text.lower().strip().split())
+
+
+def _options_from_text(text: str) -> list[str]:
+    lines = [line.strip() for line in text.splitlines() if line.strip()]
+    markers = ("rm", "$", "flight", "airasia", "malaysia", "price", "option")
+    return [line[:160] for line in lines if any(marker in line.lower() for marker in markers)][:8]
+
+
+def _cost_note(text: str, task: BrowserAgentState | None) -> str:
+    if not task:
+        return ""
+    decision = local_decision()
+    if any(word in text for word in ("messy", "visual", "double check", "look carefully", "tiny text")):
+        decision = escalation_decision(
+            reason=text,
+            current_cost=task.estimated_cost,
+            confidence=task.confidence,
+            careful="double check" in text or "look carefully" in text,
+        )
+    if decision.lane == "local":
+        return "\nCost path: local browser evidence only."
+    if decision.needs_confirmation:
+        return f"\nCost path: {decision.reason} needs confirmation before spending more."
+    task.estimated_cost += decision.estimated_cost
+    return f"\nCost path: {decision.reason}, estimated +${decision.estimated_cost:.3f}."
