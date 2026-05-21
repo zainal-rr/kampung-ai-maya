@@ -5,6 +5,7 @@ from dataclasses import dataclass
 from skill_learning_store import increment_skill_usage
 from skill_outcome_store import record_skill_outcome
 from skill_store import latest_skill_usage, list_custom_skills, record_skill_usage
+from security_manifest import SecurityManifest, get_manifest, upsert_manifest
 
 
 @dataclass(frozen=True)
@@ -45,6 +46,7 @@ class SkillRegistry:
         self.db_path = db_path
 
     async def list_skills(self, limit: int = 20) -> list[str]:
+        await ensure_builtin_skill_manifests(self.db_path)
         custom = await list_custom_skills(self.db_path, limit=limit)
         built_in = [
             f"{item.name}: {item.description} [{item.safety}/{item.approval_mode}]"
@@ -57,6 +59,7 @@ class SkillRegistry:
         return built_in + custom_lines
 
     async def build_prompt_context(self, query: str, limit: int = 4) -> str:
+        await ensure_builtin_skill_manifests(self.db_path)
         lowered = query.lower()
         relevant = []
         for skill in BUILT_IN_SKILLS:
@@ -139,3 +142,33 @@ def _artifact_marker(response: str) -> str:
     if marker not in response:
         return ""
     return response.split(marker, 1)[1].split("]", 1)[0][:120]
+
+
+async def ensure_builtin_skill_manifests(db_path: str) -> None:
+    for skill in BUILT_IN_SKILLS:
+        if await get_manifest(db_path, "skill", skill.skill_id):
+            continue
+        await upsert_manifest(db_path, _manifest_for_builtin(skill))
+
+
+def _manifest_for_builtin(skill: SkillDefinition) -> SecurityManifest:
+    permissions = {"create_artifacts": skill.skill_id in {"history_summary", "office_documents", "drawing"}}
+    if skill.skill_id in {"memory_lookup"}:
+        permissions["read_files"] = False
+    if skill.skill_id in {"file_write", "workspace_create", "office_documents", "drawing"}:
+        permissions["write_files"] = True
+    if skill.skill_id in {"web_browse", "travel_research", "sight_research"}:
+        permissions.update({"browse_web": True, "browser_click": True})
+    if skill.skill_id in {"telegram_send"}:
+        permissions["send_files"] = True
+    if skill.skill_id in {"skill_scaffold"}:
+        permissions.update({"write_files": True, "write_memory": True})
+    if skill.skill_id in {"cloud_accounts"}:
+        permissions["external_api"] = True
+    return SecurityManifest(
+        "skill",
+        skill.skill_id,
+        permissions,
+        hard_blocks=["private_exposure", "secrets"],
+        notes=f"Built-in skill manifest for {skill.name}.",
+    )

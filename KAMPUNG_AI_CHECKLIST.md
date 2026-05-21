@@ -645,6 +645,41 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add waiting-on smoke coverage.
     - [x] Add daily cockpit smoke coverage.
     - [x] Add workflow desk smoke coverage.
+
+## 🧩 Phase 17: Extensibility And Audit Layer
+
+- [x] **17.1. Security Manifests**
+    - [x] Add a manifest schema for skills and MCP tools.
+    - [x] Track read, write, delete, send, browse, click, form, account, external API, memory, and artifact permissions.
+    - [x] Track approval requirements and hard blocked actions.
+    - [x] Add manifest inspection and smoke coverage.
+
+- [x] **17.2. MCP Registry**
+    - [x] Add MCP server registry storage.
+    - [x] Track command, environment needs, enabled state, permission scope, owner, and usage.
+    - [x] Add proposal, approval, enable, disable, and audit flows.
+    - [x] Add MCP registry smoke coverage.
+
+- [x] **17.3. Skill Import Standard**
+    - [x] Import local skill folders through `SKILL.md`.
+    - [x] Store imported skills as proposed only.
+    - [x] Infer triggers, tools, permissions, and manifest from the imported skill.
+    - [x] Require review and activation tests before use.
+
+- [x] **17.4. Starter Skill Catalog**
+    - [x] Add starter skills for flights, shopping, browser research, document critique, slide critique, network troubleshooting, finance tracking, habit planning, app control, and Excel tracker creation.
+    - [x] Keep starter catalog skills proposed until approved and tested.
+    - [x] Add catalog smoke coverage.
+
+- [x] **17.5. Skill Performance Analyzer**
+    - [x] Analyze repeated success, repeated failure, corrections, and blocked outcomes.
+    - [x] Create improvement proposals without changing active behavior.
+    - [x] Add performance analyzer smoke coverage.
+
+- [x] **17.6. Maya Desk**
+    - [x] Create a private local audit report under `~/Desktop/Maya/reports/maya-desk.html`.
+    - [x] Include workflows, approvals, artifacts, skills, user model, MCP usage, skill outcomes, and cost.
+    - [x] Add Maya desk smoke coverage.
     - [x] Keep all `.py` files under 300 lines.
 
 ---

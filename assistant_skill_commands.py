@@ -4,6 +4,7 @@ import re
 
 from assistant_command_helpers import direct_key
 from skill_evaluator import evaluate_skill_scaffold
+from skill_importer import import_local_skill
 from skill_library import mirror_skill
 from skill_memory_store import add_skill_memory, disable_skill_memory, list_skill_memory
 from skill_registry import BUILT_IN_SKILLS, SkillRegistry
@@ -11,6 +12,10 @@ from skill_learning_store import mark_skill_disabled, missing_required_tests, re
 from weekly_skill_review import latest_skill_review
 from user_model_store import list_user_model_items
 from skill_store import find_skill, latest_skill_usage, list_custom_skills, list_skill_proposals, update_skill_status
+from mcp_registry import audit_mcp_server, list_mcp_servers, propose_mcp_server, set_mcp_status
+from security_manifest import get_manifest, list_manifests, manifest_summary
+from skill_performance_analyzer import skill_performance_text
+from starter_skill_catalog import catalog_summary, install_starter_catalog
 
 
 async def handle_skill_listing(db_path: str, skills: SkillRegistry, text: str) -> str | None:
@@ -48,6 +53,19 @@ async def handle_skill_listing(db_path: str, skills: SkillRegistry, text: str) -
             return "No user model entries saved yet."
         lines = [f"{idx}) {item['category']}: {item['content']} ({item['source']}, {item['confidence']})" for idx, item in enumerate(items, 1)]
         return "User model:\n" + "\n".join(lines)
+    mcp = await _mcp_reply(db_path, text)
+    if mcp is not None:
+        return mcp
+    manifest = await _manifest_reply(db_path, text)
+    if manifest is not None:
+        return manifest
+    if key == "show starter skill catalog":
+        return catalog_summary()
+    if key == "install starter skill catalog":
+        count = await install_starter_catalog(db_path)
+        return f"Starter skill catalog installed as proposed skills: {count}."
+    if key in {"show skill performance", "analyze skill performance"}:
+        return await skill_performance_text(db_path)
     if key not in {"what skills do you have", "list my skills", "show skills", "what can you do"}:
         return None
     items = await skills.list_skills(limit=12)
@@ -65,6 +83,9 @@ async def handle_skill_proposals(db_path: str, text: str) -> str | None:
 
 
 async def handle_skill_lifecycle(db_path: str, text: str) -> str | None:
+    imported = re.match(r"^import skill from\s+(.+)$", text, re.IGNORECASE)
+    if imported:
+        return await import_local_skill(db_path, imported.group(1).strip())
     match = re.match(r"^(approve|activate|disable|edit|test|improve)\s+skill\s+(.+)$", text, re.IGNORECASE)
     if not match:
         return None
@@ -89,6 +110,8 @@ async def handle_skill_lifecycle(db_path: str, text: str) -> str | None:
     status = "approved" if action == "approve" else "active" if action == "activate" else "disabled"
     if action == "activate" and skill.get("status") != "approved":
         return "Approve the skill first, then activate it after its tests pass."
+    if action == "activate" and not await get_manifest(db_path, "skill", str(skill["skill_id"])):
+        return "Add a security manifest before activation tests can make that skill active."
     if action == "activate" and not await skill_has_required_tests(db_path, str(skill["skill_id"])):
         missing = ", ".join(await missing_required_tests(db_path, str(skill["skill_id"])))
         return f"Run and pass the missing activation tests before making it active: {missing}."
@@ -136,4 +159,42 @@ async def _skill_memory_reply(db_path: str, text: str) -> str | None:
             return "Tell me which skill preference to forget."
         count = await disable_skill_memory(db_path, str(skill["skill_id"]), (forget.group(2) or "").strip())
         return f"Disabled {count} skill memory item."
+    return None
+
+
+async def _mcp_reply(db_path: str, text: str) -> str | None:
+    key = direct_key(text)
+    if key in {"show mcp tools", "show mcp servers"}:
+        rows = await list_mcp_servers(db_path)
+        if not rows:
+            return "No MCP tools are registered yet."
+        return "MCP tools:\n" + "\n".join(f"{i}) {r['name']} ({r['status']}): {r['permission_scope']}" for i, r in enumerate(rows, 1))
+    if key in {"show disabled mcp tools", "show disabled mcp servers"}:
+        rows = await list_mcp_servers(db_path, status="disabled")
+        return "Disabled MCP tools:\n" + "\n".join(f"{i}) {r['name']}" for i, r in enumerate(rows, 1)) if rows else "No disabled MCP tools."
+    match = re.match(r"^propose mcp\s+(.+?)\s+command\s+(.+?)(?:\s+scope\s+(.+))?$", text, re.I)
+    if match:
+        await propose_mcp_server(db_path, match.group(1).strip(), match.group(2).strip(), permission_scope=(match.group(3) or "").strip())
+        return f"Proposed MCP tool {match.group(1).strip()}. It is not enabled yet."
+    match = re.match(r"^(approve|enable|disable)\s+mcp\s+(.+)$", text, re.I)
+    if match:
+        status = "approved" if match.group(1).lower() == "approve" else "enabled" if match.group(1).lower() == "enable" else "disabled"
+        ok = await set_mcp_status(db_path, match.group(2).strip(), status)
+        return f"MCP tool set to {status}." if ok else "I could not find that MCP tool."
+    match = re.match(r"^audit mcp\s+(.+)$", text, re.I)
+    if match:
+        return await audit_mcp_server(db_path, match.group(1).strip())
+    return None
+
+
+async def _manifest_reply(db_path: str, text: str) -> str | None:
+    match = re.match(r"^(?:show|audit)\s+manifest\s+(.+?)\s+(.+)$", text, re.I)
+    if match:
+        manifest = await get_manifest(db_path, match.group(1).strip(), match.group(2).strip())
+        return manifest_summary(manifest) if manifest else "I could not find that manifest."
+    if direct_key(text) == "show security manifests":
+        rows = await list_manifests(db_path)
+        if not rows:
+            return "No security manifests are saved yet."
+        return "Security manifests:\n" + "\n".join(f"{i}) {r['subject_type']} {r['subject_id']}" for i, r in enumerate(rows[:12], 1))
     return None

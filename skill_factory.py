@@ -8,6 +8,7 @@ from pathlib import Path
 from skill_library import ensure_skill_library, proposed_path, test_path
 from skill_store import create_skill_proposal, upsert_skill
 from skill_learning_store import upsert_skill_metadata
+from security_manifest import SecurityManifest, upsert_manifest
 
 
 class SkillFactory:
@@ -47,6 +48,16 @@ class SkillFactory:
             safety_boundary="approval required before activation or external-code adoption",
             test_commands=[f"test skill {skill_id}"],
             review_notes="Needs Claude-style quality review before activation.",
+        )
+        await upsert_manifest(
+            self.db_path,
+            SecurityManifest(
+                "skill",
+                skill_id,
+                {"create_artifacts": True},
+                hard_blocks=["private_exposure", "secrets", "auto_activation"],
+                notes="Generated skill scaffold. Fill in exact permissions before activation.",
+            ),
         )
         proposal_id = await create_skill_proposal(
             self.db_path,

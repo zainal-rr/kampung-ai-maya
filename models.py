@@ -112,10 +112,11 @@ class TheNews(BaseAgent):
     def __init__(self, api_key: str):
         super().__init__("TheNews")
         self.client = AsyncOpenAI(api_key=api_key, base_url="https://api.x.ai/v1")
+        self.model = os.getenv("XAI_TEXT_MODEL", "grok-4.3")
 
     async def chat(self, messages: List[Dict[str, str]]) -> str:
         response = await self.client.chat.completions.create(
-            model="grok-beta",
+            model=self.model,
             messages=messages
         )
         return self._prepare_output(response.choices[0].message.content)

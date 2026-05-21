@@ -4,8 +4,8 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-from skill_memory_store import list_skill_memory
 from skill_outcome_store import recent_skill_outcomes, record_skill_outcome
+from skill_performance_analyzer import analyze_skill_performance
 from skill_store import init_skill_db, list_skill_proposals, upsert_skill
 
 
@@ -23,15 +23,19 @@ async def main() -> None:
             selected_lane="Gemini",
         )
         await record_skill_outcome(db_path, skill_id="flight_search", user_request="find cheap flights to Penang", outcome="success")
-        memory = await list_skill_memory(db_path, "flight_search")
-        _require(any(item["kind"] == "example" for item in memory), "repeated success did not add example memory")
+        outcomes = await recent_skill_outcomes(db_path)
+        _require(len([item for item in outcomes if item["outcome"] == "success"]) == 2, "success outcomes not recorded")
         await record_skill_outcome(db_path, skill_id="flight_search", user_request="book flight", outcome="failure", missing_step="booking unavailable")
         await record_skill_outcome(db_path, skill_id="flight_search", user_request="book cheaper flight", outcome="failure", missing_step="booking unavailable")
         proposals = await list_skill_proposals(db_path)
-        _require(any("repeated failures" in item["summary"] for item in proposals), "repeated failure did not propose improvement")
+        _require(not any("failed" in item["summary"] for item in proposals), "outcome logging should not create failure proposals directly")
         await record_skill_outcome(db_path, skill_id="flight_search", user_request="wrong airport", outcome="user_corrected", user_correction="Use KUL")
         outcomes = await recent_skill_outcomes(db_path)
         _require(any(item["outcome"] == "user_corrected" for item in outcomes), "correction outcome missing")
+        await analyze_skill_performance(db_path)
+        proposals = await list_skill_proposals(db_path)
+        _require(any("failed" in item["summary"] for item in proposals), "analyzer did not create failure proposal")
+        _require(any("correction" in item["summary"] for item in proposals), "analyzer did not create correction proposal")
         _require(any(item["channel"] == "telegram" and item["selected_lane"] == "Gemini" for item in outcomes), "channel or lane missing")
     print("skill_outcome_smoke: ok")
 

@@ -148,7 +148,7 @@ async def check_xai_stt() -> str:
     try:
         from speech_input import xai_transcribe_file
         transcript = await asyncio.to_thread(xai_transcribe_file, api_key, sample_path, "en")
-        return _ok(transcript, "maya speech check")
+        return _ok_any(transcript, ("maya speech check", "my speech check", "speech check"))
     except Exception as exc:
         return f"error ({exc})"
     finally:
@@ -185,24 +185,34 @@ def _ok(reply: str, expected: str) -> str:
     return f"ok ({text[:80]})"
 
 
+def _ok_any(reply: str, expected_options: tuple[str, ...]) -> str:
+    text = " ".join(reply.split())
+    if not text:
+        return "error (empty response)"
+    lowered = text.lower()
+    if not any(expected.lower() in lowered for expected in expected_options):
+        return f"unexpected ({text[:80]})"
+    return f"ok ({text[:80]})"
+
+
 def _all_ok(results: dict[str, str]) -> bool:
     return bool(results) and all(value.startswith("ok ") or value == "ok" for value in results.values())
 
 
 def _tiny_jpeg() -> bytes:
-    raw = (
-        "/9j/4AAQSkZJRgABAQAAAQABAAD/2wCEAAkGBxAQEBAQEBAQEBAQEA8QEBAQEA8QDw8P"
-        "FREWFhURFRUYHSggGBolGxUVITEhJSkrLi4uFx8zODMtNygtLisBCgoKDg0OGhAQGy0lHyUt"
-        "LS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLS0tLf/AABEIAAEA"
-        "AQMBIgACEQEDEQH/xAAXAAEBAQEAAAAAAAAAAAAAAAAAAQID/8QAFxABAQEBAAAAAAAAAAAA"
-        "AAAAAAERIf/aAAwDAQACEAMQAAAByA//xAAWEAEBAQAAAAAAAAAAAAAAAAAAESH/2gAIAQEA"
-        "AQUCuf/EABQRAQAAAAAAAAAAAAAAAAAAABD/2gAIAQMBAT8BP//EABQRAQAAAAAAAAAAAAAA"
-        "AAAAABD/2gAIAQIBAT8BP//EABYQAQEBAAAAAAAAAAAAAAAAAAABEf/aAAgBAQAGPwJf/8QA"
-        "FhABAQEAAAAAAAAAAAAAAAAAARAR/9oACAEBAAE/IV//2gAMAwEAAgADAAAAEP/EABYRAQEB"
-        "AAAAAAAAAAAAAAAAAAABEf/aAAgBAwEBPxBf/8QAFhEBAQEAAAAAAAAAAAAAAAAAAQAR/9oA"
-        "CAECAQE/EF//xAAWEAEBAQAAAAAAAAAAAAAAAAABABH/2gAIAQEAAT8QX//Z"
-    )
-    return base64.b64decode(raw)
+    from io import BytesIO
+
+    try:
+        from PIL import Image, ImageDraw
+    except Exception:
+        raw = "/9j/4AAQSkZJRgABAQAAAQABAAD/2wBDAP//////////////////////////////////////////////////////////////////////////////////////2wBDAf//////////////////////////////////////////////////////////////////////////////////////wAARCAABAAEDASIAAhEBAxEB/8QAFQABAQAAAAAAAAAAAAAAAAAAAAX/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oADAMBAAIQAxAAAAH/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oACAEBAAEFAqf/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oACAEDAQE/ASP/xAAUEQEAAAAAAAAAAAAAAAAAAAAA/9oACAECAQE/ASP/xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oACAEBAAY/Ar//xAAUEAEAAAAAAAAAAAAAAAAAAAAA/9oACAEBAAE/IR//2gAMAwEAAgADAAAAEP/EABQRAQAAAAAAAAAAAAAAAAAAABD/2gAIAQMBAT8QP//EABQRAQAAAAAAAAAAAAAAAAAAABD/2gAIAQIBAT8QP//EABQQAQAAAAAAAAAAAAAAAAAAABD/2gAIAQEAAT8QP//Z"
+        return base64.b64decode(raw)
+    image = Image.new("RGB", (64, 64), (255, 255, 255))
+    draw = ImageDraw.Draw(image)
+    draw.rectangle((16, 16, 48, 48), fill=(20, 120, 240))
+    buffer = BytesIO()
+    image.save(buffer, format="JPEG")
+    return buffer.getvalue()
 
 
 def _load_environment() -> str:

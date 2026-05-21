@@ -2,14 +2,14 @@ from __future__ import annotations
 
 import aiosqlite
 
-from skill_store import create_skill_proposal
-from skill_memory_store import add_skill_memory
+from skill_store import init_skill_db
 
 
 OUTCOMES = {"success", "failure", "partial", "user_corrected", "blocked", "cancelled"}
 
 
 async def init_skill_outcome_db(db_path: str) -> None:
+    await init_skill_db(db_path)
     async with aiosqlite.connect(db_path) as db:
         await db.execute(
             """
@@ -68,25 +68,6 @@ async def record_skill_outcome(
             ),
         )
         await db.commit()
-    if clean_outcome == "success" and await _outcome_count(db_path, skill_id, "success") >= 2:
-        await add_skill_memory(
-            db_path,
-            skill_id=skill_id,
-            kind="example",
-            content=user_request,
-            source="repeated_success",
-            confidence=0.7,
-        )
-    if clean_outcome == "failure" and await _outcome_count(db_path, skill_id, "failure") >= 2:
-        await create_skill_proposal(
-            db_path,
-            skill_id,
-            f"Improve skill {skill_id}",
-            f"Improve {skill_id} after repeated failures.",
-            missing_step or "Review recent failed outcomes before changing active behavior.",
-        )
-
-
 async def recent_skill_outcomes(db_path: str, limit: int = 12) -> list[dict[str, str]]:
     await init_skill_outcome_db(db_path)
     async with aiosqlite.connect(db_path) as db:
@@ -134,26 +115,3 @@ async def repeated_failure_skills(db_path: str, threshold: int = 2) -> list[str]
         rows = await cursor.fetchall()
     return [str(row[0]) for row in rows]
 
-
-async def _outcome_count(db_path: str, skill_id: str, outcome: str) -> int:
-    async with aiosqlite.connect(db_path) as db:
-        cursor = await db.execute(
-            "SELECT COUNT(*) FROM skill_outcome_events WHERE skill_id = ? AND outcome = ?",
-            (skill_id, outcome),
-        )
-        row = await cursor.fetchone()
-    return int(row[0] if row else 0)
-
-
-async def propose_improvements_for_repeated_failures(db_path: str, threshold: int = 2) -> list[str]:
-    proposed = []
-    for skill_id in await repeated_failure_skills(db_path, threshold):
-        proposal_id = await create_skill_proposal(
-            db_path,
-            skill_id,
-            f"Improve skill {skill_id}",
-            f"Improve {skill_id} after repeated failures.",
-            "Review failure outcomes and update triggers, tools, safety, or tests before activation.",
-        )
-        proposed.append(str(proposal_id))
-    return proposed
