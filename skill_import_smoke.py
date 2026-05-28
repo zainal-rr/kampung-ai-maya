@@ -5,8 +5,9 @@ import os
 import tempfile
 from pathlib import Path
 
+from assistant_skill_commands import handle_skill_lifecycle
 from security_manifest import get_manifest
-from skill_importer import import_local_skill
+from skill_importer import import_installed_skills, import_local_skill, import_npx_skill
 from skill_store import find_skill
 
 
@@ -27,6 +28,24 @@ async def main() -> None:
         assert Path(skill["scaffold_path"]).exists()
         manifest = await get_manifest(db_path, "skill", skill["skill_id"])
         assert manifest and manifest["permissions"]["browse_web"] is True
+        bad = await import_npx_skill(db_path, "bad;rm -rf")
+        assert "simple owner/repo" in bad
+        installed = Path(tmpdir) / ".agents" / "skills" / "taste"
+        installed.mkdir(parents=True)
+        (installed / "SKILL.md").write_text(
+            "# Taste Skill\n\nDescription: Review visual taste.\n\n## Trigger Phrases\n- critique design\n\n## Tools\n- review\n",
+            "utf-8",
+        )
+        names = await import_installed_skills(db_path, Path(tmpdir), "npx skills add fake/taste")
+        assert "Taste Skill" in names
+        imported = await find_skill(db_path, "taste")
+        assert imported and imported["status"] == "proposed"
+        reply = await handle_skill_lifecycle(db_path, "test skill Taste Skill")
+        assert reply and "activation wrapper" in reply
+        reply = await handle_skill_lifecycle(db_path, "improve skill Taste Skill")
+        assert reply and "Now run" in reply
+        reply = await handle_skill_lifecycle(db_path, "test skill Taste Skill")
+        assert reply and "It can be activated after approval" in reply
     print("skill_import_smoke: ok")
 
 

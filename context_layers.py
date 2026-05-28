@@ -5,6 +5,8 @@ from collections import Counter
 
 import aiosqlite
 
+from permission_policy import contains_sensitive_info
+
 FACT_CUES = (
     "remember",
     "my preference",
@@ -140,6 +142,8 @@ def _extract_facts(rows: list[dict[str, str]]) -> list[str]:
         if row.get("role") != "user":
             continue
         content = _shorten(row.get("content", ""))
+        if contains_sensitive_info(content):
+            continue
         lowered = content.lower()
         if any(cue in lowered for cue in FACT_CUES):
             facts.append(content)

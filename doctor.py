@@ -46,6 +46,8 @@ def print_host_status() -> None:
     print("VISION_CAMERA_EFFECTIVE:", vision_camera_effective())
     print("IMAC_INPUT_MODE:", os.getenv("IMAC_INPUT_MODE", "auto"))
     print("IMAC_AUDIO_INPUT:", os.getenv("IMAC_AUDIO_INPUT", ":0"))
+    print("IMAC_AUDIO_INPUTS:", os.getenv("IMAC_AUDIO_INPUTS", ""))
+    print("IMAC_AUDIO_INPUT_NAMES:", os.getenv("IMAC_AUDIO_INPUT_NAMES", ""))
     print("MACOS_SAY_VOICE:", os.getenv("MACOS_SAY_VOICE", "Samantha"))
     print("MAYA_WAKE_PHRASES:", os.getenv("MAYA_WAKE_PHRASES", "hey maya,good morning maya,hello maya,maya"))
     print("MAYA_WAKE_WINDOW_SECONDS:", os.getenv("MAYA_WAKE_WINDOW_SECONDS", "5"))

@@ -4,9 +4,11 @@ import re
 
 
 MALAY_MARKERS = {
-    "apa", "awak", "bagitau", "bahasa", "boleh", "cerita", "dah", "dia",
-    "je", "kan", "kat", "kau", "lah", "macam", "mana", "melayu", "nak",
-    "ni", "pun", "saya", "tak", "tapi", "tu", "yang",
+    "apa", "atau", "awak", "bagitau", "bahasa", "berapa", "berita", "boleh",
+    "buat", "cerita", "cuaca", "dah", "dalam", "dekat", "dengan", "dia",
+    "hari", "ini", "je", "kan", "kat", "kau", "ke", "kenapa", "lah", "macam",
+    "mana", "melayu", "nak", "ni", "pun", "saya", "tak", "tapi", "tolong",
+    "tu", "untuk", "yang",
 }
 
 
@@ -34,7 +36,8 @@ def wants_malay_or_manglish(text: str) -> bool:
     lowered = text.lower()
     patterns = (
         "reply in malay", "reply in manglish", "speak in malay", "speak in manglish",
-        "cakap melayu", "cakap manglish", "bahasa melayu",
+        "cakap melayu", "cakap malay", "cakap in malay", "cakap manglish",
+        "cakap in manglish", "bahasa melayu", "in malay please", "in manglish please",
     )
     return any(pattern in lowered for pattern in patterns)
 

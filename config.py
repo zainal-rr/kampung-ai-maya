@@ -4,7 +4,7 @@ from typing import Iterable
 from dotenv import load_dotenv
 
 
-load_dotenv()
+load_dotenv(override=True)
 
 
 def get_env(name: str, default: str | None = None) -> str | None:

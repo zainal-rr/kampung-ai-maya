@@ -62,6 +62,19 @@ class BrowserController:
     def open_search(self, query: str) -> None:
         self.bridge.open_url("https://www.google.com/search?q=" + quote_plus(query), self.app_name)
 
+    def open_new_tab_url(self, url: str) -> None:
+        opener = getattr(self.bridge, "open_url_new_tab", None)
+        if opener:
+            opener(url, self.app_name)
+            return
+        self.bridge.open_url(url, self.app_name)
+
+    def open_search_new_tab(self, query: str) -> None:
+        self.open_new_tab_url("https://www.google.com/search?q=" + quote_plus(query))
+
+    def open_flight_search_new_tab(self, query: str) -> None:
+        self.open_new_tab_url("https://www.google.com/travel/flights")
+
     def inspect_page(self, max_chars: int = 4500) -> BrowserPage:
         script = (
             f'tell application "{self.app_name}"\n'
@@ -103,6 +116,28 @@ class BrowserController:
         )
         return self.bridge._run_applescript(script)
 
+    def click_exact_text_last(self, target: str) -> str:
+        script = (
+            f'tell application "{self.app_name}"\n'
+            "activate\n"
+            "if (count of windows) is 0 then error \"No browser window is open\"\n"
+            f"set clickResult to execute active tab of front window javascript {_as_string(_click_exact_last_js(target))}\n"
+            "return clickResult\n"
+            "end tell"
+        )
+        return self.bridge._run_applescript(script)
+
+    def click_visible_text(self, target: str) -> str:
+        script = (
+            f'tell application "{self.app_name}"\n'
+            "activate\n"
+            "if (count of windows) is 0 then error \"No browser window is open\"\n"
+            f"set clickResult to execute active tab of front window javascript {_as_string(_click_visible_text_js(target))}\n"
+            "return clickResult\n"
+            "end tell"
+        )
+        return self.bridge._run_applescript(script)
+
     def click_text_verified(self, target: str) -> BrowserClickResult:
         before = self.inspect_page(max_chars=1200)
         raw = self.click_text(target)
@@ -126,6 +161,17 @@ class BrowserController:
             "if (count of windows) is 0 then error \"No browser window is open\"\n"
             f"set fillResult to execute active tab of front window javascript {_as_string(_fill_js(target, value))}\n"
             "return fillResult\n"
+            "end tell"
+        )
+        return self.bridge._run_applescript(script)
+
+    def click_price_result(self, target: str = "") -> str:
+        script = (
+            f'tell application "{self.app_name}"\n'
+            "activate\n"
+            "if (count of windows) is 0 then error \"No browser window is open\"\n"
+            f"set clickResult to execute active tab of front window javascript {_as_string(_click_price_result_js(target))}\n"
+            "return clickResult\n"
             "end tell"
         )
         return self.bridge._run_applescript(script)
@@ -186,10 +232,57 @@ def _click_js(target: str) -> str:
         "return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== 'hidden'; };"
         "const label = e => norm(e.innerText || e.value || e.getAttribute('aria-label') || e.title || '');"
         "const nodes = [...document.querySelectorAll('a,button,input,[role=button],[role=link],select,summary')];"
-        "const match = nodes.find(e => visible(e) && label(e).includes(target));"
+        "const visibleNodes = nodes.filter(e => visible(e));"
+        "const match = visibleNodes.find(e => label(e) === target)"
+        "|| visibleNodes.find(e => label(e).startsWith(target))"
+        "|| visibleNodes.find(e => label(e).includes(target));"
         "if (!match) return 'NOT_FOUND';"
         "match.scrollIntoView({block: 'center', inline: 'center'});"
         "match.click();"
+        "return 'CLICKED: ' + label(match).slice(0, 120);"
+        "})()"
+    )
+
+
+def _click_exact_last_js(target: str) -> str:
+    return (
+        "(() => {"
+        f"const target = {json.dumps(target.lower())};"
+        "const norm = s => (s || '').toLowerCase().replace(/\\s+/g, ' ').trim();"
+        "const visible = e => { const r = e.getBoundingClientRect();"
+        "return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== 'hidden'; };"
+        "const label = e => norm(e.innerText || e.value || e.getAttribute('aria-label') || e.title || '');"
+        "const nodes = [...document.querySelectorAll('a,button,input,[role=button],[role=link],select,summary')];"
+        "const matches = nodes.filter(e => visible(e) && label(e) === target);"
+        "if (!matches.length) return 'NOT_FOUND';"
+        "const match = matches[matches.length - 1];"
+        "match.scrollIntoView({block: 'center', inline: 'center'});"
+        "match.click();"
+        "return 'CLICKED: ' + label(match).slice(0, 120);"
+        "})()"
+    )
+
+
+def _click_visible_text_js(target: str) -> str:
+    return (
+        "(() => {"
+        f"const target = {json.dumps(target.lower())};"
+        "const norm = s => (s || '').toLowerCase().replace(/\\s+/g, ' ').trim();"
+        "const visible = e => { const r = e.getBoundingClientRect();"
+        "return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== 'hidden'; };"
+        "const label = e => norm(e.innerText || e.value || e.getAttribute('aria-label') || e.title || '');"
+        "const nodes = [...document.querySelectorAll('button,[role=button],[role=combobox],input,select,div,span')];"
+        "const matches = nodes.filter(e => visible(e) && label(e) === target)"
+        ".map(e => { const r = e.getBoundingClientRect(); return { e, r, area: r.width * r.height }; })"
+        ".sort((a,b) => (a.area - b.area) || (a.r.y - b.r.y) || (a.r.x - b.r.x));"
+        "if (!matches.length) return 'NOT_FOUND';"
+        "const match = matches[0].e;"
+        "match.scrollIntoView({block: 'center', inline: 'center'});"
+        "const rr = match.getBoundingClientRect();"
+        "const cx = rr.left + rr.width / 2, cy = rr.top + rr.height / 2;"
+        "for (const type of ['pointerdown','mousedown','pointerup','mouseup','click']) {"
+        "match.dispatchEvent(new MouseEvent(type,{bubbles:true,cancelable:true,view:window,clientX:cx,clientY:cy}));"
+        "}"
         "return 'CLICKED: ' + label(match).slice(0, 120);"
         "})()"
     )
@@ -204,7 +297,8 @@ def _target_visible_js(target: str) -> str:
         "return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== 'hidden'; };"
         "const label = e => norm(e.innerText || e.value || e.getAttribute('aria-label') || e.title || '');"
         "const nodes = [...document.querySelectorAll('a,button,input,[role=button],[role=link],select,summary')];"
-        "return nodes.some(e => visible(e) && label(e).includes(target));"
+        "const visibleNodes = nodes.filter(e => visible(e));"
+        "return visibleNodes.some(e => label(e) === target || label(e).startsWith(target) || label(e).includes(target));"
         "})()"
     )
 
@@ -238,6 +332,36 @@ def _fill_js(target: str, value: str) -> str:
         "match.dispatchEvent(new Event('input',{bubbles:true}));"
         "match.dispatchEvent(new Event('change',{bubbles:true}));"
         "return 'FILLED: '+(label(match)||target).slice(0,120);"
+        "})()"
+    )
+
+
+def _click_price_result_js(target: str) -> str:
+    return (
+        "(() => {"
+        f"const target={json.dumps(target.lower())};"
+        "const norm=s=>(s||'').toLowerCase().replace(/\\s+/g,' ').trim();"
+        "const visible=e=>{const r=e.getBoundingClientRect();return r.width>0&&r.height>0&&getComputedStyle(e).visibility!=='hidden'};"
+        "const price=s=>/\\b(MYR|RM)\\s*[\\d,]+/i.test(s||'');"
+        "const bad=s=>/(filter|currency|privacy|terms|feedback|help center|google account|main menu|change appearance)/i.test(s||'');"
+        "const nodes=[...document.querySelectorAll('a,[role=link],button,[role=button],li,div')];"
+        "let candidates=nodes.filter(e=>visible(e)).map(e=>{const r=e.getBoundingClientRect();const t=(e.innerText||e.getAttribute('aria-label')||e.title||'').replace(/\\s+/g,' ').trim();const area=r.width*r.height;return {e,r,t,n:norm(t),area}})"
+        ".filter(x=>x.t.length>12&&x.t.length<450&&price(x.t)&&!bad(x.t));"
+        "if(!candidates.length){"
+        "const priceNodes=[...document.querySelectorAll('a,[role=link],button,[role=button],li,div,span')].filter(e=>visible(e)&&price(e.innerText||e.textContent||''));"
+        "for(const node of priceNodes){let p=node;let depth=0;while(p&&depth<8){const role=(p.getAttribute&&p.getAttribute('role'))||'';const tag=(p.tagName||'').toLowerCase();const t=(p.innerText||p.textContent||'').replace(/\\s+/g,' ').trim();if((tag==='a'||tag==='button'||role==='link'||role==='button'||getComputedStyle(p).cursor==='pointer')&&t.length>12&&t.length<600&&!bad(t)){const r=p.getBoundingClientRect();candidates.push({e:p,r,t,n:norm(t),area:r.width*r.height});break;}p=p.parentElement;depth++;}}"
+        "}"
+        "if(target)candidates=candidates.filter(x=>x.n.includes(target));"
+        "if(!candidates.length)return 'NOT_FOUND';"
+        "candidates.sort((a,b)=>(a.r.y-b.r.y)||(a.area-b.area)||(a.r.x-b.r.x));"
+        "const chosen=candidates[0];"
+        "chosen.e.scrollIntoView({block:'center',inline:'center'});"
+        "const rr=chosen.e.getBoundingClientRect();"
+        "const cx=rr.left+rr.width/2, cy=rr.top+rr.height/2;"
+        "for(const type of ['pointerdown','mousedown','pointerup','mouseup','click']){"
+        "chosen.e.dispatchEvent(new MouseEvent(type,{bubbles:true,cancelable:true,view:window,clientX:cx,clientY:cy}));"
+        "}"
+        "return 'CLICKED: '+chosen.t.slice(0,180);"
         "})()"
     )
 

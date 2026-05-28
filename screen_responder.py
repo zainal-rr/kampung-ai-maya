@@ -64,6 +64,9 @@ class ScreenResponder:
     async def handle(self, text: str, channel: str) -> str | None:
         explicit = self._explicit_command(text)
         active = await screen_sight_active(self.db_path)
+        lowered = " ".join(text.lower().split())
+        if channel == "telegram" and not active and not explicit and self._requires_active_screen(lowered):
+            return "Screen sight is off. Use /screen first, then ask me what to look at."
         if not self._is_query(text, channel, active, explicit):
             return None
         context = await self.context_provider.prepare(text)
@@ -87,10 +90,47 @@ class ScreenResponder:
             if cls._same_app(context.resolved_app, frontmost):
                 return f"Yes, {context.resolved_app} is open and it is currently frontmost."
             return f"Yes, {context.resolved_app} is open. Frontmost app: {frontmost}."
+        if cls._is_visible_apps_question(lowered):
+            visible = ", ".join(context.visible_apps[:12]) or "nothing obvious"
+            hidden = cls._hidden_apps(context)
+            suffix = f" Running but not visible: {hidden}." if hidden else ""
+            return f"Visible apps from macOS: {visible}. Frontmost app: {context.frontmost}.{suffix}"
         if cls._is_open_apps_question(lowered):
             apps = ", ".join(context.running_apps[:12]) or "nothing obvious"
             return f"Open apps from macOS: {apps}. Frontmost app: {context.frontmost}."
         return ""
+
+    @classmethod
+    def _hidden_apps(cls, context: ScreenContext) -> str:
+        visible = {cls._norm(app) for app in context.visible_apps}
+        hidden = [app for app in context.running_apps if cls._norm(app) not in visible]
+        return ", ".join(hidden[:12])
+
+    @staticmethod
+    def _norm(app: str) -> str:
+        return re.sub(r"[^a-z0-9]+", "", app.lower())
+
+    @staticmethod
+    def _is_visible_apps_question(lowered: str) -> bool:
+        markers = (
+            "what app is visible", "what apps are visible", "which app is visible",
+            "which apps are visible", "visible app", "visible apps",
+        )
+        return any(marker in lowered for marker in markers)
+
+    @classmethod
+    def _requires_active_screen(cls, lowered: str) -> bool:
+        markers = (
+            "what is on my screen", "what's on my screen", "what is in my screen",
+            "what am i doing on screen", "what am i doing in screen",
+            "what am i doing on my screen", "look at my screen", "look at the screen", "my screen",
+            "what app is visible", "what apps are visible", "which app is visible",
+            "which apps are visible", "visible app", "visible apps",
+            "can you see what is in", "what is in chrome", "what is in safari",
+            "what's in chrome", "what's in safari",
+            "what about now", "how about now",
+        )
+        return any(marker in lowered for marker in markers)
 
     @staticmethod
     def _is_open_apps_question(lowered: str) -> bool:
@@ -147,8 +187,10 @@ class ScreenResponder:
             "what about now", "how about now", "does this", "is this",
             "should i", "can you read", "can you see", "what should i",
         )
-        referents = ("this", "here", "there", "layout", "slide", "page", "document", "diagram")
-        return lowered.startswith(starters) or any(word in lowered for word in referents)
+        referents = ("this", "here", "layout", "slide", "page", "document", "diagram")
+        return lowered.startswith(starters) or any(
+            re.search(rf"\b{re.escape(word)}\b", lowered) for word in referents
+        )
 
     @staticmethod
     def _same_app(left: str, right: str) -> bool:

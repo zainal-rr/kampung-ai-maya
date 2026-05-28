@@ -5,6 +5,7 @@ import re
 
 import aiosqlite
 
+from canonical_memory import search_canonical_direct_fact, search_relevant_canonical_memories
 from lesson_store import search_lessons
 from language_policy import is_language_topic, uses_malay_or_manglish, wants_malay_or_manglish
 from routine_store import list_routines
@@ -24,6 +25,7 @@ class MemoryService:
         self.archive_enabled = os.getenv("ENABLE_ARCHIVE_MEMORY", "0") == "1"
 
     async def build_prompt_context(self, query: str, limit: int = 6) -> str:
+        canonical = await search_relevant_canonical_memories(self.db_path, query, limit=3)
         lessons = await search_lessons(self.db_path, query, limit=3)
         preferences = await self._relevant_preferences(query, limit=3)
         memories = await self._relevant_knowledge(query, limit=limit) if self.archive_enabled else []
@@ -31,6 +33,8 @@ class MemoryService:
         routines = await self._relevant_routines(query, limit=3)
 
         sections = []
+        if canonical:
+            sections.append("Saved facts:\n" + "\n".join(f"- {item}" for item in canonical))
         if lessons:
             sections.append("Learned rules:\n" + "\n".join(f"- {item}" for item in lessons))
         if preferences:
@@ -44,13 +48,72 @@ class MemoryService:
         return "\n\n".join(sections)
 
     async def search(self, query: str, limit: int = 6) -> list[str]:
+        canonical = await search_relevant_canonical_memories(self.db_path, query, limit=2)
         lessons = await search_lessons(self.db_path, query, limit=2)
         preferences = await self._relevant_preferences(query, limit=2)
         memories = await self._relevant_knowledge(query, limit=limit) if self.archive_enabled else []
-        return lessons + preferences + memories
+        return canonical + lessons + preferences + memories
 
     async def search_preferences(self, query: str, limit: int = 6) -> list[str]:
         return await self._relevant_preferences(query, limit=limit)
+
+    async def search_direct_fact(self, query: str, limit: int = 3) -> list[str]:
+        subject = self._normalize_fact_subject(query)
+        if not subject:
+            return []
+        canonical = await search_canonical_direct_fact(self.db_path, query, limit=limit)
+        if canonical is None:
+            return []
+        if canonical:
+            return canonical
+        rows: list[str] = []
+        async with aiosqlite.connect(self.db_path) as db:
+            db.row_factory = aiosqlite.Row
+            pref_cursor = await db.execute(
+                """
+                SELECT value AS content
+                FROM preferences
+                ORDER BY updated_at DESC
+                LIMIT 80
+                """
+            )
+            rows.extend(str(row["content"]) for row in await pref_cursor.fetchall())
+            lesson_cursor = await db.execute(
+                """
+                SELECT normalized_rule AS content
+                FROM lessons
+                ORDER BY created_at DESC
+                LIMIT 80
+                """
+            )
+            rows.extend(str(row["content"]) for row in await lesson_cursor.fetchall())
+            try:
+                curated_cursor = await db.execute(
+                    """
+                    SELECT content
+                    FROM curated_memory_items
+                    WHERE status = 'active'
+                    ORDER BY updated_at DESC, id DESC
+                    LIMIT 80
+                    """
+                )
+                rows.extend(str(row["content"]) for row in await curated_cursor.fetchall())
+            except aiosqlite.OperationalError:
+                pass
+        matches: list[str] = []
+        seen: set[str] = set()
+        for row in rows:
+            if self._normalize_fact_subject(row) != subject:
+                continue
+            cleaned = " ".join(row.split())
+            key = cleaned.casefold()
+            if key in seen:
+                continue
+            seen.add(key)
+            matches.append(cleaned)
+            if len(matches) >= limit:
+                break
+        return matches
 
     async def _relevant_preferences(self, query: str, limit: int) -> list[str]:
         tokens = self._tokens(query)
@@ -58,7 +121,7 @@ class MemoryService:
             db.row_factory = aiosqlite.Row
             cursor = await db.execute(
                 """
-                SELECT key, value
+                SELECT key, value, source
                 FROM preferences
                 ORDER BY updated_at DESC
                 LIMIT 20
@@ -79,7 +142,15 @@ class MemoryService:
             value = row["value"]
             if not language_context and self._is_language_preference(row["key"], value):
                 continue
-            score = self._overlap_score(tokens, value)
+            haystack = f"{row['key']} {value}"
+            score = self._overlap_score(tokens, haystack)
+            preference_key = row["key"].lower().startswith("pref_")
+            if "telegram" in tokens and row["source"] == "telegram" and preference_key:
+                score += 1
+            if "style" in tokens and any(word in row["key"].lower() for word in ("style", "reply", "tone", "short")):
+                score += 2
+            if "reply" in tokens and "reply" in row["key"].lower():
+                score += 2
             if self._is_story_query(query) and "story" in row["key"]:
                 score += 3
             if self._is_story_query(query) and row["key"] == "pref_story_voice":
@@ -165,6 +236,15 @@ class MemoryService:
         }
 
     @staticmethod
+    def _normalize_fact_subject(text: str) -> str:
+        cleaned = " ".join(str(text).strip().rstrip(".?!").split()).lower()
+        cleaned = re.sub(r"^(?:remember that|remember|save this memory[: ]*)\s+", "", cleaned)
+        match = re.match(r"^(.+?)\s+(?:is|are|=)\s+.+$", cleaned)
+        if match:
+            cleaned = match.group(1)
+        return re.sub(r"[^a-z0-9]+", " ", cleaned).strip()
+
+    @staticmethod
     def _overlap_score(tokens: set[str], haystack: str) -> int:
         if not tokens:
             return 0
@@ -191,6 +271,11 @@ class MemoryService:
         if lowered.endswith("_chat_id"):
             return True
         if "chat_id" in lowered and value.isdigit():
+            return True
+        value_lower = str(value).lower().strip()
+        if value_lower.startswith("/users/") or "/desktop/maya/" in value_lower:
+            return True
+        if any(ext in value_lower for ext in (".md", ".docx", ".pptx", ".xlsx", ".svg", ".png", ".jpg", ".pdf")):
             return True
         return False
 

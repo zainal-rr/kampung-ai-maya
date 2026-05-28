@@ -22,7 +22,9 @@ async def main() -> None:
         context = _FakeContext()
         responder = ScreenResponder(db_path, _FakeScreen(True), _FakeSenses(), context)
         blocked = await responder.handle("what is on my screen", "telegram")
-        _require(blocked is None, "Telegram screen sight should need /screen first")
+        _require("Screen sight is off" in blocked, "Telegram screen question should not fall through when /screen is off")
+        blocked_doing = await responder.handle("what am i doing on screen now", "telegram")
+        _require("Screen sight is off" in blocked_doing, "Doing-on-screen question should need /screen first")
         blocked_followup = await responder.handle("Do I have Codex open?", "telegram")
         _require(blocked_followup is None, "Screen follow-up should need /screen first")
 
@@ -31,8 +33,13 @@ async def main() -> None:
         visible = await responder.handle("what is on my screen", "telegram")
         _require("Quarterly slide" in visible, "Screen was not described after /screen")
         _require("current iMac screen" in _FakeSenses.last_prompt, "Current screen boundary was missing")
+        presence = await responder.handle("are you there", "telegram")
+        _require(presence is None, "Presence checks should not trigger screen status")
         apps = await responder.handle("What apps is open?", "telegram")
         _require("Open apps from macOS" in apps and "Safari" in apps, "Open app question did not use macOS state")
+        visible_apps = await responder.handle("what app is visible now?", "telegram")
+        _require("Visible apps from macOS" in visible_apps, "Visible app question did not use macOS state")
+        _require("Codex" in visible_apps and "Telegram" in visible_apps, "Visible app state missed expected apps")
         codex_open = await responder.handle("Is Codex open?", "telegram")
         _require("Codex is open" in codex_open, "Named app open question did not use macOS state")
         codex_limit = await responder.handle("Is Codex reaching its limit?", "telegram")
@@ -60,9 +67,13 @@ async def main() -> None:
         )
         _require("Safari is not open" in closed, "Closed named app was not answered from app state")
         off = await command_to_text(db_path, parse_command("/screen off"))
-        _require("stopped looking" in off, "/screen off did not deactivate")
+        _require("Use /screen to toggle" in off, "/screen off should point to toggle")
+        still_on = await responder.handle("what about now", "telegram")
+        _require("Quarterly slide" in still_on, "/screen off should not deactivate anymore")
+        toggled_off = await command_to_text(db_path, parse_command("/screen"))
+        _require("stopped looking" in toggled_off, "/screen did not toggle off")
         stopped = await responder.handle("what about now", "telegram")
-        _require(stopped is None, "Screen sight stayed active after /screen off")
+        _require("Screen sight is off" in stopped, "Screen follow-up should not fall through after toggle off")
         imac = await ScreenResponder(db_path, _FakeScreen(True), _FakeSenses(), context).handle("look at my screen", "imac")
         _require("Quarterly slide" in imac, "iMac screen sight did not work naturally")
 
@@ -133,7 +144,7 @@ class _FakeContext:
                 requested_app="Codex",
                 resolved_app="Codex",
             )
-        return ScreenContext(frontmost="Codex", running_apps=("Codex", "Safari", "Telegram"))
+        return ScreenContext(frontmost="Codex", running_apps=("Codex", "Safari", "Telegram", "Claude"), visible_apps=("Codex", "Telegram"))
 
 
 class _FakeClosedSafari:

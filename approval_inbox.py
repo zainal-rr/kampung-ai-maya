@@ -26,7 +26,17 @@ async def approval_items(db_path: str) -> list[str]:
 
 async def _task_approvals(db_path: str) -> list[str]:
     tasks = await list_tasks(db_path, statuses=("awaiting_confirmation",), limit=10)
-    return [f"task #{task['id']}: {task['title']}" for task in tasks]
+    grouped: dict[str, list[int]] = {}
+    for task in tasks:
+        grouped.setdefault(str(task["title"]), []).append(int(task["id"]))
+    items = []
+    for title, ids in grouped.items():
+        if len(ids) == 1:
+            items.append(f"task #{ids[0]}: {title}")
+        else:
+            joined = ", #".join(str(item) for item in ids)
+            items.append(f"tasks #{joined}: {title}")
+    return items
 
 
 async def _harness_approvals(db_path: str) -> list[str]:

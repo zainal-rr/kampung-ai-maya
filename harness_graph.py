@@ -149,6 +149,8 @@ class HarnessGraphRunner:
         state["last_successful_step"] = result.next_step or state.get("workflow_type", "execute")
         state["next_suggested_step"] = next_step_for(state, result.keep_open)
         state["keep_open"] = result.keep_open
+        state["model_lane"] = result.model_lane
+        state["cost_recorded"] = result.cost_recorded
         if result.artifacts:
             state["artifacts"] = [*state.get("artifacts", []), *result.artifacts]
             if not result.structured_artifacts:

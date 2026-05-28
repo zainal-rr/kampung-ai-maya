@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import aiosqlite
 
+from canonical_memory import init_canonical_memory_db
 from storage_tasks import (
     cancel_matching_tasks,
     claim_due_tasks,
@@ -15,6 +16,7 @@ from storage_tasks import (
 
 
 async def init_db(db_path: str) -> None:
+    await init_canonical_memory_db(db_path)
     async with aiosqlite.connect(db_path) as db:
         await db.execute(
             """
@@ -111,25 +113,47 @@ async def init_db(db_path: str) -> None:
             )
             """
         )
+        try:
+            await db.execute(
+                """
+                CREATE VIRTUAL TABLE IF NOT EXISTS session_search
+                USING fts5(role, content, channel, created_at UNINDEXED)
+                """
+            )
+        except aiosqlite.OperationalError:
+            pass
         await db.commit()
 
 
 async def get_history(db_path: str, user_id: int, limit: int = 10) -> list[dict[str, str]]:
     async with aiosqlite.connect(db_path) as db:
         cursor = await db.execute(
-            "SELECT role, content FROM history WHERE user_id = ? ORDER BY timestamp DESC LIMIT ?",
+            "SELECT role, content FROM history WHERE user_id = ? ORDER BY rowid DESC LIMIT ?",
             (user_id, limit),
         )
         rows = await cursor.fetchall()
     return [{"role": row[0], "content": row[1]} for row in reversed(rows)]
 
 
-async def save_history_message(db_path: str, user_id: int, role: str, content: str) -> None:
+async def save_history_message(
+    db_path: str,
+    user_id: int,
+    role: str,
+    content: str,
+    channel: str = "",
+) -> None:
     async with aiosqlite.connect(db_path) as db:
         await db.execute(
             "INSERT INTO history (user_id, role, content) VALUES (?, ?, ?)",
             (user_id, role, content),
         )
+        try:
+            await db.execute(
+                "INSERT INTO session_search (role, content, channel, created_at) VALUES (?, ?, ?, datetime('now'))",
+                (role, content, channel),
+            )
+        except aiosqlite.OperationalError:
+            pass
         await db.commit()
 
 

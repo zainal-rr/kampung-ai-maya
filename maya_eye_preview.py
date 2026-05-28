@@ -7,8 +7,6 @@ import sys
 import time
 from pathlib import Path
 
-import cv2
-
 from maya_eye_overlay import clear_preview_target, draw_preview_targets
 from vision_blocked import frame_blocked
 
@@ -70,6 +68,11 @@ def preview_status() -> str:
 
 
 def run_preview() -> int:
+    try:
+        import cv2
+    except ModuleNotFoundError:
+        return 2
+
     index = int(os.getenv("MAYA_EXTERNAL_CAMERA_INDEX", "0"))
     title = os.getenv("MAYA_EYE_PREVIEW_TITLE", "Maya Eye")
     close_frames = int(os.getenv("MAYA_EYE_BLOCKED_CLOSE_FRAMES", "30"))

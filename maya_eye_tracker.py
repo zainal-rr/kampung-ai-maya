@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import os
 
-import cv2
-
 
 class TargetTracker:
     def __init__(self):
@@ -23,6 +21,8 @@ class TargetTracker:
         return self._match(frame, target)
 
     def _match(self, frame, target: dict) -> tuple[str, int, int, int] | None:
+        import cv2
+
         gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
         if self.template is None or self.template.size == 0:
             return None
@@ -37,6 +37,8 @@ class TargetTracker:
         return str(target["label"]), x, y, self.radius
 
     def _seed(self, frame, target: dict, signature: str) -> None:
+        import cv2
+
         label, x, y, radius = self._target_box(frame, target)
         crop = self._crop(frame, x, y, radius)
         if crop is None:

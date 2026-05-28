@@ -56,7 +56,7 @@ class HumanBrowserWorkflowRouter:
         state = BrowserAgentState(text.strip(), text.strip(), task_type, steps=["opened search"])
         if action_permission("travel_search" if task_type == "flight_search" else "browse_web") != "allow":
             return "I need your confirmation before browsing for that."
-        await asyncio.to_thread(self.browser.open_search, state.query)
+        await asyncio.to_thread(_open_search_new_tab, self.browser, state.query)
         await self._save(state)
         if task_type == "flight_search":
             return "I opened Chrome with flight options. I can compare, change filters, and shortlist, but I will stop before booking or payment."
@@ -131,7 +131,7 @@ class HumanBrowserWorkflowRouter:
         task.filters.append(text)
         task.retry_count += 1
         task.steps.append(f"searched follow-up: {text}")
-        await asyncio.to_thread(self.browser.open_search, task.query)
+        await asyncio.to_thread(_open_search_new_tab, self.browser, task.query)
         await self._save(task)
         return "I updated the browser search and kept the browsing task active."
 
@@ -209,6 +209,14 @@ def _is_browser_start(text: str) -> bool:
     if "flight" in lowered and any(word in lowered for word in ("check", "find", "search", "book", "compare")):
         return True
     return bool(re.match(r"^(?:browse|search|look up|google|check online|find online)\s+.+", lowered))
+
+
+def _open_search_new_tab(browser, query: str) -> None:
+    opener = getattr(browser, "open_search_new_tab", None)
+    if opener:
+        opener(query)
+        return
+    browser.open_search(query)
 
 
 def _click_target(text: str) -> str | None:

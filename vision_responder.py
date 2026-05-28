@@ -96,6 +96,8 @@ class VisionResponder:
             "For labels or model numbers, mentally rotate or orient the visible text for Zainal before reading it. "
             f"{orientation_context}"
             "Do not mention model providers. Do not guess private identity. "
+            "If a passport, ID, card, or private document is visible, describe it generically unless Zainal asks about it. "
+            "Never read out passport numbers, ID numbers, card numbers, addresses, barcodes, QR codes, or serial numbers. "
             "If the image is unclear, say what is uncertain."
         )
         description = (await self.senses.describe_image(snapshot.image_bytes, prompt)).strip()
@@ -105,6 +107,7 @@ class VisionResponder:
         description = await self._maybe_escalate_to_premium(request, snapshot.image_bytes, prompt, description)
         clean = remove_target_line(description)
         clean = self._remove_confidence_line(clean)
+        clean = self._remove_repeated_see(clean)
         targets = self._safe_targets(request, clean, parse_targets(description))
         marker = ""
         if targets:
@@ -188,6 +191,10 @@ class VisionResponder:
     @staticmethod
     def _remove_confidence_line(text: str) -> str:
         return re.sub(r"\s*CONFIDENCE:\s*\d{1,3}", "", text, flags=re.IGNORECASE).strip()
+
+    @staticmethod
+    def _remove_repeated_see(text: str) -> str:
+        return re.sub(r"^(?:i\s+see(?:\s+it)?[,.]?\s*)+", "", text.strip(), flags=re.IGNORECASE).strip()
 
     @staticmethod
     def _premium_may_help(request: str, answer: str, confidence: int | None) -> bool:

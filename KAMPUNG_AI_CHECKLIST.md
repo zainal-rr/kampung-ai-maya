@@ -9,14 +9,15 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Install Python 3.12 (iMac is on 3.14).
     - [x] Create project directory: `~/projects/kampung-ai`.
     - [x] Initialize Virtual Env.
-- [ ] **1.2. API Provisioning (Target: May 20, 2026)**
+- [x] **1.2. API Provisioning (Live provider smoke passed May 2026)**
     - [x] **Telegram:** Token secured in .env.
-    - [ ] **OpenAI:** Maya strategic lane (GPT-5.5).
-    - [ ] **Anthropic:** The Steward review lane (Claude Sonnet 4.6).
-    - [ ] **Google:** The Sight default and premium lanes (Gemini 3.1 Flash and Gemini 3.5 Flash).
+    - [x] **OpenAI:** Maya strategic lane (GPT-5.5).
+    - [x] **Anthropic:** The Steward review lane (Claude Sonnet 4.6).
+    - [x] **Google:** The Sight default and premium lanes (Gemini 3.1 Flash and Gemini 3.5 Flash).
     - [x] **Moonshot:** The Artisan (Kimi k2.6). [Secured in .env]
-    - [ ] **xAI:** The Pulse (Grok 3).
-    - [ ] **xAI:** Grok Voice Agent, Ara voice notes, STT, and pulse/news lane.
+    - [x] **xAI:** The Pulse (Grok 3).
+    - [x] **xAI:** Ara voice notes, STT, and pulse/news lane.
+    - [ ] **xAI:** Live iMac Grok Voice Agent websocket path.
     - [x] Move the remaining live-key day to May 20, 2026.
 - [x] **1.3. Conductor Setup (`main.py`)**
     - [x] Write the asynchronous entry point.
@@ -31,7 +32,8 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add a `launchd` background-service path for the spare iMac.
     - [x] Lock the calm default posture: routines on, Mudra/Omi adapters off until hardware day.
     - [x] Keep the iMac voice loop off during pre-key testing so Telegram is the main live quality surface.
-    - [x] Add activation rules for voice wake phrases, Telegram work-location commands, external camera only, and Mudra proximity.
+    - [x] Add activation rules for Telegram work-location commands, external camera only, temporary hotkey voice, and future Mudra proximity.
+    - [x] Add a travel testing plan where Telegram is the main away surface and Splashtop is remote maintenance only.
 
 ## 🧠 Phase 2: The Shared Brain
 *Goal: Wire the model lanes so every provider does its own job correctly.*
@@ -40,12 +42,17 @@ This document tracks the technical and operational roadmap for building the stan
     - [ ] Make Grok the default live iMac conversation model.
     - [ ] Make Ara the default Maya voice identity on the iMac.
     - [ ] Keep the iMac path optimized for fluid spoken interaction.
-    - [x] Lock the voice agent budget rule: wake phrase starts it, 5 seconds of silence closes it, and it is never open all day.
-    - [x] Set local no-cost wake phrases to `Hey Maya`, `Good morning Maya`, `Hello Maya`, and `Maya`.
+    - [x] Lock the voice agent budget rule: manual trigger starts it, 5 seconds of silence closes it, and it is never open all day.
+    - [x] Remove live voice wake activation from the roadmap. Mudra replaces wake later, hotkey is temporary.
     - [x] Add a bounded Grok Voice Agent session manager with stub transport for pre-key testing.
     - [x] Track Grok Voice Agent route and active seconds for `/route` and `/cost`.
     - [x] Prepare the real xAI websocket adapter behind disabled `real` mode.
-    - [x] Add speech audio input for the real Grok Voice Agent path after local wake detection.
+    - [x] Add speech audio input for the real Grok Voice Agent path after manual trigger.
+    - [x] Replace diagnostic file-capture voice with realtime microphone streaming for the hotkey path.
+    - [x] Stream audio chunks to Grok Voice Agent instead of recording a local PCM file first.
+    - [x] Use server-side turn detection for live Grok voice conversation.
+    - [x] Stream Ara audio back as it arrives instead of waiting for full WAV playback.
+    - [ ] Treat the current `ffmpeg` capture path as diagnostic only, not the natural iMac voice path.
     - [x] Prevent the real iMac voice-agent path from falling back to separate TTS after wake.
     - [x] Add iMac voice policy so short Malay/Manglish can stay on Grok while longer or style-sensitive Malay/Manglish routes to Gemini plus Ara.
     - [x] Add natural Ara thinking fillers for slower Malay/Manglish quality turns.
@@ -58,7 +65,7 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add Claude pre-implementation review for GPT plans.
     - [x] Add a post-implementation Claude review hook for approved implementation workflows.
 - [ ] **2.3. The Sight (Gemini 3.1 Flash with 3.5 Flash premium escalation)**
-    - [ ] Use Gemini 3.1 Flash as the primary Telegram text/research model.
+    - [x] Use Gemini 3.1 Flash as the primary Telegram text/research model.
     - [x] Use Gemini 3.5 Flash as the premium Sight lane and remove the old Pro branch.
     - [ ] Use Gemini for Omi summarization and memory distillation.
     - [ ] Add a source-aware Gemini research workflow after API keys arrive.
@@ -67,10 +74,11 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add the Claude Steward lane for careful review requests.
     - [x] Route natural review, critique, audit, hidden-risk, and check-this-plan prompts without adding a new command.
     - [x] Add provider readiness and smoke coverage for the Anthropic key.
-    - [ ] Live-test the Claude Steward lane after API keys arrive.
+    - [x] Live-test the Claude Steward lane after API keys arrive.
 - [x] **2.5. The Artisan (Kimi k2.6)**
     - [x] Lock Kimi as the sole provider for code generation.
     - [x] Route coding questions to Kimi as well as code generation.
+    - [x] Add CLI lane safety language: safe read/test/diff work is allowed, while patching, restart, deploy, delete, upload, credential, purchase, and booking actions require approval when Maya acts autonomously.
 
 ## ⚡ Phase 3: The Neural Link (Mudra Link - Priority)
 *Goal: Bridge the neural band into the interaction loop.*
@@ -120,22 +128,51 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Allow create/write file actions through chat.
     - [x] Add `app_interaction_smoke.py` for local action parsing and permission policy checks.
     - [x] Add `permission_policy_smoke.py` for file-write, Cloudflare/GCP allowance, delete/send confirmation, and private exposure denial.
+    - [x] Add active iMac context extraction for frontmost app selection, including Excel, Word, PowerPoint, Chrome, and generic text fields.
+    - [x] Let iMac voice inspect active selection or one-shot screen context without requiring Telegram `/screen`.
 - [x] **5.2. Local Audio (`afplay`)** - [TESTED SUCCESS]
 - [ ] **5.3. Ara Voice Delivery**
     - [x] Shared audio rendering path for local playback and Telegram audio delivery.
     - [x] Scheduled briefings now speak aloud on the iMac.
     - [x] Lock Telegram replies to Ara voice notes once the xAI key is present.
+    - [x] Send Telegram voice-note replies with `send_voice` when ffmpeg can convert Ara audio to Opus.
     - [x] Keep Telegram text-only before the xAI key rather than sending the wrong local fallback voice.
 - [ ] **5.4. Local iMac Voice Loop**
     - [ ] Capture microphone speech on the iMac.
-    - [x] Keep wake phrase detection local so idle listening is free from provider API cost.
+    - [x] Resolve local speech inputs by device name instead of fixed changing macOS indexes.
+    - [x] Prefer `Zainal’s Headphone` as the named speech input and keep `iMac Microphone` as fallback.
+    - [x] Disable voice wake activation for live use so idle listening is not needed.
+    - [x] Remove Whisper from the live wake path because voice wake activation is scrapped.
+    - [x] Keep Whisper only as an inactive fallback for one-shot transcription and offline debugging.
+    - [x] Archive openWakeWord work as an experiment, not a future live trigger.
+    - [x] Do not test openWakeWord for live voice activation unless Zainal explicitly reopens it later.
+    - [ ] Record Zainal-specific positive wake samples and negative background samples.
+    - [x] Archive old sample recorder experiment outside the live path.
+    - [x] Archive old local scorer prototype outside the live path.
+    - [ ] Improve the scorer beyond the first 85 percent leave-one-out baseline before live use.
+    - [x] Add a two-stage wake probe: local candidate score first, tiny STT confirmation second.
+    - [ ] Confirm the two-stage wake path before connecting it to live Maya.
+    - [x] Skip openWakeWord live hardening because voice wake activation is scrapped.
+    - [x] Do not connect openWakeWord to Maya live path.
+    - [x] Keep the iMac voice channel disabled while the wake detector is being redesigned.
+    - [x] Add hotkey voice channel so `Option + Space` starts Maya without always-on mic capture.
+    - [x] Add `Option + Escape` manual stop for the hotkey voice session.
+    - [x] Keep microphone capture closed until the hotkey starts a voice session.
+    - [x] Prove hotkey can trigger the Grok Voice Agent path.
+    - [ ] Do not continue natural voice testing on the `ffmpeg` file-capture hotkey loop.
+    - [x] Rebuild hotkey voice as realtime streaming before the next serious iMac voice test.
     - [ ] Use Grok Voice Agent speech-to-speech for the long-term iMac conversation path.
-    - [ ] Route live voice turns through Grok Voice Agent first.
     - [ ] Escalate to GPT-5.5 only when needed.
     - [ ] Speak replies locally through the iMac speakers with Ara.
     - [x] Set the wake window to 5 seconds so live voice does not stay open after silence.
     - [x] Let the iMac channel hand wake-session turns to the bounded Grok Voice Agent manager when enabled.
-    - [x] Keep wake detection on a local transcript path so idle listening is free from provider API cost.
+    - [x] Remove wake detection from live voice path. Manual trigger only.
+- [x] **5.5. No Call Mode v1**
+    - [x] Remove Loopback and virtual call audio routing after live test showed quality and stability issues.
+    - [x] Remove call context tools from iMac realtime voice.
+    - [x] Remove call listening and call-note behavior from local iMac voice.
+    - [x] Keep Maya as normal iMac voice only when Zainal is on WhatsApp or FaceTime.
+    - [x] Instruct Maya not to claim she can join, listen to, privately monitor, route audio into, or summarize calls.
 
 ## 👁️ Phase 6: Senses & AR
 *Goal: Give Maya eyes through the approved external camera only.*
@@ -153,7 +190,7 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add `vision_probe.py` for short Cisco-only `VisionNode` loop checks.
     - [x] Confirm `vision_probe.py` sees Cisco frames when the physical block is open.
     - [x] Confirm Cisco physical privacy block produces no sight.
-    - [x] Make `/see` only confirm activation and make `/closeimac` close the local preview.
+    - [x] Make `/see` toggle camera guidance on or off and make `/closeimac` close the local preview.
     - [x] Capture one safe Cisco frame for guided visual help.
     - [x] Route visible frames to the vision model for practical step-by-step guidance.
     - [x] Default vision snapshots to Gemini 3.1 Flash, with Gemini 3.5 Flash escalation for blurry labels, tiny text, risky hardware questions, low confidence, or explicit careful review.
@@ -167,8 +204,9 @@ This document tracks the technical and operational roadmap for building the stan
 - [x] **6.2. Screen Sight**
     - [x] Add snapshot-based iMac screen capture through macOS `screencapture`.
     - [x] Keep screen sight separate from Cisco camera sight.
-    - [x] Add `/screen` to activate persistent remote screen sight from Telegram.
-    - [x] Add `/screen off` and `/closeimac` shutdown behavior for screen sight.
+    - [x] Add `/screen` as a toggle for persistent remote screen sight from Telegram.
+    - [x] Remove `/screen off` as a public control because `/screen` is the toggle.
+    - [x] Keep `/closeimac` shutdown behavior for screen sight.
     - [x] Support `/screen question` for one-shot Telegram screen questions.
     - [x] Support natural iMac phrases like `look at my screen` and `explain this slide`.
     - [x] Route screen snapshots through Gemini 3.1 Flash with Gemini 3.5 Flash escalation for tiny text, complex diagrams, low confidence, or careful review.
@@ -178,6 +216,20 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Keep work-context follow-ups like `what about now` and `should I put this here` on the screen sight route while `/screen` is active.
     - [x] Use macOS app state for open-app questions instead of visual guessing from Dock indicators.
     - [x] Let named-app content questions bring the app forward before the screen snapshot when the app is running.
+    - [x] Keep iMac active context selection-first before screen snapshot for current-work questions.
+    - [x] Keep Telegram screen access explicit through `/screen` and `/screen question`.
+
+## 🧭 Phase 7: Visual Workflows & CLI Artifacts
+*Goal: Let Maya create real rendered workflow visuals and keep artifact work local-first.*
+
+- [x] **7.1. Visual Workflow Renderer**
+    - [x] Add `map this idea visually`, `workflow diagram`, `architecture diagram`, `flow diagram`, and `Mermaid visual` commands.
+    - [x] Save Mermaid source and rendered SVG under `Desktop/Maya/architecture`.
+    - [x] Open rendered visuals on iMac and attach them on Telegram.
+    - [x] Use Mermaid CLI when available and a built-in SVG fallback otherwise.
+- [x] **7.2. Artifact-First Work**
+    - [x] Keep Word, PowerPoint, Excel, Markdown, and visual workflow creation in CLI/file tooling first.
+    - [x] Use native apps for review and repair rather than manual creation.
     - [x] Resolve app aliases like Chrome to Google Chrome before deciding whether an app is open.
     - [x] Return a clear closed-app answer when a named app is not in the macOS running app list.
     - [x] Add `screen_probe.py` for runtime Screen Recording permission checks.
@@ -214,6 +266,11 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add `/memory` source and confidence inspection.
     - [x] Add `/forget` for specific memory removal.
     - [x] Add `/memorycleanup` for stale compacted context cleanup.
+    - [x] Add Hermes style `maya_core_memory` capped at 2477 characters.
+    - [x] Add Hermes style `zainal_profile_summary` capped at 1499 characters.
+    - [x] Add SQLite FTS5 session search for old normal sessions.
+    - [x] Save safe iMac voice session summaries after hotkey sessions end.
+    - [x] Add manual `save this conversation for memory` session checkpoint.
     - [x] Add `memory_control_smoke.py` and include it in launch rehearsal.
     - [ ] Let Gemini 3.1 Flash summarize weekly raw logs and remove conversational noise.
     - [ ] Let Gemini 3.5 Flash handle premium weekly synthesis when the week is dense, ambiguous, or needs stronger language quality.
@@ -263,6 +320,8 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add `/weekly` and natural weekly-reflection phrasing that reads the prepared weekly summary.
     - [x] Block normal Telegram text from falling through to any auto GPT-5.5 orchestrator path.
     - [x] Route incoming Telegram voice notes through transcription and then the normal Telegram routing path.
+    - [x] Do not force English for xAI STT on Telegram voice notes.
+    - [x] Force Malay or Manglish Telegram answers through Gemini before Ara speaks them.
     - [x] Keep Telegram voice as Ara voice notes instead of Grok Voice Agent sessions.
     - [x] Make Telegram Ara voice replies the locked default, with text-only fallback until the xAI key exists.
     - [ ] Live-test Telegram Ara voice-note replies against the xAI API.
@@ -391,6 +450,8 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Surface skill listing in chat so Maya can explain what she can do.
     - [x] Inject relevant skill context into the reply path.
     - [x] Add bounded browser, Office document, travel research, and checkout-guard skills.
+    - [x] Add `browser_capability` as the parent iMac browser route.
+    - [x] Keep child browser skills explicit: `general_browser`, `google_images`, `flight_search`, `booking_com_hotel_search`, and `airbnb_stay_search`.
     - [x] Add Sight Research and Steward Review as built-in skills.
     - [x] Add a provider capability registry for lane owners, tools, boundaries, cost tier, routing triggers, memory rights, and execution rights.
     - [x] Keep provider-native capabilities behind Maya's safety gates and skill lifecycle.
@@ -510,7 +571,14 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add `document_actions_smoke.py` and include it in launch rehearsal.
     - [ ] Let Maya edit existing Word documents from structured chat instructions.
     - [ ] Let Maya edit existing PowerPoint decks from structured chat instructions.
-    - [ ] Add visual QA before Maya calls Word or PowerPoint output polished.
+    - [x] Add PPTX visual QA before Maya calls PowerPoint output polished.
+    - [x] Render created or revised PPTX files and check for placeholder text, ellipsis overflow, truncated copy, missing readable text, and render count mismatch.
+    - [x] Add one bounded PPTX auto-revision pass before delivery.
+    - [x] If PPTX QA still fails, make Maya call it a draft with known issues instead of polished output.
+    - [x] Add PPTX polish grade: draft-level, good, or strong.
+    - [x] Detect repeated slide titles and incomplete sentence meaning in PPTX polish review.
+    - [x] Let Claude provide a presentation polish grade after local QA passes.
+    - [ ] Add equivalent visual QA before Maya calls Word output polished.
     - [ ] Use Word and PowerPoint as normal iMac apps when that is more natural than a separate UI.
 - [x] **14.4. Workspace Creation**
     - [x] Create folders under `~/Desktop/Maya` by default.
@@ -626,6 +694,9 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Route Excel files to `~/Desktop/Maya/spreadsheets`.
     - [x] Open Excel drafts on the iMac when requested from iMac.
     - [x] Send Excel drafts through Telegram when requested from Telegram.
+    - [x] Open latest Word, PowerPoint, Excel, and Markdown files from Desktop Maya by type or name.
+    - [x] Open `.docx` in Word, `.pptx` in PowerPoint, `.xlsx` in Excel, and `.md` in Cursor by default with TextEdit fallback.
+    - [x] Treat iMac highlighted selection as an anchor and read wider active Excel, Word, PowerPoint, Markdown, and browser DOM context when safe.
     - [x] Block sensitive spreadsheet content.
 - [x] **16.3. Workflow Desk**
     - [x] Add a conversational workflow desk summary.
@@ -662,6 +733,8 @@ This document tracks the technical and operational roadmap for building the stan
 
 - [x] **17.3. Skill Import Standard**
     - [x] Import local skill folders through `SKILL.md`.
+    - [x] Import external skill repositories through `npx skills add owner/repo`.
+    - [x] Run external skill installs in a temporary folder.
     - [x] Store imported skills as proposed only.
     - [x] Infer triggers, tools, permissions, and manifest from the imported skill.
     - [x] Require review and activation tests before use.
@@ -682,5 +755,192 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add Maya desk smoke coverage.
     - [x] Keep all `.py` files under 300 lines.
 
+## Phase 18: Local Wake Word Training
+*Goal: Make Maya wake locally through headphones without wasting provider tokens.*
+
+- [x] **18.1. Archived Voice Wake Experiments**
+    - [x] Archive local sample recorder for positive and negative clips.
+    - [x] Archive local scorer prototype using embeddings.
+    - [x] Archive one-stage and two-stage probes.
+    - [x] Keep iMac live voice activation disabled permanently unless Zainal explicitly reopens it.
+
+- [x] **18.2. Archived Official Training Pipeline**
+    - [x] Install official training dependencies locally.
+    - [x] Add official training asset preparation under `~/Desktop/Maya/artifacts/wakeword_official`.
+    - [x] Add Python 3.14 compatibility wrapper for openWakeWord training.
+    - [x] Generate synthetic samples with Piper.
+    - [x] Run feature augmentation and ONNX export.
+
+- [x] **18.3. Closed Direction**
+    - [x] Record that v1 official model was experimental only.
+    - [x] Record that v2 was experimental only.
+    - [x] Record that v3 was experimental only.
+    - [x] Archive scorer tuning outside the live path.
+    - [x] Close the probe direction because manual realtime streaming is the selected path.
+    - [x] Keep soak result as historical note only.
+
+## Phase 19: Artifact Quality Skills, Unified Documents, And Canonical Memory
+*Goal: Stop treating Telegram, iMac, documents, skills, and memory as separate surfaces. Maya should create the same quality artifacts everywhere and remember one canonical truth per saved fact.*
+
+### Source Of Truth Rule
+
+- [x] **19.0. Single Checklist Source**
+    - [x] Use this file, `KAMPUNG_AI_CHECKLIST.md`, as the only roadmap/checklist for this phase.
+    - [x] Do not create or maintain a separate roadmap checklist for artifact quality, skills, or memory architecture.
+    - [x] Keep skill files, tests, and helper modules as runtime artifacts only; progress and next-step ownership stay here.
+    - [x] Update `KAMPUNG_AI.md` when architecture changes, because the checklist tracks execution while `KAMPUNG_AI.md` explains how Maya works.
+    - [x] Future `what is next?` answers must inspect the first incomplete item in this phase instead of repeating old Telegram regression tests.
+    - [x] Treat the old Telegram feature regression set as passed unless a new regression appears or this checklist asks for a specific retest.
+
+### Quality Skills Creation
+
+- [x] **19.1. Artifact Quality Skills**
+    - [x] Add active `word_artifact_quality` skill.
+    - [x] Add active `excel_artifact_quality` skill.
+    - [x] Add active `powerpoint_artifact_quality` skill.
+    - [x] Add active `html_app_artifact_quality` skill.
+    - [x] Add test checklist files for all four artifact quality skills under `maya_skills/tests`.
+    - [x] Register the four skills in Maya's skill registry so `show active skills` and skill context can expose them.
+    - [x] Keep these skills as quality standards and review context, not magic executable tools.
+    - [x] Wire runtime code to explicitly load the skill context when reviewing artifacts.
+
+- [x] **19.2. Skill Acceptance Rules**
+    - [x] Each quality skill defines trigger examples.
+    - [x] Each quality skill defines non-trigger examples.
+    - [x] Each quality skill defines safety and hard-no boundaries.
+    - [x] Each quality skill defines local validation expectations.
+    - [x] Each quality skill defines Claude review expectations.
+    - [x] Each quality skill defines provider ownership: Gemini for role drafts, Kimi for HTML/code, Claude for review, local libraries for actual files.
+    - [x] Add `artifact_quality_smoke.py` to prove the skill files pass Maya's scaffold evaluator and local QA works.
+
+### Artifact Quality And Review Standards
+
+- [x] **19.3. Shared Artifact QA Contract**
+    - [x] Add `ArtifactQualityResult` with artifact type, path, pass/fail state, summary, issues, warnings, draft model, review model, validation steps, repair flag, and delivery readiness.
+    - [x] Add local HTML validation for doctype, structure, inline CSS/JS, interactive controls, code-fence leakage, and common corrupted CSS/HTML markers.
+    - [x] Add local Word validation for `.docx` openability, headings, content density, placeholder text, malformed markdown leakage, and generated summary.
+    - [x] Add local Excel validation for `.xlsx` openability, populated cells, table-like rows, frozen panes, and formulas when formulas are implied.
+    - [x] Add Claude artifact review helper that loads the relevant artifact quality skill and records Claude usage when a live key is present.
+    - [x] Fail open with a warning when Claude is unavailable, while still enforcing local validation.
+
+- [x] **19.4. Word Quality Gate**
+    - [x] Keep Gemini role-based drafting as the Word content source.
+    - [x] Build real `.docx` files with local document tooling.
+    - [x] Run local Word QA before final delivery.
+    - [x] Run Claude Word review when available.
+    - [x] Save a useful artifact summary with the structured artifact record.
+    - [x] If QA fails, say it is a draft with issues instead of calling it final.
+
+- [x] **19.5. Excel Quality Gate**
+    - [x] Keep local workbook creation for trackers, budgets, comparisons, and cost sheets.
+    - [x] Run local Excel QA before final delivery.
+    - [x] Run Claude Excel review when available.
+    - [x] Apply QA to general Excel drafts, budget trackers, testing comparisons, cost trackers, and travel-budget workbooks.
+    - [x] If QA fails, say it is a draft with issues instead of calling it final.
+
+- [x] **19.6. PowerPoint Quality Gate**
+    - [x] Preserve existing high-quality PowerPoint path: Gemini role content, Claude presentation review, local PPTX build, render QA, and topic-safe polish pass.
+    - [x] Add `powerpoint_artifact_quality` as the explicit quality skill standard.
+    - [x] Keep Design Engineering as taste context for presentation polish.
+    - [x] Feed the PowerPoint skill text directly into every presentation polish/review prompt, not only the generic skill registry.
+
+- [x] **19.7. HTML App Quality Gate**
+    - [x] Keep Kimi K2.6 as the primary HTML/code builder.
+    - [x] Keep Gemini Flash as fallback only after Kimi failure or timeout.
+    - [x] Feed `html_app_artifact_quality` into Claude HTML review.
+    - [x] Run local HTML QA after review.
+    - [x] Save and attach a real `.html` file instead of pasting source into Telegram.
+    - [x] Recognize typo-style HTML creation requests already covered by the document parser.
+    - [ ] Add browser render smoke for generated HTML files when the browser runtime is available.
+
+### Unified Document Creation Across iMac And Telegram
+
+- [x] **19.8. Canonical Document Router**
+    - [x] Keep `DocumentActionRouter` as the canonical path for Markdown, HTML, Word, Excel, and PowerPoint creation.
+    - [x] Keep Telegram text document requests on `DocumentActionRouter`.
+    - [x] Keep Telegram voice document requests flowing through xAI STT, then `DocumentActionRouter`.
+    - [x] Keep iMac document requests on `DocumentActionRouter` through the normal command route.
+    - [x] Route the older iMac presentation shortcut into `DocumentActionRouter` instead of its old local-only PPTX shortcut.
+    - [x] Keep network troubleshooting as a special local diagnostic workflow, but run Word artifact QA on its generated `.docx`.
+    - [ ] Move remaining special document-producing workflows into a shared builder interface instead of letting each workflow hand-roll final delivery.
+
+- [x] **19.9. Channel-Specific Delivery Only**
+    - [x] iMac delivery opens or focuses the native app when appropriate.
+    - [x] Telegram delivery attaches generated files.
+    - [x] Latest-document path is recorded for created artifacts.
+    - [x] Structured artifacts are recorded for direct document actions.
+    - [x] Telegram last-document replies should keep important paths visible as text instead of only voice.
+    - [ ] Add a regression that asks for the last document by voice and verifies Telegram includes path text plus a useful summary.
+
+### Canonical Memory IDs
+
+- [x] **19.10. Canonical Memory Store**
+    - [x] Add `canonical_memory_items` with `memory_id`, `kind`, `subject_key`, `content`, `value`, `scope`, `source_channel`, `source_ref`, `confidence`, `status`, `created_at`, `updated_at`, `last_used_at`, `expires_at`, `pinned`, `temporary`, and `test_marker`.
+    - [x] Add a deterministic canonical memory ID from kind, subject key, and scope.
+    - [x] Add a unique truth index over kind, subject key, and scope.
+    - [x] Add temporary/test-memory detection for regression, smoke, and Telegram test facts.
+    - [x] Add canonical backfill from existing preferences and lessons for weekly memory.
+
+- [x] **19.11. Canonical Save, Recall, And Forget**
+    - [x] Explicit `remember` and preference learning writes canonical memory first-class records.
+    - [x] Pending confirmed learning writes canonical memory records.
+    - [x] Direct memory questions search canonical memory before preferences, lessons, curated memory, or session search.
+    - [x] Forgotten canonical subjects block fallback recall from old duplicated stores.
+    - [x] `/forget` marks matching canonical memory as forgotten and still removes derived preferences, lessons, summaries, history, session search rows, curated memory, and fuzzy traces.
+    - [x] Add `canonical_memory_smoke.py` for save, recall, forget, and no-leak regression.
+    - [ ] Add a real migration command that reports dedupe counts and links old rows to canonical IDs instead of only backfilling active facts.
+
+### Memory Activation Rules
+
+- [x] **19.12. First Activation Layer**
+    - [x] Inject relevant canonical memories into prompt context as `Saved facts`.
+    - [x] Keep pinned canonical memories eligible for stronger activation.
+    - [x] Keep temporary test memories from activating unless query-relevant.
+    - [x] Keep expired or forgotten canonical memory out of recall.
+    - [x] Keep direct memory answers honest: if canonical memory has no active answer, Maya says she does not have it saved.
+    - [ ] Add scoring decay based on age and reinforcement count.
+    - [ ] Add explicit pin/unpin commands for canonical memories.
+    - [ ] Add a direct inspector that shows canonical memory IDs and activation class.
+
+### Weekly Memory Distillation
+
+- [x] **19.13. Canonical Weekly Input**
+    - [x] Weekly memory dry run backfills canonical memories before summarizing.
+    - [x] Weekly memory samples active non-temporary canonical memories.
+    - [x] Weekly memory excludes temporary and test-marker memories by default.
+    - [x] Weekly summary reports canonical memory counts and canonical fact signals.
+    - [ ] Make live weekly provider distillation write new stable memories through canonical memory only.
+    - [ ] Record canonical memory IDs used in each weekly summary.
+    - [ ] Add Claude weekly memory review for overreach, false assumptions, unsafe memory, and confirmation-needed facts.
+
+### Regression Tests
+
+- [x] **19.14. Local Smoke Coverage**
+    - [x] Add artifact quality smoke test.
+    - [x] Add canonical memory smoke test.
+    - [x] Add both new smokes to `may1_rehearsal.py`.
+    - [x] Update existing document smoke expectations for the new QA route labels.
+    - [x] Run document, artifact quality, canonical memory, memory control, learning, weekly memory, Telegram routing, and iMac workflow smokes together.
+
+- [ ] **19.15. Manual Telegram/iMac Regression**
+    - [ ] Telegram text: create Word, Excel, PowerPoint, and HTML files; verify attachments, routes, costs, paths, and file quality.
+    - [ ] Telegram voice: create one document by voice; verify STT, route, cost, attachment, visible path text, and voice reply behavior.
+    - [ ] iMac text/voice: create one Word, Excel, PowerPoint, and HTML artifact; verify native app opening and same quality path.
+    - [ ] Memory: save, recall, forget, and recall-again for one temporary test fact and one normal preference.
+    - [ ] Weekly memory: dry run after temporary tests and verify test facts do not become durable weekly memory.
+    - [x] Disable `ENABLE_LOCAL_WAKE_SCORER` for live use.
+    - [x] Keep local wake experiments separate from paid Grok and out of the live path.
+    - [x] Add voice device intent policy: Sony or `Zainal’s Headphone` allows Maya wake.
+    - [x] Block AirPods and iMac audio from local Maya wake.
+    - [x] Record Mudra within radius plus pinch as the future iMac-speaker wake path.
+    - [x] Add a no-Grok local voice integration smoke for wake acknowledgement.
+    - [x] Add hotkey voice smoke for deliberate local trigger plus 5 second idle close.
+    - [x] Add hotkey voice smoke for manual stop.
+    - [x] Remove false-wake acceptance target because voice wake activation is removed.
+    - [x] Remove wake detection acceptance target because voice wake activation is removed.
+    - [x] Do not connect local wake to Maya. Mudra is the future trigger.
+    - [x] Do not use xAI STT confirmation for the current one-stage headphone path.
+    - [x] Avoid continuous long headphone capture because it can degrade media audio quality.
+
 ---
-*Updated May 20, 2026*
+*Updated May 23, 2026*

@@ -23,6 +23,12 @@ async def activate_guided_sight(db_path: str, minutes: int | None = None) -> str
     return f"I can see now. Ask me what you want me to look at."
 
 
+async def toggle_guided_sight(db_path: str) -> str:
+    if await guided_sight_active(db_path):
+        return await deactivate_guided_sight(db_path)
+    return await activate_guided_sight(db_path)
+
+
 async def guided_sight_active(db_path: str) -> bool:
     raw = await get_preference(db_path, SESSION_KEY)
     if not raw:

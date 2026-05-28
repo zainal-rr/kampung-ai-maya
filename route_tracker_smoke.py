@@ -19,6 +19,9 @@ async def main() -> None:
         _require("voice note" in text, "input type missing")
         _require("Kimi coding" in text, "lane missing")
         _require("cost recorded: yes" in text, "cost flag missing")
+        await record_route(db_path, "voice note", "xAI STT + Gemini Flash text", "voice note transcribed, then normal Telegram text", True)
+        voice_text = await last_route_text(db_path)
+        _require("grok-2-audio" in voice_text and "gemini" in voice_text.lower(), "voice route models missing")
         print("route_tracker_smoke: ok")
 
 

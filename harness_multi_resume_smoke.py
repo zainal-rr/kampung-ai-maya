@@ -28,7 +28,7 @@ async def main() -> None:
         choices = await router.handle("continue", "telegram")
         _require(choices and "more than one" in choices.lower(), "multiple workflow choice missing")
         selected = await router.handle("2", "telegram")
-        _require(selected is not None, "numeric workflow selection failed")
+        _require(selected and selected.startswith("Continuing: screen"), "numeric workflow did not announce target")
     print("harness_multi_resume_smoke: ok")
 
 

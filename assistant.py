@@ -8,6 +8,8 @@ from assistant_model_lanes import ModelLanes
 from assistant_reply_paths import prepare_input
 from assistant_routes import AssistantRouter, RouteResult
 from channel_gateway import remember_channel_identity
+from cost_tracker import record_usage
+from curated_memory import add_curated_memory, curated_memory_prompt
 from harness_router import HarnessRouter
 from memory_service import MemoryService
 from models import TheSenses
@@ -22,6 +24,7 @@ from session_compactor import build_session_context, compact_if_needed
 from skill_registry import SkillRegistry
 from self_improvement_policy import enforce_honest_claims
 from storage import get_history, save_history_message
+from telegram_commands import command_to_text, parse_command
 from topic_context import format_topic_context, recent_topic_history
 from voice import VoiceNode, spoken_preview
 from vision_responder import VisionResponder
@@ -103,6 +106,16 @@ class KampungAssistant:
             return "Send me something real and I'll take it from there."
         if channel_external_id:
             await remember_channel_identity(self.db_path, channel, channel_external_id)
+        direct_command = parse_command(clean_text)
+        if direct_command is not None:
+            try:
+                reply = await command_to_text(self.db_path, direct_command)
+                await record_route(self.db_path, "command", "command", f"/{direct_command.name}", False)
+                await save_history_message(self.db_path, user_id, "user", clean_text, channel)
+                await save_history_message(self.db_path, user_id, "assistant", reply, channel)
+                return reply
+            except Exception:
+                logging.exception("Direct slash command failed on channel %s", channel)
 
         complex_route = self._is_complex_route(clean_text)
         sight_route = self._is_sight_route(clean_text)
@@ -120,14 +133,21 @@ class KampungAssistant:
         topic_context = format_topic_context(topic_history)
         await compact_if_needed(self.db_path, user_id=user_id)
         base_memory_context = await self.memory.build_prompt_context(clean_text)
+        curated_context = await curated_memory_prompt(self.db_path)
         session_context = await build_session_context(self.db_path, clean_text)
         quantum_context = await quantum_context_hint(self.db_path, clean_text)
         project_context = await build_project_context(self.db_path, clean_text)
         memory_context = "\n\n".join(
-            block for block in (project_context, session_context, quantum_context, base_memory_context) if block
+            block for block in (
+                project_context,
+                curated_context,
+                session_context,
+                quantum_context,
+                base_memory_context,
+            ) if block
         )
         skill_context = await self.skills.build_prompt_context(clean_text)
-        request_text = prepare_input(channel, clean_text, memory_context, skill_context)
+        request_text = prepare_input(channel, clean_text, memory_context, skill_context, input_type)
         self._sync_router()
         try:
             learning_response = await self.learning.handle(clean_text, channel)
@@ -138,7 +158,7 @@ class KampungAssistant:
             context_response = await handle_context_command(self.db_path, clean_text)
         except Exception:
             logging.exception("Context command failed on channel %s", channel)
-            context_response = None
+        context_response = None
         command_response = None
         harness_response = None
         vision_response = None
@@ -168,7 +188,9 @@ class KampungAssistant:
                 screen_response = "I had trouble reading the screen just now. Try /screen again in a bit."
 
         if vision_response is not None:
-            result = RouteResult(vision_response, "Gemini sight", "sight request", "I see." in vision_response)
+            cost = vision_response.startswith("I see.")
+            lane = "Gemini sight" if cost else "camera sight state"
+            result = RouteResult(vision_response, lane, "sight request", cost)
         elif screen_response is not None:
             cost = screen_response.startswith(("I see it.", "I see your screen."))
             lane = "Gemini screen sight" if cost else "macOS screen state"
@@ -178,9 +200,19 @@ class KampungAssistant:
         elif context_response is not None:
             result = RouteResult(context_response, "command", "session context")
         elif harness_response is not None:
-            result = RouteResult(harness_response, "LangGraph harness", "persistent workflow")
+            result = RouteResult(
+                harness_response,
+                self.harness.last_lane,
+                self.harness.last_reason,
+                self.harness.last_cost_recorded,
+            )
         elif command_response is not None:
-            result = RouteResult(command_response, "command", "app or file action")
+            result = RouteResult(
+                command_response,
+                self.commands.last_lane or "command",
+                self.commands.last_reason or "app or file action",
+                self.commands.last_cost_recorded,
+            )
         else:
             result = await self.router.route(
                 text=clean_text,
@@ -192,14 +224,45 @@ class KampungAssistant:
                 memory_context=memory_context,
                 skill_context=skill_context,
                 topic_context=topic_context,
+                input_type=input_type,
             )
 
         response = await apply_reply_preferences(self.db_path, enforce_honest_claims(clean_model_text(result.response)))
+        if result.lane == "Gemini Flash text" and result.cost_recorded:
+            await record_usage(self.db_path, "gemini_flash_text_calls", 1, result.reason)
+        route_lane, route_reason, route_cost = self._route_metadata(input_type, result)
         await self.skills.record_latest_outcome(clean_text, channel, result.lane, response)
-        await record_route(self.db_path, input_type, result.lane, result.reason, result.cost_recorded)
-        await save_history_message(self.db_path, user_id, "user", clean_text)
-        await save_history_message(self.db_path, user_id, "assistant", response)
+        await record_route(self.db_path, input_type, route_lane, route_reason, route_cost)
+        await save_history_message(self.db_path, user_id, "user", clean_text, channel)
+        await save_history_message(self.db_path, user_id, "assistant", response, channel)
+        await self._maybe_curate_memory(clean_text, channel)
 
         if speak_reply:
             await self.voice.speak(spoken_preview(response))
         return response
+
+    @staticmethod
+    def _route_metadata(input_type: str, result: RouteResult) -> tuple[str, str, bool]:
+        if input_type != "voice note":
+            return result.lane, result.reason, result.cost_recorded
+        return (
+            f"xAI STT + {result.lane}",
+            f"voice note transcribed, then {result.reason}",
+            True,
+        )
+
+    async def _maybe_curate_memory(self, text: str, channel: str) -> None:
+        lowered = text.lower()
+        explicit_cues = ("remember that", "remember ", "i prefer", "my preference")
+        durable_directives = ("do not ", "don't ", "must ")
+        if not (
+            any(cue in lowered for cue in explicit_cues)
+            or lowered.startswith(durable_directives)
+            or " maya should " in lowered
+            or " kampung ai should " in lowered
+        ):
+            return
+        try:
+            await add_curated_memory(self.db_path, text, source=channel)
+        except Exception:
+            logging.exception("Curated memory write failed on channel %s", channel)

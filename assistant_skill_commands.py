@@ -4,7 +4,7 @@ import re
 
 from assistant_command_helpers import direct_key
 from skill_evaluator import evaluate_skill_scaffold
-from skill_importer import import_local_skill
+from skill_importer import adapt_imported_skill_for_maya, import_local_skill, import_npx_skill
 from skill_library import mirror_skill
 from skill_memory_store import add_skill_memory, disable_skill_memory, list_skill_memory
 from skill_registry import BUILT_IN_SKILLS, SkillRegistry
@@ -21,11 +21,15 @@ from starter_skill_catalog import catalog_summary, install_starter_catalog
 async def handle_skill_listing(db_path: str, skills: SkillRegistry, text: str) -> str | None:
     key = direct_key(text)
     if key == "show active skills":
-        custom = await list_custom_skills(db_path, limit=12, status="active")
-        built_in = [f"{item.name}: {item.description}" for item in BUILT_IN_SKILLS]
-        custom_lines = [f"{row['name']}: {row['description']}" for row in custom]
-        lines = built_in + custom_lines
-        return "Active skills:\n" + "\n".join(f"- {item}" for item in lines[:12])
+        custom = await list_custom_skills(db_path, limit=20, status="active")
+        built_in = [f"{idx}) {item.name}: {item.description}" for idx, item in enumerate(BUILT_IN_SKILLS, 1)]
+        custom_lines = [f"{idx}) {row['name']}: {row['description']}" for idx, row in enumerate(custom, 1)]
+        reply = "Built-in active skills:\n" + "\n".join(built_in)
+        if custom_lines:
+            reply += "\n\nCustom active skills:\n" + "\n".join(custom_lines)
+        else:
+            reply += "\n\nCustom active skills:\nNone."
+        return reply
     if key in {"why did you pick that skill", "show skill usage", "show skill log"}:
         events = await latest_skill_usage(db_path, limit=5)
         if not events:
@@ -73,16 +77,22 @@ async def handle_skill_listing(db_path: str, skills: SkillRegistry, text: str) -
 
 
 async def handle_skill_proposals(db_path: str, text: str) -> str | None:
-    if direct_key(text) not in {"show skill proposals", "list skill proposals"}:
+    if direct_key(text) not in {"show skill proposals", "list skill proposals", "show all skill proposals"}:
         return None
-    proposals = await list_skill_proposals(db_path, limit=5)
+    proposals = await list_skill_proposals(db_path, limit=15)
     if not proposals:
         return "There are no skill proposals yet."
-    lines = [f"#{item['id']} {item['summary']} ({item['status']})" for item in proposals]
-    return "Skill proposals:\n" + "\n".join(lines)
+    lines = [
+        f"{idx}) {item['summary']} (proposal id: #{item['id']}, status: {item['status']})"
+        for idx, item in enumerate(proposals, 1)
+    ]
+    return "Skill proposals, latest 15:\n" + "\n".join(lines)
 
 
 async def handle_skill_lifecycle(db_path: str, text: str) -> str | None:
+    npx_import = re.match(r"^npx\s+skills\s+add\s+(.+)$", text, re.IGNORECASE)
+    if npx_import:
+        return await import_npx_skill(db_path, npx_import.group(1).strip())
     imported = re.match(r"^import skill from\s+(.+)$", text, re.IGNORECASE)
     if imported:
         return await import_local_skill(db_path, imported.group(1).strip())
@@ -97,6 +107,13 @@ async def handle_skill_lifecycle(db_path: str, text: str) -> str | None:
         path = skill.get("scaffold_path") or ""
         return f"Skill file: {path}" if path else "That skill does not have a scaffold file yet."
     if action == "test":
+        if skill.get("source") == "imported":
+            path = str(skill.get("scaffold_path") or "")
+            if path and "Maya Activation Wrapper" not in open(path, encoding="utf-8").read():
+                return (
+                    f"{skill['name']} is an imported skill. It needs a Maya activation wrapper before tests can pass. "
+                    f"Run: improve skill {skill['name']}."
+                )
         results = evaluate_skill_scaffold(str(skill.get("scaffold_path") or ""))
         for test_type, (status, notes) in results.items():
             await record_skill_test(db_path, str(skill["skill_id"]), text, status, notes, test_type)
@@ -106,6 +123,8 @@ async def handle_skill_lifecycle(db_path: str, text: str) -> str | None:
         return f"Skill tests recorded for {skill['name']}. It can be activated after approval."
     if action == "improve":
         path = skill.get("scaffold_path") or ""
+        if skill.get("source") == "imported" and adapt_imported_skill_for_maya(path, str(skill["name"])):
+            return f"Added Maya activation wrapper for {skill['name']}. Now run: test skill {skill['name']}."
         return f"Improve this scaffold, then run its tests: {path}" if path else "That skill has no scaffold to improve yet."
     status = "approved" if action == "approve" else "active" if action == "activate" else "disabled"
     if action == "activate" and skill.get("status") != "approved":

@@ -4,9 +4,6 @@ import re
 import tempfile
 from pathlib import Path
 
-import cv2
-import numpy as np
-
 
 IMAGE_MARKER = "[[maya_image:"
 Target = tuple[str, int, int, int]
@@ -28,6 +25,9 @@ def remove_target_line(text: str) -> str:
 
 
 def draw_visual_marks(image_bytes: bytes, targets: list[Target]) -> Path | None:
+    import cv2
+    import numpy as np
+
     array = np.frombuffer(image_bytes, dtype=np.uint8)
     frame = cv2.imdecode(array, cv2.IMREAD_COLOR)
     if frame is None or not targets:
@@ -114,6 +114,8 @@ def target_group_label(targets: list[Target]) -> str:
 
 
 def _draw_circle(frame, label: str, x: int, y: int, radius: int) -> None:
+    import cv2
+
     color = (0, 255, 255)
     cv2.circle(frame, (x, y), max(20, radius), color, 6)
     cv2.putText(
@@ -137,6 +139,8 @@ def _draw_group_rectangle(frame, targets: list[Target], width: int, height: int)
 
 
 def _draw_rectangle(frame, label: str, left: int, top: int, right: int, bottom: int) -> None:
+    import cv2
+
     color = (0, 255, 255)
     pad = 8
     height, width = frame.shape[:2]

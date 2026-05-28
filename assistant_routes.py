@@ -8,6 +8,7 @@ from typing import Any
 from assistant_prompts import IMAC_SLOW_MARKERS
 from assistant_reply_paths import fast_imac_response, fast_telegram_response
 from assistant_text import clean_model_text, strip_wake_prefix
+from language_policy import uses_malay_or_manglish, wants_malay_or_manglish
 from response_style import format_grouped_answers, split_telegram_segments
 
 
@@ -51,6 +52,7 @@ class AssistantRouter:
         memory_context: str,
         skill_context: str,
         topic_context: str,
+        input_type: str = "text",
     ) -> RouteResult:
         try:
             return await self._route_inner(
@@ -63,6 +65,7 @@ class AssistantRouter:
                 memory_context=memory_context,
                 skill_context=skill_context,
                 topic_context=topic_context,
+                input_type=input_type,
             )
         except Exception:
             logging.exception("Assistant request failed on channel %s", channel)
@@ -80,7 +83,9 @@ class AssistantRouter:
         memory_context: str,
         skill_context: str,
         topic_context: str,
+        input_type: str,
     ) -> RouteResult:
+        voice_note = input_type == "voice note"
         command_response = await self.commands.handle(text, channel)
         if command_response is not None:
             return RouteResult(command_response, "command", "app state or command")
@@ -97,8 +102,9 @@ class AssistantRouter:
                 memory_context,
                 skill_context,
                 topic_context,
+                voice_note=voice_note,
             )
-            return RouteResult(response, "Gemini Flash text", "explicit sight quality route", True)
+            return RouteResult(response, "Gemini Flash text", "explicit sight quality route", bool(os.getenv("GOOGLE_API_KEY")))
         if channel == "imac" and self.model_lanes.should_use_complex_path(text):
             if self.model_lanes.should_use_plan_path(text):
                 response = await self.model_lanes.complex_plan_response(text, memory_context, skill_context)
@@ -107,7 +113,7 @@ class AssistantRouter:
             return RouteResult(response, "GPT 5.5 xhigh", "explicit iMac complex cue", bool(os.getenv("OPENAI_API_KEY")))
         if channel == "telegram" and self.model_lanes.should_use_artisan_path(text):
             response = await self.model_lanes.artisan_response(text, memory_context, skill_context)
-            return RouteResult(response, "Kimi coding", "coding question", bool(os.getenv("KIMI_API_KEY")))
+            return RouteResult(response, self.model_lanes.artisan_lane(), "coding question", bool(os.getenv("KIMI_API_KEY")))
         policy_response = self.policy.reply(text, channel)
         if policy_response is not None:
             return RouteResult(policy_response, "policy", "curated system answer")
@@ -115,7 +121,7 @@ class AssistantRouter:
             response = await self.model_lanes.steward_response(text, memory_context, skill_context)
             return RouteResult(response, "Claude Steward", "careful review request", bool(os.getenv("ANTHROPIC_API_KEY")))
         if channel == "telegram":
-            return await self._route_telegram(text, memory_context, skill_context, topic_context)
+            return await self._route_telegram(text, memory_context, skill_context, topic_context, voice_note)
         if channel == "imac" and self._should_use_fast_imac_path(text):
             response = await fast_imac_response(self.imac_fast_responder, text, memory_context, skill_context)
             return RouteResult(response, "Grok voice/text", "normal iMac voice", bool(os.getenv("XAI_API_KEY")))
@@ -128,11 +134,13 @@ class AssistantRouter:
         memory_context: str,
         skill_context: str,
         topic_context: str,
+        voice_note: bool = False,
     ) -> RouteResult:
-        bundled_response = await self._handle_telegram_bundle(text, memory_context, skill_context, topic_context)
+        bundled_response = await self._handle_telegram_bundle(text, memory_context, skill_context, topic_context, voice_note)
         if bundled_response is not None:
-            return RouteResult(bundled_response, "Gemini Flash text", "bundled Telegram text")
-        if self.model_lanes.should_use_pulse_path(text):
+            return RouteResult(bundled_response, "Gemini Flash text", "bundled Telegram text", bool(os.getenv("GOOGLE_API_KEY")))
+        malay_or_manglish = uses_malay_or_manglish(text) or wants_malay_or_manglish(text)
+        if self.model_lanes.should_use_pulse_path(text) and not malay_or_manglish:
             response = await self.model_lanes.pulse_response(text, memory_context, skill_context)
             return RouteResult(response, "Grok text/news", "current or news question", bool(os.getenv("XAI_API_KEY")))
         response = await fast_telegram_response(
@@ -141,8 +149,9 @@ class AssistantRouter:
             memory_context,
             skill_context,
             topic_context,
+            voice_note=voice_note,
         )
-        return RouteResult(response, "Gemini Flash text", "normal Telegram text")
+        return RouteResult(response, "Gemini Flash text", "normal Telegram text", bool(os.getenv("GOOGLE_API_KEY")))
 
     async def _answer_telegram_segment(
         self,
@@ -150,6 +159,7 @@ class AssistantRouter:
         memory_context: str,
         skill_context: str,
         topic_context: str,
+        voice_note: bool = False,
     ) -> str | None:
         normalized = " ".join(strip_wake_prefix(segment).split()).rstrip("?.! ")
         if not normalized:
@@ -170,6 +180,7 @@ class AssistantRouter:
                 memory_context,
                 skill_context,
                 topic_context,
+                voice_note=voice_note,
             )
         )
 
@@ -179,13 +190,14 @@ class AssistantRouter:
         memory_context: str,
         skill_context: str,
         topic_context: str,
+        voice_note: bool = False,
     ) -> str | None:
         segments = split_telegram_segments(text)
         if len(segments) < 2:
             return None
         answers = []
         for segment in segments:
-            answer = await self._answer_telegram_segment(segment, memory_context, skill_context, topic_context)
+            answer = await self._answer_telegram_segment(segment, memory_context, skill_context, topic_context, voice_note)
             if answer:
                 answers.append(answer)
         if not answers:

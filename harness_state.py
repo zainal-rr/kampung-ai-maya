@@ -29,6 +29,8 @@ class HarnessState(TypedDict, total=False):
     last_error: str
     final_response: str
     memory_notes: list[str]
+    model_lane: str
+    cost_recorded: bool
 
 
 def initial_harness_state(
@@ -66,4 +68,6 @@ def initial_harness_state(
         "last_error": "",
         "final_response": "",
         "memory_notes": [],
+        "model_lane": "",
+        "cost_recorded": False,
     }

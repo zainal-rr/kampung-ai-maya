@@ -65,15 +65,16 @@ class TheSenses(BaseAgent):
 
 class TheHands(BaseAgent):
     """Kimi/OpenAI - The Executor"""
-    def __init__(self, api_key: str, base_url: str = "https://api.moonshot.ai/v1"):
+    def __init__(self, api_key: str, base_url: str = "https://api.moonshot.ai/v1", model: str | None = None):
         super().__init__("TheHands")
         self.client = AsyncOpenAI(api_key=api_key, base_url=base_url)
+        self.model = model or os.getenv("KIMI_MODEL", "kimi-k2.6")
 
-    async def chat(self, messages: List[Dict[str, str]]) -> str:
-        response = await self.client.chat.completions.create(
-            model="kimi-k2.6",
-            messages=messages
-        )
+    async def chat(self, messages: List[Dict[str, str]], max_tokens: int | None = None) -> str:
+        request = {"model": self.model, "messages": messages}
+        if max_tokens:
+            request["max_tokens"] = max_tokens
+        response = await self.client.chat.completions.create(**request)
         return self._prepare_output(response.choices[0].message.content)
 
 class TheSteward(BaseAgent):

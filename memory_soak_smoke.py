@@ -22,6 +22,13 @@ async def main() -> None:
         for index in range(90):
             await save_history_message(db_path, 1, "user", _user_turn(index))
             await save_history_message(db_path, 1, "assistant", f"Recorded turn {index}.")
+        await save_history_message(
+            db_path,
+            1,
+            "user",
+            "Remember that my API key is sk-testsecretvalue1234567890.",
+        )
+        await save_history_message(db_path, 1, "assistant", "I will not save that sensitive value.")
 
         result = await compact_if_needed(
             db_path,
@@ -35,6 +42,7 @@ async def main() -> None:
         _require(summaries, "shared summary was not saved")
         context = await build_session_context(db_path, "telegram imac persistence budget")
         _require("Shared compacted context" in context, "compacted context not injected")
+        _require("sk-testsecret" not in context and "API key is" not in context, "sensitive text leaked into compacted context")
         facts = await relevant_context_facts(db_path, "preference api key permission")
         _require(facts, "hard facts were not preserved")
         preference = await get_preference(db_path, "pref_reply_length")

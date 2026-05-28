@@ -1,19 +1,24 @@
 from __future__ import annotations
 
 import os
+import asyncio
 
 from cost_tracker import record_usage
 from language_policy import language_instruction
 from models import TheHands, TheMind, TheNews, TheSenses, TheSteward
 from orchestrator_prompts import ARTISAN_SYSTEM_PROMPT, MIND_ESCALATION_PROMPT, TECHNICAL_KEYWORDS
 from provider_capabilities import CAPABILITIES, review_triggers
+from weather_lookup import current_weather_summary, is_weather_question
 
 
 class ModelLanes:
     def __init__(self, db_path: str | None = None):
         self.db_path = db_path
         self.mind = TheMind(os.getenv("OPENAI_API_KEY", "dummy"))
-        self.artisan = TheHands(os.getenv("KIMI_API_KEY", "dummy"))
+        self.artisan = TheHands(
+            os.getenv("KIMI_API_KEY", "dummy"),
+            model=os.getenv("KIMI_CODING_MODEL") or os.getenv("KIMI_MODEL", "kimi-k2.6"),
+        )
         self.pulse = TheNews(os.getenv("XAI_API_KEY", "dummy"))
         self.premium_sight = TheSenses(
             os.getenv("GOOGLE_API_KEY", "dummy"),
@@ -33,8 +38,26 @@ class ModelLanes:
 
     @staticmethod
     def should_use_artisan_path(text: str) -> bool:
+        lowered = text.lower().strip()
+        if lowered.startswith((
+            "remember ",
+            "remember that ",
+            "what is my ",
+            "what's my ",
+            "what was my ",
+            "what are my ",
+            "do you remember ",
+        )):
+            return False
         upper = text.upper()
         return any(keyword in upper for keyword in TECHNICAL_KEYWORDS)
+
+    @staticmethod
+    def artisan_lane() -> str:
+        model = (os.getenv("KIMI_CODING_MODEL") or os.getenv("KIMI_MODEL", "kimi-k2.6")).lower()
+        if model.startswith("moonshot-v1"):
+            return "Moonshot coding"
+        return "Kimi coding"
 
     @staticmethod
     def should_use_pulse_path(text: str) -> bool:
@@ -111,7 +134,21 @@ class ModelLanes:
         if not os.getenv("KIMI_API_KEY"):
             return "The coding lane is not available yet. Add the builder API key first."
         prompt = self._prompt(ARTISAN_SYSTEM_PROMPT, text, memory_context, skill_context)
-        reply = await self.artisan.chat(prompt)
+        try:
+            timeout = float(os.getenv("KIMI_CODING_TIMEOUT_SECONDS", "30"))
+        except ValueError:
+            timeout = 30
+        try:
+            max_tokens = int(os.getenv("KIMI_CODING_MAX_TOKENS", "1200"))
+        except ValueError:
+            max_tokens = 1200
+        try:
+            reply = await asyncio.wait_for(
+                self.artisan.chat(prompt, max_tokens=max_tokens),
+                timeout=max(10, timeout),
+            )
+        except TimeoutError:
+            return "The coding lane timed out before producing an answer. I can use the normal Telegram model for a shorter answer, or we can move this into the iMac implementation path."
         await record_usage(self.db_path, "kimi_coding_calls", 1, "coding question")
         return reply
 
@@ -170,7 +207,15 @@ class ModelLanes:
     async def pulse_response(self, text: str, memory_context: str, skill_context: str) -> str:
         if not os.getenv("XAI_API_KEY"):
             return "The live news lane is not available yet. Add the xAI key first."
-        prompt = self._prompt("You are Maya's live pulse lane. Answer current questions briefly.", text, memory_context, skill_context)
+        live_context = ""
+        if is_weather_question(text):
+            try:
+                live_context = await current_weather_summary(text) or ""
+            except Exception:
+                live_context = ""
+        system = "You are Maya's live pulse lane. Answer current questions briefly."
+        context = "\n\n".join(block for block in (memory_context, skill_context, live_context) if block)
+        prompt = self._prompt(system, text, context, "")
         reply = await self.pulse.chat(prompt)
         await record_usage(self.db_path, "grok_text_calls", 1, "current question")
         return reply

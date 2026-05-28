@@ -30,6 +30,8 @@ async def main() -> None:
 
         woke, command = split_wake_phrase("Hey Maya what are my tasks")
         _require(woke and command == "what are my tasks", "wake phrase did not strip command")
+        woke, command = split_wake_phrase("Hey, Maya testing")
+        _require(woke and command == "testing", "punctuated wake phrase failed")
         woke, command = split_wake_phrase("Good morning Maya what is my briefing")
         _require(woke and command == "what is my briefing", "good morning wake phrase failed")
         woke, command = split_wake_phrase("hello Maya")

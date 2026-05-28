@@ -25,6 +25,14 @@ async def main() -> None:
         _require(active and active["status"] == "paused", "paused run missing")
         second = await HarnessRouter(db_path).handle("no", "telegram")
         _require(second and "won't do" in second.lower(), "decline did not cancel")
+        bypass = await router.handle("open the last document", "telegram")
+        _require(bypass is None, "latest document command should bypass harness and reach command router")
+        recall_bypass = await router.handle("what document did you just create?", "telegram")
+        _require(recall_bypass is None, "recent document recall should bypass harness and reach command router")
+        just_now_bypass = await router.handle("what document did you create just now?", "telegram")
+        _require(just_now_bypass is None, "just-now recent document recall should bypass harness and reach command router")
+        typed_bypass = await router.handle("open PowerPoint Kampung AI Telegram features", "telegram")
+        _require(typed_bypass is None, "typed file-open command should bypass harness and reach file opener")
     print("harness_resume_smoke: ok")
 
 

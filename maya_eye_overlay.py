@@ -4,8 +4,6 @@ import json
 import os
 from pathlib import Path
 
-import cv2
-
 from maya_eye_tracker import TargetTracker, target_signature
 from vision_markup import Target, should_group_targets, target_group_label
 
@@ -43,6 +41,8 @@ def draw_preview_targets(frame, trackers: dict[str, TargetTracker]) -> None:
 
 
 def _draw_tracked(frame, tracked: Target) -> None:
+    import cv2
+
     label, x, y, radius = tracked
     if radius >= 120:
         _draw_rectangle(frame, label, x - radius, y - radius, x + radius, y + radius)
@@ -89,6 +89,8 @@ def _draw_group_rectangle(frame, tracked: list[Target]) -> None:
 
 
 def _draw_rectangle(frame, label: str, left: int, top: int, right: int, bottom: int) -> None:
+    import cv2
+
     color = (0, 255, 255)
     pad = 8
     height, width = frame.shape[:2]

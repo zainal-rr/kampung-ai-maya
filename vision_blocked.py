@@ -2,8 +2,6 @@ from __future__ import annotations
 
 import os
 
-import cv2
-
 
 def frame_blocked(frame) -> bool:
     brightness, flatness = frame_metrics(frame)
@@ -14,5 +12,7 @@ def frame_blocked(frame) -> bool:
 
 
 def frame_metrics(frame) -> tuple[float, float]:
+    import cv2
+
     gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
     return float(gray.mean()), float(gray.std())

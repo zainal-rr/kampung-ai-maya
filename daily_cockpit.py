@@ -20,7 +20,10 @@ BUCKETS = {
 
 
 async def daily_cockpit_text(db_path: str, channel: str) -> str:
-    tasks = [task for task in await list_tasks(db_path, limit=20) if task["action_type"] != "waiting_on"]
+    tasks = _unique_tasks([
+        task for task in await list_tasks(db_path, limit=20)
+        if task["action_type"] != "waiting_on"
+    ])
     waiting = await list_waiting_on(db_path, limit=10)
     approvals = await approval_items(db_path)
     runs = await list_active_runs(db_path, limit=5)
@@ -52,7 +55,9 @@ async def daily_cockpit_text(db_path: str, channel: str) -> str:
 async def focus_text(db_path: str) -> str:
     tasks = await list_tasks(db_path, limit=10)
     waiting = await list_waiting_on(db_path, limit=10)
-    candidates = [task for task in tasks if task["action_type"] != "waiting_on"][:3]
+    candidates = _unique_tasks([
+        task for task in tasks if task["action_type"] != "waiting_on"
+    ])[:3]
     if candidates:
         lines = ["I would focus here first:"]
         for index, task in enumerate(candidates, start=1):
@@ -86,3 +91,15 @@ def bucket_for(text: str) -> str:
         if any(marker in lowered for marker in markers):
             return bucket
     return "work"
+
+
+def _unique_tasks(tasks: list[dict[str, str | int | None]]) -> list[dict[str, str | int | None]]:
+    seen = set()
+    unique = []
+    for task in tasks:
+        key = (str(task["title"]).strip().lower(), str(task.get("action_type") or ""))
+        if key in seen:
+            continue
+        seen.add(key)
+        unique.append(task)
+    return unique

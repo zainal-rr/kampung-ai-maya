@@ -8,12 +8,12 @@ from cost_tracker import usage_summary_text
 from memory_control import cleanup_stale_memory, forget_memory, memory_sources_text
 from provider_readiness import provider_readiness_text
 from route_tracker import last_route_text
-from screen_session import activate_screen_sight, deactivate_screen_sight, screen_sight_status
+from screen_session import activate_screen_sight, deactivate_screen_sight, screen_sight_status, toggle_screen_sight
 from session_compactor import inspect_session_context
 from self_healing import self_heal_text
 from telegram_status import command_help, status_text
 from telegram_voice_state import voice_enabled, voice_text
-from vision_session import activate_guided_sight, guided_sight_status
+from vision_session import guided_sight_status, toggle_guided_sight
 
 
 @dataclass(frozen=True)
@@ -36,7 +36,7 @@ def bot_commands() -> list[BotCommand]:
         BotCommand("help", "Show Maya shortcuts"),
         BotCommand("status", "Show Maya status"),
         BotCommand("imac", "Turn iMac mode on or off"),
-        BotCommand("see", "Turn camera guidance on"),
+        BotCommand("see", "Toggle camera guidance on or off"),
         BotCommand("screen", "Turn screen awareness on or off"),
         BotCommand("project", "Show or close active project"),
         BotCommand("memory", "Show or manage memory"),
@@ -55,7 +55,7 @@ async def command_to_text(db_path: str, parsed: ParsedCommand) -> str:
     if name == "remember":
         return _remember_text(parsed.args)
     if name == "see":
-        return await activate_guided_sight(db_path)
+        return await toggle_guided_sight(db_path)
     if name == "screen":
         return await _screen_command_text(db_path, parsed.args)
     if name == "project":
@@ -102,7 +102,7 @@ async def command_to_text(db_path: str, parsed: ParsedCommand) -> str:
         return await voice_text(db_path, parsed.args)
     if name == "help":
         return command_help()
-    return command_help()
+    return f"/{name} is not in the command list. Use /help to see available commands."
 
 
 def _remember_text(args: str) -> str:
@@ -133,8 +133,8 @@ def _screen_text(args: str) -> str:
 async def _screen_command_text(db_path: str, args: str) -> str:
     mode = args.lower().strip()
     if mode in {"off", "close", "stop"}:
-        return await deactivate_screen_sight(db_path)
-    return _screen_text(args) if args else await activate_screen_sight(db_path)
+        return "Use /screen to toggle screen awareness on or off."
+    return _screen_text(args) if args else await toggle_screen_sight(db_path)
 
 
 def _imac_text(args: str) -> str:
@@ -158,4 +158,3 @@ async def _memory_text(db_path: str, args: str) -> str:
     if lowered in {"cleanup", "clean"}:
         return await cleanup_stale_memory(db_path)
     return await memory_sources_text(db_path, cleaned)
-

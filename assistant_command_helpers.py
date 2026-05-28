@@ -1,5 +1,7 @@
 def confirmation_decision(text: str) -> str | None:
     lowered = text.lower().strip().rstrip(".!?")
+    if _looks_like_user_request(lowered):
+        return None
     approve = {"yes", "y", "yeah", "yep", "sure", "okay", "ok", "go", "go ahead", "do it"}
     decline = {"no", "n", "nope", "cancel", "stop", "no thanks", "no thank you"}
     later = {"later", "not now", "maybe later", "defer"}
@@ -12,13 +14,27 @@ def confirmation_decision(text: str) -> str | None:
     return None
 
 
+def _looks_like_user_request(text: str) -> bool:
+    request_markers = (
+        " cakap", " speak", " reply", " write", " create", " make", " tell",
+        " buat", " karang", " explain", " summarize", " open", " show",
+    )
+    if text in {"okay", "ok", "yes", "sure", "go ahead", "do it"}:
+        return False
+    return any(marker in f" {text}" for marker in request_markers)
+
+
 def direct_key(text: str) -> str:
     return text.lower().strip().rstrip("?.! ")
 
 
 def is_preference_query(query: str) -> bool:
     lowered = query.lower()
-    return "preference" in lowered or "prefer" in lowered
+    markers = (
+        "preference", "prefer", "style", "tone", "voice", "telegram",
+        "imac", "communication", "reply", "response", "format",
+    )
+    return any(marker in lowered for marker in markers)
 
 
 def empty_preference_memory_reply(query: str) -> str:
@@ -31,6 +47,11 @@ def empty_preference_memory_reply(query: str) -> str:
 
 
 def format_memory_reply(query: str, snippets: list[str], is_preference: bool) -> str:
+    snippets = filter_user_visible_memory(snippets)
+    if not snippets:
+        if is_preference:
+            return empty_preference_memory_reply(query)
+        return "I don't have that saved in memory yet."
     if is_preference:
         scope = preference_scope(query)
         if len(snippets) == 1:
@@ -48,3 +69,21 @@ def preference_scope(query: str) -> str:
     if "imac" in lowered:
         return "iMac preferences"
     return "your preferences"
+
+
+def filter_user_visible_memory(snippets: list[str]) -> list[str]:
+    return [item for item in snippets if is_user_visible_memory(item)]
+
+
+def is_user_visible_memory(value: str) -> bool:
+    lowered = str(value).lower().strip()
+    if not lowered:
+        return False
+    if lowered.startswith("/users/") or "/desktop/maya/" in lowered:
+        return False
+    file_extensions = (".md", ".docx", ".pptx", ".xlsx", ".svg", ".png", ".jpg", ".jpeg", ".pdf")
+    if any(ext in lowered for ext in file_extensions):
+        return False
+    if lowered == "you are maya, you are the one who see":
+        return False
+    return True

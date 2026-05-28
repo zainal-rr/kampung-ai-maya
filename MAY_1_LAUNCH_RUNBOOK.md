@@ -16,7 +16,7 @@ Keep the system conservative before the keys are tested.
 8) `ENABLE_MUDRA_ADAPTER=0`
 9) `ENABLE_AGENT_RUNTIME=1`
 10) `ENABLE_ROUTINES=1`
-11) `MAYA_WAKE_WINDOW_SECONDS=5`
+11) `XAI_VOICE_AGENT_IDLE_SECONDS=5`
 12) `ENABLE_XAI_VOICE_AGENT=0` until the dedicated live speech-to-speech path is tested.
 13) `ENABLE_OMI_ADAPTER=0` and `ENABLE_MUDRA_ADAPTER=0` stay off until the real hardware is present.
 
@@ -98,9 +98,11 @@ Then check:
 
 ## 6. Telegram Tests
 
+Use `KAMPUNG_AI_LIVE_API_TEST_CHECKLIST.md` as the detailed checklist for live lane testing. The list below is the broad runbook sequence.
+
 Send these in Telegram.
 
-1) `hello maya`
+1) `hello maya` as a normal text greeting
 2) `tell me my preference`
 3) `Remember that Telegram replies should stay short unless the task is complex`
 4) `what did you learn from me today`
@@ -123,14 +125,30 @@ Only after text and provider smoke pass:
 1) Keep `TELEGRAM_VOICE_REPLIES=1`, `TELEGRAM_REQUIRE_ARA=1`, and `TELEGRAM_VOICE_LOCKED=1`.
 2) Send a short Telegram prompt and confirm the voice note sounds like Ara.
 3) Send a short Telegram voice note and confirm it routes like typed Telegram text.
-4) Set `ENABLE_IMAC_CHANNEL=1` only when you are ready to test local speech.
-5) Set `ENABLE_XAI_VOICE_AGENT=1` and `XAI_VOICE_AGENT_MODE=real` only for the live speech-to-speech test.
-6) Say a local wake phrase, then speak the actual request into the Grok Voice Agent session.
-7) Keep Grok Voice Agent as an active wake session only: local wake detection listens for `Hey Maya`, `Good morning Maya`, `Hello Maya`, and `Maya`; the paid session starts only after the wake phrase, stays in the same conversation if Zainal speaks again within 5 seconds, closes after 5 seconds of silence, and reopens on the next wake phrase.
-8) Keep `XAI_VOICE_AGENT_MODE=stub` until the prepared real websocket transport has been tested with the live xAI key.
-9) If latency or voice quality is bad, set `ENABLE_IMAC_CHANNEL=0` again and keep testing through Telegram.
+4) Keep `ENABLE_IMAC_CHANNEL=0` while wake detection is still being hardened.
+5) Keep the old `ffmpeg` file-capture hotkey path as diagnostic only. It proved too clunky for natural iMac voice.
+6) Next local voice implementation should use `Option + Space` to open a realtime Grok Voice Agent websocket session.
+7) Stream microphone audio chunks to Grok, use server-side turn detection, and stream Ara audio back as it arrives.
+8) Press `Option + Escape` if the streaming session should stop immediately.
+9) Do not use always-on voice wake for the pre-travel test window. Mudra pinch becomes the preferred physical manual trigger after hardware arrives. No voice wake activation.
+10) If realtime local voice is not ready, keep testing through Telegram and leave the iMac voice path off.
 
-## 8. Rollback
+## 8. Travel Testing Window: 25 May to 8 June 2026
+
+Use `KAMPUNG_AI_TRAVEL_TEST_CHECKLIST.md` while Zainal is away from the iMac.
+
+1) Keep the iMac powered on and connected.
+2) Treat Telegram as the main live testing surface.
+3) Use Codex mobile only for debugging if Telegram reveals a bug.
+4) Use Splashtop Streamer as the remote iMac maintenance path for restarts, visual file checks, and confirming the machine is online.
+5) Do not treat Splashtop audio as proof that the local iMac speech-to-speech path is good.
+6) Do not actively test local iMac speech-to-speech while away.
+7) Avoid `/screen` and `/see` unless intentionally checking the remote iMac state.
+8) Keep `ENABLE_OMI_ADAPTER=0` and `ENABLE_MUDRA_ADAPTER=0` until the real hardware is present and Zainal is back.
+9) If local iMac voice is not fully stable before leaving, keep `ENABLE_XAI_VOICE_AGENT=0` during the away window.
+10) Capture Maya's reply, `/route`, `/status`, and any generated file when a remote test behaves oddly.
+
+## 9. Rollback
 
 If anything feels unstable:
 
@@ -140,7 +158,7 @@ If anything feels unstable:
 4) Re-run `doctor.py`.
 5) Check `/Users/zainalabidinjamal/projects/kampung-ai/logs/error.log`.
 
-## 9. Go-Live Rule
+## 10. Go-Live Rule
 
 Maya is live only when these are true:
 
@@ -148,4 +166,4 @@ Maya is live only when these are true:
 2) `provider_smoke.py` passes for the lanes being enabled.
 3) `learning_smoke.py` passes.
 4) Telegram replies feel fast and natural.
-5) The iMac voice loop is enabled only after Grok Voice Agent speech-to-speech and Ara output are proven.
+5) The iMac voice loop is enabled only after manual-trigger Grok Voice Agent speech-to-speech and Ara output are proven.

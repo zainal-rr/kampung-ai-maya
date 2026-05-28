@@ -1,9 +1,13 @@
 import asyncio
+import os
 
 from activation import WakeWindow
 from assistant import KampungAssistant
 from imac_voice_policy import decide_imac_voice_route
-from speech_input import build_transcript_source_from_env, build_wake_transcript_source_from_env
+from speech_input import (
+    build_transcript_source_from_env,
+    build_wake_transcript_source_from_env,
+)
 from voice_agent_session import build_voice_agent_session
 
 
@@ -26,12 +30,14 @@ class LocalVoiceChannel:
             if self.wake_window.active and self.voice_agent.enabled:
                 await self._handle_policy_turn(self.transcript_source)
                 continue
-            source = self.transcript_source if self.wake_window.active else self.wake_source
+            source = await self._current_source()
             transcript = (await source.listen()).strip()
             if not transcript:
                 print("maya-imac> no speech captured")
                 await self.voice_agent.close_if_idle()
                 continue
+            if os.getenv("MAYA_WAKE_DEBUG", "0") == "1":
+                print(f"maya-imac-wake-debug> {transcript[:80]}")
             if transcript.lower() in {"exit", "quit"}:
                 await self.voice_agent.close("local channel stopped")
                 self.running = False
@@ -79,3 +85,8 @@ class LocalVoiceChannel:
             routed = "[sight]" + transcript if decision.route == "gemini" else transcript
             response = await self.assistant.handle_text(routed, channel="imac", speak_reply=True)
         print(f"maya-imac-agent> {response}")
+
+    async def _current_source(self):
+        if self.wake_window.active:
+            return self.transcript_source
+        return self.wake_source

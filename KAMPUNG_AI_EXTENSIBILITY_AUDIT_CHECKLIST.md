@@ -61,6 +61,10 @@ This checklist tracks the Hermes comparison follow-up: MCP ecosystem, skill impo
 10) [x] Create imported skill manifest.
 11) [x] Do not activate imported skills automatically.
 12) [x] Add import smoke test.
+13) [x] Support `npx skills add owner/repo`.
+14) [x] Run `npx` imports in a temporary folder.
+15) [x] Reject unsafe package strings.
+16) [x] Import external skills as proposed only.
 
 ## 4) Starter Skill Catalog
 

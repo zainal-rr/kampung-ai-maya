@@ -106,6 +106,8 @@ def cached_result(row: dict) -> HarnessToolResult:
         requires_approval=bool(data.get("requires_approval") or False),
         next_step=str(data.get("next_step") or ""),
         keep_open=bool(data.get("keep_open") or False),
+        model_lane=str(data.get("model_lane") or ""),
+        cost_recorded=bool(data.get("cost_recorded") or False),
     )
 
 
@@ -123,5 +125,7 @@ def _result_json(result: HarnessToolResult) -> str:
             "requires_approval": result.requires_approval,
             "next_step": result.next_step,
             "keep_open": result.keep_open,
+            "model_lane": result.model_lane,
+            "cost_recorded": result.cost_recorded,
         }
     )

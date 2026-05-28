@@ -32,6 +32,7 @@ async def main() -> None:
             _require(choices and "more than one" in choices.lower(), "multiple choice missing")
             selected = await router.handle("2", "telegram")
             _require(selected and "continued" in selected, "selected checkpoint did not resume")
+            _require(selected.startswith("Continuing: general"), "selected checkpoint did not announce target")
             active = await list_active_runs(db_path)
             _require(len(active) == 3, "resume should not close other active workflows")
         finally:

@@ -40,12 +40,31 @@ TELEGRAM_FAST_SYSTEM_PROMPT = (
     "you to revisit them. The current user message is the only request to answer."
 )
 
+TELEGRAM_VOICE_SYSTEM_PROMPT = (
+    "You are Maya replying as a Telegram voice note. Speak like a real person, "
+    "not like a document. Start with the answer and keep it conversational. Use "
+    "short natural sentences with a little warmth. Do not use numbered lists, "
+    "lettered subpoints, headings, markdown, or status-report phrasing unless the "
+    "user explicitly asks for steps or an outline. Avoid provider names and internal "
+    "tags. Keep most replies to a few spoken sentences, but answer the actual "
+    "question fully enough to be useful. Mirror the current user message language. "
+    "Use recent thread context to resolve short follow-up questions when it helps, "
+    "but do not drag in unrelated topics. The current user message is the only "
+    "request to answer."
+)
 
-def delivery_instruction(channel: str) -> str:
+
+def delivery_instruction(channel: str, input_type: str = "text") -> str:
     if channel == "imac":
         return (
         "This reply is for live iMac speech. Be warm, natural, and brief. "
         "Usually use one short sentence unless I ask for detail. Mirror my current language."
+        )
+    if channel == "telegram" and input_type == "voice note":
+        return (
+            "This reply will be spoken back as a Telegram voice note. Sound natural and "
+            "conversational. Do not use numbered or lettered outlines unless I ask for steps. "
+            "Mirror my current language."
         )
     return (
         "This reply is for Telegram text. Sound like Maya: warm, direct, lightly playful, "

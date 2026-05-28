@@ -48,11 +48,16 @@ async def main() -> None:
         see_reply = await command_to_text(db_path, parse_command("/see"))
         _require("visual help" in see_reply or "I can see now" in see_reply, "see did not activate sight")
         _require(TelegramChannel._is_direct_command_reply(see_reply), "/see should be direct")
+        see_toggle = await command_to_text(db_path, parse_command("/see"))
+        _require("stopped seeing" in see_toggle, "see did not toggle off")
+        _require(TelegramChannel._is_direct_command_reply(see_toggle), "/see toggle off should be direct")
         screen_reply = await command_to_text(db_path, parse_command("/screen"))
         _require(screen_reply == "I can see your screen now.", "screen did not activate")
         _require(TelegramChannel._is_direct_command_reply(screen_reply), "/screen should be direct")
         screen_off = await command_to_text(db_path, parse_command("/screen off"))
-        _require("stopped looking" in screen_off, "screen off did not deactivate")
+        _require("Use /screen to toggle" in screen_off, "screen off should point to toggle")
+        screen_toggle = await command_to_text(db_path, parse_command("/screen"))
+        _require("stopped looking" in screen_toggle, "screen did not toggle off")
         screen_question = await command_to_text(db_path, parse_command("/screen explain this slide"))
         _require(screen_question == "look at my screen: explain this slide", "/screen args did not map")
         _require(await command_to_text(db_path, parse_command("/newtopic")) == "new topic", "newtopic did not map")
@@ -86,6 +91,13 @@ async def main() -> None:
         _require("Self heal check:" in selfheal, "selfheal did not run")
         help_text = await command_to_text(db_path, parse_command("/help"))
         _require("Maya commands:" in help_text and "/openimac" in help_text, "help did not show full command map")
+        unknown = await command_to_text(db_path, parse_command("/Desktop"))
+        _require("not in the command list" in unknown, "unknown command should be short")
+        _require(TelegramChannel._is_direct_command_reply(unknown), "unknown command should be direct")
+
+        channel = TelegramChannel("fake-token", _FakeAssistant(db_path))
+        await channel.handle_message(_FakeUpdate(), _FakeContext())
+        await channel.handle_command(_FakeUpdate(), _FakeContext())
         print("telegram_commands_smoke: ok")
 
 
@@ -101,6 +113,20 @@ async def _init(db_path: str) -> None:
 def _require(condition: bool, message: str) -> None:
     if not condition:
         raise AssertionError(message)
+
+
+class _FakeUpdate:
+    effective_message = None
+    effective_chat = None
+
+
+class _FakeContext:
+    pass
+
+
+class _FakeAssistant:
+    def __init__(self, db_path: str):
+        self.db_path = db_path
 
 
 if __name__ == "__main__":

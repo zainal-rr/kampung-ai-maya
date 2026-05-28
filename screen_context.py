@@ -24,6 +24,7 @@ APP_ALIASES = {
 class ScreenContext:
     frontmost: str = "unknown"
     running_apps: tuple[str, ...] = ()
+    visible_apps: tuple[str, ...] = ()
     requested_app: str = ""
     resolved_app: str = ""
     focused_app: str = ""
@@ -35,6 +36,7 @@ class ScreenContext:
             "MacOS app state:",
             f"frontmost app before capture: {self.frontmost}",
             f"running apps from OS: {apps}",
+            f"visible window apps from OS: {', '.join(self.visible_apps[:20]) or 'unknown'}",
         ]
         if self.requested_app:
             lines.append(f"named app requested by user: {self.requested_app}")
@@ -56,13 +58,14 @@ class ScreenContextProvider:
             self._frontmost(),
             self._running_apps(),
         )
+        visible = await self._visible_window_apps()
         requested = self._requested_app(request)
         resolved = self._match_app(requested, running, frontmost)
         if requested and self._should_focus(request) and resolved:
             error = await self._focus(resolved)
             new_frontmost = await self._frontmost()
-            return ScreenContext(new_frontmost, tuple(running), requested, resolved, "" if error else resolved, error)
-        return ScreenContext(frontmost, tuple(running), requested, resolved)
+            return ScreenContext(new_frontmost, tuple(running), tuple(visible), requested, resolved, "" if error else resolved, error)
+        return ScreenContext(frontmost, tuple(running), tuple(visible), requested, resolved)
 
     async def _frontmost(self) -> str:
         try:
@@ -76,6 +79,35 @@ class ScreenContextProvider:
             return [app for app in apps if app not in {"osascript", "System Events"}]
         except Exception:
             return []
+
+    async def _visible_window_apps(self) -> list[str]:
+        try:
+            return await asyncio.to_thread(self._visible_window_apps_sync)
+        except Exception:
+            return []
+
+    def _visible_window_apps_sync(self) -> list[str]:
+        script = (
+            'tell application "System Events"\n'
+            "set appNames to {}\n"
+            "repeat with p in (every process whose background only is false)\n"
+            "try\n"
+            "set pname to name of p\n"
+            "repeat with w in windows of p\n"
+            "set minimized to false\n"
+            'try\nset minimized to value of attribute "AXMinimized" of w\nend try\n'
+            "if minimized is false then\n"
+            "copy pname to end of appNames\n"
+            "exit repeat\n"
+            "end if\n"
+            "end repeat\n"
+            "end try\n"
+            "end repeat\n"
+            "return appNames\n"
+            "end tell"
+        )
+        apps = self.bridge._run_applescript(script)
+        return [item.strip() for item in apps.split(",") if item.strip() and item.strip() not in {"osascript", "System Events"}]
 
     async def _focus(self, app: str) -> str:
         try:

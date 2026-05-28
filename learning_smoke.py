@@ -27,6 +27,12 @@ async def main() -> None:
         )
         _require("saved" in explicit.lower(), "explicit lesson was not saved")
 
+        comma_remember = await assistant.handle_text(
+            "Remember, my tastiest fruit is mangosteen.",
+            "telegram",
+        )
+        _require("saved" in comma_remember.lower(), "remember with comma was not saved")
+
         implicit = await assistant.handle_text("that sounds too formal", "telegram")
         _require("do you want me to save it" in implicit.lower(), "implicit lesson did not ask first")
 
@@ -47,9 +53,11 @@ async def main() -> None:
         preferences = await list_preferences(db_path, limit=10)
         lessons = await list_lessons(db_path, limit=10)
         context = await MemoryService(db_path).build_prompt_context("keep Telegram replies short")
+        fruit_context = await MemoryService(db_path).build_prompt_context("what is my test fruit")
         _require(len(preferences) >= 2, "preferences were not written")
         _require(len(lessons) >= 2, "lessons were not logged")
         _require("short telegram replies" in context.lower(), "retrieval did not include saved preference")
+        _require("mangosteen" in fruit_context.lower(), "fruit memory was not retrievable")
 
         print("learning_smoke: ok")
         print(f"preferences: {len(preferences)}")

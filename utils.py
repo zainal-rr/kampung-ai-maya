@@ -130,6 +130,24 @@ class OSBridge:
         self._ensure_window(app_name)
         self._verify_frontmost(app_name)
 
+    def open_url_new_tab(self, url: str, app_name: str = "Google Chrome"):
+        """Opens a URL in a fresh browser tab and brings the browser forward."""
+        if _test_mode():
+            return
+        safe_url = url.replace("\\", "\\\\").replace('"', "%22")
+        safe_app = app_name.replace('"', '\\"')
+        script = (
+            f'tell application "{safe_app}"\n'
+            "activate\n"
+            "if (count of windows) is 0 then make new window\n"
+            f'set newTab to make new tab at end of tabs of front window with properties {{URL:"{safe_url}"}}\n'
+            "set active tab index of front window to (count of tabs of front window)\n"
+            "set index of front window to 1\n"
+            "end tell"
+        )
+        self._run_applescript(script)
+        self._verify_frontmost(app_name)
+
     def open_file(self, path: str, app_name: str | None = None):
         """Opens a local file, optionally with a specific app."""
         if _test_mode():

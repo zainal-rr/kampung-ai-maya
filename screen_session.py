@@ -17,6 +17,12 @@ async def activate_screen_sight(db_path: str, minutes: int | None = None) -> str
     return "I can see your screen now."
 
 
+async def toggle_screen_sight(db_path: str) -> str:
+    if await screen_sight_active(db_path):
+        return await deactivate_screen_sight(db_path)
+    return await activate_screen_sight(db_path)
+
+
 async def screen_sight_active(db_path: str) -> bool:
     raw = await get_preference(db_path, SESSION_KEY)
     if not raw:

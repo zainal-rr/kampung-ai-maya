@@ -41,6 +41,9 @@ START_MARKERS = (
     "create an xlsx",
     "create an md",
     "make a markdown",
+    "draft ",
+    "prepare ",
+    "generate ",
     "draw ",
     "create drawing",
     "open project",
@@ -72,12 +75,40 @@ FOLLOWUP_MARKERS = (
 STOP_MARKERS = {"stop workflow", "close workflow", "end workflow", "cancel workflow"}
 RESUME_MARKERS = {"what are you working on", "where did we stop", "what is pending", "workflow status"}
 ARTIFACT_MARKERS = {"what files did you create", "show me the latest artifact", "which screenshot did you use"}
+COMMAND_BYPASS_MARKERS = {
+    "open the last document",
+    "open latest document",
+    "what was the last document you created",
+    "what is the last document you created",
+    "what was the latest document you created",
+    "what is the latest document you created",
+    "what document did you just create",
+    "what document did you create just now",
+    "what file did you just create",
+    "what file did you create just now",
+    "what did you just create",
+    "what did you create just now",
+    "what document did you create",
+    "what file did you create",
+    "what was the last document",
+    "what is the last document",
+    "last document",
+    "latest document",
+}
+FILE_OPEN_BYPASS_RE = re.compile(
+    r"^(?:open|show(?: me)?)\s+(?:latest\s+|the\s+latest\s+)?"
+    r"(?:word|docx|document|powerpoint|presentation|pptx|excel|spreadsheet|xlsx|markdown|md)\b",
+    re.I,
+)
 
 
 class HarnessRouter:
     def __init__(self, db_path: str):
         self.db_path = db_path
         self.runner = HarnessGraphRunner(db_path)
+        self.last_lane = "LangGraph harness"
+        self.last_reason = "persistent workflow"
+        self.last_cost_recorded = False
 
     async def handle(self, text: str, channel: str) -> str | None:
         cleaned = " ".join(text.strip().split())
@@ -87,12 +118,16 @@ class HarnessRouter:
         if decision:
             return await self._confirmation(decision, channel)
         lowered = cleaned.lower()
+        lowered_key = lowered.rstrip("?.! ")
+        if lowered_key in COMMAND_BYPASS_MARKERS or FILE_OPEN_BYPASS_RE.match(cleaned):
+            return None
         selection = await self._selection(cleaned, channel)
         if selection is not None:
             return selection
         if lowered in STOP_MARKERS:
             return await self._stop(channel)
-        if lowered in RESUME_MARKERS:
+        if lowered in RESUME_MARKERS or lowered == "continue":
+            await self._save_resume_choices(channel)
             return await build_resume_summary(self.db_path, channel)
         if lowered in ARTIFACT_MARKERS:
             return await self._artifact_summary(channel)
@@ -127,11 +162,14 @@ class HarnessRouter:
             workflow_type=workflow_type,
         )
         result = await self.runner.run(state)
+        self._remember_route(result)
         return str(result.get("final_response") or "I started the workflow.")
 
     async def _continue(self, active: dict, text: str, channel: str) -> str:
         result = await self.runner.resume(active, text)
-        return str(result.get("final_response") or "I continued the workflow.")
+        self._remember_route(result)
+        response = str(result.get("final_response") or "I continued the workflow.")
+        return _continuing_prefix(active) + "\n" + response
 
     async def _confirmation(self, decision: str, channel: str) -> str | None:
         active = await get_active_run(self.db_path, channel)
@@ -147,6 +185,7 @@ class HarnessRouter:
             return "Okay, I won't do that."
         await resolve_approval(self.db_path, active["run_id"], "approved")
         result = await self.runner.resume(active, "approved", approval_result="approved")
+        self._remember_route(result)
         return str(result.get("final_response") or "Done. I continued after your approval.")
 
     async def _stop(self, channel: str) -> str:
@@ -183,6 +222,17 @@ class HarnessRouter:
                 return f"Last file: {item['path']}"
         return "No file artifact is available yet."
 
+    async def _save_resume_choices(self, channel: str) -> None:
+        runs = await list_active_runs(self.db_path, channel)
+        if len(runs) <= 1:
+            return
+        await upsert_preference(
+            self.db_path,
+            f"maya_harness_choices:{channel}",
+            ",".join(str(run["run_id"]) for run in runs),
+            source="harness",
+        )
+
     async def _selection(self, text: str, channel: str) -> str | None:
         raw = await get_preference(self.db_path, f"maya_harness_choices:{channel}")
         if not raw:
@@ -202,6 +252,11 @@ class HarnessRouter:
             return "That workflow is not available anymore."
         return await self._continue(run, "continue", channel)
 
+    def _remember_route(self, result: dict) -> None:
+        self.last_lane = str(result.get("model_lane") or "LangGraph harness")
+        self.last_reason = "persistent workflow"
+        self.last_cost_recorded = bool(result.get("cost_recorded"))
+
 
 def _is_start(lowered: str) -> bool:
     return any(marker in lowered for marker in START_MARKERS)
@@ -215,3 +270,9 @@ def _thread_id(workflow_type: str, text: str, run_id: str) -> str:
     if run_id.startswith("task_"):
         return f"harness:background:{run_id.removeprefix('task_')}"
     return f"harness:{run_id}"
+
+
+def _continuing_prefix(active: dict) -> str:
+    workflow = str(active.get("workflow_type") or "workflow")
+    goal = str(active.get("goal") or "").strip()
+    return f"Continuing: {workflow}" + (f" for {goal}." if goal else ".")

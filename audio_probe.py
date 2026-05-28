@@ -3,7 +3,12 @@ import os
 import shutil
 import subprocess
 
+from dotenv import load_dotenv
+
+from audio_devices import bin_path, resolve_audio_input
 from speech_input import detect_avfoundation_audio_devices
+
+load_dotenv()
 
 
 def check_command(name: str) -> str | None:
@@ -12,7 +17,7 @@ def check_command(name: str) -> str | None:
 
 async def try_record(audio_device: str, seconds: int = 1) -> tuple[bool, str]:
     process = await asyncio.create_subprocess_exec(
-        "ffmpeg",
+        bin_path("ffmpeg"),
         "-y",
         "-f",
         "avfoundation",
@@ -41,14 +46,23 @@ async def main():
     devices = detect_avfoundation_audio_devices()
     print(f"visible_avfoundation_audio_devices: {devices}")
 
-    target = os.getenv("IMAC_AUDIO_INPUT", ":0")
-    print(f"configured_input: {target}")
+    raw_targets = (
+        os.getenv("IMAC_AUDIO_INPUT_NAMES")
+        or os.getenv("IMAC_AUDIO_INPUTS")
+        or os.getenv("IMAC_AUDIO_INPUT", ":0")
+    )
+    targets = [resolve_audio_input(target) for target in raw_targets.split(",") if target.strip()]
+    print(f"configured_inputs: {targets}")
 
-    ok, details = await try_record(target)
-    print(f"record_test_ok: {ok}")
-    if details:
-        print("record_test_details:")
-        print(details)
+    ok = False
+    for target in targets:
+        ok, details = await try_record(target)
+        print(f"record_test_{target}_ok: {ok}")
+        if details:
+            print(f"record_test_{target}_details:")
+            print(details)
+        if ok:
+            break
 
     if ok:
         print("recommended_imac_input_mode=mic")

@@ -30,6 +30,10 @@ BUILT_IN_SKILLS = (
     SkillDefinition("drawing", "Drawing", "Create simple SVG drawings locally, with optional Gemini image generation when enabled.", "safe", "none", ("draw", "diagram", "image", "moon")),
     SkillDefinition("web_browse", "Web Browse", "Open browser searches, inspect active Chrome page text, and click visible non-sensitive browser targets.", "bounded", "policy_guard", ("browse", "internet", "web", "search", "website", "chrome", "safari")),
     SkillDefinition("office_documents", "Office Documents", "Work with Word, Excel, and PowerPoint through local files and macOS app control.", "bounded", "policy_guard", ("word", "docx", "document", "excel", "xlsx", "spreadsheet", "powerpoint", "pptx", "presentation", "slides")),
+    SkillDefinition("word_artifact_quality", "Word Artifact Quality", "Quality standards and review gates for Maya-created Word documents.", "bounded", "policy_guard", ("word", "docx", "document", "report", "itinerary")),
+    SkillDefinition("excel_artifact_quality", "Excel Artifact Quality", "Quality standards and review gates for Maya-created Excel workbooks.", "bounded", "policy_guard", ("excel", "xlsx", "spreadsheet", "tracker", "budget")),
+    SkillDefinition("powerpoint_artifact_quality", "PowerPoint Artifact Quality", "Quality standards and review gates for Maya-created PowerPoint decks.", "bounded", "policy_guard", ("powerpoint", "pptx", "presentation", "slides", "deck")),
+    SkillDefinition("html_app_artifact_quality", "HTML App Artifact Quality", "Quality standards and review gates for Maya-created single-file HTML apps.", "bounded", "policy_guard", ("html", "web app", "single-file app", "mini app")),
     SkillDefinition("travel_research", "Travel Research", "Search flight options, compare prices, dates, baggage, and timing before any booking.", "bounded", "policy_guard", ("flight", "flights", "ticket", "airline", "travel", "booking")),
     SkillDefinition("network_troubleshooting", "Network Troubleshooting", "Run basic local network checks and create Word troubleshooting notes when the explanation is lengthy.", "bounded", "policy_guard", ("network", "wifi", "internet", "router", "dns", "troubleshoot")),
     SkillDefinition("checkout_guard", "Checkout Guard", "Stop before purchases, payments, bookings, uploads, or private data exposure unless Zainal confirms.", "sensitive", "chat_confirmation", ("buy", "book", "pay", "checkout", "passport", "card", "payment")),
@@ -152,10 +156,15 @@ async def ensure_builtin_skill_manifests(db_path: str) -> None:
 
 
 def _manifest_for_builtin(skill: SkillDefinition) -> SecurityManifest:
-    permissions = {"create_artifacts": skill.skill_id in {"history_summary", "office_documents", "drawing"}}
+    quality_artifact_skills = {
+        "word_artifact_quality", "excel_artifact_quality",
+        "powerpoint_artifact_quality", "html_app_artifact_quality",
+    }
+    artifact_skills = {"history_summary", "office_documents", "drawing", *quality_artifact_skills}
+    permissions = {"create_artifacts": skill.skill_id in artifact_skills}
     if skill.skill_id in {"memory_lookup"}:
         permissions["read_files"] = False
-    if skill.skill_id in {"file_write", "workspace_create", "office_documents", "drawing"}:
+    if skill.skill_id in {"file_write", "workspace_create", "office_documents", "drawing", *quality_artifact_skills}:
         permissions["write_files"] = True
     if skill.skill_id in {"web_browse", "travel_research", "sight_research"}:
         permissions.update({"browse_web": True, "browser_click": True})

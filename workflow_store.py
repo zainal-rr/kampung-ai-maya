@@ -9,7 +9,8 @@ from storage_tasks import task_dict
 
 TASK_SELECT = (
     "tasks.id, title, details, tasks.status, priority, channel, action_type, "
-    "autonomy_mode, payload, due_at, last_error, result, tasks.created_at, tasks.updated_at"
+    "autonomy_mode, payload, due_at, tasks.last_error AS last_error, "
+    "tasks.result AS result, tasks.created_at, tasks.updated_at"
 )
 
 

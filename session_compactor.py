@@ -14,6 +14,7 @@ from context_layers import (
 )
 from context_prompt import format_context_blocks
 from context_tokens import estimate_row_tokens, split_older_rows_by_token_budget
+from permission_policy import contains_sensitive_info
 from session_memory_store import (
     init_session_memory_db,
     latest_session_summary,
@@ -158,7 +159,7 @@ async def _relevant_summaries(db_path: str, query: str, limit: int) -> list[dict
         return []
     tokens = _tokens(query)
     if not tokens:
-        return summaries[:limit]
+        return []
     scored = []
     for item in summaries:
         summary = str(item["summary"])
@@ -192,6 +193,8 @@ def _summarize(rows: list[dict[str, str]], message_count: int) -> str:
 def _topic_lines(rows: list[dict[str, str]]) -> list[str]:
     counter = Counter()
     for row in rows:
+        if contains_sensitive_info(row["content"]):
+            continue
         counter.update(_tokens(row["content"]))
     topics = [word for word, _ in counter.most_common(5)]
     if not topics:
@@ -203,6 +206,8 @@ def _topic_key(rows: list[dict[str, str]]) -> str:
     counter = Counter()
     for row in rows:
         if row["role"] == "user":
+            if contains_sensitive_info(row["content"]):
+                continue
             counter.update(_tokens(row["content"]))
     if not counter:
         return "general"
@@ -221,6 +226,8 @@ def _user_direction_lines(rows: list[dict[str, str]]) -> list[str]:
             continue
         content = " ".join(row["content"].split())
         if not content or content.lower() in FILLER_LINES:
+            continue
+        if contains_sensitive_info(content):
             continue
         if len(content) > 130:
             content = content[:127].rstrip() + "..."

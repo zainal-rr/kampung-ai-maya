@@ -24,6 +24,8 @@ async def main() -> None:
         dry = await WeeklyMemoryDistiller(db_path).run(save=False)
         _require("Provider calls used: none" in dry.summary, "dry run should not need providers")
         _require("short Telegram replies" in dry.summary, "preferences were not included")
+        _require("Recent conversation topics:" in dry.summary, "conversation topics were not summarized")
+        _require("quantum computing" in dry.summary and "spin" in dry.summary, "voice-style Telegram topics were missed")
         _require("6429253538" not in dry.summary, "internal chat id leaked into weekly memory")
         _require("Create skill scaffold" not in dry.summary, "pending scaffold leaked into open loops")
         _require(not dry.saved, "dry run should not save unless requested")
@@ -49,7 +51,11 @@ async def _init(db_path: str) -> None:
 
 
 async def _seed(db_path: str) -> None:
-    await save_history_message(db_path, 1, "user", "Remember that Telegram should stay short.")
+    await save_history_message(db_path, 1, "user", "Remember that Telegram should stay short.", "telegram")
+    await save_history_message(db_path, 1, "user", "Hi Maya, can you tell me what quantum computing is?", "telegram")
+    await save_history_message(db_path, 1, "assistant", "Quantum computing uses qubits, superposition, and entanglement.", "telegram")
+    await save_history_message(db_path, 1, "user", "What spin are you talking about?", "telegram")
+    await save_history_message(db_path, 1, "assistant", "Spin here is the quantum particle property connected to qubits.", "telegram")
     await upsert_preference(db_path, "telegram_reply_length", "short Telegram replies unless the task is complex")
     await add_lesson(
         db_path,

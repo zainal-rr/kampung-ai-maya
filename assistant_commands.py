@@ -4,9 +4,10 @@ import re
 
 from assistant_context_helpers import handle_context_command
 from activation import handle_activation_command
-from assistant_command_helpers import direct_key, empty_preference_memory_reply, format_memory_reply, is_preference_query
+from assistant_command_helpers import direct_key
 from assistant_briefing_helpers import handle_weekly_reflection
 from assistant_confirmation_helpers import resolve_pending_confirmation
+from assistant_memory_commands import handle_memory_lookup
 from assistant_skill_helpers import queue_skill_scaffold
 from assistant_task_helpers import create_sensitive_send_task, format_open_tasks, parse_task_delete_request
 from document_actions import DocumentActionRouter
@@ -17,9 +18,12 @@ from imac_workflows import ImacWorkflowRouter
 from local_actions import LocalActionRouter
 from memory_service import MemoryService
 from permission_policy import contains_sensitive_info, hard_no_private_exposure_text, is_private_exposure
+from presentation_command_helpers import handle_presentation_command
 from project_actions import ProjectActionRouter
 from routine_commands import RoutineCommandRouter
+from safety_action_commands import safety_action_reply
 from self_heal_commands import handle_self_heal_status
+from session_memory_actions import handle_session_memory_command
 from skill_registry import SkillRegistry
 from assistant_skill_commands import handle_skill_lifecycle, handle_skill_listing, handle_skill_proposals
 from storage import cancel_matching_tasks, create_task, list_preferences, list_tasks
@@ -44,15 +48,25 @@ class AssistantCommandRouter:
         self.web = WebActionRouter()
         self.routines = RoutineCommandRouter(db_path)
         self.everyday = EverydayCommandRouter(db_path)
+        self.last_lane = self.last_reason = ""
+        self.last_cost_recorded = False
 
     async def handle(self, clean_text: str, channel: str) -> str | None:
+        self.last_lane = self.last_reason = ""
+        self.last_cost_recorded = False
         if is_private_exposure(clean_text):
+            self.last_lane = "command"
+            self.last_reason = "private exposure block"
             return hard_no_private_exposure_text()
         workflow_confirmation = await self.workflows.handle_confirmation(clean_text)
         if workflow_confirmation is not None:
+            self.last_lane = "command"
+            self.last_reason = "workflow confirmation"
             return workflow_confirmation
         confirmation = await self._resolve_confirmation(clean_text, channel)
         if confirmation is not None:
+            self.last_lane = "command"
+            self.last_reason = "confirmation resolver"
             return confirmation
 
         for handler in (
@@ -60,6 +74,7 @@ class AssistantCommandRouter:
             self._handle_activation_command,
             self._handle_summary_task,
             self._handle_weekly_reflection,
+            self._handle_safety_actions,
             self._handle_everyday_commands,
             self._handle_document_actions,
             self._handle_imac_workflows,
@@ -73,6 +88,7 @@ class AssistantCommandRouter:
             self._handle_task_deletion,
             self._handle_task_listing,
             self._handle_context_window,
+            self._handle_session_memory_command,
             self._handle_preference_listing,
             self._handle_skill_listing,
             self._handle_skill_proposals,
@@ -88,7 +104,6 @@ class AssistantCommandRouter:
 
     async def _handle_activation_command(self, text: str, channel: str) -> str | None:
         return await handle_activation_command(self.db_path, text)
-
     async def _handle_reminder(self, text: str, channel: str) -> str | None:
         match = re.match(r"^(?:remind me to|create task)\s+(.+)$", text, re.IGNORECASE)
         if not match:
@@ -123,10 +138,19 @@ class AssistantCommandRouter:
 
     async def _handle_weekly_reflection(self, text: str, channel: str) -> str | None:
         return await handle_weekly_reflection(self.db_path, text, channel)
+    async def _handle_safety_actions(self, text: str, channel: str) -> str | None:
+        reply = safety_action_reply(text)
+        if reply:
+            self.last_lane = "command"
+            self.last_reason = "safety gate"
+        return reply
 
     async def _handle_everyday_commands(self, text: str, channel: str) -> str | None:
-        return await self.everyday.handle(text, channel)
-
+        reply = await self.everyday.handle(text, channel)
+        if reply:
+            self.last_lane = self.everyday.last_lane
+            self.last_reason = self.everyday.last_reason
+        return reply
     async def _handle_send_to_telegram(self, text: str, channel: str) -> str | None:
         match = re.match(r"^(?:send|share)\s+(.+?)\s+to telegram$", text, re.IGNORECASE)
         if not match:
@@ -142,9 +166,17 @@ class AssistantCommandRouter:
 
     async def _handle_local_actions(self, text: str, channel: str) -> str | None:
         return await self.actions.handle(text)
-
     async def _handle_document_actions(self, text: str, channel: str) -> str | None:
-        return await self.documents.handle(text, channel)
+        presentation = await handle_presentation_command(self.db_path, text, channel)
+        if presentation:
+            reply, self.last_lane, self.last_reason, self.last_cost_recorded = presentation
+            return reply
+        reply = await self.documents.handle(text, channel)
+        if reply and self.documents.last_model_lane:
+            self.last_lane = self.documents.last_model_lane
+            self.last_reason = "document workflow"
+            self.last_cost_recorded = self.documents.last_cost_recorded
+        return reply
 
     async def _handle_local_creation_actions(self, text: str, channel: str) -> str | None:
         return (
@@ -154,7 +186,11 @@ class AssistantCommandRouter:
         )
 
     async def _handle_project_actions(self, text: str, channel: str) -> str | None:
-        return await self.projects.handle(text, channel)
+        reply = await self.projects.handle(text, channel)
+        if reply:
+            self.last_lane = "command"
+            self.last_reason = "project mode"
+        return reply
 
     async def _handle_imac_workflows(self, text: str, channel: str) -> str | None:
         return await self.workflows.handle(text, channel)
@@ -208,6 +244,13 @@ class AssistantCommandRouter:
     async def _handle_context_window(self, text: str, channel: str) -> str | None:
         return await handle_context_command(self.db_path, text)
 
+    async def _handle_session_memory_command(self, text: str, channel: str) -> str | None:
+        reply = await handle_session_memory_command(self.db_path, text)
+        if reply:
+            self.last_lane = "command"
+            self.last_reason = "session memory"
+        return reply
+
     async def _handle_preference_listing(self, text: str, channel: str) -> str | None:
         if direct_key(text) not in {
             "show my preferences", "list my preferences", "tell me my preference",
@@ -235,20 +278,11 @@ class AssistantCommandRouter:
         return await handle_self_heal_status(self.db_path, text)
 
     async def _handle_memory_lookup(self, text: str, channel: str) -> str | None:
-        match = re.match(r"^(?:what do you remember about|search memory for|show memory about)\s+(.+)$", text, re.IGNORECASE)
-        if not match:
-            return None
-        query = match.group(1).strip()
-        preference_query = is_preference_query(query)
-        if preference_query:
-            snippets = await self.memory.search_preferences(query, limit=6)
-            if not snippets:
-                return empty_preference_memory_reply(query)
-        else:
-            snippets = await self.memory.search(query, limit=6)
-        if not snippets:
-            return "I don't have that saved in memory yet."
-        return format_memory_reply(query, snippets, preference_query)
+        reply = await handle_memory_lookup(self.memory, text)
+        if reply:
+            self.last_lane = "command"
+            self.last_reason = "memory lookup"
+        return reply
 
     async def _resolve_confirmation(self, text: str, channel: str) -> str | None:
         return await resolve_pending_confirmation(self.db_path, text, channel)

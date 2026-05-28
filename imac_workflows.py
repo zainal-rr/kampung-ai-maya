@@ -5,10 +5,12 @@ import re
 from pathlib import Path
 
 from assistant_command_helpers import confirmation_decision
+from artifact_quality import extract_docx_text, review_artifact_quality, validate_docx_path
 from browser_control import BrowserController, page_summary
 from browser_workflows import HumanBrowserWorkflowRouter
+from document_actions import DocumentActionRouter
 from network_tools import network_doc_sections, run_network_diagnostics, summarize_network
-from office_files import create_docx, create_pptx, presentation_outline, safe_slug
+from office_modern_files import create_docx
 from permission_policy import action_permission
 from storage import delete_preference, get_preference, upsert_preference
 from utils import OSBridge
@@ -25,6 +27,7 @@ class ImacWorkflowRouter:
         self.browser = BrowserController(self.bridge)
         self.human_browser = HumanBrowserWorkflowRouter(db_path, self.bridge)
         self.workspace = workspace or workspace_dir("")
+        self.documents = DocumentActionRouter(db_path, workspace=self.workspace, bridge=self.bridge)
 
     async def handle(self, text: str, channel: str) -> str | None:
         return (
@@ -122,19 +125,9 @@ class ImacWorkflowRouter:
         if action_permission("create_presentation") != "allow":
             return "I need your confirmation before creating that presentation."
         topic = match.group(1).strip()
-        path = self.workspace / "presentations" / f"{safe_slug(topic)}.pptx"
-        slides = presentation_outline(topic)
-        await asyncio.to_thread(create_pptx, path, topic.title(), slides)
-        try:
-            await asyncio.to_thread(self.bridge.open_file, str(path), "Microsoft PowerPoint")
-        except Exception as exc:
-            return f"I created the presentation at {path}, but I could not open PowerPoint: {exc}"
-        await upsert_preference(self.db_path, "maya_active_workflow", f"presentation:{path}", source="workflow")
-        return _attach_file(
-            f"I created the draft presentation and opened it in PowerPoint: {path}",
-            path,
-            channel,
-        )
+        reply = await self.documents._create_powerpoint(topic, channel)
+        await upsert_preference(self.db_path, "maya_active_workflow", "presentation:latest_document", source="workflow")
+        return reply
 
     async def _network_doc(self, text: str, channel: str) -> str | None:
         lowered = _clean(text)
@@ -146,11 +139,20 @@ class ImacWorkflowRouter:
         path = self.workspace / "reports" / "network-troubleshooting.docx"
         sections = network_doc_sections(results)
         await asyncio.to_thread(create_docx, path, "Network Troubleshooting Notes", sections)
+        local_qa = await asyncio.to_thread(validate_docx_path, path)
+        review_qa = await review_artifact_quality(self.db_path, "docx", "network troubleshooting notes", await asyncio.to_thread(extract_docx_text, path))
+        quality = local_qa.merge(review_qa)
         try:
             await asyncio.to_thread(self.bridge.open_file, str(path), "Microsoft Word")
         except Exception as exc:
             return f"I created the network notes at {path}, but I could not open Word: {exc}"
         await upsert_preference(self.db_path, "maya_active_workflow", f"network:{path}", source="workflow")
+        if not quality.passed:
+            return _attach_file(
+                f"{summarize_network(results)} I opened the troubleshooting draft in Word, but QA found: {quality.short_issue_text()}. {path}",
+                path,
+                channel,
+            )
         return _attach_file(
             f"{summarize_network(results)} I opened the troubleshooting document in Word: {path}",
             path,
@@ -158,7 +160,7 @@ class ImacWorkflowRouter:
         )
 
     async def _open_search(self, query: str) -> None:
-        await asyncio.to_thread(self.browser.open_search, query)
+        await asyncio.to_thread(self.browser.open_search_new_tab, query)
 
 
 def _clean(text: str) -> str:

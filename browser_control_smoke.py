@@ -27,6 +27,9 @@ class FakeBridge:
     def open_url(self, url: str, app_name: str = "Google Chrome") -> None:
         self.url = url
 
+    def open_url_new_tab(self, url: str, app_name: str = "Google Chrome") -> None:
+        self.new_tab_url = url
+
 
 class FakeScreen:
     def capture_once(self):
@@ -38,6 +41,8 @@ def main() -> None:
     browser = BrowserController(bridge)
     browser.open_search("flight to Penang")
     _require("flight+to+Penang" in bridge.url, "search URL was not encoded")
+    browser.open_search_new_tab("flight to Kyoto")
+    _require("flight+to+Kyoto" in bridge.new_tab_url, "new tab search URL was not encoded")
 
     page = browser.inspect_page()
     _require(page.title == "Flights", "title parse failed")

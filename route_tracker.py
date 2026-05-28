@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+import os
+
 import aiosqlite
 
 
@@ -55,11 +57,53 @@ async def last_route_text(db_path: str) -> str:
     if not row:
         return "No route recorded yet."
     cost = "yes" if row["cost_recorded"] else "no"
+    model = _model_for_lane(row["lane"])
     return (
         "Last route:\n"
         f"1) input: {row['input_type']}\n"
         f"2) lane: {row['lane']}\n"
-        f"3) reason: {row['reason']}\n"
-        f"4) cost recorded: {cost}\n"
-        f"5) time: {row['created_at']}"
+        f"3) model: {model}\n"
+        f"4) reason: {row['reason']}\n"
+        f"5) cost recorded: {cost}\n"
+        f"6) time: {row['created_at']}"
     )
+
+
+def _model_for_lane(lane: str) -> str:
+    lowered = lane.lower()
+    prefix = ""
+    if "xai stt" in lowered:
+        prefix = f"{os.getenv('XAI_VOICE_TRANSCRIPTION_MODEL', 'grok-2-audio')} + "
+    if "gemini" in lowered:
+        if "claude" in lowered:
+            gemini = os.getenv("GEMINI_FLASH_MODEL", "gemini-3-flash-preview")
+            claude = os.getenv("CLAUDE_STEWARD_MODEL", "claude-sonnet-4-6")
+            return f"{prefix}{gemini} + {claude}"
+        if "premium" in lowered or "pro" in lowered or "careful" in lowered:
+            return f"{prefix}{os.getenv('GEMINI_PREMIUM_MODEL', 'gemini-3.5-flash')}"
+        return f"{prefix}{os.getenv('GEMINI_FLASH_MODEL', 'gemini-3-flash-preview')}"
+    if "gpt" in lowered:
+        effort = os.getenv("OPENAI_COMPLEX_REASONING_EFFORT", "xhigh")
+        return f"{prefix}gpt-5.5 ({effort})"
+    if "moonshot" in lowered:
+        env_name = "KIMI_HTML_MODEL" if "html" in lowered else "KIMI_CODING_MODEL"
+        default = "moonshot-v1-8k"
+        if "claude" in lowered:
+            moonshot = os.getenv(env_name, default)
+            claude = os.getenv("CLAUDE_STEWARD_MODEL", "claude-sonnet-4-6")
+            return f"{prefix}{moonshot} + {claude}"
+        return f"{prefix}{os.getenv(env_name, default)}"
+    if "kimi" in lowered:
+        env_name = "KIMI_HTML_MODEL" if "html" in lowered else "KIMI_CODING_MODEL"
+        kimi = os.getenv(env_name) or os.getenv("KIMI_MODEL", "kimi-k2.6")
+        if "claude" in lowered:
+            claude = os.getenv("CLAUDE_STEWARD_MODEL", "claude-sonnet-4-6")
+            return f"{prefix}{kimi} + {claude}"
+        return f"{prefix}{kimi}"
+    if "claude" in lowered or "steward" in lowered:
+        return f"{prefix}{os.getenv('CLAUDE_STEWARD_MODEL', 'claude-sonnet-4-6')}"
+    if "grok" in lowered or "pulse" in lowered:
+        return f"{prefix}{os.getenv('XAI_TEXT_MODEL', 'grok-4.3')}"
+    if prefix:
+        return prefix.rstrip(" +")
+    return "none"

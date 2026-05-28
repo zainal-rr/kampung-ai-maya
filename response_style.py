@@ -6,6 +6,10 @@ from storage import list_preferences
 
 
 async def apply_reply_preferences(db_path: str, text: str) -> str:
+    text, markers = _protect_delivery_markers(text)
+    text, urls = _protect_urls(text)
+    text, code = _protect_code_spans(text)
+    text, paths = _protect_file_paths(text)
     text = _normalize_outline_markers(text)
     preferences = await list_preferences(db_path, limit=20)
     values = [item["value"] for item in preferences]
@@ -13,7 +17,10 @@ async def apply_reply_preferences(db_path: str, text: str) -> str:
         text = _strip_dashes(text)
     if _wants_no_exclamation(values):
         text = _strip_exclamations(text)
-    return text
+    text = _restore_markers(text, paths, "PATH")
+    text = _restore_markers(text, code, "CODE")
+    text = _restore_markers(text, urls, "URL")
+    return _restore_delivery_markers(text, markers)
 
 
 def format_grouped_answers(answers: list[str]) -> str:
@@ -117,3 +124,57 @@ def _looks_like_request(text: str) -> bool:
 
 def _strip_number_marker(line: str) -> str:
     return re.sub(r"^\s*\d+[\).]\s*", "", line).strip()
+
+
+def _protect_delivery_markers(text: str) -> tuple[str, list[str]]:
+    markers: list[str] = []
+
+    def replace(match: re.Match[str]) -> str:
+        markers.append(match.group(0))
+        return f"MAYAMARKER{len(markers) - 1}TOKEN"
+
+    protected = re.sub(r"^\[file:/[^\]\n]+\]\s*$", replace, text, flags=re.MULTILINE)
+    protected = re.sub(r"\[\[maya_image:[^\]]+\]\]", replace, protected)
+    return protected, markers
+
+
+def _restore_delivery_markers(text: str, markers: list[str]) -> str:
+    return _restore_markers(text, markers, "MARKER").strip()
+
+
+def _protect_urls(text: str) -> tuple[str, list[str]]:
+    markers: list[str] = []
+
+    def replace(match: re.Match[str]) -> str:
+        markers.append(match.group(0))
+        return f"MAYAURL{len(markers) - 1}TOKEN"
+
+    return re.sub(r"https?://[^\s)>\]]+", replace, text), markers
+
+
+def _protect_code_spans(text: str) -> tuple[str, list[str]]:
+    markers: list[str] = []
+
+    def replace(match: re.Match[str]) -> str:
+        markers.append(match.group(0))
+        return f"MAYACODE{len(markers) - 1}TOKEN"
+
+    return re.sub(r"`[^`\n]+`", replace, text), markers
+
+
+def _protect_file_paths(text: str) -> tuple[str, list[str]]:
+    markers: list[str] = []
+
+    def replace(match: re.Match[str]) -> str:
+        markers.append(match.group(0))
+        return f"MAYAPATH{len(markers) - 1}TOKEN"
+
+    pattern = r"(?:/Users|~/Desktop|~/Downloads|/tmp|/var|/private)/[^\s,;:]+"
+    return re.sub(pattern, replace, text), markers
+
+
+def _restore_markers(text: str, markers: list[str], kind: str) -> str:
+    restored = text
+    for index, marker in enumerate(markers):
+        restored = restored.replace(f"MAYA{kind}{index}TOKEN", marker)
+    return restored

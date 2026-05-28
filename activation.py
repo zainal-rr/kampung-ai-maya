@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 import time
 
 from storage import get_preference, upsert_preference
@@ -16,13 +17,13 @@ def wake_phrases() -> tuple[str, ...]:
 
 def split_wake_phrase(text: str) -> tuple[bool, str]:
     cleaned = " ".join(text.strip().split())
-    lowered = cleaned.lower()
     for phrase in wake_phrases():
-        if not lowered.startswith(phrase):
+        words = [re.escape(word) for word in phrase.split()]
+        pattern = r"^\s*" + r"[\s,.;!?]+".join(words) + r"\b[\s,.:;!?]*"
+        match = re.match(pattern, cleaned, flags=re.IGNORECASE)
+        if not match:
             continue
-        remainder = cleaned[len(phrase):]
-        if not remainder or remainder[0] in {" ", ",", ":"}:
-            return True, remainder.strip(" ,:")
+        return True, cleaned[match.end():].strip(" ,.:;!?")
     return False, cleaned
 
 

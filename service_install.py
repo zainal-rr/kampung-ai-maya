@@ -31,9 +31,7 @@ def install() -> None:
     PLIST_PATH.parent.mkdir(parents=True, exist_ok=True)
     with PLIST_PATH.open("wb") as file_obj:
         plistlib.dump(build_plist(), file_obj)
-    bootout()
-    subprocess.run(["launchctl", "bootstrap", domain(), str(PLIST_PATH)], check=False)
-    subprocess.run(["launchctl", "enable", f"{domain()}/{LABEL}"], check=False)
+    restart()
     print(f"Installed launch agent at {PLIST_PATH}")
 
 
@@ -52,6 +50,13 @@ def status() -> None:
         print(result.stderr.strip())
 
 
+def restart() -> None:
+    bootout()
+    subprocess.run(["launchctl", "bootstrap", domain(), str(PLIST_PATH)], check=False)
+    subprocess.run(["launchctl", "enable", f"{domain()}/{LABEL}"], check=False)
+    print(f"Restarted {LABEL}")
+
+
 def bootout() -> None:
     subprocess.run(["launchctl", "bootout", domain(), str(PLIST_PATH)], check=False)
 
@@ -64,6 +69,8 @@ if __name__ == "__main__":
     action = sys.argv[1] if len(sys.argv) > 1 else "status"
     if action == "install":
         install()
+    elif action == "restart":
+        restart()
     elif action == "uninstall":
         uninstall()
     else:

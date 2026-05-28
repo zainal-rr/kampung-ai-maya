@@ -1,14 +1,20 @@
 from __future__ import annotations
 
+import hashlib
 import re
 from pathlib import Path
 from zipfile import ZIP_DEFLATED, ZipFile
 from xml.sax.saxutils import escape
 
 
-def safe_slug(text: str) -> str:
+def safe_slug(text: str, max_length: int = 80) -> str:
     slug = re.sub(r"[^a-z0-9]+", "-", text.lower()).strip("-")
-    return slug or "maya-work"
+    slug = slug or "maya-work"
+    if len(slug) <= max_length:
+        return slug
+    digest = hashlib.sha1(slug.encode("utf-8")).hexdigest()[:8]
+    keep = max(12, max_length - len(digest) - 1)
+    return f"{slug[:keep].rstrip('-')}-{digest}"
 
 
 def create_docx(path: Path, title: str, sections: list[tuple[str, list[str]]]) -> Path:

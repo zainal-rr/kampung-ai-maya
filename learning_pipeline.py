@@ -10,6 +10,8 @@ from lesson_store import (
     get_pending_lesson,
     list_lessons,
 )
+from assistant_command_helpers import is_user_visible_memory
+from canonical_memory import upsert_canonical_memory
 from permission_policy import contains_sensitive_info, hard_no_private_exposure_text
 from self_improvement_policy import verified_learning_message
 from storage import get_preference, upsert_preference
@@ -58,6 +60,15 @@ class LearningPipeline:
             channel=channel,
             preference_key=preference_key,
         )
+        await upsert_canonical_memory(
+            self.db_path,
+            raw_text=raw_text,
+            content=rule,
+            kind=lesson_type,
+            scope=scope,
+            source_channel=channel,
+            confidence="high",
+        )
         if not await self._verified(lesson_id, preference_key, rule):
             return "I tried to save that, but I could not verify it yet."
         return f"{verified_learning_message('preference', True)} {rule}"
@@ -98,13 +109,25 @@ class LearningPipeline:
             channel=channel,
             preference_key=key,
         )
+        await upsert_canonical_memory(
+            self.db_path,
+            raw_text=str(pending["raw_text"]),
+            content=rule,
+            kind=str(pending["lesson_type"]),
+            scope=str(pending["scope"]),
+            source_channel=channel,
+            confidence="medium",
+        )
         await clear_pending_lesson(self.db_path, pending_id)
         if not await self._verified(lesson_id, key, rule):
             return "I tried to save that, but I could not verify it yet."
         return f"{verified_learning_message('preference', True)} {rule}"
 
     async def _inspect_lessons(self) -> str:
-        lessons = await list_lessons(self.db_path, limit=6)
+        lessons = [
+            item for item in await list_lessons(self.db_path, limit=10)
+            if self._visible_lesson(str(item["normalized_rule"]))
+        ][:6]
         if not lessons:
             preferences = await self._visible_preferences()
             if not preferences:
@@ -123,7 +146,15 @@ class LearningPipeline:
             str(item["value"])
             for item in preferences
             if "chat_id" not in str(item["key"]).lower()
+            and is_user_visible_memory(str(item["value"]))
         ]
+
+    @staticmethod
+    def _visible_lesson(rule: str) -> bool:
+        lowered = rule.lower().strip()
+        if lowered == "you are maya, you are the one who see":
+            return False
+        return is_user_visible_memory(rule)
 
     async def _verified(self, lesson_id: int, preference_key: str, rule: str) -> bool:
         lesson = await get_lesson(self.db_path, lesson_id)
@@ -135,7 +166,7 @@ class LearningPipeline:
         for pattern in (
             r"^i(?: am|'m) teaching you(?: that)?\s+(.+)$",
             r"^my preference(?: for you)?(?: is)?\s+(.+)$",
-            r"^remember(?: that)?\s+(.+)$",
+            r"^remember(?:\s+that)?[\s,;:]+(.+)$",
         ):
             match = re.match(pattern, text, re.IGNORECASE)
             if match:

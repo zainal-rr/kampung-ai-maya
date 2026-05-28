@@ -17,7 +17,7 @@ except ImportError:
 
 
 def realtime_url() -> str:
-    query = urlencode({"model": os.getenv("XAI_VOICE_AGENT_MODEL", "grok-voice-think-fast-1.0")})
+    query = urlencode({"model": os.getenv("XAI_VOICE_AGENT_MODEL", "grok-voice-latest")})
     return f"wss://api.x.ai/v1/realtime?{query}"
 
 
@@ -139,7 +139,7 @@ class XaiRealtimeVoiceAgentTransport:
             stdout=subprocess.DEVNULL,
             stderr=subprocess.DEVNULL,
         )
-        asyncio.create_task(_cleanup_after_playback(process, path))
+        await _cleanup_after_playback(process, path)
 
     def _write_wav(self, audio: bytes) -> Path:
         fd, filename = tempfile.mkstemp(prefix="maya-grok-voice-", suffix=".wav")
@@ -168,6 +168,7 @@ def _event_error(event: dict) -> str:
 def _default_instructions() -> str:
     return (
         "You are Maya, Zainal's warm, direct iMac voice partner. "
+        "Zainal is in Malaysia. Use Malaysia time, Asia/Kuala_Lumpur, for time questions. "
         "Keep spoken replies short, natural, and useful. "
         "Use Ara voice. Do not mention providers."
     )

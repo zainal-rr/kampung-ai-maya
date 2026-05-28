@@ -36,6 +36,8 @@ class HarnessToolResult:
     requires_approval: bool = False
     next_step: str = ""
     keep_open: bool = False
+    model_lane: str = ""
+    cost_recorded: bool = False
 
 
 class HarnessTools:
@@ -108,11 +110,15 @@ class HarnessTools:
     async def _document(self, text: str, channel: str) -> HarnessToolResult:
         reply = (
             await self.documents.handle(text, channel)
-            or await self.drawing.handle(text, channel)
-            or await self.workspace.handle(text, channel)
-            or await self.files.handle(text, channel)
+            or (await self.drawing.handle(text, channel) if _wants_drawing(text) else None)
+            or (await self.workspace.handle(text, channel) if _wants_workspace(text) else None)
+            or (await self.files.handle(text, channel) if _wants_raw_file(text) else None)
         )
-        return _result(reply, "document")
+        result = _result(reply, "document")
+        if getattr(self.documents, "last_model_lane", ""):
+            result.model_lane = self.documents.last_model_lane
+            result.cost_recorded = self.documents.last_cost_recorded
+        return result
 
     async def _project(self, text: str, channel: str) -> HarnessToolResult:
         reply = await self.projects.handle(text, channel)
@@ -168,6 +174,21 @@ def _result(reply: str | None, kind: str) -> HarnessToolResult:
 def _needs_approval(text: str) -> bool:
     lowered = " ".join(text.lower().split())
     return any(word in lowered for word in SENSITIVE_WORDS)
+
+
+def _wants_drawing(text: str) -> bool:
+    lowered = " ".join(text.lower().split())
+    return lowered.startswith(("draw ", "create drawing", "make drawing"))
+
+
+def _wants_workspace(text: str) -> bool:
+    lowered = " ".join(text.lower().split())
+    return "folder" in lowered or lowered.startswith(("create project", "make project", "start project"))
+
+
+def _wants_raw_file(text: str) -> bool:
+    lowered = " ".join(text.lower().split())
+    return bool(re.match(r"^(create|write)(?: a)? file\s+.+\s+with\s+.+$", lowered))
 
 
 def _approval_owned_by_browser(workflow_type: str, text: str) -> bool:

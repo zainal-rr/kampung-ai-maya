@@ -8,6 +8,7 @@ from pathlib import Path
 from assistant import KampungAssistant
 from context_layers import init_context_layers_db
 from lesson_store import init_lesson_db
+from markdown_drafter import MarkdownDraft
 from project_store import active_project, project_notes
 from route_tracker import init_route_db
 from routine_store import init_routine_db
@@ -34,6 +35,9 @@ async def main() -> None:
         os.environ["MAYA_PROJECT_ROOTS"] = str(project_root)
         db_path = str(tmp_path / "smoke.db")
         await _init(db_path)
+        import document_actions as da
+        old_draft = da.draft_markdown_with_gemini
+        da.draft_markdown_with_gemini = _fake_draft
 
         maya = KampungAssistant(db_path)
         maya.telegram_fast_responder = ExplodingResponder()
@@ -44,6 +48,8 @@ async def main() -> None:
         _require("nothing is waiting" in loose_yes.lower(), "loose yes fell through")
         loose_no = await maya.handle_text("no that is okay", "telegram")
         _require("nothing is waiting" in loose_no.lower(), "loose no fell through")
+        okay_malay = await maya.handle_text("Okay cakap malay", "telegram")
+        _require("nothing is waiting" not in okay_malay.lower(), "language request was swallowed as approval")
 
         ambiguous = await maya.handle_text("open project orchid", "telegram")
         _require("more than one" in ambiguous.lower() and "orchid-beta" in ambiguous, "ambiguous project not listed")
@@ -96,6 +102,7 @@ async def main() -> None:
         _require("disabled" in disabled.lower(), "skill disable failed")
         disabled_context = await maya.skills.build_prompt_context("hotel booking")
         _require("hotel" not in disabled_context.lower(), "disabled skill leaked into context")
+        da.draft_markdown_with_gemini = old_draft
         print("hardening_flow_smoke: ok")
 
 
@@ -142,6 +149,10 @@ def _write_reviewed_scaffold(path: Path) -> None:
 """,
         "utf-8",
     )
+
+
+async def _fake_draft(db_path: str, topic: str) -> MarkdownDraft:
+    return MarkdownDraft(f"# {topic.title()}\n\n## Draft\n\n1) Setup note.\n")
 
 
 if __name__ == "__main__":

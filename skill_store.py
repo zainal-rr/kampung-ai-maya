@@ -120,11 +120,20 @@ async def update_skill_status(db_path: str, skill_id: str, status: str) -> bool:
 async def find_skill(db_path: str, query: str) -> dict[str, str] | None:
     wanted = _norm(query)
     rows = await list_custom_skills(db_path, limit=100)
+    for row in rows:
+        if wanted and wanted == _norm(str(row["skill_id"])):
+            return row
+    for row in rows:
+        if wanted and wanted == _norm(str(row["name"])):
+            return row
     scored = []
     for row in rows:
         raw = f"{row['skill_id']} {row['name']}".lower()
         haystack = _norm(raw)
-        if wanted and (wanted in haystack or haystack in wanted):
+        if wanted and wanted in haystack:
+            scored.append((100 + len(wanted), row))
+            continue
+        if wanted and haystack in wanted:
             return row
         score = sum(1 for token in _tokens(query) if token in raw or token.rstrip("ing") in raw)
         if score:

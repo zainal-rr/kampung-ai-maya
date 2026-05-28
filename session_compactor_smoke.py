@@ -38,6 +38,8 @@ async def main() -> None:
         context = await build_session_context(db_path, "telegram imac context continuity")
         _require("Shared compacted context" in context, "prompt context was not built")
         _require("Hard facts and rules" in context, "hard fact layer was not injected")
+        check_in_context = await build_session_context(db_path, "are you there")
+        _require("Shared compacted context" not in check_in_context, "check-ins should not inherit compacted summaries")
         inspected = await inspect_session_context(db_path)
         _require("Context window:" in inspected, "inspection reply missing header")
 

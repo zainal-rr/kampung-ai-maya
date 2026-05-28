@@ -9,6 +9,7 @@ class ResponsePolicy:
         for handler in (
             self._topic_break_reply,
             self._greeting_reply,
+            self._presence_reply,
             self._malay_reply,
             self._identity_reply,
             self._powering_reply,
@@ -60,6 +61,22 @@ class ResponsePolicy:
         return "Hey. I'm here. What do you need?"
 
     @staticmethod
+    def _presence_reply(text: str, channel: str) -> str | None:
+        if text not in {
+            "are you there",
+            "you there",
+            "are you here",
+            "maya are you there",
+            "are you dead",
+            "you dead",
+            "maya are you dead",
+        }:
+            return None
+        if channel == "telegram":
+            return "I'm here."
+        return "I'm here."
+
+    @staticmethod
     def _malay_reply(text: str, channel: str) -> str | None:
         markers = {
             "can you speak in malay",
@@ -68,6 +85,9 @@ class ResponsePolicy:
             "boleh cakap manglish",
             "can you reply in malay",
             "can you reply in manglish",
+            "okay cakap malay",
+            "maya cakap in malay please",
+            "maya cakap in malay",
         }
         if text not in markers:
             return None
