@@ -79,6 +79,7 @@ BASE_CHECKS = (
     Check("iMac workflows", ("imac_workflows_smoke.py",)),
     Check("document actions", ("document_actions_smoke.py",)),
     Check("artifact quality", ("artifact_quality_smoke.py",)),
+    Check("HTML render", ("html_render_smoke.py",)),
     Check("PPTX quality gate", ("pptx_quality_gate_smoke.py",)),
     Check("PPTX polish review", ("pptx_polish_review_smoke.py",)),
     Check("Desktop workspace and Excel", ("desktop_workspace_excel_smoke.py",)),

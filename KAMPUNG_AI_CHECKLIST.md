@@ -851,7 +851,7 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Run local HTML QA after review.
     - [x] Save and attach a real `.html` file instead of pasting source into Telegram.
     - [x] Recognize typo-style HTML creation requests already covered by the document parser.
-    - [ ] Add browser render smoke for generated HTML files when the browser runtime is available.
+    - [x] Add browser render smoke for generated HTML files when the browser runtime is available.
 
 ### Unified Document Creation Across iMac And Telegram
 
