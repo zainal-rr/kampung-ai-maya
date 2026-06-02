@@ -18,18 +18,18 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] **Codex:** Codex CLI is installed for The Artisan coding lane; service-auth/live smoke remains tracked in 2.5.
     - [x] **xAI:** The Pulse (Grok 3).
     - [x] **xAI:** Ara voice notes, STT, and pulse/news lane.
-    - [ ] **xAI:** Live iMac Grok Voice Agent websocket path.
+    - [x] **xAI:** Live iMac Grok Voice Agent websocket path tested before May 25, 2026; iMac voice could continue conversation and trigger Word, Excel, and PowerPoint creation.
     - [x] Move the remaining live-key day to May 20, 2026.
 - [x] **1.3. Conductor Setup (`main.py`)**
     - [x] Write the asynchronous entry point.
     - [x] Initialize SQLite database.
     - [x] Implement the **"Friendship Guard" (Output Masking)**.
-- [ ] **1.4. Channel Model Lock**
-    - [ ] Define the iMac as the **primary** interaction channel.
-    - [ ] Keep Telegram as a **secondary remote** channel.
-    - [ ] Avoid building a visible iMac UI unless needed for maintenance/debugging.
-    - [ ] Use Terminal as the short-term development host only.
-    - [ ] Plan a dedicated Kampung AI app/service identity for the long term.
+- [x] **1.4. Channel Model Lock**
+    - [x] Define the iMac as the **primary** interaction channel.
+    - [x] Keep Telegram as a **secondary remote** channel.
+    - [x] Avoid building a visible iMac UI unless needed for maintenance/debugging.
+    - [x] Use Terminal as the short-term development host only.
+    - [x] Plan a dedicated Kampung AI app/service identity for the long term.
     - [x] Add a `launchd` background-service path for the spare iMac.
     - [x] Lock the calm default posture: routines on, Mudra/Omi adapters off until hardware day.
     - [x] Keep the iMac voice loop off during pre-key testing so Telegram is the main live quality surface.
@@ -40,9 +40,9 @@ This document tracks the technical and operational roadmap for building the stan
 *Goal: Wire the model lanes so every provider does its own job correctly.*
 
 - [ ] **2.1. The Primary Voice Presence (Grok Voice Agent + Ara)**
-    - [ ] Make Grok the default live iMac conversation model.
-    - [ ] Make Ara the default Maya voice identity on the iMac.
-    - [ ] Keep the iMac path optimized for fluid spoken interaction.
+    - [x] Make Grok the default live iMac conversation model.
+    - [x] Make Ara the default Maya voice identity on the iMac.
+    - [x] Keep the iMac path optimized for fluid spoken interaction.
     - [x] Lock the voice agent budget rule: manual trigger starts it, 5 seconds of silence closes it, and it is never open all day.
     - [x] Remove live voice wake activation from the roadmap. Mudra replaces wake later, hotkey is temporary.
     - [x] Add a bounded Grok Voice Agent session manager with stub transport for pre-key testing.
@@ -61,7 +61,7 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Record the long-work handoff rule: acknowledge by voice, idle or close paid speech-to-speech while background work runs, then reopen voice for follow-up or final delivery.
     - [x] Decouple realtime voice from document, browser, coding, and memory worker tools so Grok voice records a handoff instead of doing long work itself.
     - [ ] Add parked voice-session state so Maya can keep short conversation alive while background agents work, without letting Grok execute the work.
-    - [ ] Live-test the real xAI websocket adapter after the xAI key arrives.
+    - [x] Live-test the real xAI websocket adapter after the xAI key arrives; pre-May-25 iMac test passed with Office artifact creation by voice.
 - [ ] **2.2. The Mind (GPT-5.5)**
     - [x] Implement "Escalation Logic" for high-complexity strategy.
     - [x] Lock GPT usage to explicit complex cues only.
@@ -1091,7 +1091,7 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Weekly memory: ran fresh `2026-W22` dry run after temporary tests and verified forgotten test fact `hotteok` did not become durable weekly memory.
 
 - [ ] **19.17. Manual iMac Regression - June 8**
-    - [ ] iMac text/voice: create one Word, Excel, and PowerPoint artifact; verify native app opening and same quality path.
+    - [x] iMac text/voice: create one Word, Excel, and PowerPoint artifact; verified before May 25, 2026 that iMac voice can create Word, Excel, and PowerPoint through Maya.
     - [ ] Defer iMac HTML/app-building regression into the project-based `/complex` app-building lane.
     - [ ] Confirm iMac live voice uses the same architecture as Telegram memory, document creation, workflow desk, and weekly memory.
     - [ ] Verify native app continuity: open last document, open specific document, summarize document, and focus the correct app.
