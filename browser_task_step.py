@@ -7,6 +7,7 @@ from urllib.parse import urlsplit
 from active_context import ActiveContextInspector
 from browser_capability import run_browser_capability, route_browser_capability
 from browser_control import BrowserController, element_summary, page_summary
+from travel_booking_safety import travel_booking_boundary_reply, travel_booking_safety_footer
 from utils import OSBridge
 
 
@@ -22,7 +23,9 @@ class BrowserTaskStepper:
         sensitive_terms = ("pay", "passport", "card", "otp", "login", "submit")
         book_action = bool(re.search(r"\b(book|reserve)\b", lowered)) and "booking.com" not in lowered
         if book_action or any(word in lowered for word in sensitive_terms):
-            return "I can prepare or compare, but I will stop before booking, payment, login, or private details."
+            return travel_booking_boundary_reply(question) or (
+                "I can prepare or compare, but I will stop before booking, payment, login, or private details."
+            )
         if any(word in lowered for word in ("click", "select", "open")) and any(word in lowered for word in ("result", "option", "listing", "hotel", "airbnb", "flight", "osaka", "kyoto")):
             return await self._open_travel_selection(question)
         route = route_browser_capability(question)
@@ -63,6 +66,8 @@ class BrowserTaskStepper:
             f"now: {after.title}\n"
             f"url: {after.url}\n"
             + page_summary(after, max_lines=10)
+            + "\n"
+            + travel_booking_safety_footer(1)
         )
 
 

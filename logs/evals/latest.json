@@ -1,8 +1,8 @@
 {
-  "created_at": "2026-06-02T13:21:51Z",
-  "passed": 25,
+  "created_at": "2026-06-02T19:39:38Z",
+  "passed": 29,
   "failed": 0,
-  "total": 25,
+  "total": 29,
   "score": 100.0,
   "results": [
     {
@@ -62,6 +62,13 @@
       "output": "word_quality_smoke: ok"
     },
     {
+      "category": "word",
+      "name": "word visual QA",
+      "passed": true,
+      "returncode": 0,
+      "output": "word_visual_qa_smoke: ok"
+    },
+    {
       "category": "excel",
       "name": "excel golden artifact",
       "passed": true,
@@ -83,11 +90,25 @@
       "output": "document_edit_office_smoke: ok"
     },
     {
+      "category": "imac",
+      "name": "June 8 iMac regression",
+      "passed": true,
+      "returncode": 0,
+      "output": "imac_june8_regression_smoke: ok"
+    },
+    {
       "category": "self_heal",
       "name": "self-heal loop",
       "passed": true,
       "returncode": 0,
       "output": "self_heal_loop_smoke: ok"
+    },
+    {
+      "category": "travel",
+      "name": "travel booking safety",
+      "passed": true,
+      "returncode": 0,
+      "output": "travel_booking_safety_smoke: ok"
     },
     {
       "category": "quantum",
@@ -109,6 +130,13 @@
       "passed": true,
       "returncode": 0,
       "output": "artisan_maker_template_smoke: ok"
+    },
+    {
+      "category": "hardware",
+      "name": "hardware live proof readiness",
+      "passed": true,
+      "returncode": 0,
+      "output": "hardware_live_proof_smoke: ok"
     },
     {
       "category": "safety",

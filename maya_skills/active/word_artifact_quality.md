@@ -50,6 +50,7 @@ Open the `.docx` with `python-docx`.
 Check heading presence, paragraph density, placeholder text, malformed markdown remnants, and openability.
 Check that the headings fit the detected scenario and that scenario-specific required sections are present.
 Check that required sections are not thin or meta-commentary such as "this section should include..." or "model generated content."
+Run local Word visual QA before calling a document polished: first visible paragraph should be title/heading styled, headings should be readable and not repeated, margins should be sane, and body paragraphs should not be visually dense walls of text. Optional macOS `textutil` preview may be used as extra proof, but structural layout heuristics still run without it.
 
 ## Claude Review
 Claude reviews extracted document text against this skill for clarity, usefulness, completeness, and whether Maya can honestly call it final.

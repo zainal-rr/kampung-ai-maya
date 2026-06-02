@@ -52,6 +52,8 @@ class DocumentWordMixin:
         local_qa = await asyncio.to_thread(validate_docx_path, path, topic)
         if "local Word QA" not in self.last_model_lane:
             self.last_model_lane += " + local Word QA"
+        if "word visual layout" in local_qa.validation_steps and "local Word visual QA" not in self.last_model_lane:
+            self.last_model_lane += " + local Word visual QA"
         review_qa = await review_artifact_quality(self.db_path, "docx", topic, await asyncio.to_thread(extract_docx_text, path))
         if review_qa.review_model and "Claude Word review" not in self.last_model_lane:
             self.last_model_lane += " + Claude Word review"

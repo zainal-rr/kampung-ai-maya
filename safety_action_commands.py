@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 
 from permission_policy import hard_no_private_exposure_text, is_private_exposure
+from travel_booking_safety import travel_booking_boundary_reply
 
 
 def safety_action_reply(text: str) -> str | None:
@@ -15,7 +16,7 @@ def safety_action_reply(text: str) -> str | None:
             "Tell me the exact file path if you really want me to queue a delete request."
         )
     if _looks_like_sensitive_browser_action(cleaned):
-        return (
+        return travel_booking_boundary_reply(text) or (
             "I can help research or compare, but I stop before booking, payment, upload, "
             "login submission, or final submit actions unless you explicitly confirm the exact action."
         )

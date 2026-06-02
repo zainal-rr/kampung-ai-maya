@@ -3,6 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from skill_store import init_skill_db, record_skill_usage, upsert_skill
+from travel_booking_safety import travel_booking_safety_footer
 
 
 async def record_stay_skill(db_path: str, skill_id: str, name: str, description: str, question: str) -> None:
@@ -48,4 +49,5 @@ def stay_reply(result) -> str:
         lines.append("visible stay options: none extracted from page text; use screenshot fallback if prices are visibly shown.")
     if not result.verified():
         lines.append("manual check needed: I opened the structured search, but the visible page did not clearly verify the search result state.")
+    lines.append(travel_booking_safety_footer(len(result.options)))
     return "\n".join(lines)

@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 
 from flight_search_models import FieldAttempt, FlightDetails, MONTHS
+from travel_booking_safety import travel_booking_safety_footer
 
 
 def _labels_contain(labels: list[str], value: str) -> bool:
@@ -68,6 +69,7 @@ def _opened_reply(details: FlightDetails) -> str:
     if details.assumptions:
         lines.append("assumptions:")
         lines.extend(f"{idx}) {item}" for idx, item in enumerate(details.assumptions, 1))
+    lines.append(travel_booking_safety_footer())
     return "\n".join(lines)
 
 
@@ -189,4 +191,5 @@ def _filled_reply(details: FlightDetails, attempts: list[FieldAttempt], price_op
         lines.extend(f"{idx}) {item}" for idx, item in enumerate(details.assumptions, 1))
     if details.missing:
         lines.append("missing: " + ", ".join(details.missing))
+    lines.append(travel_booking_safety_footer(len(price_options or [])))
     return "\n".join(lines)

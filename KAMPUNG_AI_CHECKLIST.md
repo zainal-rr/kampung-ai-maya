@@ -39,7 +39,7 @@ This document tracks the technical and operational roadmap for building the stan
 ## 🧠 Phase 2: The Shared Brain
 *Goal: Wire the model lanes so every provider does its own job correctly.*
 
-- [ ] **2.1. The Primary Voice Presence (Grok Voice Agent + Ara)**
+- [x] **2.1. The Primary Voice Presence (Grok Voice Agent + Ara)**
     - [x] Make Grok the default live iMac conversation model.
     - [x] Make Ara the default Maya voice identity on the iMac.
     - [x] Keep the iMac path optimized for fluid spoken interaction.
@@ -62,7 +62,7 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Decouple realtime voice from document, browser, coding, and memory worker tools so Grok voice records a handoff instead of doing long work itself.
     - [x] Add parked voice-session state so Maya can keep short conversation alive while background agents work, without letting Grok execute the work.
     - [x] Live-test the real xAI websocket adapter after the xAI key arrives; pre-May-25 iMac test passed with Office artifact creation by voice.
-- [ ] **2.2. The Mind (GPT-5.5)**
+- [x] **2.2. The Mind (GPT-5.5)**
     - [x] Implement "Escalation Logic" for high-complexity strategy.
     - [x] Lock GPT usage to explicit complex cues only.
     - [x] Add GPT Plan Mode for explicit complex planning without execution.
@@ -77,18 +77,18 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add `/complex self-heal` as the preferred serious repair route: inspect logs, localize failure, plan repair, Claude risk review, isolated Artisan patch proposal, tests, and approval before main-repo apply.
     - [x] Add commands or natural handling for continuing, pausing, cancelling, and inspecting `/complex` agentic workflows from Telegram and iMac.
     - [x] Add regression tests proving `/complex` can create a plan-only response, create an approval-gated workflow, resume after restart, and keep repo changes isolated until approval.
-- [ ] **2.3. The Sight (Gemini 3.1 Flash with 3.5 Flash premium escalation)**
+- [x] **2.3. The Sight (Gemini 3.1 Flash with 3.5 Flash premium escalation)**
     - [x] Use Gemini 3.1 Flash as the primary Telegram text/research model.
     - [x] Use Gemini 3.5 Flash as the premium Sight lane and remove the old Pro branch.
     - [x] Use Gemini for Omi summarization and memory distillation.
     - [x] Add a source-aware Gemini research workflow after API keys arrive.
     - [x] Use Gemini 3.1 Flash for normal camera snapshots and escalate to Gemini 3.5 Flash only when premium sight can plausibly help.
-- [ ] **2.4. The Steward (Claude Opus 4.8)**
+- [x] **2.4. The Steward (Claude Opus 4.8)**
     - [x] Add the Claude Steward lane for careful review requests.
     - [x] Route natural review, critique, audit, hidden-risk, and check-this-plan prompts without adding a new command.
     - [x] Add provider readiness and smoke coverage for the Anthropic key.
     - [x] Live-test the Claude Steward lane after API keys arrive.
-- [ ] **2.5. The Artisan (Codex replacing Kimi and Claude Code)**
+- [x] **2.5. The Artisan (Codex replacing Kimi and Claude Code)**
     - [x] Keep the lane name as `Artisan`; Maya should not rename it to Codex in normal user-facing flow.
     - [x] Document that Codex replaces Kimi/Moonshot and Claude Code as the Artisan implementation engine.
     - [x] Document that Word, Excel, PowerPoint, memory, normal chat, voice, and document review do not move to Artisan.
@@ -153,7 +153,7 @@ This document tracks the technical and operational roadmap for building the stan
 
 - [ ] **4.1. Tailscale Ingress**
     - [ ] Configure auto-sync for Omi transcripts via Tailscale.
-- [ ] **4.2. The Context Sieve**
+- [x] **4.2. The Context Sieve**
     - [x] Implement filter node to strip silence/noise from ambient feeds.
     - [x] Store distilled Omi memories in the shared memory system.
     - [x] Let Gemini own Omi transcript summarization and memory extraction.
@@ -180,7 +180,7 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add active iMac context extraction for frontmost app selection, including Excel, Word, PowerPoint, Chrome, and generic text fields.
     - [x] Let iMac voice inspect active selection or one-shot screen context without requiring Telegram `/screen`.
 - [x] **5.2. Local Audio (`afplay`)** - [TESTED SUCCESS]
-- [ ] **5.3. Ara Voice Delivery**
+- [x] **5.3. Ara Voice Delivery**
     - [x] Shared audio rendering path for local playback and Telegram audio delivery.
     - [x] Scheduled briefings now speak aloud on the iMac.
     - [x] Lock Telegram replies to Ara voice notes once the xAI key is present.
@@ -230,7 +230,7 @@ This document tracks the technical and operational roadmap for building the stan
 ## 👁️ Phase 6: Senses & AR
 *Goal: Give Maya eyes through the approved external camera only.*
 
-- [x] **6.1. MediaPipe Vision (`vision.py`)** - [TESTED SUCCESS]
+- [ ] **6.1. MediaPipe Vision (`vision.py`)**
     - [x] Block built-in iMac camera index 1 by default.
     - [x] Default Maya vision to Cisco Desk Camera 4K index 0.
     - [x] Add external camera open-event adapter for iMac activation.
@@ -612,7 +612,7 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Strengthen browser click verification with DOM text hash, modal markers, target presence, URL, and title.
     - [x] Store browser observations as structured harness evidence with URL, title, text hash, click/fill targets, screen status, confidence, and provenance.
     - [x] Add `browser_agent_maturity_smoke.py` for dynamic-page verification, cost gates, browser state, and sensitive-click pause behavior.
-- [ ] **14.3. Office Work**
+- [x] **14.3. Office Work**
     - [x] Add general document creation v1 for Markdown, Word, and PowerPoint drafts.
     - [x] Put Markdown notes under `~/Desktop/Maya/notes`.
     - [x] Put Word drafts under `~/Desktop/Maya/documents`.
@@ -640,8 +640,8 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add PPTX polish grade: draft-level, good, or strong.
     - [x] Detect repeated slide titles and incomplete sentence meaning in PPTX polish review.
     - [x] Let Claude provide a presentation polish grade after local QA passes.
-    - [ ] Add equivalent visual QA before Maya calls Word output polished.
-    - [ ] Use Word and PowerPoint as normal iMac apps when that is more natural than a separate UI.
+    - [x] Add equivalent visual QA before Maya calls Word output polished.
+    - [x] Use Word and PowerPoint as normal iMac apps when that is more natural than a separate UI.
 - [x] **14.4. Workspace Creation**
     - [x] Create folders under `~/Desktop/Maya` by default.
     - [x] Create projects under `~/Desktop/Maya/Projects` by default.
@@ -651,11 +651,11 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Send drawing files in Telegram and open them on the iMac depending on the active channel.
     - [x] Add an optional Gemini image-generation path through `GEMINI_IMAGE_MODEL` and `ENABLE_GEMINI_IMAGE_GENERATION`.
     - [x] Add `workspace_drawing_smoke.py` and include it in launch rehearsal.
-- [ ] **14.6. Travel Booking Skill**
+- [x] **14.6. Travel Booking Skill**
     - [x] Keep flight research as an active workflow so date or cheaper-option follow-ups update the browser search.
     - [x] Turn flight research into a guided browser flow with persistent search, compare, filter, click, and fill steps.
-    - [ ] Support compare first, choose exact option second, confirm purchase last.
-    - [ ] Block card, bank, passport, password, OTP, token, and API-key exposure.
+    - [x] Support compare first, choose exact option second, confirm purchase last.
+    - [x] Block card, bank, passport, password, OTP, token, and API-key exposure.
 - [x] **14.7. Network Troubleshooting Workflow**
     - [x] Run basic safe local network checks.
     - [x] Create a Word troubleshooting note for lengthy results.
@@ -917,7 +917,7 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Keep Grok out of normal PowerPoint image generation so Grok remains reserved for live voice, Pulse, current/news, and only explicit Grok requests.
     - [x] Add Gemini image generation/sourcing for PowerPoint decks when images improve comprehension.
 
-- [ ] **19.7. Office Output Quality Sprint**
+- [x] **19.7. Office Output Quality Sprint**
     - [x] Define what "good output" means for Word, Excel, and PowerPoint beyond route/tool success.
     - [x] Add a bounded Gemini artifact preflight role agent for Word, Excel, and PowerPoint so short requests produce a scenario-specific blueprint before drafting/building.
     - [x] Upgrade Word output so first drafts have stronger structure, useful detail, summaries, and fewer generic sections.
@@ -972,6 +972,7 @@ This document tracks the technical and operational roadmap for building the stan
         - [x] Add longer Telegram media/document upload timeouts and visible fallback path messaging when file upload fails.
         - [x] Verified latest local PowerPoint has 6 slides, speaker notes on every slide, QA pass, and no stretched images.
         - [x] Fix latest-document PowerPoint summaries so they inspect the delivered `.pptx` and ignore stale intermediate draft-level polish rows.
+        - [x] Add local Word visual QA before Maya calls Word output polished.
 
 - [x] **19.7a. HTML App Quality Gate**
     - [x] Retire Kimi K2.6 as the future primary HTML/code builder.
@@ -1092,7 +1093,9 @@ This document tracks the technical and operational roadmap for building the stan
 
 - [ ] **19.17. Manual iMac Regression - June 8**
     - [x] iMac text/voice: create one Word, Excel, and PowerPoint artifact; verified before May 25, 2026 that iMac voice can create Word, Excel, and PowerPoint through Maya.
-    - [ ] Defer iMac HTML/app-building regression into the project-based `/complex` app-building lane.
+    - [x] Defer iMac HTML/app-building regression into the project-based `/complex` app-building lane.
+    - [x] Prepare `imac_june8_regression.py` with preflight checks and exact manual prompts for June 8.
+    - [x] Add smoke coverage proving the June 8 regression checklist is present and does not falsely mark manual-live proof as complete.
     - [ ] Confirm iMac live voice uses the same architecture as Telegram memory, document creation, workflow desk, and weekly memory.
     - [ ] Verify native app continuity: open last document, open specific document, summarize document, and focus the correct app.
     - [ ] Verify iMac voice long-work handoff: Grok voice acknowledges, parks or closes paid voice, and the normal Maya worker completes the task.
@@ -1108,6 +1111,8 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Remove wake detection acceptance target because voice wake activation is removed.
     - [x] Do not connect local wake to Maya. Mudra is the future trigger.
     - [x] Do not use xAI STT confirmation for the current one-stage headphone path.
+    - [x] Add `hardware_live_proof.py` so hardware/live readiness can be audited without pretending physical proof has happened.
+    - [x] Add smoke coverage for hardware/live proof readiness and manual-live-required boundaries.
     - [x] Avoid continuous long headphone capture because it can degrade media audio quality.
 
 ## Phase 20: Kampung AI Hardening Sprint
@@ -1193,7 +1198,7 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Ensure demo replay notes are linked from README, Maya Desk, and the eval suite so the five demos can be rerun without inventing prompts.
 
 ---
-*Updated June 2, 2026*
+*Updated June 3, 2026*
 
 ## Phase 21: Proof Packaging And Source-Aware Research
 
@@ -1275,4 +1280,4 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Treat proof quality, not feature count, as the current bottleneck.
 
 ---
-*Updated June 2, 2026*
+*Updated June 3, 2026*

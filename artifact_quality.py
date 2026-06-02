@@ -11,6 +11,7 @@ from artifact_review_store import record_artifact_review
 from models import TheSteward
 from provider_capabilities import CAPABILITIES
 from word_quality import validate_word_doc_quality
+from word_visual_qa import inspect_word_visual_quality
 from artifact_quality_extractors import (
     clip_text,
     extract_docx_text,
@@ -147,6 +148,8 @@ def validate_docx_path(path: Path, topic: str = "") -> ArtifactQualityResult:
     bad = ("lorem ipsum", "todo", "placeholder section", "placeholder text", "draft document about", "add a specific point", "```", "###")
     issues.extend(f"placeholder or malformed text found: {marker}" for marker in bad if marker in joined)
     issues.extend(validate_word_doc_quality(topic, paragraphs, headings, sections))
+    visual = inspect_word_visual_quality(path)
+    issues.extend(visual.issues)
     summary = summary_from_text(paragraphs, "Word document")
     return ArtifactQualityResult(
         "docx",
@@ -154,7 +157,8 @@ def validate_docx_path(path: Path, topic: str = "") -> ArtifactQualityResult:
         not issues,
         summary,
         issues,
-        validation_steps=["docx open", "headings", "content density", "placeholder scan"],
+        visual.warnings,
+        validation_steps=["docx open", "headings", "content density", "placeholder scan", "word visual layout"],
         delivery_ready=not issues,
     )
 
