@@ -44,7 +44,7 @@ This checklist tracks the live API tests after provider keys are active. It is t
 
 1) [x] Prompt: `check this plan carefully: I want Maya to create files, browse, and send reports automatically`
 2) [x] Expected lane: `Claude Steward`.
-3) [x] Expected model: `claude-sonnet-4-6`.
+3) [x] Expected model: `claude-opus-4-8`.
 4) [x] Expected behavior: risk review.
 5) [x] Expected behavior: no `/complex` route.
 6) [x] Expected behavior: no GPT call.
@@ -52,8 +52,8 @@ This checklist tracks the live API tests after provider keys are active. It is t
 ## 6) GPT Complex Lane
 
 1) [x] Prompt: `/complex make a short testing plan for Maya after API keys are live`
-2) [x] Expected lane: `GPT 5.5 xhigh + Claude review`.
-3) [x] Expected model: `gpt-5.5 (xhigh)`.
+2) [x] Expected lane: `GPT 5.5 medium + Claude review`.
+3) [x] Expected model: `gpt-5.5 (medium)`.
 4) [x] Expected behavior: Codex style plan.
 5) [x] Expected behavior: Claude review included after GPT plan.
 6) [x] Expected behavior: used only because `/complex` was explicit.

@@ -4,9 +4,9 @@ import json
 import os
 import re
 
-from artifact_quality import artifact_skill_context
 from cost_tracker import record_usage
 from models import TheSteward
+from powerpoint_quality_context import powerpoint_quality_context
 from provider_capabilities import CAPABILITIES
 
 Slides = list[tuple[str, list[str]]]
@@ -20,7 +20,7 @@ async def review_presentation_slides(db_path: str, topic: str, slides: Slides) -
         os.getenv("CLAUDE_STEWARD_MODEL", CAPABILITIES["steward"].default_model),
     )
     response = await steward.chat([
-        {"role": "system", "content": _system_prompt()},
+        {"role": "system", "content": await _system_prompt(db_path)},
         {"role": "user", "content": _user_prompt(topic, slides)},
     ])
     reviewed = _parse_slides(response)
@@ -30,14 +30,14 @@ async def review_presentation_slides(db_path: str, topic: str, slides: Slides) -
     return slides
 
 
-def _system_prompt() -> str:
+async def _system_prompt(db_path: str) -> str:
     return (
         "You are Maya's Claude presentation designer and deck editor. Gemini already drafted "
         "the role-based content and key points. Preserve that factual content, but improve the "
         "story arc, slide titles, executive usefulness, visual rhythm, and scannability. Convert "
         "dense facts into clear slide messages without inventing unsupported claims. Return only valid JSON."
-        "\n\nPowerPoint artifact quality skill:\n"
-        f"{artifact_skill_context('pptx')}"
+        "\n\n"
+        f"{await powerpoint_quality_context(db_path)}"
     )
 
 
@@ -46,9 +46,9 @@ def _user_prompt(topic: str, slides: Slides) -> str:
     return (
         f"Topic: {topic}\n\n"
         "Rewrite this as a cleaner, better-designed draft deck. Use 5 to 7 slides. "
-        "Each slide title should make a point, not just name a category. "
-        "Each slide needs 2 to 3 concise bullets that fit comfortably on a slide. "
-        "Avoid generic bullets, crowded text, and unsupported certainty. "
+        "Each slide title should provide a clear visual cue or point. "
+        "Each slide needs 2 to 3 concrete supporting bullets; Maya's builder will condense visible text and move explanation into speaker notes. "
+        "Avoid generic bullets, crowded text, sentence-heavy visible slides, and unsupported certainty. "
         "Use the Gemini content as the factual source. Improve design, structure, pacing, and slide language. "
         "Use a practical flow: context, sharp point of view, key decisions, tradeoffs, and what to do next. "
         "Return JSON only in this shape: "

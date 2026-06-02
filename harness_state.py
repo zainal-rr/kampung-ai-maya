@@ -31,6 +31,12 @@ class HarnessState(TypedDict, total=False):
     memory_notes: list[str]
     model_lane: str
     cost_recorded: bool
+    source_complex_run_id: str
+    complex_request: str
+    complex_plan: str
+    complex_review: str
+    executable_steps: list[str]
+    approval_required: bool
 
 
 def initial_harness_state(

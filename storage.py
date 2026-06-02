@@ -3,6 +3,7 @@ from __future__ import annotations
 import aiosqlite
 
 from canonical_memory import init_canonical_memory_db
+from retention_policy import init_retention_db
 from storage_tasks import (
     cancel_matching_tasks,
     claim_due_tasks,
@@ -13,10 +14,12 @@ from storage_tasks import (
     record_task_event,
     update_task_status,
 )
+from voice_session_log import init_voice_session_log_db
 
 
 async def init_db(db_path: str) -> None:
     await init_canonical_memory_db(db_path)
+    await init_voice_session_log_db(db_path)
     async with aiosqlite.connect(db_path) as db:
         await db.execute(
             """
@@ -123,6 +126,7 @@ async def init_db(db_path: str) -> None:
         except aiosqlite.OperationalError:
             pass
         await db.commit()
+    await init_retention_db(db_path)
 
 
 async def get_history(db_path: str, user_id: int, limit: int = 10) -> list[dict[str, str]]:

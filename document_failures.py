@@ -4,8 +4,12 @@ from __future__ import annotations
 def document_generation_failed(label: str, exc: Exception) -> str:
     text = str(exc)
     lowered = text.lower()
-    if "kimi and gemini" in lowered:
+    if "codex" in lowered and "gemini" in lowered:
+        provider = "Codex app lane and Gemini"
+    elif "kimi and gemini" in lowered:
         provider = "Kimi and Gemini"
+    elif "codex" in lowered:
+        provider = "Codex app lane"
     else:
         provider = "Kimi" if "kimi" in lowered else "Gemini Flash"
     if "RESOURCE_EXHAUSTED" in text or "429" in text:

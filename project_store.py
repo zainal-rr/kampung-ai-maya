@@ -8,6 +8,7 @@ from pathlib import Path
 
 import aiosqlite
 
+from retention_policy import touch_project_activity
 from storage import delete_preference, get_preference, upsert_preference
 from workspace_paths import project_roots as default_project_roots
 
@@ -44,6 +45,7 @@ async def active_project(db_path: str) -> ProjectMatch | None:
 async def set_active_project(db_path: str, project: ProjectMatch) -> None:
     await upsert_preference(db_path, ACTIVE_PROJECT_PATH, str(project.path), source="project")
     await upsert_preference(db_path, ACTIVE_PROJECT_NAME, project.name, source="project")
+    await touch_project_activity(db_path, project.path, "opened project", "project")
 
 
 async def clear_active_project(db_path: str) -> None:
@@ -98,6 +100,7 @@ async def resolve_pending_project_choice(db_path: str, text: str) -> ProjectMatc
 
 async def remember_project_note(db_path: str, path: Path, kind: str, content: str) -> None:
     await _init(db_path)
+    await touch_project_activity(db_path, path, f"{kind}: {content}", "project_memory")
     async with aiosqlite.connect(db_path) as db:
         await db.execute(
             """

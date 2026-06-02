@@ -67,6 +67,9 @@ async def main() -> None:
         _require("missing: departure date" in penang, "explicit destination without date should ask for date instead of using Japan trip date")
         _require("What departure date should I use?" in penang, "missing date should ask a direct clarification")
         _require(bridge.opened_urls == opened_before, "flight search should not open Google Flights without a departure date")
+        reply = await opener.open_for_task("open github")
+        _require("Browser capability opened GitHub" in reply, "frequent site did not bypass generic browser search")
+        _require(bridge.opened_urls[-1] == "https://github.com", "frequent site opened wrong URL from task opener")
     print("browser_task_opener_smoke: ok")
 
 

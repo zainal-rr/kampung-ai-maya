@@ -37,7 +37,7 @@ class FakeBot:
         self.next_message_id += 1
         return FakeMessage(message_id)
 
-    async def send_document(self, chat_id: int, document, caption: str | None = None):
+    async def send_document(self, chat_id: int, document, caption: str | None = None, **kwargs):
         self.documents.append({"chat_id": chat_id, "caption": caption})
 
     async def delete_message(self, **kwargs):

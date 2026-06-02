@@ -110,10 +110,14 @@ class KampungAssistant:
         if direct_command is not None:
             try:
                 reply = await command_to_text(self.db_path, direct_command)
-                await record_route(self.db_path, "command", "command", f"/{direct_command.name}", False)
-                await save_history_message(self.db_path, user_id, "user", clean_text, channel)
-                await save_history_message(self.db_path, user_id, "assistant", reply, channel)
-                return reply
+                if reply.startswith((COMPLEX_ROUTE_PREFIX, SIGHT_ROUTE_PREFIX)):
+                    clean_text = reply
+                else:
+                    if direct_command.name != "route":
+                        await record_route(self.db_path, "command", "command", f"/{direct_command.name}", False)
+                    await save_history_message(self.db_path, user_id, "user", clean_text, channel)
+                    await save_history_message(self.db_path, user_id, "assistant", reply, channel)
+                    return reply
             except Exception:
                 logging.exception("Direct slash command failed on channel %s", channel)
 
@@ -149,33 +153,37 @@ class KampungAssistant:
         skill_context = await self.skills.build_prompt_context(clean_text)
         request_text = prepare_input(channel, clean_text, memory_context, skill_context, input_type)
         self._sync_router()
-        try:
-            learning_response = await self.learning.handle(clean_text, channel)
-        except Exception:
-            logging.exception("Learning pipeline failed on channel %s", channel)
-            learning_response = None
-        try:
-            context_response = await handle_context_command(self.db_path, clean_text)
-        except Exception:
-            logging.exception("Context command failed on channel %s", channel)
+        pre_route_allowed = not complex_route and not sight_route
+        learning_response = None
         context_response = None
+        if pre_route_allowed:
+            try:
+                learning_response = await self.learning.handle(clean_text, channel)
+            except Exception:
+                logging.exception("Learning pipeline failed on channel %s", channel)
+                learning_response = None
+            try:
+                context_response = await handle_context_command(self.db_path, clean_text)
+            except Exception:
+                logging.exception("Context command failed on channel %s", channel)
+            context_response = None
         command_response = None
         harness_response = None
         vision_response = None
         screen_response = None
-        if learning_response is None and context_response is None:
+        if pre_route_allowed and learning_response is None and context_response is None:
             try:
                 harness_response = await self.harness.handle(clean_text, channel)
             except Exception:
                 logging.exception("Harness router failed on channel %s", channel)
                 harness_response = None
-        if learning_response is None and context_response is None and harness_response is None:
+        if pre_route_allowed and learning_response is None and context_response is None and harness_response is None:
             try:
                 command_response = await self.commands.handle(clean_text, channel)
             except Exception:
                 logging.exception("Command router failed on channel %s", channel)
                 command_response = None
-        if learning_response is None and context_response is None and harness_response is None and command_response is None:
+        if pre_route_allowed and learning_response is None and context_response is None and harness_response is None and command_response is None:
             try:
                 vision_response = await self.vision_responder.handle(clean_text, channel)
             except Exception:

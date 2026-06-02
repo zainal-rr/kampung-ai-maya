@@ -19,7 +19,7 @@ async def main() -> None:
     old_key = os.environ.get("OPENAI_API_KEY")
     old_effort = os.environ.get("OPENAI_COMPLEX_REASONING_EFFORT")
     os.environ["OPENAI_API_KEY"] = "test"
-    os.environ["OPENAI_COMPLEX_REASONING_EFFORT"] = "xhigh"
+    os.environ["OPENAI_COMPLEX_REASONING_EFFORT"] = "medium"
     lanes = ModelLanes()
     fake_mind = FakeMind()
     lanes.mind = fake_mind
@@ -29,7 +29,7 @@ async def main() -> None:
         _restore("OPENAI_API_KEY", old_key)
         _restore("OPENAI_COMPLEX_REASONING_EFFORT", old_effort)
     _require(reply == "complex ok", "complex response failed")
-    _require(fake_mind.reasoning_effort == "xhigh", "complex lane did not request xhigh")
+    _require(fake_mind.reasoning_effort == "medium", "complex lane did not request medium")
     print("complex_reasoning_smoke: ok")
 
 

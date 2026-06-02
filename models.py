@@ -82,7 +82,7 @@ class TheSteward(BaseAgent):
     def __init__(self, api_key: str, model: str | None = None):
         super().__init__("TheSteward")
         self.api_key = api_key
-        self.model = model or os.getenv("CLAUDE_STEWARD_MODEL", "claude-sonnet-4-6")
+        self.model = model or os.getenv("CLAUDE_STEWARD_MODEL", "claude-opus-4-8")
 
     async def chat(self, messages: List[Dict[str, str]]) -> str:
         system_parts = [item.get("content", "") for item in messages if item.get("role") == "system"]

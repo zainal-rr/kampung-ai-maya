@@ -6,6 +6,7 @@ from pathlib import Path
 
 from office_files import safe_slug
 from permission_policy import action_permission, path_allowed
+from retention_policy import touch_project_activity
 from project_store import (
     ProjectMatch,
     active_project,
@@ -107,6 +108,7 @@ async def project_status(db_path: str) -> str:
     project = await active_project(db_path)
     if not project:
         return "No active project right now."
+    await touch_project_activity(db_path, project.path, "project status requested", "project")
     return f"Active project: {project.name}\nPath: {project.path}"
 
 

@@ -42,7 +42,7 @@ async def execute_with_ledger(db_path: str, tools: HarnessTools, state: dict, ap
             requires_approval=True,
             next_step="recovery",
         )
-    result = await tools.execute(workflow, text, state.get("channel", "imac"), approved=approved)
+    result = await tools.execute(workflow, text, state.get("channel", "imac"), approved=approved, state=state)
     await finish_action(db_path, key, result)
     return result
 

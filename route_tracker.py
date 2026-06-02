@@ -72,36 +72,41 @@ async def last_route_text(db_path: str) -> str:
 def _model_for_lane(lane: str) -> str:
     lowered = lane.lower()
     prefix = ""
+    claude_review = os.getenv("CLAUDE_STEWARD_MODEL", "claude-opus-4-8")
     if "xai stt" in lowered:
         prefix = f"{os.getenv('XAI_VOICE_TRANSCRIPTION_MODEL', 'grok-2-audio')} + "
+    if "artisan" in lowered or "codex" in lowered:
+        gemini = os.getenv("GEMINI_FLASH_MODEL", "gemini-3-flash-preview")
+        engine = os.getenv("ARTISAN_ENGINE", "codex")
+        model = os.getenv("ARTISAN_CODEX_MODEL", "").strip() if engine == "codex" else "claude-code"
+        return f"{prefix}{gemini} + {model or engine}".rstrip(" +")
     if "gemini" in lowered:
         if "claude" in lowered:
             gemini = os.getenv("GEMINI_FLASH_MODEL", "gemini-3-flash-preview")
-            claude = os.getenv("CLAUDE_STEWARD_MODEL", "claude-sonnet-4-6")
-            return f"{prefix}{gemini} + {claude}"
+            return f"{prefix}{gemini} + {claude_review}"
         if "premium" in lowered or "pro" in lowered or "careful" in lowered:
             return f"{prefix}{os.getenv('GEMINI_PREMIUM_MODEL', 'gemini-3.5-flash')}"
         return f"{prefix}{os.getenv('GEMINI_FLASH_MODEL', 'gemini-3-flash-preview')}"
     if "gpt" in lowered:
-        effort = os.getenv("OPENAI_COMPLEX_REASONING_EFFORT", "xhigh")
+        effort = os.getenv("OPENAI_COMPLEX_REASONING_EFFORT", "medium")
         return f"{prefix}gpt-5.5 ({effort})"
+    if "codex" in lowered:
+        return f"{prefix}{os.getenv('ARTISAN_CODEX_MODEL', '').strip() or 'codex'}".rstrip(" +")
     if "moonshot" in lowered:
         env_name = "KIMI_HTML_MODEL" if "html" in lowered else "KIMI_CODING_MODEL"
         default = "moonshot-v1-8k"
         if "claude" in lowered:
             moonshot = os.getenv(env_name, default)
-            claude = os.getenv("CLAUDE_STEWARD_MODEL", "claude-sonnet-4-6")
-            return f"{prefix}{moonshot} + {claude}"
+            return f"{prefix}{moonshot} + {claude_review}"
         return f"{prefix}{os.getenv(env_name, default)}"
     if "kimi" in lowered:
         env_name = "KIMI_HTML_MODEL" if "html" in lowered else "KIMI_CODING_MODEL"
         kimi = os.getenv(env_name) or os.getenv("KIMI_MODEL", "kimi-k2.6")
         if "claude" in lowered:
-            claude = os.getenv("CLAUDE_STEWARD_MODEL", "claude-sonnet-4-6")
-            return f"{prefix}{kimi} + {claude}"
+            return f"{prefix}{kimi} + {claude_review}"
         return f"{prefix}{kimi}"
     if "claude" in lowered or "steward" in lowered:
-        return f"{prefix}{os.getenv('CLAUDE_STEWARD_MODEL', 'claude-sonnet-4-6')}"
+        return f"{prefix}{claude_review}"
     if "grok" in lowered or "pulse" in lowered:
         return f"{prefix}{os.getenv('XAI_TEXT_MODEL', 'grok-4.3')}"
     if prefix:

@@ -2,15 +2,14 @@ from __future__ import annotations
 
 import os
 import re
-import asyncio
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
 from cost_tracker import record_usage
-from models import TheHands, TheSenses
-from orchestrator_prompts import ARTISAN_SYSTEM_PROMPT
+from models import TheSenses
 from google import genai
 from google.genai import types
+from word_quality import word_prompt_context
 
 
 @dataclass(frozen=True)
@@ -19,12 +18,12 @@ class MarkdownDraft:
     grounded: bool = False
 
 
-async def draft_markdown_with_gemini(db_path: str, topic: str) -> MarkdownDraft | None:
+async def draft_markdown_with_gemini(db_path: str, topic: str, preflight_context: str = "") -> MarkdownDraft | None:
     api_key = os.getenv("GOOGLE_API_KEY")
     if not api_key:
         return None
     model = os.getenv("GEMINI_FLASH_MODEL", "gemini-3-flash-preview")
-    prompt = _prompt(topic)
+    prompt = _prompt(topic, preflight_context)
     grounded = should_ground_topic(topic)
     if grounded:
         reply = await _grounded_reply(api_key, model, prompt)
@@ -57,46 +56,15 @@ async def draft_html_with_gemini(db_path: str, topic: str) -> MarkdownDraft | No
 
 
 async def draft_html_with_kimi(db_path: str, topic: str) -> MarkdownDraft | None:
-    api_key = os.getenv("KIMI_API_KEY")
-    if not api_key:
-        return None
-    model = html_builder_model()
-    hands = TheHands(api_key, model=model)
-    try:
-        timeout = float(os.getenv("KIMI_HTML_TIMEOUT_SECONDS", "45"))
-    except ValueError:
-        timeout = 45
-    try:
-        max_tokens = int(os.getenv("KIMI_HTML_MAX_TOKENS", "3000"))
-    except ValueError:
-        max_tokens = 3000
-    timeout = max(10, timeout)
-    try:
-        reply = await asyncio.wait_for(
-            hands.chat([
-                {"role": "system", "content": ARTISAN_SYSTEM_PROMPT},
-                {"role": "system", "content": "Build single-file HTML apps. Return only file contents."},
-                {"role": "user", "content": _html_prompt(topic)},
-            ], max_tokens=max_tokens),
-            timeout=timeout,
-        )
-    except TimeoutError as exc:
-        raise TimeoutError(f"{html_builder_lane()} timed out after {timeout:.0f}s") from exc
-    content = _clean_html(reply)
-    if content:
-        await record_usage(db_path, "kimi_coding_calls", 1, "html app draft")
-    return MarkdownDraft(content, False) if content else None
+    return None
 
 
 def html_builder_model() -> str:
-    return os.getenv("KIMI_HTML_MODEL") or os.getenv("KIMI_MODEL", "kimi-k2.6")
+    return os.getenv("CODEX_IMPLEMENTATION_MODEL", "codex")
 
 
 def html_builder_lane() -> str:
-    model = html_builder_model().lower()
-    if model.startswith("moonshot-v1"):
-        return "Moonshot V1 HTML app builder"
-    return "Kimi HTML app builder"
+    return "Codex app implementation"
 
 
 def should_use_model_draft(topic: str) -> bool:
@@ -153,21 +121,29 @@ async def _grounded_reply(api_key: str, model: str, prompt: str) -> str:
     return _apply_source_quality(text, sources)
 
 
-def _prompt(topic: str) -> str:
+def _prompt(topic: str, preflight_context: str = "") -> str:
     role = _assumed_role(topic)
+    word_context = word_prompt_context(topic)
+    preflight = (
+        f"\nArtifact preflight blueprint:\n{preflight_context.strip()}\n"
+        if preflight_context.strip()
+        else ""
+    )
     return (
         f"Create a useful working draft about: {topic}\n\n"
         f"Assumed role: {role}\n\n"
+        f"Scenario-specific document standard:\n{word_context}\n\n"
+        f"{preflight}"
         "Write from inside that role. Imagine you are the person or operator who must actually use this document, "
         "spreadsheet, report, note, or slide content in the real world. Make practical assumptions from the topic "
-        "when needed, and label those assumptions clearly.\n\n"
+        "only when needed, and keep the structure matched to the scenario instead of using boilerplate.\n\n"
         "Rules:\n"
         "1) Use real content, not placeholders.\n"
         "2) Use numbered lists like 1) and a), not dash bullets.\n"
-        "3) Touch every key point a real owner would need: goal, assumptions, constraints, steps, risks, costs or resources, timeline, decision points, and next actions.\n"
-        "4) Adapt the sections to the artifact type. For spreadsheets, describe useful columns, rows, formulas, statuses, and review fields. For presentations, provide slide-ready sections with strong messages. For Word or Markdown, provide a structured working draft.\n"
+        "3) Touch the scenario-specific points a real owner would need: purpose, constraints, actions, risks, resources, timeline, decisions, and next steps where relevant.\n"
+        "4) Adapt the sections to the artifact type. For spreadsheets, describe useful columns, rows, formulas, statuses, and review fields. For presentations, provide slide-ready sections with strong messages. For Word or Markdown, use the scenario-specific section standard above.\n"
         "5) For current products, models, pricing, dates, or releases, prefer official sources first.\n"
-        "6) Use these sections when relevant: Role And Assumptions, Working Context, Key Decisions, Plan, Budget Or Resources, Risks, Review Checklist, Next Steps, Officially Verified, Third Party Signals, Needs Verification, Confidence, Sources.\n"
+        "6) Do not use generic audit-report headings like Role And Assumptions, Working Context, or Key Decisions unless the user explicitly asks for that structure.\n"
         "7) Do not state exact pricing, release dates, benchmark numbers, or model limits unless tied to a reliable source.\n"
         "8) Clearly separate official facts from third party interpretation.\n"
         "9) Keep it concise but complete enough to become a useful file.\n"

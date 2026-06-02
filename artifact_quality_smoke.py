@@ -6,6 +6,7 @@ from pathlib import Path
 
 from artifact_quality import validate_docx_path, validate_html_content, validate_xlsx_path
 from office_modern_files import create_docx, create_xlsx
+from powerpoint_quality_context import powerpoint_quality_context
 from skill_evaluator import evaluate_skill_scaffold
 
 
@@ -13,12 +14,17 @@ SKILLS = (
     "word_artifact_quality",
     "excel_artifact_quality",
     "powerpoint_artifact_quality",
+    "powerpoint_design_taste",
     "html_app_artifact_quality",
 )
 
 
 async def main() -> None:
     _skill_smoke()
+    skill_context = await powerpoint_quality_context(":memory:")
+    _require("PowerPoint Artifact Quality" in skill_context, "PowerPoint quality context missing")
+    _require("PowerPoint Design Taste" in skill_context, "PowerPoint design taste context missing")
+    _require("Design Engineering" in skill_context, "Design Engineering context missing from PowerPoint QA")
     with tempfile.TemporaryDirectory(prefix="maya-artifact-quality-") as tmp:
         root = Path(tmp)
         docx = create_docx(
@@ -33,8 +39,8 @@ async def main() -> None:
         xlsx = create_xlsx(
             root / "budget.xlsx",
             "Budget Tracker",
-            ["Category", "Estimate", "Actual"],
-            [["Flights", 100, 90], ["Total", "=SUM(B4:B4)", "=SUM(C4:C4)"]],
+            ["Category", "Estimated", "Actual", "Variance"],
+            [["Flights", 100, 90, "=C4-B4"], ["Total", "=SUM(B4:B4)", "=SUM(C4:C4)", "=SUM(D4:D4)"]],
         )
         good_html = (
             "<!DOCTYPE html><html><head><style>body{font-family:system-ui}</style></head>"

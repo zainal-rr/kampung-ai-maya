@@ -3,20 +3,19 @@ from __future__ import annotations
 import os
 
 from cost_tracker import record_usage
-from browser_task_step import browser_task_step
 from language_policy import language_instruction
 from models import TheSenses
 from xai_realtime_visual_context_tools import (
     active_context_tool,
     execute_visual_context_tool,
 )
-from xai_realtime_document_tools import DESKTOP_FILE_TOOL_NAME, desktop_file_tool, execute_desktop_file_tool
+from xai_voice_handoff import save_voice_handoff_request
 from xai_voice_state_tools import read_maya_state
 
 
 GEMINI_TOOL_NAME = "answer_with_gemini"
 MAYA_STATE_TOOL_NAME = "read_maya_state"
-BROWSER_TASK_STEP_TOOL_NAME = "browser_task_step"
+HANDOFF_TOOL_NAME = "handoff_to_maya_work_lane"
 
 
 def voice_tools() -> list[dict]:
@@ -24,8 +23,7 @@ def voice_tools() -> list[dict]:
         gemini_voice_tool(),
         maya_state_tool(),
         active_context_tool(),
-        browser_task_step_tool(),
-        desktop_file_tool(),
+        handoff_tool(),
     ]
     return tools
 
@@ -36,10 +34,12 @@ async def execute_voice_tool(db_path: str, name: str, args: dict) -> str:
         return await answer_with_gemini(db_path, question)
     if name == MAYA_STATE_TOOL_NAME:
         return await read_maya_state(db_path, question)
-    if name == BROWSER_TASK_STEP_TOOL_NAME:
-        return await browser_task_step(db_path, question)
-    if name == DESKTOP_FILE_TOOL_NAME:
-        return await execute_desktop_file_tool(db_path, str(args.get("request") or question))
+    if name == HANDOFF_TOOL_NAME:
+        request = str(args.get("request") or question).strip()
+        if not request:
+            return "I need the exact request before I can hand it off."
+        await save_voice_handoff_request(db_path, request)
+        return "Handoff saved. Tell Zainal you will handle it outside the paid voice session now."
     extra = await execute_visual_context_tool(db_path, name, question)
     if extra is not None:
         return extra
@@ -79,18 +79,27 @@ def maya_state_tool() -> dict:
     }
 
 
-def browser_task_step_tool() -> dict:
+def handoff_tool() -> dict:
     return {
         "type": "function",
-        "name": BROWSER_TASK_STEP_TOOL_NAME,
+        "name": HANDOFF_TOOL_NAME,
         "description": (
-            "Perform one browser step on the iMac, such as opening Chrome, searching Google, searching Google Images, "
-            "opening Google Flights, Booking.com, or Airbnb, "
-            "attempting to fill structured travel parameters, clicking a visible priced flight/hotel/Airbnb selection, "
-            "inspecting the page, or summarizing visible browser results. "
-            "Never book, pay, log in, submit, or enter private details."
+            "Use this when Zainal asks for long work or tool work during live voice: documents, spreadsheets, "
+            "PowerPoint, HTML apps, browser research, travel searches, file opening, project changes, coding, "
+            "memory writes, or anything that should run through Maya's normal agents. Do not do that work inside "
+            "Grok voice. Save the request for Maya's work lane, then tell Zainal the paid voice session can close "
+            "while Maya handles it."
         ),
-        "parameters": _question_schema("The browser step to perform."),
+        "parameters": {
+            "type": "object",
+            "properties": {
+                "request": {
+                    "type": "string",
+                    "description": "The exact user request to hand off to Maya's normal work lane.",
+                }
+            },
+            "required": ["request"],
+        },
     }
 
 

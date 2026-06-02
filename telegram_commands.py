@@ -4,16 +4,24 @@ from dataclasses import dataclass
 
 from telegram import BotCommand
 
+from artifact_review_store import latest_artifact_review_text
+from artisan_apply import apply_latest_artisan_repo_changes
+from artisan_runner import latest_artisan_delivery_text, latest_artisan_summary_text, latest_artisan_transcript_text
 from cost_tracker import usage_summary_text
+from canonical_memory_inspector import inspect_canonical_memory
+from canonical_memory_migration import migrate_memory_to_canonical
+from canonical_memory_pin import set_canonical_memory_pin
 from memory_control import cleanup_stale_memory, forget_memory, memory_sources_text
 from provider_readiness import provider_readiness_text
 from route_tracker import last_route_text
 from screen_session import activate_screen_sight, deactivate_screen_sight, screen_sight_status, toggle_screen_sight
 from session_compactor import inspect_session_context
 from self_healing import self_heal_text
+from self_heal_memory import handle_memory_self_heal_command
 from telegram_status import command_help, status_text
 from telegram_voice_state import voice_enabled, voice_text
 from vision_session import guided_sight_status, toggle_guided_sight
+from weekly_memory_status import run_weekly_memory_now_text, weekly_memory_status_text
 
 
 @dataclass(frozen=True)
@@ -72,6 +80,14 @@ async def command_to_text(db_path: str, parsed: ParsedCommand) -> str:
         return await forget_memory(db_path, parsed.args)
     if name == "memorycleanup":
         return await cleanup_stale_memory(db_path)
+    if name == "memorymigrate":
+        return await migrate_memory_to_canonical(db_path)
+    if name == "memoryinspect":
+        return await inspect_canonical_memory(db_path, parsed.args)
+    if name == "memorypin":
+        return await set_canonical_memory_pin(db_path, parsed.args, pinned=True)
+    if name == "memoryunpin":
+        return await set_canonical_memory_pin(db_path, parsed.args, pinned=False)
     if name == "lessons":
         return "what did you learn from me today"
     if name == "skills":
@@ -88,16 +104,21 @@ async def command_to_text(db_path: str, parsed: ParsedCommand) -> str:
         return provider_readiness_text()
     if name == "route":
         return await last_route_text(db_path)
+    if name in {"review", "artifactreview", "artifactqa"}:
+        return await latest_artifact_review_text(db_path)
     if name == "context":
         return await inspect_session_context(db_path)
     if name == "weekly":
-        return "weekly reflection"
+        return await _weekly_text(db_path, parsed.args)
+    if name == "artisan":
+        return await _artisan_text(db_path, parsed.args)
     if name == "newtopic":
         return "new topic"
     if name == "status":
         return await status_text(db_path)
     if name == "selfheal":
-        return await self_heal_text(db_path)
+        scoped = await handle_memory_self_heal_command(db_path, parsed.args)
+        return scoped or await self_heal_text(db_path)
     if name == "voice":
         return await voice_text(db_path, parsed.args)
     if name == "help":
@@ -124,6 +145,19 @@ def _complex_text(args: str) -> str:
     if not args:
         return "Use /complex followed by the question or decision you want me to think through."
     return f"[complex]{args}"
+
+
+async def _artisan_text(db_path: str, args: str) -> str:
+    mode = args.lower().strip()
+    if mode in {"transcript", "log"}:
+        return await latest_artisan_transcript_text(db_path)
+    if mode in {"app", "last app", "latest app"}:
+        return await latest_artisan_delivery_text(db_path, "app", "telegram")
+    if mode in {"maker", "3d", "3d model", "last 3d", "latest 3d"}:
+        return await latest_artisan_delivery_text(db_path, "maker", "telegram")
+    if mode in {"apply", "apply latest", "apply repo", "apply changes"}:
+        return await apply_latest_artisan_repo_changes(db_path)
+    return await latest_artisan_summary_text(db_path)
 
 
 def _screen_text(args: str) -> str:
@@ -157,4 +191,23 @@ async def _memory_text(db_path: str, args: str) -> str:
         return await forget_memory(db_path, cleaned[7:].strip())
     if lowered in {"cleanup", "clean"}:
         return await cleanup_stale_memory(db_path)
+    if lowered in {"migrate", "migration", "canonical migrate"}:
+        return await migrate_memory_to_canonical(db_path)
+    if lowered in {"inspect", "ids", "canonical"}:
+        return await inspect_canonical_memory(db_path)
+    if lowered.startswith(("inspect ", "ids ", "canonical ")):
+        return await inspect_canonical_memory(db_path, cleaned.split(" ", 1)[1].strip())
+    if lowered.startswith("pin "):
+        return await set_canonical_memory_pin(db_path, cleaned[4:].strip(), pinned=True)
+    if lowered.startswith("unpin "):
+        return await set_canonical_memory_pin(db_path, cleaned[6:].strip(), pinned=False)
     return await memory_sources_text(db_path, cleaned)
+
+
+async def _weekly_text(db_path: str, args: str) -> str:
+    mode = args.lower().strip()
+    if mode in {"status", "runs", "audit"}:
+        return await weekly_memory_status_text(db_path)
+    if mode in {"run", "now", "start", "save"}:
+        return await run_weekly_memory_now_text(db_path, trigger_source="telegram")
+    return "weekly reflection"

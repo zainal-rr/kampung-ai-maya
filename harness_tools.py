@@ -14,7 +14,7 @@ from local_actions import LocalActionRouter
 from project_actions import ProjectActionRouter
 from screen_service import MacScreenService
 from screen_responder import ScreenResponder
-from self_healing import self_heal_text
+from self_healing import self_heal_from_complex_plan, self_heal_text
 from skill_factory import SkillFactory
 from utils import OSBridge
 from workspace_actions import WorkspaceActionRouter
@@ -54,7 +54,7 @@ class HarnessTools:
         self.screen = ScreenResponder(db_path)
         self.skills = SkillFactory(db_path)
 
-    async def execute(self, workflow_type: str, text: str, channel: str, approved: bool = False) -> HarnessToolResult:
+    async def execute(self, workflow_type: str, text: str, channel: str, approved: bool = False, state: dict | None = None) -> HarnessToolResult:
         if workflow_type == "skill":
             return await self._skill(text, channel, approved)
         if not _approval_owned_by_browser(workflow_type, text) and _needs_approval(text) and not approved:
@@ -74,6 +74,8 @@ class HarnessTools:
             "scheduled": self._scheduled,
             "omi_distillation": self._omi_placeholder,
         }.get(workflow_type, self._general)
+        if workflow_type == "self_heal":
+            return await self._self_heal(text, channel, state or {})
         return await handler(text, channel)
 
     async def _browser(self, text: str, channel: str) -> HarnessToolResult:
@@ -140,8 +142,17 @@ class HarnessTools:
         artifact = local_artifact("note", str(result["scaffold_path"]), result["title"], "skill_factory")
         return HarnessToolResult("completed", message, [str(result["scaffold_path"])], [artifact], next_step="skill")
 
-    async def _self_heal(self, text: str, channel: str) -> HarnessToolResult:
-        reply = await self_heal_text(self.db_path)
+    async def _self_heal(self, text: str, channel: str, state: dict | None = None) -> HarnessToolResult:
+        state = state or {}
+        if state.get("source_complex_run_id") and state.get("complex_plan"):
+            reply = await self_heal_from_complex_plan(
+                self.db_path,
+                request=str(state.get("complex_request") or text),
+                plan=str(state.get("complex_plan") or ""),
+                review=str(state.get("complex_review") or ""),
+            )
+        else:
+            reply = await self_heal_text(self.db_path, create_review_task=False)
         return HarnessToolResult("completed", reply, next_step="self_heal", keep_open=True)
 
     async def _app(self, text: str, channel: str) -> HarnessToolResult:

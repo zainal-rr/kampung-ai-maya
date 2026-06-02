@@ -7,8 +7,18 @@ from dataclasses import dataclass, field
 from pathlib import Path
 
 from cost_tracker import record_usage
+from artifact_review_store import record_artifact_review
 from models import TheSteward
 from provider_capabilities import CAPABILITIES
+from word_quality import validate_word_doc_quality
+from artifact_quality_extractors import (
+    clip_text,
+    extract_docx_text,
+    extract_xlsx_text,
+    food_trip_workbook,
+    summary_from_text,
+    topic_needs_formula,
+)
 
 
 SKILL_IDS = {
@@ -16,6 +26,10 @@ SKILL_IDS = {
     "xlsx": "excel_artifact_quality",
     "pptx": "powerpoint_artifact_quality",
     "html": "html_app_artifact_quality",
+}
+
+EXTRA_SKILL_IDS = {
+    "pptx": ("powerpoint_design_taste",),
 }
 
 
@@ -53,9 +67,20 @@ class ArtifactQualityResult:
 
 
 def artifact_skill_context(artifact_type: str) -> str:
-    skill_id = SKILL_IDS.get(artifact_type.lower(), "")
-    if not skill_id:
+    artifact_type = artifact_type.lower()
+    skill_ids = [SKILL_IDS.get(artifact_type, ""), *EXTRA_SKILL_IDS.get(artifact_type, ())]
+    skill_ids = [skill_id for skill_id in skill_ids if skill_id]
+    if not skill_ids:
         return ""
+    chunks = []
+    for skill_id in skill_ids:
+        text = _skill_text(skill_id)
+        if text:
+            chunks.append(text)
+    return "\n\n".join(chunks)[:16000]
+
+
+def _skill_text(skill_id: str) -> str:
     for folder in ("active", "proposed"):
         path = Path("maya_skills") / folder / f"{skill_id}.md"
         if path.exists():
@@ -89,12 +114,14 @@ def validate_html_content(topic: str, html: str) -> ArtifactQualityResult:
     )
 
 
-def validate_docx_path(path: Path) -> ArtifactQualityResult:
+def validate_docx_path(path: Path, topic: str = "") -> ArtifactQualityResult:
     from docx import Document
 
     issues: list[str] = []
     paragraphs: list[str] = []
     headings: list[str] = []
+    sections: list[tuple[str, list[str]]] = []
+    current_heading = ""
     try:
         doc = Document(path)
     except Exception as exc:
@@ -107,15 +134,20 @@ def validate_docx_path(path: Path) -> ArtifactQualityResult:
         style_name = getattr(getattr(paragraph, "style", None), "name", "")
         if "heading" in style_name.lower():
             headings.append(text)
+            current_heading = text
+            sections.append((current_heading, []))
+        elif current_heading and sections:
+            sections[-1][1].append(text)
     word_count = sum(len(item.split()) for item in paragraphs)
     joined = "\n".join(paragraphs).lower()
     if word_count < 40:
         issues.append("document has too little real content")
     if not headings:
         issues.append("document has no useful headings")
-    bad = ("lorem ipsum", "todo", "placeholder", "draft document about", "add a specific point", "```", "###")
+    bad = ("lorem ipsum", "todo", "placeholder section", "placeholder text", "draft document about", "add a specific point", "```", "###")
     issues.extend(f"placeholder or malformed text found: {marker}" for marker in bad if marker in joined)
-    summary = _summary_from_text(paragraphs, "Word document")
+    issues.extend(validate_word_doc_quality(topic, paragraphs, headings, sections))
+    summary = summary_from_text(paragraphs, "Word document")
     return ArtifactQualityResult(
         "docx",
         str(path),
@@ -140,7 +172,10 @@ def validate_xlsx_path(path: Path, topic: str = "") -> ArtifactQualityResult:
     non_empty = 0
     formulas = 0
     headers = 0
+    workbook_text: list[str] = []
     for sheet in book.worksheets:
+        if sheet.title.lower() in {"sheet", "sheet1", "maya draft"}:
+            issues.append(f"{sheet.title} is not a meaningful sheet name")
         if sheet.max_row < 3 or sheet.max_column < 2:
             issues.append(f"{sheet.title} has too little structure")
         if not sheet.freeze_panes:
@@ -148,6 +183,7 @@ def validate_xlsx_path(path: Path, topic: str = "") -> ArtifactQualityResult:
         for row in sheet.iter_rows(values_only=True):
             values = [value for value in row if value not in (None, "")]
             if values:
+                workbook_text.extend(str(value) for value in values)
                 non_empty += len(values)
                 if len(values) >= 3:
                     headers += 1
@@ -156,8 +192,17 @@ def validate_xlsx_path(path: Path, topic: str = "") -> ArtifactQualityResult:
         issues.append("workbook is mostly empty")
     if headers == 0:
         issues.append("workbook has no table-like rows")
-    if _topic_needs_formula(topic) and formulas == 0:
+    if topic_needs_formula(topic) and formulas == 0:
         issues.append("budget/tracker workbook has no formulas")
+    lowered = " ".join(workbook_text).lower()
+    if topic_needs_formula(topic):
+        for required in ("estimated", "actual", "variance"):
+            if required not in lowered:
+                issues.append(f"budget/tracker workbook missing {required} column or field")
+    if food_trip_workbook(topic):
+        for required in ("restaurant", "estimated", "actual", "variance", "source", "suggestion"):
+            if required not in lowered:
+                issues.append(f"food-trip workbook missing {required} detail")
     summary = f"Excel workbook with {len(book.sheetnames)} sheet(s), {non_empty} populated cells, and {formulas} formula cell(s)."
     return ArtifactQualityResult(
         "xlsx",
@@ -199,39 +244,16 @@ async def review_artifact_quality(
     await record_usage(db_path, "claude_steward_calls", 1, f"{artifact_type} artifact review")
     first = response.strip().splitlines()[0] if response.strip() else ""
     rejected = first.lower().startswith("reject") or response.lower().startswith("reject")
+    await record_artifact_review(db_path, artifact_type, topic, model, not rejected, response)
     return ArtifactQualityResult(
         artifact_type,
         passed=not rejected,
-        summary=_clip(response, 220),
-        issues=[_clip(response, 300)] if rejected else [],
+        summary=clip_text(response, 220),
+        issues=[clip_text(response, 300)] if rejected else [],
         review_model=model,
         validation_steps=["claude artifact skill review"],
         delivery_ready=not rejected,
     )
-
-
-def extract_docx_text(path: Path, limit: int = 6000) -> str:
-    from docx import Document
-
-    doc = Document(path)
-    lines = [" ".join(paragraph.text.split()) for paragraph in doc.paragraphs if paragraph.text.strip()]
-    return "\n".join(lines)[:limit]
-
-
-def extract_xlsx_text(path: Path, limit: int = 6000) -> str:
-    from openpyxl import load_workbook
-
-    book = load_workbook(path, data_only=False)
-    lines = []
-    for sheet in book.worksheets:
-        lines.append(f"Sheet: {sheet.title}")
-        for row in sheet.iter_rows(values_only=True):
-            values = [str(value) for value in row if value not in (None, "")]
-            if values:
-                lines.append(" | ".join(values))
-            if len("\n".join(lines)) >= limit:
-                return "\n".join(lines)[:limit]
-    return "\n".join(lines)[:limit]
 
 
 def _review_prompt(artifact_type: str, topic: str, extracted: str, skill_context: str) -> str:
@@ -240,26 +262,8 @@ def _review_prompt(artifact_type: str, topic: str, extracted: str, skill_context
         f"User topic: {topic}\n\n"
         f"Artifact quality skill:\n{skill_context or 'No skill file found.'}\n\n"
         "Review the artifact against the skill. PASS if it is useful and deliverable. "
-        "REJECT only for concrete quality failures that should stop Maya from calling it final.\n\n"
+        "REJECT only for concrete quality failures that should stop Maya from calling it final. "
+        "Do not claim visual styling, rendered layout, sheet count, or chart quality unless those facts are present in the extracted artifact content. "
+        "For spreadsheets, distinguish worksheets from sections inside one worksheet.\n\n"
         f"Extracted artifact content:\n{extracted[:16000]}"
     )
-
-
-def _summary_from_text(paragraphs: list[str], fallback: str) -> str:
-    body = [item for item in paragraphs if len(item.split()) >= 4]
-    if not body:
-        return fallback
-    joined = " ".join(body[:4])
-    return _clip(joined, 260)
-
-
-def _topic_needs_formula(topic: str) -> bool:
-    lowered = topic.lower()
-    return any(word in lowered for word in ("budget", "tracker", "expense", "total", "spend"))
-
-
-def _clip(text: str, limit: int) -> str:
-    clean = " ".join(str(text).split())
-    if len(clean) <= limit:
-        return clean
-    return clean[: limit - 1].rsplit(" ", 1)[0].rstrip(" ,;:") + "."

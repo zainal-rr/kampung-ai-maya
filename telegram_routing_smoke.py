@@ -40,7 +40,7 @@ class FakeModelLanes:
 
     @staticmethod
     def artisan_lane() -> str:
-        return "Moonshot coding"
+        return "Gemini build brief + Artisan Codex"
 
     @staticmethod
     def should_use_pulse_path(text: str) -> bool:
@@ -58,7 +58,7 @@ class FakeModelLanes:
     def should_use_steward_path(text: str) -> bool:
         return "check this plan carefully" in text.lower()
 
-    async def artisan_response(self, text: str, memory_context: str, skill_context: str) -> str:
+    async def artisan_response(self, text: str, memory_context: str, skill_context: str, channel: str = "telegram") -> str:
         self.artisan_calls += 1
         return "artisan lane"
 
@@ -66,7 +66,7 @@ class FakeModelLanes:
         self.complex_calls += 1
         return "complex lane"
 
-    async def complex_plan_response(self, text: str, memory_context: str, skill_context: str) -> str:
+    async def complex_plan_response(self, text: str, memory_context: str, skill_context: str, channel: str = "telegram") -> str:
         self.complex_calls += 1
         return "complex plan lane"
 

@@ -1,0 +1,29 @@
+{
+  "version": 1,
+  "items": [
+    {"id": "python.aiosqlite", "category": "python", "requirement": "required", "import": "aiosqlite", "purpose": "SQLite async storage"},
+    {"id": "python.dotenv", "category": "python", "requirement": "required", "import": "dotenv", "purpose": "environment loading"},
+    {"id": "python.docx", "category": "python", "requirement": "required_for_documents", "import": "docx", "purpose": "Word document creation and validation"},
+    {"id": "python.openpyxl", "category": "python", "requirement": "required_for_spreadsheets", "import": "openpyxl", "purpose": "Excel workbook creation and validation"},
+    {"id": "python.pptx", "category": "python", "requirement": "required_for_presentations", "import": "pptx", "purpose": "PowerPoint deck creation"},
+    {"id": "python.pil", "category": "python", "requirement": "required_for_visual_qa", "import": "PIL", "purpose": "image processing and preview checks"},
+    {"id": "tool.ffmpeg", "category": "system_tool", "requirement": "required_for_voice_notes", "binary": "ffmpeg", "purpose": "Telegram voice-note conversion"},
+    {"id": "tool.codex", "category": "system_tool", "requirement": "required_for_artisan", "binary": "codex", "special_check": "codex_chatgpt_auth", "purpose": "Artisan implementation through ChatGPT subscription Codex"},
+    {"id": "tool.blender", "category": "system_tool", "requirement": "required_for_maker_exports", "binary": "blender", "alternate_path": "/Applications/Blender.app", "purpose": "Blender/Maker model export"},
+    {"id": "app.word", "category": "local_app", "requirement": "optional_imac_delivery", "path": "/Applications/Microsoft Word.app", "purpose": "native Word open/focus"},
+    {"id": "app.excel", "category": "local_app", "requirement": "optional_imac_delivery", "path": "/Applications/Microsoft Excel.app", "purpose": "native Excel open/focus"},
+    {"id": "app.powerpoint", "category": "local_app", "requirement": "optional_imac_delivery", "path": "/Applications/Microsoft PowerPoint.app", "purpose": "native PowerPoint open/focus"},
+    {"id": "app.chrome", "category": "local_app", "requirement": "optional_browser_qa", "path": "/Applications/Google Chrome.app", "purpose": "browser QA and authenticated browsing"},
+    {"id": "env.telegram", "category": "provider_key", "requirement": "required_for_telegram", "env": "TELEGRAM_BOT_TOKEN", "purpose": "Telegram bot channel"},
+    {"id": "env.gemini", "category": "provider_key", "requirement": "required_for_sight", "env": "GOOGLE_API_KEY", "purpose": "Gemini text, vision, image, drafting, memory shaping"},
+    {"id": "env.claude", "category": "provider_key", "requirement": "required_for_review", "env": "ANTHROPIC_API_KEY", "purpose": "Claude Steward review"},
+    {"id": "env.xai", "category": "provider_key", "requirement": "required_for_voice_and_news", "env": "XAI_API_KEY", "purpose": "xAI STT, Grok voice, Ara, news/current"},
+    {"id": "env.openai", "category": "provider_key", "requirement": "required_for_complex", "env": "OPENAI_API_KEY", "purpose": "GPT complex planning lane"},
+    {"id": "launchd.maya", "category": "launchd", "requirement": "required_for_autostart", "path": "~/Library/LaunchAgents/com.kampungai.maya.plist", "purpose": "Maya service launch agent"},
+    {"id": "launchd.weekly_memory", "category": "launchd", "requirement": "required_for_weekly_memory", "path": "~/Library/LaunchAgents/com.kampungai.maya.weeklymemory.plist", "purpose": "weekly memory automation"},
+    {"id": "permission.camera", "category": "macos_permission", "requirement": "required_for_sight", "purpose": "Cisco Desk Camera sight access"},
+    {"id": "permission.microphone", "category": "macos_permission", "requirement": "required_for_imac_voice", "purpose": "local iMac voice input"},
+    {"id": "permission.accessibility", "category": "macos_permission", "requirement": "required_for_imac_control", "purpose": "desktop app control"},
+    {"id": "mcp.blender", "category": "mcp_server", "requirement": "optional_for_maker", "id_hint": "ahujasid/blender-mcp", "purpose": "interactive Blender scene control"}
+  ]
+}

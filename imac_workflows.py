@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 
 from assistant_command_helpers import confirmation_decision
-from artifact_quality import extract_docx_text, review_artifact_quality, validate_docx_path
+from artifact_builder import ArtifactBuilder
 from browser_control import BrowserController, page_summary
 from browser_workflows import HumanBrowserWorkflowRouter
 from document_actions import DocumentActionRouter
@@ -139,25 +139,21 @@ class ImacWorkflowRouter:
         path = self.workspace / "reports" / "network-troubleshooting.docx"
         sections = network_doc_sections(results)
         await asyncio.to_thread(create_docx, path, "Network Troubleshooting Notes", sections)
-        local_qa = await asyncio.to_thread(validate_docx_path, path)
-        review_qa = await review_artifact_quality(self.db_path, "docx", "network troubleshooting notes", await asyncio.to_thread(extract_docx_text, path))
-        quality = local_qa.merge(review_qa)
-        try:
-            await asyncio.to_thread(self.bridge.open_file, str(path), "Microsoft Word")
-        except Exception as exc:
-            return f"I created the network notes at {path}, but I could not open Word: {exc}"
-        await upsert_preference(self.db_path, "maya_active_workflow", f"network:{path}", source="workflow")
-        if not quality.passed:
-            return _attach_file(
-                f"{summarize_network(results)} I opened the troubleshooting draft in Word, but QA found: {quality.short_issue_text()}. {path}",
-                path,
-                channel,
-            )
-        return _attach_file(
-            f"{summarize_network(results)} I opened the troubleshooting document in Word: {path}",
+        artifact = await ArtifactBuilder(self.db_path, self.bridge).finish_docx(
             path,
+            "network troubleshooting notes",
             channel,
+            run_id="network_troubleshooting",
+            source_tool="imac_workflows",
+            success_message=f"{summarize_network(results)} I opened the troubleshooting document in Word: {path}",
+            draft_message=(
+                f"{summarize_network(results)} I opened the troubleshooting draft in Word, "
+                f"but QA found issues. {path}"
+            ),
+            open_file=True,
         )
+        await upsert_preference(self.db_path, "maya_active_workflow", f"network:{path}", source="workflow")
+        return artifact.reply
 
     async def _open_search(self, query: str) -> None:
         await asyncio.to_thread(self.browser.open_search_new_tab, query)
@@ -181,9 +177,3 @@ def _click_target(text: str) -> str | None:
 def _is_sensitive_browser_action(text: str) -> bool:
     lowered = _clean(text)
     return any(word in lowered for word in SENSITIVE_BROWSER_WORDS)
-
-
-def _attach_file(message: str, path: Path, channel: str) -> str:
-    if channel != "telegram":
-        return message
-    return f"{message}\n[file:{path}]"

@@ -17,6 +17,7 @@ WORKSPACE_DIRS = (
     "screenshots",
     "reports",
     "inbox",
+    "voice_sessions",
 )
 
 

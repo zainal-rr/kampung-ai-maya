@@ -13,8 +13,8 @@ from active_context_models import ActiveContext
 from browser_control import BrowserController
 from browser_understanding import extract_browser_options_with_gemini
 from permission_policy import action_permission
-from skill_store import init_skill_db, record_skill_usage, upsert_skill
 from storage import upsert_preference
+from stay_booking_runtime import record_stay_skill, stay_reply, stay_workflow_value
 from travel_budget import save_travel_plan_fields
 from utils import OSBridge
 
@@ -62,7 +62,7 @@ class BookingComHotelSkill:
     async def run(self, question: str) -> str:
         if action_permission("travel_search") != "allow":
             return "I need your confirmation before searching hotels."
-        await _record_skill(self.db_path, BOOKING_SKILL_ID, BOOKING_SKILL_NAME, "Search Booking.com with structured hotel parameters.", question)
+        await record_stay_skill(self.db_path, BOOKING_SKILL_ID, BOOKING_SKILL_NAME, "Search Booking.com with structured hotel parameters.", question)
         context = await self.inspector.inspect(question, allow_screen_fallback=False)
         details = extract_stay_details(question, context)
         await save_travel_plan_fields(
@@ -85,8 +85,8 @@ class BookingComHotelSkill:
             )
             if options:
                 result = replace(result, options=tuple(options))
-        await upsert_preference(self.db_path, "maya_active_workflow", _workflow_value("booking.com", details), source="skill")
-        return _reply(result)
+        await upsert_preference(self.db_path, "maya_active_workflow", stay_workflow_value("booking.com", details), source="skill")
+        return stay_reply(result)
 
     def _open_and_inspect(self, url: str, details: StayDetails, provider: str) -> StaySearchResult:
         self.browser.open_new_tab_url(url)
@@ -105,7 +105,7 @@ class AirbnbStaySkill:
     async def run(self, question: str) -> str:
         if action_permission("travel_search") != "allow":
             return "I need your confirmation before searching Airbnb."
-        await _record_skill(self.db_path, AIRBNB_SKILL_ID, AIRBNB_SKILL_NAME, "Search Airbnb with structured stay parameters.", question)
+        await record_stay_skill(self.db_path, AIRBNB_SKILL_ID, AIRBNB_SKILL_NAME, "Search Airbnb with structured stay parameters.", question)
         context = await self.inspector.inspect(question, allow_screen_fallback=False)
         details = extract_stay_details(question, context)
         await save_travel_plan_fields(
@@ -128,8 +128,8 @@ class AirbnbStaySkill:
             )
             if options:
                 result = replace(result, options=tuple(options))
-        await upsert_preference(self.db_path, "maya_active_workflow", _workflow_value("airbnb", details), source="skill")
-        return _reply(result)
+        await upsert_preference(self.db_path, "maya_active_workflow", stay_workflow_value("airbnb", details), source="skill")
+        return stay_reply(result)
 
     def _open_and_inspect(self, url: str, details: StayDetails, provider: str) -> StaySearchResult:
         self.browser.open_new_tab_url(url)
@@ -294,39 +294,3 @@ def _month(value: str) -> int:
     key = value.lower()[:3]
     months = {"jan": 1, "feb": 2, "mar": 3, "apr": 4, "may": 5, "jun": 6, "jul": 7, "aug": 8, "sep": 9, "oct": 10, "nov": 11, "dec": 12}
     return months[key]
-
-
-async def _record_skill(db_path: str, skill_id: str, name: str, description: str, question: str) -> None:
-    await init_skill_db(db_path)
-    scaffold = Path(__file__).resolve().parent / "maya_skills" / "active" / f"{skill_id}.md"
-    await upsert_skill(db_path, skill_id, name, description, "bounded", "policy_guard", "active", "local", str(scaffold))
-    await record_skill_usage(db_path, skill_id=skill_id, name=name, query=question, lane="iMac stay_booking_skill", reason="stay booking intent routed to executable skill")
-
-
-def _workflow_value(provider: str, details: StayDetails) -> str:
-    return f"{provider}:location={details.location};checkin={details.checkin};checkout={details.checkout};adults={details.adults};rooms={details.rooms}"
-
-
-def _reply(result: StaySearchResult) -> str:
-    details = result.details
-    lines = [
-        f"{result.provider} skill used.",
-        f"status: {'ready for review' if result.verified() else 'needs manual check'}",
-        f"url: {result.url}",
-        f"location: {details.location}",
-        f"checkin: {details.checkin.isoformat()}",
-        f"checkout: {details.checkout.isoformat()}",
-        f"guests: {details.adults} adult{'s' if details.adults != 1 else ''}",
-        f"rooms: {details.rooms}",
-    ]
-    if details.assumptions:
-        lines.append("assumptions:")
-        lines.extend(f"{idx}) {item}" for idx, item in enumerate(details.assumptions, 1))
-    if result.options:
-        lines.append("visible stay options:")
-        lines.extend(f"{idx}) {item}" for idx, item in enumerate(result.options, 1))
-    else:
-        lines.append("visible stay options: none extracted from page text; use screenshot fallback if prices are visibly shown.")
-    if not result.verified():
-        lines.append("manual check needed: I opened the structured search, but the visible page did not clearly verify the search result state.")
-    return "\n".join(lines)

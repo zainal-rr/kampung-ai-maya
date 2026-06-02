@@ -86,15 +86,15 @@ class AssistantRouter:
         input_type: str,
     ) -> RouteResult:
         voice_note = input_type == "voice note"
+        if complex_route:
+            if self.model_lanes.should_use_plan_path(text):
+                response = await self.model_lanes.complex_plan_response(text, memory_context, skill_context, channel)
+                return RouteResult(response, "GPT 5.5 medium + Claude review", "explicit complex plan", bool(os.getenv("OPENAI_API_KEY")))
+            response = await self.model_lanes.complex_response(text, memory_context, skill_context)
+            return RouteResult(response, "GPT 5.5 medium", "explicit /complex", bool(os.getenv("OPENAI_API_KEY")))
         command_response = await self.commands.handle(text, channel)
         if command_response is not None:
             return RouteResult(command_response, "command", "app state or command")
-        if complex_route:
-            if self.model_lanes.should_use_plan_path(text):
-                response = await self.model_lanes.complex_plan_response(text, memory_context, skill_context)
-                return RouteResult(response, "GPT 5.5 xhigh + Claude review", "explicit complex plan", bool(os.getenv("OPENAI_API_KEY")))
-            response = await self.model_lanes.complex_response(text, memory_context, skill_context)
-            return RouteResult(response, "GPT 5.5 xhigh", "explicit /complex", bool(os.getenv("OPENAI_API_KEY")))
         if sight_route:
             response = await fast_telegram_response(
                 self.telegram_fast_responder,
@@ -107,13 +107,13 @@ class AssistantRouter:
             return RouteResult(response, "Gemini Flash text", "explicit sight quality route", bool(os.getenv("GOOGLE_API_KEY")))
         if channel == "imac" and self.model_lanes.should_use_complex_path(text):
             if self.model_lanes.should_use_plan_path(text):
-                response = await self.model_lanes.complex_plan_response(text, memory_context, skill_context)
-                return RouteResult(response, "GPT 5.5 xhigh + Claude review", "explicit iMac complex plan", bool(os.getenv("OPENAI_API_KEY")))
+                response = await self.model_lanes.complex_plan_response(text, memory_context, skill_context, channel)
+                return RouteResult(response, "GPT 5.5 medium + Claude review", "explicit iMac complex plan", bool(os.getenv("OPENAI_API_KEY")))
             response = await self.model_lanes.complex_response(text, memory_context, skill_context)
-            return RouteResult(response, "GPT 5.5 xhigh", "explicit iMac complex cue", bool(os.getenv("OPENAI_API_KEY")))
-        if channel == "telegram" and self.model_lanes.should_use_artisan_path(text):
-            response = await self.model_lanes.artisan_response(text, memory_context, skill_context)
-            return RouteResult(response, self.model_lanes.artisan_lane(), "coding question", bool(os.getenv("KIMI_API_KEY")))
+            return RouteResult(response, "GPT 5.5 medium", "explicit iMac complex cue", bool(os.getenv("OPENAI_API_KEY")))
+        if channel in {"telegram", "imac"} and self.model_lanes.should_use_artisan_path(text):
+            response = await self.model_lanes.artisan_response(text, memory_context, skill_context, channel)
+            return RouteResult(response, self.model_lanes.artisan_lane(), "coding implementation handoff", True)
         policy_response = self.policy.reply(text, channel)
         if policy_response is not None:
             return RouteResult(policy_response, "policy", "curated system answer")

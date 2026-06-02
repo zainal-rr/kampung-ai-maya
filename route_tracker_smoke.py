@@ -22,6 +22,9 @@ async def main() -> None:
         await record_route(db_path, "voice note", "xAI STT + Gemini Flash text", "voice note transcribed, then normal Telegram text", True)
         voice_text = await last_route_text(db_path)
         _require("grok-2-audio" in voice_text and "gemini" in voice_text.lower(), "voice route models missing")
+        await record_route(db_path, "text", "Gemini Flash role-based Word draft + local Word QA + Claude Word review", "document workflow", True)
+        review_text = await last_route_text(db_path)
+        _require("claude-opus-4-8" in review_text, "Claude review routes should default to Opus 4.8")
         print("route_tracker_smoke: ok")
 
 

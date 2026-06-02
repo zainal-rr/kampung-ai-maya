@@ -1,24 +1,26 @@
 from __future__ import annotations
 
+import re
 from pathlib import Path
 
 from docx import Document
+from docx.shared import Inches as DocxInches, Pt as DocxPt
 from openpyxl import Workbook
-from openpyxl.styles import Font, PatternFill
 from pptx import Presentation
-from pptx.dml.color import RGBColor
-from pptx.enum.text import PP_ALIGN
-from pptx.util import Inches, Pt
+from pptx.util import Inches
 
-from office_files import presentation_outline, safe_slug
+from office_files import safe_slug
+from excel_style import sheet_title_for, style_basic_sheet
+from office_pptx_colors import DARK_BG, PASTEL_BG
+from office_pptx_layout import (
+    _content_slide,
+    _content_slide_visual,
+    _paint_background,
+    _speaker_notes,
+    _title_slide,
+)
+from office_pptx_text import _visual_bullets, _visual_title
 
-
-CREAM = RGBColor(248, 247, 242)
-INK = RGBColor(23, 35, 31)
-FOREST = RGBColor(16, 88, 57)
-MINT = RGBColor(224, 238, 229)
-GOLD = RGBColor(194, 146, 63)
-SAGE = RGBColor(143, 166, 148)
 
 
 def create_docx(path: Path, title: str, sections: list[tuple[str, list[str]]]) -> Path:
@@ -28,166 +30,105 @@ def create_docx(path: Path, title: str, sections: list[tuple[str, list[str]]]) -
     for heading, lines in sections:
         doc.add_heading(heading, level=1)
         for line in lines:
-            doc.add_paragraph(line)
+            _add_docx_line(doc, line)
     doc.save(path)
     return path
 
 
-def create_pptx(path: Path, title: str, slides: list[tuple[str, list[str]]]) -> Path:
+def _add_docx_line(doc: Document, line: str) -> None:
+    commands = _split_command_sequence(line)
+    if not commands:
+        doc.add_paragraph(line)
+        return
+    for command in commands:
+        paragraph = doc.add_paragraph()
+        paragraph.paragraph_format.left_indent = DocxInches(0.25)
+        paragraph.paragraph_format.space_after = DocxPt(2)
+        run = paragraph.add_run(command)
+        run.font.name = "Courier New"
+        run.font.size = DocxPt(9)
+
+
+def _split_command_sequence(line: str) -> list[str]:
+    text = " ".join(str(line).split()).strip()
+    lowered = text.lower()
+    if not _looks_like_command_sequence(lowered):
+        return []
+    parts = [part.strip() for part in text.split(";") if part.strip()]
+    return parts if len(parts) >= 3 else []
+
+
+def _looks_like_command_sequence(lowered: str) -> bool:
+    if lowered.count(";") < 2:
+        return False
+    markers = (
+        "configure terminal",
+        "write memory",
+        "copy running-config",
+        "show running-config",
+        "ip dhcp pool",
+        "default-router",
+        "dns-server",
+        "wpa2 psk",
+        "interface gigabitethernet",
+    )
+    return any(re.search(rf"\b{re.escape(marker)}\b", lowered) for marker in markers)
+
+
+def create_pptx(path: Path, title: str, slides: list[tuple[str, list[str]]], theme: str | None = None) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
+    selected_theme = theme or choose_pptx_theme(title)
+    visual_topic = _pptx_visual_topic(title)
     deck = Presentation()
     deck.slide_width = Inches(13.333)
     deck.slide_height = Inches(7.5)
     for index, (heading, bullets) in enumerate(slides):
         slide = deck.slides.add_slide(deck.slide_layouts[6])
-        _paint_background(slide, RGBColor(248, 250, 247))
+        _paint_background(slide, DARK_BG if selected_theme == "dark" else PASTEL_BG)
+        visible_heading = _visual_title(heading, index)
+        visible_bullets = _visual_bullets(bullets)
         if index == 0:
-            _title_slide(slide, heading, bullets)
+            _title_slide(slide, visible_heading, visible_bullets, selected_theme)
+        elif visual_topic:
+            _content_slide_visual(slide, visible_heading, visible_bullets, index, len(slides), selected_theme)
         else:
-            _content_slide(slide, heading, bullets, index, len(slides))
+            _content_slide(slide, visible_heading, visible_bullets, index, len(slides), selected_theme)
+        _speaker_notes(slide, heading, bullets)
     deck.save(path)
     return path
+
+
+def choose_pptx_theme(topic: str) -> str:
+    lowered = str(topic).lower()
+    pastel_markers = (
+        "not dark", "no dark", "don't want dark", "dont want dark", "do not want dark",
+        "not in dark", "not a dark", "avoid dark", "without dark", "pastel",
+        "light theme", "light mode", "bright theme", "white theme", "soft theme",
+    )
+    if any(marker in lowered for marker in pastel_markers):
+        return "pastel"
+    return "dark"
+
+
+def _pptx_visual_topic(topic: str) -> bool:
+    lowered = str(topic).lower()
+    markers = (
+        "food", "restaurant", "cafe", "trip", "travel", "itinerary", "tourism",
+        "venue", "hotel", "product", "pitch", "brand", "marketing", "lifestyle",
+    )
+    return any(marker in lowered for marker in markers)
 
 
 def create_xlsx(path: Path, title: str, headers: list[str], rows: list[list[str]]) -> Path:
     path.parent.mkdir(parents=True, exist_ok=True)
     book = Workbook()
     sheet = book.active
-    sheet.title = "Maya Draft"
+    sheet.title = sheet_title_for(title, headers)
     sheet.append([title])
     sheet.append([])
     sheet.append(headers)
     for row in rows:
         sheet.append(row)
-    _style_sheet(sheet)
+    style_basic_sheet(sheet, title)
     book.save(path)
     return path
-
-
-def _paint_background(slide, color: RGBColor) -> None:
-    fill = slide.background.fill
-    fill.solid()
-    fill.fore_color.rgb = color
-
-
-def _title_slide(slide, title: str, bullets: list[str]) -> None:
-    _accent_bar(slide)
-    _block(slide, 0.95, 0.9, 6.0, 5.65, FOREST, FOREST)
-    _text_box(slide, title, 1.25, 1.35, 5.05, 1.3, 34, RGBColor(255, 255, 250), True)
-    subtitle = _complete(" ".join(bullets[:1])) if bullets else "Draft prepared by Maya"
-    _text_box(slide, subtitle, 1.28, 3.25, 4.95, 1.0, 17, RGBColor(222, 234, 226), False)
-    cards = bullets[1:4] or ["Context", "Implication", "Next step"]
-    for idx, line in enumerate(cards[:3]):
-        _mini_card(slide, idx + 1, line, 7.35, 1.08 + idx * 1.55)
-
-
-def _content_slide(slide, title: str, bullets: list[str], index: int, total: int) -> None:
-    _accent_bar(slide)
-    _text_box(slide, title, 0.72, 0.55, 11.4, 0.7, 26, FOREST, True)
-    items = bullets[:3] or ["Add a specific point."]
-    if index % 2:
-        for idx, bullet in enumerate(items):
-            _number_card(slide, idx + 1, bullet, 0.9 + idx * 4.02, 1.75)
-    else:
-        _block(slide, 0.9, 1.55, 3.4, 4.55, MINT, SAGE)
-        _text_box(slide, "Why it matters", 1.2, 2.0, 2.7, 0.45, 22, FOREST, True)
-        _text_box(slide, _short(items[0], 150), 1.22, 2.85, 2.55, 1.45, 15, INK, False)
-        for idx, bullet in enumerate(items[1:] or items[:1]):
-            _wide_card(slide, idx + 1, bullet, 4.85, 1.75 + idx * 1.75)
-    footer = slide.shapes.add_textbox(Inches(10.9), Inches(6.85), Inches(1.4), Inches(0.3))
-    footer.text_frame.text = f"{index + 1}/{total}"
-    _set_text_style(footer, Pt(10), RGBColor(100, 112, 104))
-
-
-def _accent_bar(slide) -> None:
-    bar = slide.shapes.add_shape(1, Inches(0), Inches(0), Inches(0.18), Inches(7.5))
-    bar.fill.solid()
-    bar.fill.fore_color.rgb = RGBColor(24, 92, 58)
-    bar.line.fill.background()
-
-
-def _block(slide, x: float, y: float, w: float, h: float, fill: RGBColor, line: RGBColor):
-    shape = slide.shapes.add_shape(1, Inches(x), Inches(y), Inches(w), Inches(h))
-    shape.fill.solid()
-    shape.fill.fore_color.rgb = fill
-    shape.line.color.rgb = line
-    return shape
-
-
-def _text_box(slide, text: str, x: float, y: float, w: float, h: float, size: int, color: RGBColor, bold: bool):
-    box = slide.shapes.add_textbox(Inches(x), Inches(y), Inches(w), Inches(h))
-    frame = box.text_frame
-    frame.clear()
-    frame.word_wrap = True
-    para = frame.paragraphs[0]
-    run = para.add_run()
-    run.text = text
-    run.font.size = Pt(size)
-    run.font.color.rgb = color
-    run.font.bold = bold
-    return box
-
-
-def _mini_card(slide, number: int, text: str, x: float, y: float) -> None:
-    _block(slide, x, y, 4.75, 1.05, RGBColor(255, 255, 252), SAGE)
-    _text_box(slide, f"0{number}", x + 0.28, y + 0.28, 0.55, 0.25, 14, GOLD, True)
-    _text_box(slide, _short(text, 155), x + 1.0, y + 0.18, 3.35, 0.72, 13, INK, False)
-
-
-def _number_card(slide, number: int, text: str, x: float, y: float) -> None:
-    _block(slide, x, y, 3.25, 3.35, MINT, SAGE)
-    _text_box(slide, f"0{number}", x + 0.35, y + 0.35, 0.7, 0.3, 18, GOLD, True)
-    _text_box(slide, _short(text, 190), x + 0.38, y + 0.95, 2.45, 1.95, 14, INK, False)
-
-
-def _wide_card(slide, number: int, text: str, x: float, y: float) -> None:
-    _block(slide, x, y, 6.6, 1.25, RGBColor(255, 255, 252), SAGE)
-    _text_box(slide, f"0{number}", x + 0.28, y + 0.34, 0.6, 0.3, 17, GOLD, True)
-    _text_box(slide, _short(text, 220), x + 1.0, y + 0.18, 4.9, 0.8, 13, INK, False)
-
-
-def _short(text: str, limit: int = 90) -> str:
-    clean = " ".join(str(text).split())
-    if len(clean) <= limit:
-        return _complete(clean)
-    for punctuation in (". ", "? ", "! "):
-        pos = clean.rfind(punctuation, 0, limit)
-        if pos >= 35:
-            return clean[: pos + 1]
-    for separator in (" — ", " - ", "; ", ": "):
-        first = clean.split(separator, 1)[0].strip()
-        if 35 <= len(first) <= limit:
-            return first.rstrip(".") + "."
-    clipped = clean[: limit - 1].rsplit(" ", 1)[0].rstrip(" ,;:-")
-    return clipped.rstrip(".") + "."
-
-
-def _complete(text: str) -> str:
-    clean = text.strip(" ,;:-")
-    return clean if clean.endswith((".", "?", "!", ")")) else clean + "."
-
-
-def _set_text_style(shape, size: Pt, color: RGBColor, bold: bool = False) -> None:
-    for paragraph in shape.text_frame.paragraphs:
-        _style_paragraph(paragraph, size, color, bold)
-
-
-def _style_paragraph(paragraph, size: Pt, color: RGBColor, bold: bool = False) -> None:
-    for run in paragraph.runs:
-        run.font.size = size
-        run.font.color.rgb = color
-        run.font.bold = bold
-
-
-def _style_sheet(sheet) -> None:
-    sheet["A1"].font = Font(bold=True, size=14)
-    header_row = 3
-    fill = PatternFill("solid", fgColor="E8F0FE")
-    for cell in sheet[header_row]:
-        cell.font = Font(bold=True)
-        cell.fill = fill
-    for column in sheet.columns:
-        letter = column[0].column_letter
-        width = min(max(len(str(cell.value or "")) for cell in column) + 2, 55)
-        sheet.column_dimensions[letter].width = width
-    sheet.freeze_panes = "A4"

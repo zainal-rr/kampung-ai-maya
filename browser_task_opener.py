@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 from active_context import ActiveContextInspector
 from active_context_models import ActiveContext
-from browser_capability import run_browser_capability
+from browser_capability import route_browser_capability, run_browser_capability
 from browser_control import BrowserController
 from permission_policy import action_permission
 from storage import upsert_preference
@@ -30,7 +30,8 @@ class BrowserTaskOpener:
     async def open_for_task(self, question: str) -> str:
         if action_permission("travel_search" if _is_travel_booking(question) else "browse_web") != "allow":
             return "I need your confirmation before browsing for that."
-        if _is_travel_booking(question):
+        route = route_browser_capability(question)
+        if _is_travel_booking(question) or route.child_skill not in {"general_browser"}:
             return await run_browser_capability(self.db_path, question, bridge=self.bridge)
         context = await self.inspector.inspect(question, allow_screen_fallback=False)
         result = _build_result(question, context)

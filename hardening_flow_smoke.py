@@ -65,7 +65,7 @@ async def main() -> None:
         project_doc = await maya.handle_text("create an md file for this project about setup", "telegram")
         _require(str(second_path / "docs") in project_doc, "project document did not land in docs")
         notes = await project_notes(db_path, second_path, limit=2)
-        _require(any("setup.md" in item["content"] for item in notes), "project document memory missing")
+        _require(any("setup-v1.md" in item["content"] for item in notes), "project document memory missing")
         await maya.handle_text("close project", "telegram")
         no_project_doc = await maya.handle_text("create an md file for this project about setup", "telegram")
         _require("no active project" in no_project_doc.lower(), "this-project guardrail failed")

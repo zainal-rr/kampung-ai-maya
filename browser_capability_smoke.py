@@ -54,9 +54,16 @@ async def main() -> None:
     _require(route_browser_capability("find Airbnb in Penang").child_skill == "airbnb_stay_search", "airbnb route failed")
     _require(route_browser_capability("find hotel in Penang").child_skill == "booking_com_hotel_search", "hotel route failed")
     _require(route_browser_capability("google images modern kampung house").child_skill == "google_images", "image route failed")
+    _require(route_browser_capability("search modern kampung house").child_skill == "google_search", "google search route failed")
+    _require(route_browser_capability("search YouTube LangGraph tutorial").child_skill == "youtube_research", "youtube route failed")
+    _require(route_browser_capability("what does Reddit say about AirAsia").child_skill == "reddit_research", "reddit route failed")
+    _require(route_browser_capability("open Google Cloud Console").child_skill == "google_cloud_console", "gcp route failed")
+    _require(route_browser_capability("open github").child_skill == "frequent_site_open", "frequent site route failed")
+    _require(route_browser_capability("open maybank").site_category == "sensitive_finance", "sensitive site route failed")
+    _require(route_browser_capability("google pokemon").child_skill == "google_search", "plain Google query should use google search skill")
     _require(route_browser_capability("open Chrome").child_skill == "general_browser", "general route failed")
     catalog = browser_child_skill_catalog()
-    _require({item["id"] for item in catalog} >= {"general_browser", "google_images", "flight_search", "booking_com_hotel_search", "airbnb_stay_search"}, "catalog missing child skills")
+    _require({item["id"] for item in catalog} >= {"general_browser", "google_images", "google_search", "youtube_research", "reddit_research", "google_cloud_console", "flight_search", "booking_com_hotel_search", "airbnb_stay_search", "frequent_site_open"}, "catalog missing child skills")
 
     with tempfile.TemporaryDirectory(prefix="maya-browser-capability-") as tmp:
         db_path = str(Path(tmp) / "smoke.db")
@@ -70,6 +77,10 @@ async def main() -> None:
         reply = await run_browser_capability(db_path, "find flight to Penang June 7 2026", bridge=bridge)
         _require("Flight search skill used" in reply, "flight child skill did not run")
         _require(bridge.urls[-1] == "https://www.google.com/travel/flights", "flight child did not open stable URL")
+
+        reply = await run_browser_capability(db_path, "open github", bridge=bridge)
+        _require("Browser capability opened GitHub" in reply, "frequent site open did not run")
+        _require(bridge.urls[-1] == "https://github.com", "frequent site opened wrong URL")
 
     print("browser_capability_smoke: ok")
 

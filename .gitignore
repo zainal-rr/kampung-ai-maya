@@ -22,6 +22,8 @@ backups/
 *.wav
 *.mp3
 *.mp4
+.maya_voice_*
+.claude/mcp/blender_mcp/
 maya_skills/active/*.md
 maya_skills/proposed/*.md
 maya_skills/disabled/*.md

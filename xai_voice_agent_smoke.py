@@ -12,7 +12,7 @@ from xai_voice_agent import (
 
 def main() -> None:
     url = realtime_url()
-    _require("grok-voice-think-fast-1.0" in url, "default voice model missing")
+    _require("grok-voice-latest" in url, "default voice model alias missing")
     session = session_update_payload()["session"]
     _require(session["voice"] == "ara", "Ara voice is not the default")
     _require(session["turn_detection"]["type"] is None, "manual turn detection not configured")

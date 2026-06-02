@@ -12,14 +12,16 @@ def document_request(text: str) -> tuple[str, str, bool] | None:
     patterns = (
         (r"^(?:create|make|write|give)\s+(?:me\s+)?(?:an?\s+)?(?:md|markdown)(?: file| note)?(?: for this project)?\s+(?:about|on|for)?\s*(.+)$", "md"),
         (r"^(?:create|make|write|give)\s+(?:me\s+)?(?:an?\s+)?(?:html)(?: file| page| app)?(?: for this project)?\s+(?:about|on|for)?\s*(.+)$", "html"),
-        (r"^(?:draft|prepare|generate)\s+(.+?)\s+(?:in|as)\s+(?:an?\s+)?(?:md|markdown)(?: file| note)?(?: for this project)?$", "md"),
-        (r"^(?:draft|prepare|generate)\s+(.+?)\s+(?:in|as)\s+(?:an?\s+)?(?:html)(?: file| page| app)?(?: for this project)?$", "html"),
+        (r"^(?:create|make|write|give|draft|prepare|generate)\s+(?:me\s+)?(?:an?\s+)?(.+?)\s+(?:in|as)\s+(?:an?\s+)?(?:md|markdown)(?: file| note)?(?: for this project)?$", "md"),
+        (r"^(?:create|make|write|give|draft|prepare|generate)\s+(?:me\s+)?(?:an?\s+)?(.+?)\s+(?:in|as)\s+(?:an?\s+)?(?:html)(?: file| page| app)?(?: for this project)?$", "html"),
         (r"^(?:draft|prepare|generate)\s+(?:me\s+)?(?:an?\s+)?(?:md|markdown)(?: file| note)?(?: for this project)?\s+(?:about|on|for)\s+(.+)$", "md"),
-        (r"^(?:create|make|write|give)\s+(?:me\s+)?(?:a\s+)?(?:word document|work document|docx|document)(?: for this project)?\s+(?:about|on|for)?\s*(.+)$", "docx"),
-        (r"^(?:create|make|write|give)\s+(?:me\s+)?(?:an?\s+)?(.+?)\s+(?:word document|work document|docx|document)(?: for this project)?\s+(?:about|on|for)\s+(.+)$", "docx"),
-        (r"^(?:draft|prepare|generate)\s+(.+?)\s+(?:in|as)\s+(?:a\s+)?(?:word document|docx|document)(?: for this project)?$", "docx"),
+        (r"^(?:create|make|write|give)\s+(?:me\s+)?(?:a\s+)?(?:word doc|word document|work document|docx|doc|document)(?: for this project)?\s+(?:(?:about|on|for)\s+(?:an?\s+)?)?\s*(.+)$", "docx"),
+        (r"^(?:create|make|write|give|draft|prepare|generate)\s+(.+?)\s+(?:in|as)\s+(?:a\s+)?(?:word doc|word document|docx|doc|document|word)(?: for this project)?$", "docx"),
+        (r"^(?:create|make|write|give)\s+(?:me\s+)?(?:an?\s+)?(.+?)\s+(?:word doc|word document|work document|docx|doc|document|word)(?: file)?(?: for this project)?(?:\s+(?:about|on|for)\s+(.+))?$", "docx"),
         (r"^(?:create|make|write|give)\s+(?:me\s+)?(?:an?\s+)?(?:budgeting\s+|budget\s+|expense\s+)?(?:excel|xlsx|spreadsheet|sheet)(?: file| tracker)?(?: for this project)?\s+(?:about|on|for)?\s*(.+)$", "xlsx"),
+        (r"^(?:create|make|write|give|draft|prepare|generate)\s+(?:me\s+)?(?:an?\s+)?(.+?)\s+(?:in|as)\s+(?:an?\s+)?(?:excel|xlsx|spreadsheet|sheet)(?: file| workbook)?(?: for this project)?$", "xlsx"),
         (r"^(?:make|create|craft)\s+(?:me\s+)?(?:a\s+)?(?:powerpoint|presentation|pptx|slides)\s+(?:on|about|for)\s+(.+)$", "pptx"),
+        (r"^(?:create|make|write|give|draft|prepare|generate)\s+(?:me\s+)?(?:an?\s+)?(.+?)\s+(?:in|as)\s+(?:an?\s+)?(?:powerpoint|presentation|pptx|slides)(?: file| deck)?(?: for this project)?$", "pptx"),
     )
     for pattern, kind in patterns:
         match = re.match(pattern, cleaned, re.IGNORECASE)
@@ -52,7 +54,7 @@ def clean_topic(topic: str) -> str:
 def _draft_in_file_request(cleaned: str) -> tuple[str, str, bool] | None:
     match = re.match(
         r"^(?:draft|prepare|generate)\s+(.+?)\s+(?:in|as)\s+(?:an?\s+)?"
-        r"(md|markdown|html|word document|work document|docx|document|excel|xlsx|spreadsheet|sheet|powerpoint|presentation|pptx|slides)"
+        r"(md|markdown|html|word doc|word document|work document|docx|doc|document|word|excel|xlsx|spreadsheet|sheet|powerpoint|presentation|pptx|slides)"
         r"(?: file| note| tracker)?(?:\s+for\s+(.+))?$",
         cleaned,
         re.IGNORECASE,

@@ -14,7 +14,10 @@ async def style_sections(
     styled = []
     for heading, lines in sections:
         styled_heading = await style_document_text(db_path, heading)
-        styled_lines = [await style_document_text(db_path, line) for line in lines]
+        styled_lines = [
+            line if _should_preserve_exact_text(line) else await style_document_text(db_path, line)
+            for line in lines
+        ]
         styled.append((styled_heading, styled_lines))
     return styled
 
@@ -30,3 +33,22 @@ async def style_table(
         for row in rows
     ]
     return styled_headers, styled_rows
+
+
+def _should_preserve_exact_text(text: str) -> bool:
+    lowered = str(text).lower()
+    command_markers = (
+        "configure terminal",
+        "write memory",
+        "copy running-config",
+        "show running-config",
+        "default-router",
+        "dns-server",
+        "wpa2 psk",
+        "ip address",
+        "ip dhcp pool",
+        "no shutdown",
+        "enable secret",
+        "interface gigabitethernet",
+    )
+    return any(marker in lowered for marker in command_markers)

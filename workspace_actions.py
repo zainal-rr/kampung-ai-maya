@@ -6,13 +6,15 @@ from pathlib import Path
 
 from office_files import safe_slug
 from permission_policy import action_permission, path_allowed
+from project_store import ProjectMatch, remember_project_note, set_active_project
 from workspace_paths import ensure_workspace_tree, workspace_dir
 
 
 class WorkspaceActionRouter:
-    def __init__(self, workspace: Path | None = None):
+    def __init__(self, workspace: Path | None = None, db_path: str | None = None):
         self.workspace = workspace or workspace_dir("")
         self.projects_root = self.workspace / "Projects"
+        self.db_path = db_path
 
     async def handle(self, text: str, channel: str) -> str | None:
         folder_name = _folder_name(text)
@@ -37,6 +39,10 @@ class WorkspaceActionRouter:
         if action_permission("create_file") != "allow" or not path_allowed(path):
             return f"I need confirmation before creating {path}."
         await asyncio.to_thread(_make_project, path, name)
+        if self.db_path:
+            project = ProjectMatch(path.name, path.resolve())
+            await set_active_project(self.db_path, project)
+            await remember_project_note(self.db_path, project.path, "created", f"Created project {project.name}.")
         return f"Done. I created the project at {path} with a starter README."
 
 

@@ -8,9 +8,12 @@ def main() -> None:
     _expect("apa khabar", "grok")
     _expect("karang satu cerita pendek in Manglish", "gemini", filler=True)
     _expect("jawab in Manglish yang natural", "gemini", filler=True)
-    _expect("remember my Malay style preference", "gemini", filler=True)
+    _expect("jawab in Malay with natural wording", "gemini", filler=True)
+    _expect("remember my Malay style preference", "assistant")
     _expect("architecture strategy", "grok")
     _expect("this is complex, make a plan for architecture strategy", "assistant")
+    _expect("make a PowerPoint about Kampung AI features", "assistant")
+    _expect("search Google Flights from Kuala Lumpur to Penang tomorrow", "assistant")
     print("imac_voice_policy_smoke: ok")
 
 

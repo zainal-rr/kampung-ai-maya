@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import aiosqlite
 
+from retention_policy import touch_task_activity
+
 
 TASK_COLUMNS = (
     "id, title, details, status, priority, channel, action_type, "
@@ -51,7 +53,9 @@ async def create_task(
             (title, details, channel, action_type, autonomy_mode, due_at, payload, priority),
         )
         await db.commit()
-        return int(cursor.lastrowid)
+        task_id = int(cursor.lastrowid)
+    await touch_task_activity(db_path, task_id, "created task", "task")
+    return task_id
 
 
 async def list_tasks(
@@ -111,6 +115,8 @@ async def claim_due_tasks(
                 (task_id,),
             )
         await db.commit()
+    for task_id in task_ids:
+        await touch_task_activity(db_path, int(task_id), "claimed due task", "task")
     return [task_dict(row) for row in rows]
 
 
@@ -131,6 +137,7 @@ async def update_task_status(
             (status, result, last_error, task_id),
         )
         await db.commit()
+    await touch_task_activity(db_path, task_id, status, "task")
 
 
 async def complete_task(db_path: str, task_id: int, result: str = "") -> None:
@@ -162,6 +169,7 @@ async def record_task_event(db_path: str, task_id: int, event: str, details: str
             (task_id, event, details),
         )
         await db.commit()
+    await touch_task_activity(db_path, task_id, event, "task_event")
 
 
 def _matches_task(task: dict[str, str | int | None], query: str, task_id: int | None) -> bool:

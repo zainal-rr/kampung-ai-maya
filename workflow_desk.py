@@ -3,6 +3,7 @@ from __future__ import annotations
 from harness_artifact_store import latest_artifacts
 from harness_store import finish_run, list_active_runs
 from project_store import active_project
+from retention_policy import retention_status_summary
 from storage import get_preference, upsert_preference
 
 
@@ -25,6 +26,9 @@ async def workflow_desk_text(db_path: str) -> str:
     if artifacts:
         latest = artifacts[0]
         lines.append(f"{len(lines)}) Latest artifact: {latest.get('path') or latest.get('url')}")
+    retention = await retention_status_summary(db_path)
+    if "pending" in retention.lower() and "no project/task" not in retention.lower():
+        lines.append(f"{len(lines)}) {retention}")
     return "\n".join(lines)
 
 

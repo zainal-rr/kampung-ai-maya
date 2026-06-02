@@ -6,6 +6,8 @@ from datetime import datetime, timedelta, timezone
 
 import aiosqlite
 
+from canonical_memory_scoring import activation_score
+from canonical_memory_usage import mark_canonical_used
 
 STOPWORDS = {"a", "an", "are", "is", "my", "the", "that", "this", "to", "for", "of", "me", "i"}
 TEST_MARKERS = ("test", "regression", "telegram test", "smoke", "temporary")
@@ -29,6 +31,7 @@ async def init_canonical_memory_db(db_path: str) -> None:
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 last_used_at DATETIME,
+                reinforcement_count INTEGER DEFAULT 0,
                 expires_at DATETIME,
                 pinned INTEGER DEFAULT 0,
                 temporary INTEGER DEFAULT 0,
@@ -42,6 +45,10 @@ async def init_canonical_memory_db(db_path: str) -> None:
             ON canonical_memory_items(kind, subject_key, scope)
             """
         )
+        try:
+            await db.execute("ALTER TABLE canonical_memory_items ADD COLUMN reinforcement_count INTEGER DEFAULT 0")
+        except aiosqlite.OperationalError:
+            pass
         await db.commit()
 
 
@@ -134,12 +141,7 @@ async def search_canonical_direct_fact(db_path: str, query: str, limit: int = 3)
             (subject_key, limit),
         )
         rows = await cursor.fetchall()
-        for row in rows:
-            await db.execute(
-                "UPDATE canonical_memory_items SET last_used_at = CURRENT_TIMESTAMP WHERE memory_id = ?",
-                (row["memory_id"],),
-            )
-        await db.commit()
+    await mark_canonical_used(db_path, [str(row["memory_id"]) for row in rows])
     return [str(row["content"]) for row in rows]
 
 
@@ -150,7 +152,8 @@ async def search_relevant_canonical_memories(db_path: str, query: str, limit: in
         db.row_factory = aiosqlite.Row
         cursor = await db.execute(
             """
-            SELECT memory_id, content, subject_key, pinned, temporary
+            SELECT memory_id, content, subject_key, pinned, temporary, updated_at,
+                   COALESCE(reinforcement_count, 0) AS reinforcement_count
             FROM canonical_memory_items
             WHERE status = 'active'
               AND (expires_at IS NULL OR expires_at > datetime('now'))
@@ -162,15 +165,21 @@ async def search_relevant_canonical_memories(db_path: str, query: str, limit: in
     scored = []
     for row in rows:
         haystack = f"{row['subject_key']} {row['content']}"
-        score = len(tokens & memory_tokens(haystack))
-        if row["pinned"]:
-            score += 4
-        if row["temporary"] and score == 0:
+        overlap = len(tokens & memory_tokens(haystack))
+        score = activation_score(
+            overlap=overlap,
+            pinned=bool(row["pinned"]),
+            reinforcement_count=int(row["reinforcement_count"]),
+            updated_at=str(row["updated_at"] or ""),
+        )
+        if row["temporary"] and overlap == 0:
             continue
-        if score > 0:
-            scored.append((score, str(row["content"])))
+        if overlap > 0 or row["pinned"]:
+            scored.append((score, str(row["memory_id"]), str(row["content"])))
     scored.sort(key=lambda item: item[0], reverse=True)
-    return [content for _, content in scored[:limit]]
+    selected = scored[:limit]
+    await mark_canonical_used(db_path, [memory_id for _, memory_id, _content in selected])
+    return [content for _, _memory_id, content in selected]
 
 
 async def forget_canonical_memory(db_path: str, query: str) -> int:

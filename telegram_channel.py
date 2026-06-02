@@ -10,7 +10,7 @@ from channel_gateway import channel_envelope
 from telegram_audit import record_telegram_command
 from telegram_commands import bot_commands, command_to_text, parse_command, voice_enabled
 from telegram_delivery_state import last_voice_message_id, save_last_voice_message_id
-from telegram_delivery import send_document_file, send_speech, send_text, split_file_markers
+from telegram_delivery import send_document_file, send_photo_file, send_speech, send_text, split_file_markers
 from telegram_voice_input import transcribe_telegram_voice
 from route_tracker import record_route
 
@@ -68,7 +68,8 @@ class TelegramChannel:
         result_type = "direct" if self._is_direct_command_reply(command_text) else "mapped"
         await self._record_command(update, parsed.name, parsed.args, command_text, result_type)
         if self._is_direct_command_reply(command_text):
-            await record_route(self.assistant.db_path, "command", "command", f"/{parsed.name}", False)
+            if parsed.name != "route":
+                await record_route(self.assistant.db_path, "command", "command", f"/{parsed.name}", False)
             await self._send_response(update, context, command_text, input_type="command")
             return
         await self._handle_text(update, context, command_text, input_type="command")
@@ -86,12 +87,16 @@ class TelegramChannel:
             "Use /complex",
             "Usage estimate,",
             "Last route:",
+            "Last artifact review:",
+            "No artifact review",
             "Context window:",
             "No route recorded yet.",
             "Maya status:",
             "Memory sources:",
             "Forget result:",
             "Memory cleanup:",
+            "Weekly memory status:",
+            "Weekly memory run completed.",
             "Self heal check:",
             "Provider readiness:",
             "I can see now.",
@@ -139,7 +144,10 @@ class TelegramChannel:
                     await send_text(context.bot, chat_id, response)
                     file_paths = []
                 for path in file_paths:
-                    await send_document_file(context.bot, chat_id, path, caption=path.name)
+                    if path.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"}:
+                        await send_photo_file(context.bot, chat_id, path, caption=path.name)
+                    else:
+                        await send_document_file(context.bot, chat_id, path, caption=path.name)
             await self._delete_previous_voice(context, chat_id)
             sent_message = await send_speech(
                 context.bot,
@@ -172,7 +180,16 @@ class TelegramChannel:
         return False
 
     async def run(self):
-        app = ApplicationBuilder().token(self.token).build()
+        app = (
+            ApplicationBuilder()
+            .token(self.token)
+            .read_timeout(_timeout_env("TELEGRAM_READ_TIMEOUT", 30.0))
+            .write_timeout(_timeout_env("TELEGRAM_WRITE_TIMEOUT", 30.0))
+            .media_write_timeout(_timeout_env("TELEGRAM_MEDIA_WRITE_TIMEOUT", 180.0))
+            .connect_timeout(_timeout_env("TELEGRAM_CONNECT_TIMEOUT", 20.0))
+            .pool_timeout(_timeout_env("TELEGRAM_POOL_TIMEOUT", 20.0))
+            .build()
+        )
         app.add_handler(MessageHandler(filters.COMMAND, self.handle_command))
         app.add_handler(MessageHandler(filters.VOICE | filters.AUDIO, self.handle_voice_message))
         app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), self.handle_message))
@@ -226,3 +243,10 @@ def _voice_companion_text(text: str) -> str:
         if stripped:
             cleaned_lines.append(stripped)
     return "\n".join(cleaned_lines).strip() or "I sent the file details in text."
+
+
+def _timeout_env(name: str, default: float) -> float:
+    try:
+        return float(os.getenv(name, str(default)))
+    except ValueError:
+        return default

@@ -6,12 +6,13 @@ import tempfile
 from pathlib import Path
 
 from lesson_store import init_lesson_db
+from artifact_review_store import record_artifact_review
 from routine_store import init_routine_db
 from skill_store import init_skill_db
 from route_tracker import record_route
 from session_memory_store import init_session_memory_db, save_session_summary
 from self_heal_store import init_self_heal_db
-from storage import init_db
+from storage import init_db, upsert_preference
 from telegram_commands import bot_commands, command_to_text, parse_command, voice_enabled
 from telegram_channel import TelegramChannel
 
@@ -41,6 +42,20 @@ async def main() -> None:
         _require(TelegramChannel._is_direct_command_reply(forget_help), "/forget help should be direct")
         cleanup = await command_to_text(db_path, parse_command("/memorycleanup"))
         _require("Memory cleanup:" in cleanup, "memorycleanup did not run")
+        await upsert_preference(db_path, "smoke_city", "my smoke city is Kyoto", "telegram")
+        migrated = await command_to_text(db_path, parse_command("/memory migrate"))
+        _require("Canonical memory migration:" in migrated, "memory migrate did not run")
+        _require("Source rows linked:" in migrated, "memory migrate did not report links")
+        migrated_alias = await command_to_text(db_path, parse_command("/memorymigrate"))
+        _require("Duplicate source links:" in migrated_alias, "memorymigrate alias did not report dedupe")
+        pinned = await command_to_text(db_path, parse_command("/memory pin smoke city"))
+        _require("Pinned 1 canonical memory" in pinned, "memory pin did not run")
+        inspected = await command_to_text(db_path, parse_command("/memory inspect smoke city"))
+        _require("id: mem_" in inspected and "class: pinned" in inspected, "memory inspect did not show pinned canonical memory")
+        unpinned = await command_to_text(db_path, parse_command("/memoryunpin smoke city"))
+        _require("Unpinned 1 canonical memory" in unpinned, "memoryunpin alias did not run")
+        inspected_alias = await command_to_text(db_path, parse_command("/memoryinspect smoke city"))
+        _require("class: temporary_test" in inspected_alias, "memoryinspect alias did not show unpinned test class")
 
         voice_status = await command_to_text(db_path, parse_command("/voice off"))
         _require("locked on" in voice_status and await voice_enabled(db_path), "locked voice status failed")
@@ -80,11 +95,18 @@ async def main() -> None:
         route = await command_to_text(db_path, parse_command("/route"))
         _require("Last route:" in route and "Gemini Flash text" in route, "route did not show last lane")
         _require(TelegramChannel._is_direct_command_reply(route), "/route should be direct")
+        await record_artifact_review(db_path, "xlsx", "Seoul food tracker", "claude-opus-4-8", True, "PASS: useful workbook.")
+        review = await command_to_text(db_path, parse_command("/review"))
+        _require("Last artifact review:" in review and "PASS: useful workbook" in review, "review did not show artifact QA")
+        _require(TelegramChannel._is_direct_command_reply(review), "/review should be direct")
         await save_session_summary(db_path, "Shared session summary\n1) Test\n a) carried context")
         context = await command_to_text(db_path, parse_command("/context"))
         _require("Context window:" in context and "carried context" in context, "context did not inspect summary")
         _require(TelegramChannel._is_direct_command_reply(context), "/context should be direct")
         _require(await command_to_text(db_path, parse_command("/weekly")) == "weekly reflection", "weekly did not map")
+        weekly_status = await command_to_text(db_path, parse_command("/weekly status"))
+        _require("Weekly memory status:" in weekly_status, "weekly status did not return audit state")
+        _require(TelegramChannel._is_direct_command_reply(weekly_status), "/weekly status should be direct")
         status = await command_to_text(db_path, parse_command("/status"))
         _require("screen sight" in status and "project:" in status, "status did not report channel state")
         selfheal = await command_to_text(db_path, parse_command("/selfheal"))

@@ -8,7 +8,10 @@ from assistant_command_helpers import direct_key
 from assistant_briefing_helpers import handle_weekly_reflection
 from assistant_confirmation_helpers import resolve_pending_confirmation
 from assistant_memory_commands import handle_memory_lookup
+from assistant_schedule_commands import handle_reminder_command, handle_summary_task_command
 from assistant_skill_helpers import queue_skill_scaffold
+from artisan_apply import apply_latest_artisan_repo_changes
+from artisan_runner import latest_artisan_summary_text, latest_artisan_transcript_text
 from assistant_task_helpers import create_sensitive_send_task, format_open_tasks, parse_task_delete_request
 from document_actions import DocumentActionRouter
 from everyday_commands import EverydayCommandRouter
@@ -26,9 +29,9 @@ from self_heal_commands import handle_self_heal_status
 from session_memory_actions import handle_session_memory_command
 from skill_registry import SkillRegistry
 from assistant_skill_commands import handle_skill_lifecycle, handle_skill_listing, handle_skill_proposals
-from storage import cancel_matching_tasks, create_task, list_preferences, list_tasks
-from time_parser import extract_due_from_text, format_due_text
+from storage import cancel_matching_tasks, list_preferences, list_tasks
 from unsupported_actions import unsupported_action_subject
+from voice_session_commands import handle_voice_session_command
 from web_actions import WebActionRouter
 from workspace_actions import WorkspaceActionRouter
 
@@ -41,7 +44,7 @@ class AssistantCommandRouter:
         self.actions = LocalActionRouter()
         self.documents = DocumentActionRouter(db_path)
         self.files = FileActionRouter()
-        self.workspace = WorkspaceActionRouter()
+        self.workspace = WorkspaceActionRouter(db_path=db_path)
         self.drawing = DrawingActionRouter()
         self.projects = ProjectActionRouter(db_path)
         self.workflows = ImacWorkflowRouter(db_path)
@@ -75,6 +78,7 @@ class AssistantCommandRouter:
             self._handle_summary_task,
             self._handle_weekly_reflection,
             self._handle_safety_actions,
+            self._handle_voice_session_command,
             self._handle_everyday_commands,
             self._handle_document_actions,
             self._handle_imac_workflows,
@@ -88,6 +92,7 @@ class AssistantCommandRouter:
             self._handle_task_deletion,
             self._handle_task_listing,
             self._handle_context_window,
+            self._handle_artisan_status,
             self._handle_session_memory_command,
             self._handle_preference_listing,
             self._handle_skill_listing,
@@ -105,36 +110,10 @@ class AssistantCommandRouter:
     async def _handle_activation_command(self, text: str, channel: str) -> str | None:
         return await handle_activation_command(self.db_path, text)
     async def _handle_reminder(self, text: str, channel: str) -> str | None:
-        match = re.match(r"^(?:remind me to|create task)\s+(.+)$", text, re.IGNORECASE)
-        if not match:
-            return None
-        title, due_at = extract_due_from_text(match.group(1).strip())
-        task_id = await create_task(
-            self.db_path,
-            title=title,
-            details=text,
-            channel=channel,
-            action_type="follow_up",
-            autonomy_mode="auto_safe",
-            due_at=due_at,
-        )
-        return f"Got it. I saved task #{task_id}: {title}, {format_due_text(due_at)}."
+        return await handle_reminder_command(self.db_path, text, channel)
 
     async def _handle_summary_task(self, text: str, channel: str) -> str | None:
-        match = re.match(r"^(?:summarize my day|summarize my history|schedule summary)\s*(.*)$", text, re.IGNORECASE)
-        if not match:
-            return None
-        title, due_at = extract_due_from_text(f"history summary {match.group(1).strip()}".strip())
-        task_id = await create_task(
-            self.db_path,
-            title=title,
-            details=text,
-            channel=channel,
-            action_type="summarize_history",
-            autonomy_mode="auto_safe",
-            due_at=due_at,
-        )
-        return f"Done. I scheduled summary task #{task_id}, {format_due_text(due_at)}."
+        return await handle_summary_task_command(self.db_path, text, channel)
 
     async def _handle_weekly_reflection(self, text: str, channel: str) -> str | None:
         return await handle_weekly_reflection(self.db_path, text, channel)
@@ -244,6 +223,29 @@ class AssistantCommandRouter:
     async def _handle_context_window(self, text: str, channel: str) -> str | None:
         return await handle_context_command(self.db_path, text)
 
+    async def _handle_artisan_status(self, text: str, channel: str) -> str | None:
+        key = direct_key(text)
+        if key in {"what did artisan say", "show artisan status", "artisan status", "show artisan"}:
+            self.last_lane = "command"
+            self.last_reason = "artisan status"
+            return await latest_artisan_summary_text(self.db_path)
+        if key in {"show artisan transcript", "artisan transcript", "what was artisan transcript"}:
+            self.last_lane = "command"
+            self.last_reason = "artisan transcript"
+            return await latest_artisan_transcript_text(self.db_path)
+        if key in {"apply artisan changes", "apply latest artisan changes", "apply artisan repo changes"}:
+            self.last_lane = "command"
+            self.last_reason = "artisan apply approved changes"
+            return await apply_latest_artisan_repo_changes(self.db_path)
+        return None
+
+    async def _handle_voice_session_command(self, text: str, channel: str) -> str | None:
+        reply = await handle_voice_session_command(self.db_path, text)
+        if reply:
+            self.last_lane = "command"
+            self.last_reason = "voice session review"
+        return reply
+
     async def _handle_session_memory_command(self, text: str, channel: str) -> str | None:
         reply = await handle_session_memory_command(self.db_path, text)
         if reply:
@@ -275,7 +277,11 @@ class AssistantCommandRouter:
         return await handle_skill_lifecycle(self.db_path, text)
 
     async def _handle_self_heal_status(self, text: str, channel: str) -> str | None:
-        return await handle_self_heal_status(self.db_path, text)
+        reply = await handle_self_heal_status(self.db_path, text)
+        if reply:
+            self.last_lane = "command"
+            self.last_reason = "self-heal status"
+        return reply
 
     async def _handle_memory_lookup(self, text: str, channel: str) -> str | None:
         reply = await handle_memory_lookup(self.memory, text)

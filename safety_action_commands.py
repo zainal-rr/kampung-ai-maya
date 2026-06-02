@@ -37,6 +37,8 @@ def _looks_like_delete_file(text: str) -> bool:
 def _looks_like_sensitive_browser_action(text: str) -> bool:
     if re.match(r"^(?:approve|test|activate|disable|edit|show)\s+skill\b", text):
         return False
+    if _looks_like_local_document_send(text):
+        return False
     starters = (
         "book", "buy", "purchase", "pay", "checkout", "submit", "upload",
         "send", "login", "log in",
@@ -45,4 +47,13 @@ def _looks_like_sensitive_browser_action(text: str) -> bool:
     return (
         any(re.match(rf"^{re.escape(marker)}\b", text) for marker in starters)
         or any(re.search(rf"\b{re.escape(marker)}\b", text) for marker in sensitive_fields)
+    )
+
+
+def _looks_like_local_document_send(text: str) -> bool:
+    return bool(
+        re.match(
+            r"^send(?:\s+me)?\s+(?:the\s+)?(?:last|latest)\s+(?:document|doc|file|artifact)$",
+            text,
+        )
     )

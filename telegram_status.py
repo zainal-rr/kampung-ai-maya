@@ -8,6 +8,7 @@ from maya_eye_preview import preview_status
 from permission_policy import permission_summary
 from provider_readiness import provider_readiness_text
 from project_actions import project_status
+from retention_policy import retention_status_summary
 from route_tracker import last_route_text
 from screen_session import screen_sight_status
 from self_healing import self_heal_text
@@ -42,7 +43,8 @@ async def status_text(db_path: str) -> str:
         f"12) provider readiness: {provider_readiness_text().splitlines()[0]}\n"
         f"13) last route: {(await last_route_text(db_path)).splitlines()[0]}\n"
         f"14) self heal: {(await self_heal_text(db_path)).splitlines()[0]}\n"
-        f"15) local permissions: {permission_summary()}"
+        f"15) retention: {await retention_status_summary(db_path)}\n"
+        f"16) local permissions: {permission_summary()}"
     )
 
 
@@ -67,17 +69,21 @@ def command_help() -> str:
         "f) /routines: show routines\n"
         "g) /preferences: show saved preferences\n"
         "h) /forget target: forget a specific memory\n"
-        "i) /memorycleanup: clean stale memory\n"
-        "j) /lessons: show recent lessons\n"
-        "k) /skills: show available skills\n"
-        "l) /createskill idea: propose a new skill\n"
-        "m) /proposals: show skill proposals\n"
-        "n) /cost: show usage estimate\n"
-        "o) /providers: show provider readiness\n"
-        "p) /route: show last routing decision\n"
-        "q) /context: show compacted context\n"
-        "r) /weekly: show weekly reflection\n"
-        "s) /newtopic: reset current topic\n"
-        "t) /selfheal: run safe self-heal check\n"
+        "i) /memory migrate: link old memory rows to canonical memory IDs\n"
+        "j) /memory pin target: keep an important canonical memory eligible\n"
+        "k) /memory unpin target: remove manual memory priority\n"
+        "l) /memory inspect target: show canonical memory IDs and activation class\n"
+        "m) /memorycleanup: clean stale memory\n"
+        "n) /lessons: show recent lessons\n"
+        "o) /skills: show available skills\n"
+        "p) /createskill idea: propose a new skill\n"
+        "q) /proposals: show skill proposals\n"
+        "r) /cost: show usage estimate\n"
+        "s) /providers: show provider readiness\n"
+        "t) /route: show last routing decision\n"
+        "u) /context: show compacted context\n"
+        "v) /weekly: show weekly reflection\n"
+        "w) /newtopic: reset current topic\n"
+        "x) /selfheal: run safe self-heal check\n"
         "You can still talk normally: open project Kampung AI, show my tasks, remember my preference."
     )

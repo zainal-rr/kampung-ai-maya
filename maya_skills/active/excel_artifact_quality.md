@@ -11,7 +11,9 @@ trigger: create, make, draft, review, or repair an Excel file, `.xlsx`, spreadsh
 non-trigger: normal chat, Word-only requests, PowerPoint-only requests, HTML app requests, browser searches, payments, secrets, or private exposure.
 
 ## Quality Standard
-Good Excel output has meaningful sheet names, useful headers, editable rows, sensible widths, frozen header/reference panes, formats where useful, formulas for totals when implied, and notes that help Zainal keep using the workbook.
+Good Excel output has meaningful sheet names, useful headers, editable rows, sensible widths, frozen header/reference panes, pastel colors, formats where useful, formulas for totals when implied, and notes that help Zainal keep using the workbook.
+
+For food-trip budget requests, the workbook must go beyond generic travel categories. It should include per-food or per-restaurant rows, estimated budget per item or stop, actual cost, variance, totals, restaurant/source links in notes where available, and suggestions for what to try or prioritize.
 
 ## Safety
 hard no: no private exposure, no secrets, no passwords, no OTPs, no bank or card data, no fake completion, no empty workbook, no generic one-row table pretending to be a useful spreadsheet.
@@ -22,7 +24,7 @@ Open the workbook with `openpyxl`.
 Check sheet count, populated cells, table-like rows, frozen panes, and formula cells when the topic implies calculations.
 
 ## Claude Review
-Claude reviews an extracted workbook summary against this skill for usefulness, structure, missing columns, and whether the file is deliverable.
+Claude reviews an extracted workbook summary against this skill for usefulness, structure, missing columns, request fit, and whether the file is deliverable. For food-trip workbooks, Claude should reject generic templates that do not include food/restaurant-level budget rows, notes links, and suggestions.
 
 ## Provider And Repair
 Gemini drafts spreadsheet notes when model drafting is needed. Local libraries build the workbook. If QA rejects, repair once where available or deliver as a draft with issues.
@@ -33,6 +35,8 @@ iMac opens the workbook in Excel. Telegram attaches the workbook and keeps the p
 ## Activation Tests
 happy path: user asks for a Tokyo travel budget tracker.
 success: file opens, has useful categories, editable rows, formulas, and frozen panes.
+food trip path: user asks for a Seoul food trip budget tracker.
+success: file includes food/restaurant budget rows, estimated cost, actual cost, variance, totals, notes with restaurant links where available, and useful suggestions.
 failure path: workbook is empty or has no formulas for a budget/tracker request.
 rollback: keep it as a draft and report QA issues instead of calling it final.
 regression: asking what Excel is should not create a workbook.

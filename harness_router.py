@@ -175,6 +175,8 @@ class HarnessRouter:
         active = await get_active_run(self.db_path, channel)
         if not active:
             return None
+        if str(active.get("workflow_type") or "").startswith("artisan"):
+            return await self._artisan_confirmation(active, decision)
         state = await self.runner.get_snapshot(active)
         if not state.get("pending_approval") and active.get("status") != "paused":
             return None
@@ -187,6 +189,25 @@ class HarnessRouter:
         result = await self.runner.resume(active, "approved", approval_result="approved")
         self._remember_route(result)
         return str(result.get("final_response") or "Done. I continued after your approval.")
+
+    async def _artisan_confirmation(self, active: dict, decision: str) -> str | None:
+        state = dict(active.get("state") or {})
+        if state.get("approval_state") != "repo_approval_required" and active.get("status") != "paused":
+            return None
+        if decision != "approve":
+            await resolve_approval(self.db_path, active["run_id"], "declined")
+            await finish_run(self.db_path, active["run_id"], status="cancelled")
+            return "Okay, I won't apply the Artisan repo changes."
+        await resolve_approval(self.db_path, active["run_id"], "approved")
+        await finish_run(self.db_path, active["run_id"], status="approved_waiting_manual_apply")
+        worktree = state.get("working_directory", "")
+        original = state.get("original_repo_path", "")
+        return (
+            "Approved. I recorded approval for the Artisan repo changes, but I did not apply them automatically.\n"
+            f"1) isolated worktree: {worktree}\n"
+            f"2) original repo: {original}\n"
+            "3) next: review the worktree diff, then apply intentionally."
+        )
 
     async def _stop(self, channel: str) -> str:
         active = await get_active_run(self.db_path, channel)

@@ -7,11 +7,12 @@ from pathlib import Path
 from assistant import KampungAssistant
 from context_layers import init_context_layers_db
 from lesson_store import init_lesson_db
+from office_modern_files import create_docx
 from route_tracker import last_route_text
 from routine_store import init_routine_db
 from session_memory_store import init_session_memory_db
 from skill_store import init_skill_db
-from storage import init_db
+from storage import init_db, upsert_preference
 
 
 async def main() -> None:
@@ -35,6 +36,14 @@ async def main() -> None:
         _require("stop before booking" in booking.lower(), "booking was not gated")
         route = await last_route_text(db_path)
         _require("safety gate" in route, "booking route was not safety gate")
+
+        doc_path = Path(tmp) / "Maya" / "documents" / "latest.docx"
+        create_docx(doc_path, "Latest Doc", [("Summary", ["Useful content."])])
+        await upsert_preference(db_path, "maya_last_document_path", str(doc_path), source="document")
+        send_doc = await assistant.handle_text("send me the last document", "telegram")
+        _require(f"[file:{doc_path}]" in send_doc, "latest document send was blocked by safety gate")
+        route = await last_route_text(db_path)
+        _require("lane: command" in route and "latest document" in route, "latest document send should be command route")
 
         loose_yes = await assistant.handle_text("yes", "telegram")
         _require("nothing is waiting" in loose_yes.lower(), "loose yes reached provider")

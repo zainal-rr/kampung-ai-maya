@@ -4,6 +4,7 @@ import json
 
 import aiosqlite
 
+from retention_policy import touch_task_activity
 from storage_tasks import task_dict
 
 
@@ -46,6 +47,7 @@ async def begin_workflow(db_path: str, task_id: int, plan: list[str]) -> dict[st
             (task_id, json.dumps(plan)),
         )
         await db.commit()
+    await touch_task_activity(db_path, task_id, "workflow started", "workflow")
     return await get_workflow(db_path, task_id) or {}
 
 
@@ -81,6 +83,7 @@ async def save_workflow_progress(
             (current_step, json.dumps(context), task_id),
         )
         await db.commit()
+    await touch_task_activity(db_path, task_id, "workflow progress", "workflow")
 
 
 async def finish_workflow(
@@ -102,6 +105,7 @@ async def finish_workflow(
             (status, json.dumps(context), error, task_id),
         )
         await db.commit()
+    await touch_task_activity(db_path, task_id, status, "workflow")
 
 
 async def resumable_running_tasks(db_path: str, limit: int = 5) -> list[dict[str, str | int | None]]:

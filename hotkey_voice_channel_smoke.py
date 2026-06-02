@@ -2,11 +2,11 @@ import asyncio
 import os
 import tempfile
 from pathlib import Path
-from types import SimpleNamespace
 
 from hotkey_voice_channel import HotkeyVoiceChannel
 from storage import get_preference, init_db, upsert_preference
 from voice_agent_audio import VoiceAgentAudioCapture, _pcm16_rms
+from xai_voice_handoff import VOICE_HANDOFF_KEY, save_voice_handoff_request
 
 
 class FakeVoice:
@@ -69,12 +69,23 @@ class StopAfterFirstCapture(FakeAudioCapture):
         return await super().listen_audio()
 
 
+class FakeAssistant:
+    def __init__(self, db_path):
+        self.db_path = db_path
+        self.voice = FakeVoice()
+        self.handled = []
+
+    async def handle_text(self, text, channel, speak_reply=False):
+        self.handled.append((text, channel, speak_reply))
+        return "handled handoff"
+
+
 async def main():
     os.environ["MAYA_HOTKEY_VOICE_MODE"] = "diagnostic"
     tmp = tempfile.TemporaryDirectory(prefix="maya-hotkey-smoke-")
     db_path = str(Path(tmp.name) / "smoke.db")
     await init_db(db_path)
-    assistant = SimpleNamespace(db_path=db_path, voice=FakeVoice())
+    assistant = FakeAssistant(db_path)
     channel = HotkeyVoiceChannel(assistant, audio_capture=FakeAudioCapture([b"1234", b""]))
     channel.voice_agent = FakeVoiceAgent()
     await channel._run_voice_session()
@@ -85,9 +96,15 @@ async def main():
     stop_channel = HotkeyVoiceChannel(assistant, audio_capture=FakeAudioCapture([]))
     stop_channel.voice_agent = FakeVoiceAgent()
     await upsert_preference(db_path, "maya_active_workflow", "browser:search:test", source="test")
+    await save_voice_handoff_request(db_path, "make an Excel file that should be cancelled")
     await stop_channel.stop_voice_session()
     assert stop_channel.voice_agent.closed == ["manual hotkey stop"]
     assert await get_preference(db_path, "maya_active_workflow") is None
+    assert await get_preference(db_path, VOICE_HANDOFF_KEY) is None
+    assert not assistant.handled
+    await save_voice_handoff_request(db_path, "make a Word document about routers")
+    await stop_channel._run_pending_voice_handoff()
+    assert assistant.handled[-1] == ("make a Word document about routers", "imac", True)
     interrupted = HotkeyVoiceChannel(assistant)
     interrupted.voice_agent = FakeVoiceAgent()
     interrupted.audio_capture = StopAfterFirstCapture(interrupted)

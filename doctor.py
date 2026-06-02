@@ -5,6 +5,7 @@ import asyncio
 from pathlib import Path
 
 from code_health import collect_code_health, format_code_health
+from dependency_manifest import dependency_readiness_text
 from dotenv import load_dotenv
 from provider_readiness import provider_readiness_text
 from speech_input import detect_avfoundation_audio_devices
@@ -56,8 +57,8 @@ def print_host_status() -> None:
     print("XAI_VOICE_AGENT_IDLE_SECONDS:", os.getenv("XAI_VOICE_AGENT_IDLE_SECONDS", "5"))
     print("XAI_VOICE_AGENT_MODEL:", os.getenv("XAI_VOICE_AGENT_MODEL", "grok-voice-think-fast-1.0"))
     print("XAI_VOICE_AGENT_VOICE:", os.getenv("XAI_VOICE_AGENT_VOICE", "ara"))
-    print("OPENAI_COMPLEX_REASONING_EFFORT:", os.getenv("OPENAI_COMPLEX_REASONING_EFFORT", "xhigh"))
-    print("CLAUDE_STEWARD_MODEL:", os.getenv("CLAUDE_STEWARD_MODEL", "claude-sonnet-4-6"))
+    print("OPENAI_COMPLEX_REASONING_EFFORT:", os.getenv("OPENAI_COMPLEX_REASONING_EFFORT", "medium"))
+    print("CLAUDE_STEWARD_MODEL:", os.getenv("CLAUDE_STEWARD_MODEL", "claude-opus-4-8"))
     print("GEMINI_FLASH_MODEL:", os.getenv("GEMINI_FLASH_MODEL", "gemini-3.1-flash"))
     print("GEMINI_PREMIUM_MODEL:", os.getenv("GEMINI_PREMIUM_MODEL", "gemini-3.5-flash"))
     print("GEMINI_IMAGE_MODEL:", os.getenv("GEMINI_IMAGE_MODEL", "gemini-2.5-flash-image"))
@@ -122,6 +123,11 @@ def print_provider_status() -> None:
     print(provider_readiness_text())
 
 
+def print_dependency_manifest_status() -> None:
+    print("\n== Dependency Manifest ==")
+    print(dependency_readiness_text())
+
+
 def print_weekly_memory_status() -> None:
     print("\n== Weekly Memory ==")
     db_path = os.getenv("KAMPUNG_DB_PATH", "session_history.db")
@@ -165,6 +171,7 @@ if __name__ == "__main__":
     print_audio_status()
     print_runtime_status()
     print_provider_status()
+    print_dependency_manifest_status()
     print_weekly_memory_status()
     print_code_health()
     print_recommendation()

@@ -1,0 +1,181 @@
+from __future__ import annotations
+
+import asyncio
+import math
+import os
+from pathlib import Path
+
+from PIL import Image
+from pptx import Presentation
+from pptx.util import Inches
+
+from gemini_image import generate_gemini_image
+from office_files import safe_slug
+from workspace_paths import workspace_dir
+
+
+def topic_benefits_from_visuals(topic: str) -> bool:
+    lowered = str(topic).lower()
+    markers = (
+        "food", "trip", "travel", "restaurant", "itinerary", "product", "pitch",
+        "venue", "place", "city", "architecture", "concept", "diagram", "visual",
+        "brand", "marketing", "tourism", "hotel", "cafe",
+    )
+    return any(marker in lowered for marker in markers)
+
+
+async def add_gemini_visual_asset(path: Path, topic: str) -> tuple[bool, str]:
+    if os.getenv("ENABLE_PPTX_GEMINI_IMAGES", "1") == "0":
+        return False, "Gemini PPTX images disabled."
+    if not topic_benefits_from_visuals(topic):
+        return False, "Topic does not need generated visuals."
+    if not os.getenv("GOOGLE_API_KEY"):
+        return False, "Gemini image generation unavailable: GOOGLE_API_KEY not configured."
+    prompts = _image_prompts(path, topic)
+    image_paths: list[Path] = []
+    try:
+        for index, prompt in enumerate(prompts, 1):
+            image_path = workspace_dir("artifacts", create=True) / "pptx-images" / f"{safe_slug(topic, 56)}-{index}.png"
+            await generate_gemini_image(prompt, image_path)
+            image_paths.append(image_path)
+    except Exception as exc:
+        return False, f"Gemini image generation failed: {exc}"
+    return await asyncio.to_thread(_insert_visuals, path, image_paths)
+
+
+def _image_prompts(path: Path, topic: str) -> list[str]:
+    deck = Presentation(path)
+    slides = list(deck.slides)
+    max_images = visual_image_target(len(slides))
+    prompts = []
+    for index in range(max_images):
+        slide = slides[index % len(slides)]
+        texts = [" ".join(getattr(shape, "text", "").split()) for shape in slide.shapes]
+        slide_topic = " / ".join(text for text in texts[:4] if text) or topic
+        prompts.append(_image_prompt(topic, slide_topic, index))
+    return prompts
+
+
+def _image_prompt(topic: str, slide_topic: str, index: int) -> str:
+    lowered = str(topic).lower()
+    if any(word in lowered for word in ("food", "restaurant", "cafe", "trip", "travel", "tourism")):
+        if any(marker in lowered for marker in ("pastel", "light theme", "light mode", "bright theme", "not dark", "no dark")):
+            style = (
+                "Use bright high-key editorial travel and food photography with natural light, "
+                "appetizing real food texture, and a clean magazine feel."
+            )
+        else:
+            style = (
+                "Use premium editorial travel and food photography with controlled contrast, "
+                "rich shadows, appetizing real food texture, and a dark-theme presentation fit. "
+                "Avoid flat black studio emptiness; keep the food and place visually inspectable."
+            )
+    elif any(word in lowered for word in ("cyber", "security", "architecture", "risk", "incident", "command")):
+        style = "Use dark premium technical editorial imagery with high contrast and controlled light."
+    else:
+        style = "Use polished editorial imagery with a clear subject and strong composition."
+    return (
+        "Create a clean, presentation-ready 16:9 visual for a PowerPoint deck. "
+        "No text, labels, logos, watermarks, UI chrome, or captions inside the image. "
+        f"{style} "
+        f"Deck topic: {topic}. Slide focus: {slide_topic}. Visual number: {index + 1}."
+    )
+
+
+def _insert_visuals(path: Path, image_paths: list[Path]) -> tuple[bool, str]:
+    deck = Presentation(path)
+    if not deck.slides:
+        return False, "Deck has no slides for image insertion."
+    inserted = 0
+    for index, image_path in enumerate(image_paths):
+        slide_index = _target_slide_index(index, len(deck.slides))
+        if slide_index is None:
+            break
+        x, y, width, height = _picture_slot(index, slide_index, extra=index >= len(deck.slides))
+        _add_picture_cover(deck.slides[slide_index], image_path, x, y, width, height)
+        inserted += 1
+    deck.save(path)
+    if not inserted:
+        return False, "No visual slots were available for image insertion."
+    return True, f"Inserted {inserted} Gemini visual assets."
+
+
+def visual_image_cap(slide_count: int) -> int:
+    if slide_count <= 0:
+        return 0
+    return max(1, math.ceil(slide_count * 1.3))
+
+
+def visual_image_target(slide_count: int) -> int:
+    if slide_count <= 0:
+        return 0
+    cap = visual_image_cap(slide_count)
+    try:
+        configured = int(os.getenv("PPTX_GEMINI_IMAGE_MAX", str(slide_count)))
+    except ValueError:
+        configured = slide_count
+    return max(1, min(configured, cap))
+
+
+def required_visual_image_count(slide_count: int) -> int:
+    if slide_count <= 0:
+        return 0
+    return min(slide_count, visual_image_target(slide_count))
+
+
+def _target_slide_index(image_index: int, slide_count: int) -> int | None:
+    if slide_count <= 0:
+        return None
+    if image_index < slide_count:
+        return image_index
+    if slide_count == 1:
+        return 0
+    return 1 + ((image_index - slide_count) % (slide_count - 1))
+
+
+def _picture_slot(image_index: int, slide_index: int, extra: bool = False) -> tuple[float, float, float, float]:
+    if extra:
+        if slide_index == 0:
+            return 10.15, 5.18, 1.65, 1.05
+        if slide_index % 3 == 0:
+            return 10.62, 2.82, 1.52, 0.92
+        image_left = slide_index % 2 == 1
+        return (10.28, 5.08, 1.55, 1.0) if image_left else (4.75, 5.08, 1.55, 1.0)
+    if slide_index == 0:
+        return 7.25, 1.0, 5.1, 3.55
+    if slide_index % 3 == 0:
+        return 0.86, 1.34, 11.65, 2.62
+    image_left = slide_index % 2 == 1
+    return (0.86, 1.44, 5.73, 4.83) if image_left else (6.56, 1.44, 5.73, 4.83)
+
+
+def _add_picture_cover(slide, image_path: Path, x: float, y: float, width: float, height: float):
+    picture = slide.shapes.add_picture(
+        str(image_path),
+        Inches(x),
+        Inches(y),
+        width=Inches(width),
+        height=Inches(height),
+    )
+    _apply_center_crop(picture, image_path, width / height)
+    return picture
+
+
+def _apply_center_crop(picture, image_path: Path, frame_ratio: float) -> None:
+    with Image.open(image_path) as image:
+        image_width, image_height = image.size
+    if image_width <= 0 or image_height <= 0 or frame_ratio <= 0:
+        return
+    image_ratio = image_width / image_height
+    if abs(image_ratio - frame_ratio) < 0.01:
+        return
+    if frame_ratio > image_ratio:
+        crop_total = 1 - (image_ratio / frame_ratio)
+        crop = max(0, min(0.49, crop_total / 2))
+        picture.crop_top = crop
+        picture.crop_bottom = crop
+    else:
+        crop_total = 1 - (frame_ratio / image_ratio)
+        crop = max(0, min(0.49, crop_total / 2))
+        picture.crop_left = crop
+        picture.crop_right = crop

@@ -52,7 +52,7 @@ class BriefingBuilder:
     async def _weekly(self, channel: str) -> str:
         prepared = await latest_weekly_summary(self.db_path)
         if prepared:
-            return self._compose(channel, "Weekly reflection.", [prepared["summary"][:420]])
+            return self._compose(channel, "Weekly reflection.", _clean_weekly_summary(str(prepared["summary"])))
         completed, failed = await self._task_totals()
         preferences = await list_preferences(self.db_path, limit=2)
         lines = [f"Tasks completed this week: {completed}. Failed: {failed}."]
@@ -88,4 +88,106 @@ class BriefingBuilder:
     def _compose(channel: str, title: str, lines: list[str]) -> str:
         if channel == "imac":
             return " ".join([title] + lines[:2])
-        return title + "\n" + "\n".join(f"- {line}" for line in lines[:3])
+        return title + "\n" + "\n".join(f"- {line}" for line in lines[:4])
+
+
+def _clean_weekly_summary(summary: str) -> list[str]:
+    facts = _extract_after(summary, "Canonical facts:")
+    topics = _extract_after(summary, "Recent conversation topics:")
+    loops = _extract_after(summary, "Open loops:")
+    saved = _extract_count(summary, "Live canonical memories saved:")
+    rejected = _extract_count(summary, "Live canonical memories rejected:")
+    confirmation = _extract_count(summary, "Claude confirmation needed:")
+    lines: list[str] = []
+    if facts:
+        lines.append("What I kept: " + _clean_list(facts, limit=2, skip_continuations=True))
+    if topics:
+        lines.append("Main thread: " + _clean_list(topics, limit=4))
+    if loops and loops.lower() != "none":
+        lines.append("Open loops: " + _clean_list(loops, limit=2))
+    if saved or rejected or confirmation:
+        parts = []
+        if saved:
+            parts.append(f"{saved} saved")
+        if rejected:
+            parts.append(f"{rejected} rejected")
+        if confirmation:
+            parts.append(f"{confirmation} needs confirmation")
+        lines.append("Memory update: " + ", ".join(parts) + ".")
+    if not lines:
+        lines.append("I prepared the weekly memory summary, but there was nothing important enough to surface.")
+    return lines[:4]
+
+
+def _extract_after(summary: str, label: str) -> str:
+    for line in summary.splitlines():
+        stripped = line.strip()
+        if stripped.startswith(label):
+            return stripped.split(":", 1)[1].strip().rstrip(".")
+    return ""
+
+
+def _extract_count(summary: str, label: str) -> int:
+    raw = _extract_after(summary, label)
+    if not raw:
+        return 0
+    first = raw.split(".", 1)[0].strip()
+    try:
+        return int(first)
+    except ValueError:
+        return 0
+
+
+def _clean_list(value: str, limit: int, skip_continuations: bool = False) -> str:
+    items = [item.strip() for item in value.split(";") if item.strip()]
+    cleaned = []
+    seen = set()
+    for item in items:
+        if _internal_weekly_item(item):
+            continue
+        if skip_continuations and item[:1].islower():
+            continue
+        cleaned_item = _truncate_clean(item)
+        key = cleaned_item.lower()
+        if key in seen:
+            continue
+        seen.add(key)
+        cleaned.append(cleaned_item)
+        if len(cleaned) >= limit:
+            break
+    if not cleaned:
+        return "nothing user-facing"
+    return _join(cleaned)
+
+
+def _internal_weekly_item(item: str) -> bool:
+    lowered = item.lower()
+    markers = (
+        "/users/",
+        "{",
+        "canonical memory ids",
+        "provider plan",
+        "provider calls",
+        "gemini first pass",
+        "claude stewardship",
+    )
+    return any(marker in lowered for marker in markers)
+
+
+def _truncate_clean(item: str, limit: int = 120) -> str:
+    text = " ".join(item.split()).strip(" .")
+    if "; " in text:
+        text = text.split("; ", 1)[0].strip(" .")
+    if ". " in text:
+        text = text.split(". ", 1)[0].strip(" .")
+    if len(text) <= limit:
+        return text
+    return text[: limit - 1].rsplit(" ", 1)[0].rstrip(" ,") + "."
+
+
+def _join(items: list[str]) -> str:
+    if len(items) <= 1:
+        return items[0] if items else ""
+    if len(items) == 2:
+        return items[0] + "; " + items[1]
+    return "; ".join(items[:-1]) + "; " + items[-1]

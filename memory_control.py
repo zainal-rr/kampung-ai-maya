@@ -5,9 +5,9 @@ import re
 
 from canonical_memory import forget_canonical_memory, search_relevant_canonical_memories
 from curated_memory import curated_memory_status, forget_curated_memory
+from retention_policy import run_retention_cleanup
 from session_memory_store import list_session_summaries
 from storage import list_preferences
-
 
 async def forget_memory(db_path: str, query: str) -> str:
     cleaned = " ".join(query.strip().split())
@@ -114,18 +114,15 @@ async def _forget_fuzzy_memory(db_path: str, query: str) -> int:
         await db.commit()
     return deleted + curated_deleted
 
-
 async def _delete_history_context_like(db: aiosqlite.Connection, pattern: str) -> int:
     rows = await (await db.execute("SELECT rowid, role, content FROM history ORDER BY rowid")).fetchall()
     ids = _matching_context_ids(rows, lambda row, _combined: _like_match(pattern, row["content"]))
     return await _delete_history_ids(db, ids)
 
-
 async def _delete_session_search_context_like(db: aiosqlite.Connection, pattern: str) -> int:
     rows = await (await db.execute("SELECT rowid, role, content FROM session_search ORDER BY rowid")).fetchall()
     ids = _matching_context_ids(rows, lambda row, _combined: _like_match(pattern, row["content"]))
     return await _delete_session_search_ids(db, ids)
-
 
 async def _delete_fuzzy_history_context(db: aiosqlite.Connection, tokens: set[str], related_tokens: set[str]) -> int:
     rows = await (await db.execute("SELECT rowid, role, content FROM history ORDER BY rowid")).fetchall()
@@ -214,6 +211,7 @@ async def memory_sources_text(db_path: str, query: str = "") -> str:
 
 
 async def cleanup_stale_memory(db_path: str, keep_summaries: int = 5) -> str:
+    retention = await run_retention_cleanup(db_path)
     async with aiosqlite.connect(db_path) as db:
         stale_summaries = await db.execute(
             """
@@ -228,12 +226,13 @@ async def cleanup_stale_memory(db_path: str, keep_summaries: int = 5) -> str:
             "DELETE FROM pending_lessons WHERE created_at < datetime('now', '-14 days')"
         )
         await db.commit()
-    return (
-        "Memory cleanup:\n"
-        f"1) Removed stale compacted summaries: {stale_summaries.rowcount}\n"
-        f"2) Removed old pending lessons: {stale_pending.rowcount}\n"
-        "3) Preferences and confirmed lessons were left intact."
-    )
+    return "\n".join((
+        "Memory cleanup:",
+        f"1) Removed stale compacted summaries: {stale_summaries.rowcount}",
+        f"2) Removed old pending lessons: {stale_pending.rowcount}",
+        "3) Preferences and confirmed lessons were left intact.",
+        f"4) Retention marked projects/tasks: {retention['projects_marked']}/{retention['tasks_marked']}; deleted records: {retention['projects_deleted']}/{retention['tasks_deleted']}.",
+    ))
 
 
 async def _list_lessons(db_path: str, query: str) -> list[dict[str, str]]:

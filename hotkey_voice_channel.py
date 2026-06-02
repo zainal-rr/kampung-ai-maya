@@ -13,6 +13,7 @@ from voice_agent_audio import VoiceAgentAudioCapture
 from voice_agent_session import build_voice_agent_session
 from voice_context import build_imac_voice_context
 from xai_realtime_stream import XaiRealtimeStreamingSession
+from xai_voice_handoff import VOICE_HANDOFF_KEY, pop_voice_handoff_request
 
 
 class HotkeyVoiceChannel:
@@ -158,6 +159,7 @@ class HotkeyVoiceChannel:
             "maya_active_workflow",
             STATE_KEY,
             PENDING_CLICK_KEY,
+            VOICE_HANDOFF_KEY,
         )
         for key in keys:
             with contextlib.suppress(Exception):
@@ -187,6 +189,8 @@ class HotkeyVoiceChannel:
             else:
                 await self.voice_agent.close_if_idle()
             self.session_active = False
+            if not self.stop_requested:
+                await self._run_pending_voice_handoff()
             if self.session_task is asyncio.current_task():
                 self.session_task = None
             print("maya-hotkey> voice session closed", flush=True)
@@ -200,6 +204,14 @@ class HotkeyVoiceChannel:
             print(f"maya-hotkey-reply> {response}", flush=True)
         await asyncio.sleep(int(os.getenv("XAI_VOICE_AGENT_IDLE_SECONDS", "20")))
         await self.voice_agent.close("idle timeout")
+
+    async def _run_pending_voice_handoff(self) -> None:
+        request = await pop_voice_handoff_request(self.assistant.db_path)
+        if not request:
+            return
+        print(f"maya-hotkey-handoff> {request}", flush=True)
+        response = await self.assistant.handle_text(request, channel="imac", speak_reply=True)
+        print(f"maya-hotkey-handoff-reply> {response}", flush=True)
 
     def _hotkey_debounced(self) -> bool:
         now = time.monotonic()

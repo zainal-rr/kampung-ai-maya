@@ -21,7 +21,21 @@ async def main() -> None:
         assert path.exists()
         html = path.read_text("utf-8")
         assert "Maya Desk" in html
+        for section in (
+            "Readiness",
+            "Workflows",
+            "Last Route",
+            "Memory Health",
+            "Weekly Memory",
+            "Dependency Readiness",
+            "Harness Traces",
+            "Recent Failures",
+            "Cost",
+        ):
+            assert section in html
         assert "Sample" in html
+        assert "sk-" not in html
+        assert "BEGIN PRIVATE KEY" not in html
         assert str(path).endswith("reports/maya-desk.html")
     print("maya_desk_smoke: ok")
 

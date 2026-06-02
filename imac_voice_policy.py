@@ -31,6 +31,8 @@ def decide_imac_voice_route(text: str) -> ImacVoiceDecision:
     cleaned = " ".join(text.strip().split())
     if _explicit_complex(cleaned):
         return ImacVoiceDecision("assistant", "explicit complex cue")
+    if _long_work_or_tool_request(cleaned):
+        return ImacVoiceDecision("assistant", "long workflow handoff")
     if _quality_sensitive(cleaned):
         return ImacVoiceDecision("gemini", "quality-sensitive Malay/Manglish", _filler(cleaned))
     if not _is_malay_or_manglish(cleaned):
@@ -63,6 +65,24 @@ def _explicit_complex(text: str) -> bool:
         "route this to gpt", "route to gpt", "use gpt for this", "use gpt",
     )
     return any(marker in lowered for marker in markers)
+
+
+def _long_work_or_tool_request(text: str) -> bool:
+    lowered = text.lower()
+    if lowered.startswith(("remember ", "forget ", "/forget")) or "remember that" in lowered:
+        return True
+    action_markers = (
+        "make", "create", "build", "prepare", "generate", "draft", "write",
+        "open", "search", "find flights", "book", "compare", "edit", "update",
+    )
+    artifact_markers = (
+        "document", "word", "docx", "spreadsheet", "excel", "xlsx", "powerpoint",
+        "presentation", "ppt", "pptx", "html", "app", "file", "budget tracker",
+        "browser", "chrome", "google flights", "booking.com", "airbnb", "project",
+    )
+    if any(action in lowered for action in action_markers) and any(artifact in lowered for artifact in artifact_markers):
+        return True
+    return lowered.startswith(("/open", "/screen", "/see", "/memory", "/route", "/cost"))
 
 
 def _filler(text: str) -> str:

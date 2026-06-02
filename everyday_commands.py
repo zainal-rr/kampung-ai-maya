@@ -1,11 +1,9 @@
 from __future__ import annotations
 
-import re
 from pathlib import Path
-from zipfile import ZipFile
-from xml.etree import ElementTree
 
 from approval_inbox import approval_inbox_text
+from artisan_runner import latest_artisan_delivery_text
 from daily_cockpit import daily_cockpit_text, focus_text, project_cockpit_text
 from desktop_file_opener import DesktopFileOpener
 from harness_artifact_store import latest_artifacts
@@ -14,6 +12,13 @@ from storage import get_preference
 from utils import OSBridge
 from waiting_on import handle_waiting_on
 from workflow_desk import background_tasks_text, close_matching_workflow, quiet_mode_text, workflow_desk_text
+from everyday_document_summary import (
+    _best_artifact_summary,
+    _close_workflow_query,
+    _content_summary,
+    _pptx_content_summary,
+    _summary_from_path,
+)
 
 
 class EverydayCommandRouter:
@@ -87,12 +92,61 @@ class EverydayCommandRouter:
         }:
             self._mark("latest document")
             return await self._latest_document(channel)
-        if cleaned in {"open latest document", "open the last document"}:
+        if cleaned in {
+            "open latest document",
+            "open the last document",
+            "send latest document",
+            "send the latest document",
+            "send me latest document",
+            "send me the latest document",
+            "send last document",
+            "send the last document",
+            "send me last document",
+            "send me the last document",
+        }:
             self._mark("latest document")
             return await self._open_latest_document(channel)
-        if cleaned in {"open latest file", "open the last file", "open latest artifact"}:
+        if cleaned in {
+            "open latest file",
+            "open the last file",
+            "open latest artifact",
+            "send latest file",
+            "send the latest file",
+            "send me latest file",
+            "send me the latest file",
+            "send latest artifact",
+            "send me latest artifact",
+        }:
             self._mark("artifact action")
             return await self._open_latest_file(channel)
+        if cleaned in {
+            "last app",
+            "latest app",
+            "send last app",
+            "send the last app",
+            "send me the last app",
+            "send latest app",
+            "send me latest app",
+            "where is the last app",
+            "where is my last app",
+        }:
+            self._mark("latest app")
+            return await latest_artisan_delivery_text(self.db_path, "app", channel)
+        if cleaned in {
+            "last 3d model",
+            "latest 3d model",
+            "last 3d print",
+            "latest 3d print",
+            "send last 3d model",
+            "send the last 3d model",
+            "send me the last 3d model",
+            "send last 3d print",
+            "send me the last 3d print",
+            "where is the last 3d model",
+            "where is my last 3d model",
+        }:
+            self._mark("latest maker")
+            return await latest_artisan_delivery_text(self.db_path, "maker", channel)
         file_reply = await self.file_opener.handle(text, channel)
         if file_reply:
             self._mark("desktop file open")
@@ -149,141 +203,21 @@ class EverydayCommandRouter:
         return f"I opened the last document: {path}"
 
     async def _document_summary(self, path: str) -> str:
-        local_summary = _content_summary(Path(path))
+        document_path = Path(path)
+        local_summary = _content_summary(document_path)
         if local_summary:
             return local_summary
-        artifacts = await latest_artifacts(self.db_path, limit=20)
-        for artifact in artifacts:
-            if str(artifact.get("path") or "") == path:
-                summary = str(artifact.get("summary") or "").strip()
-                if summary:
-                    return summary
-        return _summary_from_path(Path(path))
-
-
-def _close_workflow_query(text: str) -> str | None:
-    match = re.match(r"^(?:pause|close|cancel)\s+(?:the\s+)?(.+?)\s+(?:task|workflow)$", text, re.I)
-    return match.group(1).strip(" .") if match else None
-
-
-def _summary_from_path(path: Path) -> str:
-    stem = path.stem.replace("-", " ").replace("_", " ").strip()
-    suffix = path.suffix.lower()
-    if suffix == ".docx":
-        return f"Word document about {stem}."
-    if suffix == ".pptx":
-        return f"PowerPoint presentation about {stem}."
-    if suffix == ".xlsx":
-        return f"Excel spreadsheet for {stem}."
-    if suffix == ".html":
-        return f"HTML file for {stem}."
-    return f"File about {stem}."
-
-
-def _content_summary(path: Path) -> str:
-    if not path.exists() or path.suffix.lower() != ".docx":
-        return ""
-    paragraphs = _docx_paragraphs(path)
-    if not paragraphs:
-        return ""
-    title = paragraphs[0]
-    headings = _interesting_headings(paragraphs[1:])
-    detail = _first_detail(paragraphs[1:])
-    subject = _summary_subject(title)
-    sentence = subject
-    if headings:
-        sentence += " covering " + _friendly_topics(headings[:4])
-    if detail:
-        sentence += ". " + _friendly_detail(detail)
-    return sentence.rstrip(".") + "."
-
-
-def _docx_paragraphs(path: Path) -> list[str]:
-    try:
-        with ZipFile(path) as archive:
-            xml = archive.read("word/document.xml")
-    except (KeyError, OSError):
-        return []
-    root = ElementTree.fromstring(xml)
-    namespace = {"w": "http://schemas.openxmlformats.org/wordprocessingml/2006/main"}
-    paragraphs: list[str] = []
-    for paragraph in root.findall(".//w:p", namespace):
-        text = "".join(node.text or "" for node in paragraph.findall(".//w:t", namespace)).strip()
-        if text:
-            paragraphs.append(text)
-    return paragraphs
-
-
-def _interesting_headings(paragraphs: list[str]) -> list[str]:
-    generic = {"role and assumptions", "working context", "key decisions", "plan", "next steps"}
-    headings = []
-    for text in paragraphs:
-        lowered = text.lower().strip()
-        if lowered in generic:
-            headings.append(text)
-        elif re.match(r"^(?:day\s+\d+|budget|timeline|itinerary)\b", lowered):
-            headings.append(text)
-        if len(headings) >= 5:
-            break
-    return headings
-
-
-def _first_detail(paragraphs: list[str]) -> str:
-    for text in paragraphs:
-        lowered = text.lower()
-        if lowered.startswith(("role:", "assumption")):
-            continue
-        if any(marker in lowered for marker in ("kyoto", "tokyo", "trip", "itinerary", "arrival", "departure")):
-            return text[:180].rstrip(".")
-    return ""
-
-
-def _join_phrases(items: list[str]) -> str:
-    if not items:
-        return ""
-    if len(items) == 1:
-        return items[0]
-    return ", ".join(items[:-1]) + ", and " + items[-1]
-
-
-def _summary_subject(title: str) -> str:
-    lowered = title.lower()
-    day_match = re.match(r"^(?P<count>one|two|three|four|five|six|seven|\d+)\s+days?\s+(?P<place>.+?)\s+trip$", title, re.I)
-    if day_match:
-        count = day_match.group("count").lower()
-        place = day_match.group("place").strip()
-        return f"A {count}-day {place} trip plan"
-    if "trip" in lowered or "itinerary" in lowered:
-        return f"A {title} plan"
-    return f"A {title}"
-
-
-def _friendly_topics(headings: list[str]) -> str:
-    cleaned = []
-    for heading in headings:
-        mapped = _topic_label(heading)
-        if mapped:
-            cleaned.append(mapped)
-            continue
-        text = re.sub(r"^Day\s+(\d+):\s*", r"Day \1 ", heading, flags=re.I)
-        text = text.replace("&", "and")
-        text = re.sub(r"\s*\([^)]*\)", "", text).strip()
-        text = re.sub(r"Day\s+(\d+)\s+The\s+", r"Day \1 ", text)
-        text = re.sub(r"^Day\s+(\d+)\s+", r"Day \1: ", text)
-        cleaned.append(text[0].lower() + text[1:] if text else text)
-    return _join_phrases([item for item in cleaned if item])
-
-
-def _friendly_detail(detail: str) -> str:
-    return detail.strip().rstrip(".")
-
-
-def _topic_label(heading: str) -> str:
-    labels = {
-        "role and assumptions": "trip assumptions",
-        "working context": "travel context",
-        "key decisions": "key decisions",
-        "plan": "the plan",
-        "next steps": "next steps",
-    }
-    return labels.get(heading.lower().strip(), "")
+        pptx_summary = _pptx_content_summary(document_path)
+        if pptx_summary:
+            return pptx_summary
+        artifacts = await latest_artifacts(self.db_path, limit=30)
+        summaries = [
+            artifact
+            for artifact in artifacts
+            if str(artifact.get("path") or "") == path
+            and str(artifact.get("summary") or "").strip()
+        ]
+        artifact_summary = _best_artifact_summary(summaries)
+        if artifact_summary:
+            return artifact_summary
+        return _summary_from_path(document_path)

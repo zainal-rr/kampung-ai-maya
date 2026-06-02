@@ -16,8 +16,13 @@ class FakeBot:
     async def send_message(self, chat_id: int, text: str) -> None:
         self.messages.append((chat_id, text))
 
-    async def send_document(self, chat_id: int, document, caption: str | None = None) -> None:
+    async def send_document(self, chat_id: int, document, caption: str | None = None, **kwargs) -> None:
         self.documents.append((chat_id, document.name, caption))
+
+
+class FailingBot(FakeBot):
+    async def send_document(self, chat_id: int, document, caption: str | None = None, **kwargs) -> None:
+        raise TimeoutError("simulated upload timeout")
 
 
 async def main() -> None:
@@ -39,6 +44,13 @@ async def main() -> None:
         _require(bot.messages == [(123, "Here is the file.")], "message delivery failed")
         _require(len(bot.documents) == 1, "document was not delivered")
         _require(bot.documents[0][2] == "maya-notes.docx", "document caption was not set")
+
+        failing_bot = FailingBot()
+        await send_text(failing_bot, 124, text)
+        _require(
+            any("Telegram upload timed out or failed" in message for _, message in failing_bot.messages),
+            "upload failure should send a visible fallback path message",
+        )
 
         long_bot = FakeBot()
         await send_text(long_bot, 456, "x" * (MAX_TELEGRAM_TEXT + 50))

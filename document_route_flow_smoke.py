@@ -9,6 +9,7 @@ from context_layers import init_context_layers_db
 from harness_artifact_store import init_harness_artifact_db
 from harness_store import init_harness_db
 from lesson_store import init_lesson_db
+from artifact_preflight import ArtifactPreflight
 from markdown_drafter import MarkdownDraft
 from route_tracker import last_route_text
 from routine_store import init_routine_db
@@ -30,25 +31,28 @@ async def main() -> None:
 
         old_draft = da.draft_markdown_with_gemini
         old_review = da.review_presentation_slides
+        old_preflight = da.artifact_preflight_with_gemini
         old_travel_draft = travel_budget.draft_markdown_with_gemini
         try:
             da.draft_markdown_with_gemini = _fake_draft
             da.review_presentation_slides = _fake_review
+            da.artifact_preflight_with_gemini = _fake_preflight
             travel_budget.draft_markdown_with_gemini = _fake_draft
 
             await _case(db_path, "create an md file about drone operations", "Gemini Flash role-based document draft")
-            await _case(db_path, "write a Word document about drone company operations", "Gemini Flash role-based Word draft")
-            await _case(db_path, "make an Excel spreadsheet about drone inspection pipeline", "Gemini Flash role-based spreadsheet draft")
-            await _case(db_path, "make an Excel travel budget sheet for Osaka trip", "Gemini Flash role-based travel budget notes + Local travel budget workbook")
+            await _case(db_path, "write a Word document about drone company operations", "Gemini artifact preflight + Gemini Flash role-based Word draft")
+            await _case(db_path, "make an Excel spreadsheet about drone inspection pipeline", "Gemini artifact preflight + Gemini Flash role-based spreadsheet draft")
+            await _case(db_path, "make an Excel travel budget sheet for Osaka trip", "Gemini artifact preflight + Gemini Flash role-based travel budget notes + Local travel budget workbook")
             await _case(
                 db_path,
                 "make presentation on drone inspection company",
-                "Gemini Flash role-based presentation content + Claude presentation design review",
+                "Gemini artifact preflight + PowerPoint design taste + Gemini Flash role-based presentation content + Claude presentation design review",
             )
             print("document_route_flow_smoke: ok")
         finally:
             da.draft_markdown_with_gemini = old_draft
             da.review_presentation_slides = old_review
+            da.artifact_preflight_with_gemini = old_preflight
             travel_budget.draft_markdown_with_gemini = old_travel_draft
 
 
@@ -72,7 +76,7 @@ async def _init(db_path: str) -> None:
     await init_harness_artifact_db(db_path)
 
 
-async def _fake_draft(db_path: str, topic: str) -> MarkdownDraft:
+async def _fake_draft(db_path: str, topic: str, preflight_context: str = "") -> MarkdownDraft:
     return MarkdownDraft(
         "# Role Based Draft\n\n"
         "## Role And Assumptions\n\n"
@@ -87,6 +91,10 @@ async def _fake_draft(db_path: str, topic: str) -> MarkdownDraft:
 
 async def _fake_review(db_path: str, topic: str, slides):
     return [("Designed Story Arc", ["Preserve Gemini content", "Improve slide rhythm"])]
+
+
+async def _fake_preflight(db_path: str, artifact_type: str, topic: str) -> ArtifactPreflight:
+    return ArtifactPreflight(artifact_type, topic, "gemini", "runtime preflight", True)
 
 
 def _require(condition: bool, message: str) -> None:

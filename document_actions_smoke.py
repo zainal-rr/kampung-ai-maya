@@ -16,16 +16,34 @@ from session_memory_store import init_session_memory_db
 from skill_store import init_skill_db
 from storage import init_db, upsert_preference
 from telegram_delivery import split_file_markers
+from artifact_preflight import ArtifactPreflight
 from markdown_drafter import MarkdownDraft, _apply_source_quality, should_ground_topic
 from openpyxl import load_workbook
+from document_actions_smoke_helpers import (
+    FakeBridge,
+    _failure_smoke,
+    _fake_artifact_quality_review,
+    _fake_bad_word_edit,
+    _fake_draft,
+    _fake_html_draft,
+    _fake_html_fallback,
+    _fake_html_review,
+    _fake_review,
+    _first_suffix,
+    _init,
+    _model_draft_smoke,
+    _notes_members,
+    _office_can_open,
+    _require,
+    _slide_members,
+    _source_quality_smoke,
+    _workbook_text,
+    _zip_has,
+    _zip_text,
+    same_review,
+)
 
 
-class FakeBridge:
-    def __init__(self):
-        self.opened: list[tuple[str, str | None]] = []
-
-    def open_file(self, path: str, app_name: str | None = None) -> None:
-        self.opened.append((path, app_name))
 
 
 async def main() -> None:
@@ -45,12 +63,22 @@ async def main() -> None:
         old_html_review = da.review_html_app
         old_should = da.should_use_model_draft
         old_review = da.review_presentation_slides
+        old_artifact_review = da.review_artifact_quality
+        old_preflight = da.artifact_preflight_with_gemini
+        preflight_calls: list[str] = []
+
+        async def fake_preflight(db_path: str, artifact_type: str, topic: str) -> ArtifactPreflight:
+            preflight_calls.append(artifact_type)
+            return ArtifactPreflight(artifact_type, topic, "gemini", f"{artifact_type} runtime preflight blueprint", True)
+
         da.draft_markdown_with_gemini = _fake_draft
         da.draft_html_with_kimi = _fake_html_draft
         da.draft_html_with_gemini = _fake_html_fallback
         da.review_html_app = _fake_html_review
         da.should_use_model_draft = lambda topic: True
         da.review_presentation_slides = _fake_review
+        da.review_artifact_quality = _fake_artifact_quality_review
+        da.artifact_preflight_with_gemini = fake_preflight
         assistant = KampungAssistant(db_path)
         bridge = FakeBridge()
         assistant.commands.documents.bridge = bridge
@@ -90,7 +118,10 @@ async def main() -> None:
         _require("<pre>" not in html_file_text and "### Role" not in html_file_text, "html app should not be a spec wrapper")
         _require("Reviewed by Claude" in html_file_text, "html app was not reviewed")
         html_route = await last_route_text(db_path)
-        _require("Kimi HTML app builder + Claude HTML review + local HTML QA" in html_route, "html app should use Kimi plus Claude plus local QA lane")
+        _require(
+            "Codex app implementation + Claude HTML review + local HTML QA" in html_route,
+            "html app should use Codex plus Claude plus local QA lane",
+        )
 
         typo_html = await assistant.handle_text("ake me a html file for a travel planner app", "telegram")
         typo_text, typo_files = split_file_markers(typo_html)
@@ -102,6 +133,43 @@ async def main() -> None:
         _require(docx_files and _zip_has(docx_files[0], "word/document.xml"), "docx file missing")
         _require(_zip_text(docx_files[0], "word/document.xml").count("WAN or internet port"), "docx used template content")
         _require("dash style" in _zip_text(docx_files[0], "word/document.xml"), "docx ignored no-dash preference")
+        da.draft_markdown_with_gemini = _fake_bad_word_edit
+        putty_doc = await assistant.handle_text("Can you update the document to show a simple config if what i should write in putty", "telegram")
+        da.draft_markdown_with_gemini = _fake_draft
+        _, putty_files = split_file_markers(putty_doc)
+        putty_text = _zip_text(putty_files[0], "word/document.xml") if putty_files else ""
+        _require(putty_files and putty_files[0] == docx_files[0], "PuTTY edit should update router document in place")
+        _require("Ument" not in putty_text, "document edit parser corrupted the title")
+        _require("Router Setup Guide With PuTTY Config" in putty_text, "PuTTY edit should use a clean title")
+        _require("configure terminal" in putty_text and "write memory" in putty_text, "PuTTY edit missing simple command config")
+        _require("default-router" in putty_text and "show running-config" in putty_text, "PuTTY command syntax should preserve required hyphens")
+        _require("Word deterministic PuTTY repair" in assistant.commands.documents.last_model_lane, "PuTTY edit should use deterministic repair if model edit is weak")
+        seoul_doc = await assistant.handle_text("Make me a Word document for a 2-day Seoul food trip", "telegram")
+        _, seoul_files = split_file_markers(seoul_doc)
+        seoul_text = _zip_text(seoul_files[0], "word/document.xml") if seoul_files else ""
+        _require(seoul_files and _zip_has(seoul_files[0], "word/document.xml"), "short Seoul doc request did not create docx")
+        _require("Day 1 Plan" in seoul_text and "Day 2 Plan" in seoul_text, "decorated day headings were not canonicalized")
+        _require("Gemini artifact preflight" in assistant.commands.documents.last_model_lane, "Word route did not run artifact preflight")
+        edited_seoul = await assistant.handle_text("Can you update that to 4 days", "telegram")
+        _, edited_seoul_files = split_file_markers(edited_seoul)
+        edited_seoul_text = _zip_text(edited_seoul_files[0], "word/document.xml") if edited_seoul_files else ""
+        _require(edited_seoul_files and edited_seoul_files[0] == seoul_files[0], "Word edit should update the latest document in place")
+        _require("Day 4 Plan" in edited_seoul_text, "Word edit did not update the itinerary duration")
+        _require((seoul_files[0].parent / ".maya_backups").exists(), "Word edit should create an internal backup")
+        _require("Gemini Flash Word edit" in assistant.commands.documents.last_model_lane, "Word edit lane missing")
+        copied_seoul = await assistant.handle_text("create a copy of that to 2 days", "telegram")
+        _, copied_seoul_files = split_file_markers(copied_seoul)
+        copied_seoul_text = _zip_text(copied_seoul_files[0], "word/document.xml") if copied_seoul_files else ""
+        _require(copied_seoul_files and copied_seoul_files[0] != seoul_files[0], "explicit copy should create a new version")
+        _require("Day 2 Plan" in copied_seoul_text and "Day 4 Plan" not in copied_seoul_text, "explicit copy did not apply requested edit")
+        before_failed_edit = copied_seoul_files[0].read_bytes()
+        da.draft_markdown_with_gemini = _fake_bad_word_edit
+        failed_edit = await assistant.handle_text("update that to 9 days", "telegram")
+        da.draft_markdown_with_gemini = _fake_draft
+        _require("kept the original unchanged" in failed_edit, "failed Word edit should preserve original")
+        _require(copied_seoul_files[0].read_bytes() == before_failed_edit, "failed in-place edit should restore original bytes")
+        vague_doc = await assistant.handle_text("make me a travel doc", "telegram")
+        _require("Which city or destination" in vague_doc and "[file:" not in vague_doc, "vague travel doc should ask one question")
         voice_word = await assistant.handle_text("Give me a two days work document for Q23", "telegram", input_type="voice note")
         _, voice_word_files = split_file_markers(voice_word)
         _require(voice_word_files and _zip_has(voice_word_files[0], "word/document.xml"), "voice/STT work document wording should create docx")
@@ -113,17 +181,25 @@ async def main() -> None:
 
         deck = await assistant.handle_text("make presentation on router setup", "telegram")
         _, deck_files = split_file_markers(deck)
-        _require(deck_files and _zip_has(deck_files[0], "ppt/presentation.xml"), "pptx file missing")
-        _require(_office_can_open(deck_files[0]), "pptx should open without repair")
-        deck_text = " ".join(_zip_text(deck_files[0], name) for name in _slide_members(deck_files[0]))
+        deck_path = _first_suffix(deck_files, ".pptx")
+        _require(deck_path and _zip_has(deck_path, "ppt/presentation.xml"), "pptx file missing")
+        _require(not _first_suffix(deck_files, ".jpg"), "PowerPoint Telegram delivery should not attach preview images by default")
+        _require(_office_can_open(deck_path), "pptx should open without repair")
+        deck_text = " ".join(_zip_text(deck_path, name) for name in _slide_members(deck_path))
+        deck_full_text = deck_text + " " + " ".join(_zip_text(deck_path, name) for name in _notes_members(deck_path))
         _require("Key concept 1" not in deck_text, "pptx used placeholder content")
-        _require("Reviewed narrative" in deck_text, "pptx did not use review content")
-        _require("Review dash" in deck_text, "pptx ignored no-dash preference")
+        _require("reviewed narrative" in deck_full_text.lower(), "pptx did not use review content")
+        _require("Review - dash" not in deck_full_text, "pptx ignored no-dash preference")
         _require("monocular HUD" not in deck_text, "pptx QA leaked Ray-Ban revision content")
         _require("Visual QA passed" in deck, "pptx did not report QA result")
+        _require("Gemini artifact preflight" in assistant.commands.documents.last_model_lane, "PowerPoint route did not run artifact preflight")
         powerpoint = await assistant.handle_text("make me a PowerPoint about Kampung AI Telegram features", "telegram")
         _, powerpoint_files = split_file_markers(powerpoint)
-        _require(powerpoint_files and _zip_has(powerpoint_files[0], "ppt/presentation.xml"), "PowerPoint wording did not create a pptx file")
+        powerpoint_path = _first_suffix(powerpoint_files, ".pptx")
+        _require(
+            powerpoint_path and _zip_has(powerpoint_path, "ppt/presentation.xml"),
+            f"PowerPoint wording did not create a pptx file: {powerpoint}",
+        )
 
         await assistant.handle_text("open project Orchid Lab", "telegram")
         project = await active_project(db_path)
@@ -154,6 +230,7 @@ async def main() -> None:
         budget_text = _workbook_text(budget_files[0])
         _require("Estimated JPY" in budget_text and "Actual JPY" in budget_text, "budget tracker should have editable budget columns")
         _require("Role And Assumptions" not in budget_text, "budget tracker should not be a notes spreadsheet")
+        _require("Gemini artifact preflight" in assistant.commands.documents.last_model_lane, "Excel route did not run artifact preflight")
         sheet = await assistant.handle_text("make an Excel comparison sheet for router setup and mesh wifi", "telegram")
         _, sheet_files = split_file_markers(sheet)
         _require(sheet_files and _zip_has(sheet_files[0], "xl/worksheets/sheet1.xml"), "xlsx file missing")
@@ -171,6 +248,7 @@ async def main() -> None:
             await _model_draft_smoke(db_path)
             await _failure_smoke(db_path)
             _source_quality_smoke()
+            _require({"docx", "xlsx", "pptx"}.issubset(set(preflight_calls)), "preflight did not run for all Office artifact types")
             print("document_actions_smoke: ok")
         finally:
             da.draft_markdown_with_gemini = old_draft
@@ -179,218 +257,39 @@ async def main() -> None:
             da.review_html_app = old_html_review
             da.should_use_model_draft = old_should
             da.review_presentation_slides = old_review
+            da.review_artifact_quality = old_artifact_review
+            da.artifact_preflight_with_gemini = old_preflight
             if old_google:
                 os.environ["GOOGLE_API_KEY"] = old_google
 
 
-async def _init(db_path: str) -> None:
-    await init_db(db_path)
-    await init_lesson_db(db_path)
-    await init_skill_db(db_path)
-    await init_routine_db(db_path)
-    await init_session_memory_db(db_path)
-    await init_context_layers_db(db_path)
 
 
-def _zip_has(path: Path, member: str) -> bool:
-    with zipfile.ZipFile(path) as archive:
-        return member in archive.namelist()
 
 
-def _zip_text(path: Path, member: str) -> str:
-    with zipfile.ZipFile(path) as archive:
-        return archive.read(member).decode("utf-8", errors="ignore")
 
 
-def _workbook_text(path: Path) -> str:
-    book = load_workbook(path, data_only=False)
-    values = []
-    for sheet in book.worksheets:
-        for row in sheet.iter_rows(values_only=True):
-            values.extend(str(item) for item in row if item is not None)
-    return "\n".join(values)
 
 
-def _slide_members(path: Path) -> list[str]:
-    with zipfile.ZipFile(path) as archive:
-        return [name for name in archive.namelist() if name.startswith("ppt/slides/slide") and name.endswith(".xml")]
 
 
-def _require(condition: bool, message: str) -> None:
-    if not condition:
-        raise AssertionError(message)
 
 
-async def _model_draft_smoke(db_path: str) -> None:
-    import document_actions as da
-    from route_tracker import last_route_text
 
-    old_draft = da.draft_markdown_with_gemini
-    old_should = da.should_use_model_draft
 
-    try:
-        da.draft_markdown_with_gemini = _fake_draft
-        da.should_use_model_draft = lambda topic: True
-        router = da.DocumentActionRouter(db_path, workspace=Path(os.environ["MAYA_WORKSPACE_ROOT"]))
-        reply = await router.handle("create an md file about new gemini 3.5", "telegram")
-        _require(reply and "[file:" in reply, "model draft did not attach file")
-        _require(router.last_model_lane == "Gemini Flash grounded role-based document draft", "model draft lane not recorded")
-        _require(router.last_cost_recorded is True, "model draft cost not recorded")
-        assistant = KampungAssistant(db_path)
-        response = await assistant.handle_text("create an md file about new gemini 3.5", "telegram")
-        _require("[file:" in response, "assistant model draft did not attach file")
-        route = await last_route_text(db_path)
-        _require("Gemini Flash grounded role-based document draft" in route, "assistant route did not expose model draft lane")
-        _require("cost recorded: yes" in route, "assistant route did not record model draft cost")
 
-        async def fake_grounded(db_path: str, topic: str) -> MarkdownDraft:
-            return MarkdownDraft("# New Gemini 3.5\n\n## Sources\n\n1) Google: https://ai.google.dev\n", grounded=True)
 
-        da.draft_markdown_with_gemini = fake_grounded
-        grounded_router = da.DocumentActionRouter(db_path, workspace=Path(os.environ["MAYA_WORKSPACE_ROOT"]))
-        grounded_reply = await grounded_router.handle("create an md file about latest gemini", "telegram")
-        _require(grounded_reply and "[file:" in grounded_reply, "grounded draft did not attach file")
-        _require(grounded_router.last_model_lane == "Gemini Flash grounded role-based document draft", "grounded lane not recorded")
-    finally:
-        da.draft_markdown_with_gemini = old_draft
-        da.should_use_model_draft = old_should
 
-async def _failure_smoke(db_path: str) -> None:
-    import document_actions as da
 
-    old_draft = da.draft_markdown_with_gemini
-    old_html = da.draft_html_with_kimi
-    old_fallback = da.draft_html_with_gemini
-    old_review = da.review_html_app
 
-    async def fail_draft(db_path: str, topic: str) -> MarkdownDraft:
-        raise RuntimeError("429 RESOURCE_EXHAUSTED")
 
-    async def timeout_html(db_path: str, topic: str) -> MarkdownDraft:
-        raise TimeoutError("Kimi timed out")
 
-    async def no_html(db_path: str, topic: str) -> MarkdownDraft | None:
-        return None
 
-    async def no_review(db_path: str, topic: str, html: str):
-        return html, "skipped"
 
-    async def broken_review(db_path: str, topic: str, html: str):
-        return "<!DOCTYPE html>\n<html><head><style>body{", "reviewed"
 
-    try:
-        da.draft_markdown_with_gemini = fail_draft
-        da.review_html_app = no_review
-        router = da.DocumentActionRouter(db_path, workspace=Path(os.environ["MAYA_WORKSPACE_ROOT"]))
-        before = set(Path(os.environ["MAYA_WORKSPACE_ROOT"]).joinpath("notes").glob("quota-test*.md"))
-        reply = await router.handle("create an md file about quota test", "telegram")
-        after = set(Path(os.environ["MAYA_WORKSPACE_ROOT"]).joinpath("notes").glob("quota-test*.md"))
-        _require("No file was created" in (reply or ""), "quota failure should not create fake file")
-        _require(before == after, "quota failure created a file")
-        da.draft_html_with_kimi = timeout_html
-        da.draft_html_with_gemini = _fake_html_fallback
-        fallback_reply = await router.handle("make me a html file for a travel planner app", "telegram")
-        _require("[file:" in (fallback_reply or ""), "Gemini should take over when Kimi times out")
-        _require(
-            router.last_model_lane == "Kimi HTML timeout -> Gemini Flash HTML fallback + local HTML QA",
-            "fallback lane should record the Kimi timeout before Gemini takeover",
-        )
-        da.draft_html_with_gemini = no_html
-        html_reply = await router.handle("make me a html file for a travel planner app", "telegram")
-        _require("Kimi and Gemini" in (html_reply or ""), "double HTML failure should be reported")
-        _require("No file was created" in (html_reply or ""), "Kimi timeout should not claim a file")
-        da.draft_html_with_kimi = _fake_html_draft
-        da.draft_html_with_gemini = _fake_html_fallback
-        da.review_html_app = broken_review
-        broken_reply = await router.handle("make me a html file for a broken review check app", "telegram")
-        _, broken_files = split_file_markers(broken_reply or "")
-        _require(broken_files and broken_files[0].exists(), "broken review should still create original html")
-        broken_text = broken_files[0].read_text(encoding="utf-8")
-        _require("<script" in broken_text and "<button" in broken_text, "broken review replaced the usable original")
-        _require(
-            router.last_model_lane == "Kimi HTML app builder + Claude HTML review rejected + local HTML QA",
-            "broken Claude review should be marked rejected",
-        )
-        da.review_html_app = same_review
-        same_reply = await router.handle("make me a html file for a same review check app", "telegram")
-        _require("[file:" in (same_reply or ""), "same review should still create html")
-        _require(
-            router.last_model_lane == "Kimi HTML app builder + Claude HTML review + local HTML QA",
-            "valid same Claude review should be recorded",
-        )
-    finally:
-        da.draft_markdown_with_gemini = old_draft
-        da.draft_html_with_kimi = old_html
-        da.draft_html_with_gemini = old_fallback
-        da.review_html_app = old_review
 
-async def _fake_draft(db_path: str, topic: str) -> MarkdownDraft:
-    lowered = topic.lower()
-    if "router" in lowered:
-        return MarkdownDraft("# Router Setup\n\n## Real Draft\n\n1) Connect the WAN or internet port.\n2) Keep dash - style clean.\n")
-    if "gemini" in lowered or "latest" in lowered:
-        return MarkdownDraft("# New Gemini 3.5\n\n## What To Verify\n\n1) Check official sources.\n\n## Sources\n\n1) Google: https://ai.google.dev\n", grounded=True)
-    if "html" in lowered or "wonderlog" in lowered:
-        return MarkdownDraft("<!DOCTYPE html>\n<html lang=\"en\"><head><title>Wonderlog Style App</title></head><body><main>Trip planner</main></body></html>\n")
-    return MarkdownDraft(f"# {topic.title()}\n\n## Real Draft\n\n1) Model generated content.\n")
 
-async def _fake_html_draft(db_path: str, topic: str) -> MarkdownDraft:
-    return MarkdownDraft(
-        "<!DOCTYPE html>\n"
-        "<html lang=\"en\"><head><title>Travel Planner</title><style>body{font-family:system-ui}</style></head>"
-        "<body><main><h1>Travel Planner</h1><input id=\"item\"><button id=\"add\">Add</button><ul id=\"list\"></ul></main>"
-        "<script>document.getElementById('add').addEventListener('click',()=>{const li=document.createElement('li');li.textContent=document.getElementById('item').value;document.getElementById('list').appendChild(li);localStorage.setItem('travelPlanner',document.getElementById('list').textContent);});</script>"
-        "</body></html>\n"
-    )
 
-async def _fake_html_fallback(db_path: str, topic: str) -> MarkdownDraft:
-    return MarkdownDraft(
-        "<!DOCTYPE html>\n"
-        "<html lang=\"en\"><head><title>Fallback Planner</title><style>body{font-family:system-ui}</style></head>"
-        "<body><main><input id=\"city\"><button id=\"save\">Save</button></main>"
-        "<script>document.getElementById('save').addEventListener('click',()=>localStorage.setItem('city',document.getElementById('city').value));</script>"
-        "</body></html>\n"
-    )
-
-async def _fake_html_review(db_path: str, topic: str, html: str):
-    return html.replace("</main>", "<p>Reviewed by Claude</p></main>"), "reviewed"
-
-async def same_review(db_path: str, topic: str, html: str):
-    return html, "reviewed"
-
-async def _fake_review(db_path: str, topic: str, slides):
-    return [("Reviewed narrative", ["WAN or internet port", "Review - dash"])]
-
-def _office_can_open(path: Path) -> bool:
-    if path.suffix == ".pptx":
-        from pptx import Presentation
-        Presentation(path)
-        return True
-    if path.suffix == ".xlsx":
-        from openpyxl import load_workbook
-        load_workbook(path)
-        return True
-    if path.suffix == ".docx":
-        from docx import Document
-        Document(path)
-        return True
-    return False
-
-def _source_quality_smoke() -> None:
-    text = "# Gemini\n\n## Overview\n\n1) Draft.\n\n### Sources\n\n1) Old source\n"
-    sources = [
-        ("Google AI", "https://ai.google.dev/gemini-api/docs"),
-        ("simonwillison.net", "https://vertexaisearch.cloud.google.com/grounding-api-redirect/fake"),
-        ("meta.com", "https://vertexaisearch.cloud.google.com/grounding-api-redirect/fake2"),
-    ]
-    cleaned = _apply_source_quality(text, sources)
-    _require(cleaned.count("## Sources") == 1, "source section duplicated")
-    _require("### Sources" not in cleaned, "model source heading survived")
-    _require("### Official Sources" in cleaned, "official sources not labeled")
-    _require("### Third Party Sources" in cleaned, "third party sources not labeled")
-    _require("simonwillison.net" in cleaned, "redirected third party source missing")
-    _require("meta.com" in cleaned.split("### Third Party Sources")[0], "official redirect title not recognized")
-    _require("Old source" not in cleaned, "old model sources were not replaced")
 
 
 if __name__ == "__main__":

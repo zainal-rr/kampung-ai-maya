@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 import asyncio
+import logging
 import os
 import subprocess
 from contextlib import suppress
@@ -15,6 +16,7 @@ from vision_markup import split_image_marker
 from workspace_paths import legacy_workspace_root, maya_workspace_root, project_roots
 
 
+logger = logging.getLogger(__name__)
 MAX_TELEGRAM_TEXT = 3900
 MAX_TELEGRAM_CAPTION = 1024
 FILE_MARKER = re.compile(r"^\[file:(?P<path>/[^\]\n]+)\]\s*$", re.MULTILINE)
@@ -37,7 +39,25 @@ async def send_text(bot: Bot, chat_id: int, text: str) -> None:
         finally:
             image_path.unlink(missing_ok=True)
     for path in file_paths:
-        await send_document_file(bot, chat_id, path, caption=path.name)
+        try:
+            if _is_image_file(path):
+                await send_photo_file(bot, chat_id, path, caption=path.name)
+            else:
+                await send_document_file(bot, chat_id, path, caption=path.name)
+        except Exception as exc:
+            logger.exception("Telegram file upload failed for %s", path)
+            await bot.send_message(chat_id=chat_id, text=_file_upload_failure(path, exc))
+
+
+async def send_photo_file(bot: Bot, chat_id: int, path: Path, caption: str = "") -> None:
+    if not path.exists() or not path.is_file():
+        return
+    with path.open("rb") as image_file:
+        await bot.send_photo(
+            chat_id=chat_id,
+            photo=image_file,
+            caption=caption[:MAX_TELEGRAM_CAPTION] or None,
+        )
 
 
 async def send_document_file(bot: Bot, chat_id: int, path: Path, caption: str = "") -> None:
@@ -48,6 +68,8 @@ async def send_document_file(bot: Bot, chat_id: int, path: Path, caption: str = 
             chat_id=chat_id,
             document=document_file,
             caption=caption[:MAX_TELEGRAM_CAPTION] or None,
+            read_timeout=_document_read_timeout(path),
+            write_timeout=_document_write_timeout(path),
         )
 
 
@@ -199,3 +221,40 @@ def _allowed_download_file(path: Path) -> bool:
 
 def _allowed_project_doc(path: Path) -> bool:
     return path.parent.name == "docs" and any(_within(path, root) for root in project_roots())
+
+
+def _is_image_file(path: Path) -> bool:
+    return path.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"}
+
+
+def _document_write_timeout(path: Path) -> float:
+    try:
+        configured = float(os.getenv("TELEGRAM_DOCUMENT_WRITE_TIMEOUT", "180"))
+    except ValueError:
+        configured = 180.0
+    try:
+        size_mb = path.stat().st_size / (1024 * 1024)
+    except OSError:
+        size_mb = 0
+    return max(configured, 20.0 * size_mb)
+
+
+def _document_read_timeout(path: Path) -> float:
+    try:
+        configured = float(os.getenv("TELEGRAM_DOCUMENT_READ_TIMEOUT", "60"))
+    except ValueError:
+        configured = 60.0
+    try:
+        size_mb = path.stat().st_size / (1024 * 1024)
+    except OSError:
+        size_mb = 0
+    return max(configured, 5.0 * size_mb)
+
+
+def _file_upload_failure(path: Path, exc: Exception) -> str:
+    return (
+        "I created the file, but Telegram upload timed out or failed.\n"
+        f"File: {path.name}\n"
+        f"Path: {path}\n"
+        f"Upload error: {exc.__class__.__name__}"
+    )

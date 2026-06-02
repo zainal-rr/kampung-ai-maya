@@ -4,6 +4,10 @@ import os
 import tempfile
 from pathlib import Path
 
+from PIL import Image
+from pptx import Presentation
+from pptx.util import Inches
+
 from office_modern_files import create_pptx
 from pptx_quality_gate import ensure_pptx_quality, inspect_pptx_quality
 
@@ -24,6 +28,16 @@ def main() -> None:
         after = ensure_pptx_quality(good, max_revisions=1)
         _require(after.passed, "normal generated deck should pass QA")
         _require(after.images and all(path.exists() for path in after.images), "QA did not render slides")
+        stretched = Path(tmp) / "stretched.pptx"
+        square = Path(tmp) / "square.png"
+        Image.new("RGB", (512, 512), (30, 60, 90)).save(square)
+        create_pptx(stretched, "Seoul Food Trip", [("Seoul Food Trip", ["Anchor meal", "Budget logic"])])
+        deck = Presentation(stretched)
+        deck.slides[0].shapes.add_picture(str(square), Inches(1), Inches(1), width=Inches(9), height=Inches(2))
+        deck.save(stretched)
+        stretched_result = inspect_pptx_quality(stretched)
+        _require(not stretched_result.passed, "stretched picture should fail QA")
+        _require(any("stretched image" in issue for issue in stretched_result.issues), "stretched image issue missing")
     if old_root is None:
         os.environ.pop("MAYA_WORKSPACE_ROOT", None)
     else:

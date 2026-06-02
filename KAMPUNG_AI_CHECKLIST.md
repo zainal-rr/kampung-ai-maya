@@ -12,9 +12,10 @@ This document tracks the technical and operational roadmap for building the stan
 - [x] **1.2. API Provisioning (Live provider smoke passed May 2026)**
     - [x] **Telegram:** Token secured in .env.
     - [x] **OpenAI:** Maya strategic lane (GPT-5.5).
-    - [x] **Anthropic:** The Steward review lane (Claude Sonnet 4.6).
+    - [x] **Anthropic:** The Steward review lane (Claude Opus 4.8).
     - [x] **Google:** The Sight default and premium lanes (Gemini 3.1 Flash and Gemini 3.5 Flash).
-    - [x] **Moonshot:** The Artisan (Kimi k2.6). [Secured in .env]
+    - [x] **Moonshot:** Legacy Kimi credentials were secured, but Kimi/Moonshot is retired from the active coding roadmap.
+    - [x] **Codex:** Codex CLI is installed for The Artisan coding lane; service-auth/live smoke remains tracked in 2.5.
     - [x] **xAI:** The Pulse (Grok 3).
     - [x] **xAI:** Ara voice notes, STT, and pulse/news lane.
     - [ ] **xAI:** Live iMac Grok Voice Agent websocket path.
@@ -47,6 +48,7 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add a bounded Grok Voice Agent session manager with stub transport for pre-key testing.
     - [x] Track Grok Voice Agent route and active seconds for `/route` and `/cost`.
     - [x] Prepare the real xAI websocket adapter behind disabled `real` mode.
+    - [x] Keep `grok-voice-latest` as the xAI-recommended realtime voice model alias, with Ara as Maya's voice.
     - [x] Add speech audio input for the real Grok Voice Agent path after manual trigger.
     - [x] Replace diagnostic file-capture voice with realtime microphone streaming for the hotkey path.
     - [x] Stream audio chunks to Grok Voice Agent instead of recording a local PCM file first.
@@ -57,6 +59,8 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add iMac voice policy so short Malay/Manglish can stay on Grok while longer or style-sensitive Malay/Manglish routes to Gemini plus Ara.
     - [x] Add natural Ara thinking fillers for slower Malay/Manglish quality turns.
     - [x] Record the long-work handoff rule: acknowledge by voice, idle or close paid speech-to-speech while background work runs, then reopen voice for follow-up or final delivery.
+    - [x] Decouple realtime voice from document, browser, coding, and memory worker tools so Grok voice records a handoff instead of doing long work itself.
+    - [ ] Add parked voice-session state so Maya can keep short conversation alive while background agents work, without letting Grok execute the work.
     - [ ] Live-test the real xAI websocket adapter after the xAI key arrives.
 - [ ] **2.2. The Mind (GPT-5.5)**
     - [x] Implement "Escalation Logic" for high-complexity strategy.
@@ -64,21 +68,66 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add GPT Plan Mode for explicit complex planning without execution.
     - [x] Add Claude pre-implementation review for GPT plans.
     - [x] Add a post-implementation Claude review hook for approved implementation workflows.
+    - [x] Add controlled `/complex` dynamic workflow records with isolated research, planner, and review subagent events.
+    - [x] Add bounded dynamic task graph generation for `/complex plan`.
+    - [x] Add parallel subagent execution with capped 2 to 4 Gemini subagents.
+    - [x] Keep `/complex` workflow status resumable through harness run/events state.
+    - [x] Expand `/complex` so an approved plan can become a checkpointed agentic harness workflow.
+    - [x] Persist `/complex` executable plans as structured workflow steps with owner lane, expected output, artifact refs, approval requirement, verification step, and failure policy.
+    - [x] Add `/complex self-heal` as the preferred serious repair route: inspect logs, localize failure, plan repair, Claude risk review, isolated Artisan patch proposal, tests, and approval before main-repo apply.
+    - [x] Add commands or natural handling for continuing, pausing, cancelling, and inspecting `/complex` agentic workflows from Telegram and iMac.
+    - [x] Add regression tests proving `/complex` can create a plan-only response, create an approval-gated workflow, resume after restart, and keep repo changes isolated until approval.
 - [ ] **2.3. The Sight (Gemini 3.1 Flash with 3.5 Flash premium escalation)**
     - [x] Use Gemini 3.1 Flash as the primary Telegram text/research model.
     - [x] Use Gemini 3.5 Flash as the premium Sight lane and remove the old Pro branch.
     - [ ] Use Gemini for Omi summarization and memory distillation.
     - [ ] Add a source-aware Gemini research workflow after API keys arrive.
     - [x] Use Gemini 3.1 Flash for normal camera snapshots and escalate to Gemini 3.5 Flash only when premium sight can plausibly help.
-- [ ] **2.4. The Steward (Claude Sonnet 4.6)**
+- [ ] **2.4. The Steward (Claude Opus 4.8)**
     - [x] Add the Claude Steward lane for careful review requests.
     - [x] Route natural review, critique, audit, hidden-risk, and check-this-plan prompts without adding a new command.
     - [x] Add provider readiness and smoke coverage for the Anthropic key.
     - [x] Live-test the Claude Steward lane after API keys arrive.
-- [x] **2.5. The Artisan (Kimi k2.6)**
-    - [x] Lock Kimi as the sole provider for code generation.
-    - [x] Route coding questions to Kimi as well as code generation.
+- [ ] **2.5. The Artisan (Codex replacing Kimi and Claude Code)**
+    - [x] Keep the lane name as `Artisan`; Maya should not rename it to Codex in normal user-facing flow.
+    - [x] Document that Codex replaces Kimi/Moonshot and Claude Code as the Artisan implementation engine.
+    - [x] Document that Word, Excel, PowerPoint, memory, normal chat, voice, and document review do not move to Artisan.
     - [x] Add CLI lane safety language: safe read/test/diff work is allowed, while patching, restart, deploy, delete, upload, credential, purchase, and booking actions require approval when Maya acts autonomously.
+    - [x] Document the approval boundary: repo changes require Zainal approval; `~/Desktop/Maya/Projects/...` project work can be edited directly unless the action is destructive or external.
+    - [x] Document that Maya must store Artisan output in the workflow desk so she can answer `what did Artisan say?`.
+    - [x] Verify Codex CLI is installed on the iMac.
+    - [x] Live-login/test Codex auth from Maya's service environment.
+    - [x] Add a subscription-auth guard so Artisan only runs Codex when `codex login status` confirms `Logged in using ChatGPT`.
+    - [x] Add an Artisan runner wrapper that calls Codex programmatically and captures structured output.
+    - [x] Require Gemini to create the build brief before Artisan runs.
+    - [x] Store `artisan_run_id`, Codex transcript/final-message path when available, working directory, status, summary, changed files, tests run, transcript path, artifacts, usage/cost metadata, and approval state.
+    - [x] Route coding questions and code-generation requests to Artisan instead of Kimi.
+    - [x] Enforce worktree isolation for repo repairs and self-healing jobs.
+    - [x] Add approval gate before applying Artisan patches to `~/projects/kampung-ai` or any other repo.
+    - [x] Add direct-write support for non-destructive work inside `~/Desktop/Maya/Projects/...`.
+    - [x] Add `/route`, `/cost`, workflow desk, and transcript/report support for Artisan runs.
+    - [x] Add smoke tests proving Kimi is not called and Artisan jobs are queued/captured correctly.
+    - [x] Add smoke tests proving repo jobs use isolated worktrees and approval does not auto-apply patches.
+    - [x] Install project design skills from `emilkowalski/skill` and `Leonxlnx/taste-skill`.
+    - [x] Mirror the approved app-design skill subset into local project skill folders for Artisan project use.
+    - [x] Add the optional `ahujasid/blender-mcp` server entry for Codex with telemetry disabled.
+    - [x] Install and enable the Blender-side MCP add-on in Blender 5.1 with telemetry consent disabled.
+    - [x] Add a live Blender MCP connection test that starts the Blender-side server, confirms scene inspection/object creation through the MCP handler, and then stops the server cleanly.
+    - [x] Add live Codex smoke test after login is confirmed.
+    - [x] Add Blender/Maker readiness smoke and export smoke after Blender is installed.
+    - [x] Add an Artisan app-project QA gate that serves the app, checks linked assets/scripts, verifies expected UI text, and records pass/fail before Maya calls app-building ready.
+    - [x] Strengthen app QA with README requirement, CSS corruption checks, local HTTP smoke, and optional browser preview screenshot capture.
+    - [x] Add latest-app delivery continuity so `send me the last app` returns the app path, QA summary, and Telegram zip attachment.
+    - [x] Add live subscription-backed Codex app smoke proving a real app project can be created, QA checked, zipped, and delivered from the workflow desk.
+    - [x] Record that app-building is an established Artisan capability that stays available and documented even when the current work session focuses on self-healing, memory, documents, or workflow reliability.
+    - [x] Add an explicit approved-worktree apply-back command for repo jobs; default approval should still record permission and not silently patch the original repo.
+    - [x] Add deterministic maker template selection so known simple 3D objects such as cable clips and phone stands do not wait on Codex.
+    - [x] Add deterministic maker templates for label/key tags, wall hooks, and organizer trays.
+    - [x] Make Maya own Blender export and validation after source generation: `.blend`, mesh export, README, and no physical print action.
+    - [x] Strengthen maker QA with mesh dimensions, preview render generation, README QA notes, and Telegram delivery markers for STL, BLEND, README, and preview.
+    - [x] Add latest-maker delivery continuity so `send me the last 3D model` returns path, dimensions, safety status, and attachments.
+    - [x] Fix live Artisan 3D delivery timeout so a maker job completes source, `.blend`, `.stl`, and README without manual rerun.
+    - [x] Add a live Artisan 3D regression that proves Gemini brief plus the Artisan maker lane produces editable Blender source, exported STL, README, route/artifact records, and no physical print action.
 
 ## ⚡ Phase 3: The Neural Link (Mudra Link - Priority)
 *Goal: Bridge the neural band into the interaction loop.*
@@ -166,6 +215,10 @@ This document tracks the technical and operational roadmap for building the stan
     - [ ] Speak replies locally through the iMac speakers with Ara.
     - [x] Set the wake window to 5 seconds so live voice does not stay open after silence.
     - [x] Let the iMac channel hand wake-session turns to the bounded Grok Voice Agent manager when enabled.
+    - [x] Add durable iMac voice session transcript logging for user speech, Maya speech, tool calls, interruptions, and diagnostics.
+    - [x] Export iMac voice session review logs as Markdown under `Desktop/Maya/voice_sessions`.
+    - [x] Add voice session review commands for last session, today's sessions, search, export, and diagnostics.
+    - [x] Add `voice_session_log_smoke.py` and include it in launch rehearsal.
     - [x] Remove wake detection from live voice path. Manual trigger only.
 - [x] **5.5. No Call Mode v1**
     - [x] Remove Loopback and virtual call audio routing after live test showed quality and stability issues.
@@ -246,6 +299,7 @@ This document tracks the technical and operational roadmap for building the stan
 - [x] **8.1. Memory Migration** - [COMPLETED 169 HIGH-VALUE CHUNKS]
 - [x] **8.2. Weekly Reflection (Sunday 20:00)**
     - [x] Schedule and deliver weekly reflection through the routine runtime.
+    - [x] Add a launchd weekly memory job for Sunday 20:00 using the documented reflection cadence.
     - [x] System Health Heartbeat logic.
 - [ ] **8.3. Unified Memory**
     - [ ] Merge iMac, Telegram, and Omi interactions into one shared memory model.
@@ -311,7 +365,7 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Keep older Telegram slash commands as hidden compatibility aliases.
     - [x] Add Telegram slash shortcuts for memory source, forget, memory cleanup, and self-heal inspection.
     - [x] Add `/complex` as the only official Telegram route to GPT-5.5.
-    - [x] Make `/complex` and explicit iMac complex cues use GPT-5.5 with `xhigh` reasoning effort.
+    - [x] Make `/complex` and explicit iMac complex cues use GPT-5.5 with `medium` reasoning effort.
     - [x] Add `/cost` as a direct Telegram usage estimate command.
     - [x] Add `/providers` as a direct Telegram provider-readiness checklist.
     - [x] Add `/route` as a direct Telegram routing-inspection command.
@@ -328,7 +382,7 @@ This document tracks the technical and operational roadmap for building the stan
 - [ ] **9.2. Shared Orchestrator Across Channels**
     - [x] Reuse the same routing and memory context path for iMac and Telegram.
     - [ ] Keep channel adapters thin so the brain stays centralized.
-    - [ ] Preserve one Maya identity across Grok, Gemini, GPT-5.5, and Kimi.
+    - [ ] Preserve one Maya identity across Grok, Gemini, GPT-5.5, The Steward, and The Artisan.
     - [x] Carry only a short recent-topic window for Telegram follow-ups instead of dragging the full chat forever.
     - [x] Carry a compacted shared session context across iMac and Telegram.
     - [x] Support an explicit `new topic` reset for conversational context.
@@ -451,7 +505,10 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Inject relevant skill context into the reply path.
     - [x] Add bounded browser, Office document, travel research, and checkout-guard skills.
     - [x] Add `browser_capability` as the parent iMac browser route.
-    - [x] Keep child browser skills explicit: `general_browser`, `google_images`, `flight_search`, `booking_com_hotel_search`, and `airbnb_stay_search`.
+    - [x] Keep child browser skills explicit: `general_browser`, `google_search`, `google_images`, `flight_search`, `youtube_research`, `reddit_research`, `google_cloud_console`, `booking_com_hotel_search`, `airbnb_stay_search`, and `frequent_site_open`.
+    - [x] Add executable site skills for Google Search, YouTube, Reddit, and Google Cloud Console.
+    - [x] Add a frequent-site registry for common iMac sites with category-specific safety policy.
+    - [x] Keep finance sites such as Maybank open-only with hard blocks for credentials, OTPs, card data, account data, payment forms, and private financial data.
     - [x] Add Sight Research and Steward Review as built-in skills.
     - [x] Add a provider capability registry for lane owners, tools, boundaries, cost tier, routing triggers, memory rights, and execution rights.
     - [x] Keep provider-native capabilities behind Maya's safety gates and skill lifecycle.
@@ -478,7 +535,8 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Support chat commands to create, list, and disable routines.
     - [x] Clarify that briefings should be natural chat triggers, not command-first workflows.
 - [x] **12.13. Go-Live Smoke Test**
-    - [x] Add a one-command provider smoke test for Gemini, GPT-5.5, Claude, Kimi, Grok, Ara TTS, and xAI STT.
+    - [x] Add a one-command provider smoke test for Gemini, GPT-5.5, Claude, legacy Kimi, Grok, Ara TTS, and xAI STT.
+    - [x] Add Codex/Artisan readiness smoke once Codex is installed.
     - [x] Make the smoke test fail gracefully when keys or the correct interpreter are missing.
     - [x] Load `.env` directly so launch key checks do not depend on shell sourcing.
     - [x] Count Ara TTS only when the xAI API path works, not when macOS fallback creates audio.
@@ -569,8 +627,12 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Send generated Office files back through Telegram when the request comes from Telegram.
     - [x] Open generated documents locally when the request comes from the iMac.
     - [x] Add `document_actions_smoke.py` and include it in launch rehearsal.
+    - [ ] Add `/edit` and natural `edit` routing for latest-document refinement across Telegram and iMac.
+    - [x] Add natural latest-Word edit routing for follow-ups like `update that to 4 days`; update the latest `.docx` in place by default, keep an internal hidden backup, restore on QA failure, and create a visible new version only when Zainal asks for a copy/new version.
     - [ ] Let Maya edit existing Word documents from structured chat instructions.
     - [ ] Let Maya edit existing PowerPoint decks from structured chat instructions.
+    - [ ] Let Maya edit existing Excel workbooks from structured chat instructions.
+    - [ ] Ensure edit workflows create a safe new version or update in place only when appropriate, then rerun artifact QA.
     - [x] Add PPTX visual QA before Maya calls PowerPoint output polished.
     - [x] Render created or revised PPTX files and check for placeholder text, ellipsis overflow, truncated copy, missing readable text, and render count mismatch.
     - [x] Add one bounded PPTX auto-revision pass before delivery.
@@ -650,6 +712,9 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add self-heal stage logging for detected, isolated, proposed, closed, and future repair states.
     - [x] Add self-heal inspection answers for what broke, tests, patch direction, restart safety, and repair reports.
     - [x] Keep patching, deploy, restart, delete, and broad refactor approval-gated.
+    - [x] Add scoped memory self-heal dry-run/proceed/abort commands with durable snapshots under `backups/self_heal_memory/`.
+    - [x] Reject `/selfheal force` for the memory-only heal.
+    - [x] Require rollback behavior, explicit retrieval pass criteria, and a post-heal core/profile target of 80 percent usage or less.
 - [x] **15.9. Hardware Preparation**
     - [x] Record Mudra events without mapping gestures to actions.
     - [x] Prepare Omi transcript metadata for future pendant ingestion.
@@ -810,8 +875,9 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Each quality skill defines safety and hard-no boundaries.
     - [x] Each quality skill defines local validation expectations.
     - [x] Each quality skill defines Claude review expectations.
-    - [x] Each quality skill defines provider ownership: Gemini for role drafts, Kimi for HTML/code, Claude for review, local libraries for actual files.
+    - [x] Each quality skill defines provider ownership: Gemini for role drafts, Artisan for HTML/code implementation after the Codex lane is wired, Claude for review, local libraries for actual files.
     - [x] Add `artifact_quality_smoke.py` to prove the skill files pass Maya's scaffold evaluator and local QA works.
+    - [x] Record complete-by-default artifact behavior: creation should use the strongest relevant quality standards immediately, while `edit` or `/edit` is reserved for follow-up changes.
 
 ### Artifact Quality And Review Standards
 
@@ -837,21 +903,91 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Run Claude Excel review when available.
     - [x] Apply QA to general Excel drafts, budget trackers, testing comparisons, cost trackers, and travel-budget workbooks.
     - [x] If QA fails, say it is a draft with issues instead of calling it final.
+    - [x] Make Excel workbook styling use pastel colors by default.
+    - [x] Upgrade food-trip budget workbooks so they include per-food or per-restaurant budget rows, estimated cost, actual cost, variance, totals, restaurant/source links in notes where available, and useful suggestions.
 
 - [x] **19.6. PowerPoint Quality Gate**
     - [x] Preserve existing high-quality PowerPoint path: Gemini role content, Claude presentation review, local PPTX build, render QA, and topic-safe polish pass.
     - [x] Add `powerpoint_artifact_quality` as the explicit quality skill standard.
+    - [x] Add `powerpoint_design_taste` as an active Maya skill adapted from Leonxlnx `design-taste-frontend`.
     - [x] Keep Design Engineering as taste context for presentation polish.
     - [x] Feed the PowerPoint skill text directly into every presentation polish/review prompt, not only the generic skill registry.
+    - [x] Add PowerPoint theme selection: dark/editorial by default, pastel only when Zainal explicitly asks for pastel/light/bright/white or says he does not want dark.
+    - [x] Set Nano Banana 2 / Gemini 3.1 Flash Image as the default PowerPoint visual generator policy, with Nano Banana Pro for high-value final decks.
+    - [x] Keep Grok out of normal PowerPoint image generation so Grok remains reserved for live voice, Pulse, current/news, and only explicit Grok requests.
+    - [x] Add Gemini image generation/sourcing for PowerPoint decks when images improve comprehension.
 
-- [x] **19.7. HTML App Quality Gate**
-    - [x] Keep Kimi K2.6 as the primary HTML/code builder.
-    - [x] Keep Gemini Flash as fallback only after Kimi failure or timeout.
+- [ ] **19.7. Office Output Quality Sprint**
+    - [x] Define what "good output" means for Word, Excel, and PowerPoint beyond route/tool success.
+    - [x] Add a bounded Gemini artifact preflight role agent for Word, Excel, and PowerPoint so short requests produce a scenario-specific blueprint before drafting/building.
+    - [x] Upgrade Word output so first drafts have stronger structure, useful detail, summaries, and fewer generic sections.
+        - [x] Define Word good output as scenario fit, section depth, actionability, specificity, local openability, and Claude review, not just route success.
+        - [x] Add scenario-specific Word structures for travel itineraries, research briefs, technical guides, proposals, checklists, meeting notes, letters, reports, plans, and explainers.
+        - [x] Feed the selected Word scenario structure into Gemini before drafting.
+        - [x] Canonicalize or reject generic headings such as Role And Assumptions, Working Context, and Key Decisions when the scenario does not call for them.
+        - [x] Make local Word QA inspect scenario headings and content depth, not only `.docx` openability.
+        - [x] Accept short natural Word requests such as `Seoul food trip doc`, `router setup guide in Word`, and `proposal doc for Kampung AI`.
+        - [x] Ask one short clarification question when essential artifact parameters are missing instead of creating generic files.
+        - [x] Default short city food-trip documents to a compact 2-day plan and reject internal duration mismatches.
+        - [x] Strengthen router/WiFi technical guides with required admin password, SSID, WiFi password, WPA2/WPA3, firmware, and verification content.
+        - [x] Repair proposal drafts before delivery when they contain empty Out of Scope labels, incomplete tiered frameworks, or raw markdown dividers.
+        - [x] Add a one-pass Word repair loop after local QA/Claude rejection before Maya delivers the file as a draft.
+        - [x] Add a Word quality smoke test that builds real `.docx` files and validates multiple everyday scenarios.
+        - [x] Add Word golden artifact smoke tests that inspect real `.docx` content for travel, router, and proposal scenarios.
+        - [x] Add natural latest-document Word edit support so short follow-ups such as `update that to 4 days` update in place, while explicit copy/new-version requests create a new visible version.
+        - [x] Fix natural Word edit parsing so `the document` does not get partially matched as `doc`, corrupting titles such as `Ument`.
+        - [x] Add PuTTY/router CLI Word QA so terminal edit requests require actual sample config commands, placeholder explanation, verification commands, and save/rollback guidance.
+    - [x] Upgrade Excel output so workbooks feel immediately useful, visually polished, and domain-specific by default.
+        - [x] Replace weak generic sheet names such as `Maya Draft` with meaningful sheet names.
+        - [x] Add stronger generic workbook styling: pastel title/header/section fills, neutral editable body cells, frozen panes, real Excel tables, sensible widths, wrapped text, and number formats.
+        - [x] Add estimated, actual, variance, and total formulas to generic budget trackers.
+        - [x] Strengthen comparison/tracker workbook structures so they are not generic notes tables.
+        - [x] Strengthen local Excel QA to reject weak sheet names, budget/tracker workbooks missing estimated/actual/variance fields, and food-trip workbooks missing restaurant/source/suggestion detail.
+        - [x] Add `excel_golden_artifact_smoke.py` to inspect actual workbook content for generic budget and Seoul food-trip scenarios.
+    - [x] Upgrade PowerPoint output so decks have stronger narrative, visual design, image use where useful, and less draft-level polish.
+        - [x] Replace generic Markdown-to-slide conversion with scenario-specific deck spines for travel/food, technical, proposal, and general decks.
+        - [x] Remove generic title-slide fallback copy such as `Draft prepared from grounded Maya notes`.
+        - [x] Store PowerPoint QA/review results so `/review` can explain the latest deck pass/fail state.
+        - [x] Keep visual asset support through the Gemini PPTX image path when enabled and when the topic benefits from visuals.
+        - [x] Treat remaining `draft-level` PowerPoint polish as a failed quality gate instead of a clean deliverable pass.
+        - [x] Move PowerPoint explanatory detail into speaker notes and keep visible slide text short and visual.
+        - [x] Enable Google/Gemini image generation by default for visual PowerPoint topics.
+        - [x] Require generated or safely sourced visual assets before visual-topic decks are called deliverable.
+        - [x] Insert multiple Gemini/Google visual assets for visual-topic decks instead of limiting decks to one cover image.
+        - [x] Set the PowerPoint visual-asset hard cap to `ceil(slide_count * 1.3)` and require visual-topic decks to cover every slide with images by default.
+        - [x] Use image-led PowerPoint layouts for visual topics so photos do not sit on top of text.
+        - [x] Insert PowerPoint visuals with aspect-preserving crop/cover and fail QA for raw stretched images.
+        - [x] Feed PowerPoint design taste into Gemini preflight/drafting and Claude review through active skill context.
+        - [x] Render PowerPoint previews internally for QA, but do not send JPEG/contact-sheet previews in Telegram unless explicitly requested.
+        - [x] Insert Gemini/Google visual assets after text/layout repair so generated images are not lost by later rebuilds.
+        - [x] Do not attach rejected editable `.pptx` drafts or JPEG previews in Telegram by default.
+        - [x] Store internet-derived PowerPoint visual-design guidance in Maya's active PowerPoint artifact skill.
+        - [x] Retry PowerPoint visual QA and Claude polish internally up to a safety cap instead of sending every failed attempt to Telegram.
+        - [x] Add deterministic PowerPoint rescue spines for repeated draft-level polish failures before Maya gives up.
+    - [x] Add golden artifact tests for one Word, one Excel, and one PowerPoint example that inspect actual file content, not only route labels.
+    - [x] Run one real Telegram Office quality pass only after the generators are improved.
+        - [x] Word Telegram pass: `seoul-food-trip-v3.docx` attached, route used Gemini artifact preflight + Word QA + Claude Opus review, review passed.
+        - [x] Excel Telegram pass: `seoul-budget-tracker-v6.xlsx` attached, route used Gemini artifact preflight + local Excel QA + Claude Opus review, review passed.
+        - [x] PowerPoint Telegram delivery retest: `seoul-food-trip-deck-v14.pptx` attached successfully after the timeout fix.
+        - [x] Add longer Telegram media/document upload timeouts and visible fallback path messaging when file upload fails.
+        - [x] Verified latest local PowerPoint has 6 slides, speaker notes on every slide, QA pass, and no stretched images.
+        - [x] Fix latest-document PowerPoint summaries so they inspect the delivered `.pptx` and ignore stale intermediate draft-level polish rows.
+
+- [x] **19.7a. HTML App Quality Gate**
+    - [x] Retire Kimi K2.6 as the future primary HTML/code builder.
+    - [x] Record that future serious HTML/app-building belongs to The Artisan with Codex, not Kimi or Claude Code.
+    - [x] Keep the current standalone HTML document path gated as a lightweight document workflow only until the Artisan app lane is implemented.
     - [x] Feed `html_app_artifact_quality` into Claude HTML review.
     - [x] Run local HTML QA after review.
     - [x] Save and attach a real `.html` file instead of pasting source into Telegram.
     - [x] Recognize typo-style HTML creation requests already covered by the document parser.
     - [x] Add browser render smoke for generated HTML files when the browser runtime is available.
+    - [x] Move app-building acceptance out of the current manual Telegram document regression; focus current testing on memory and document creation first.
+    - [x] Gate app-building implementation until Word, Excel, and PowerPoint output quality is good enough.
+    - [x] Add a project-based app-building lane where The Artisan creates code inside an active project folder with `src`, `assets`, tests, and browser/local QA expectations.
+    - [x] Route real app-building through Gemini build brief plus Artisan implementation; use `/complex` first when the scope is non-trivial.
+    - [x] Require app-building tests to prove Artisan did the primary build; Gemini fallback may be useful for tiny throwaway HTML drafts but does not count as app-building success.
+    - [x] Live-test project app building with Codex after login is confirmed.
 
 ### Unified Document Creation Across iMac And Telegram
 
@@ -862,7 +998,7 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Keep iMac document requests on `DocumentActionRouter` through the normal command route.
     - [x] Route the older iMac presentation shortcut into `DocumentActionRouter` instead of its old local-only PPTX shortcut.
     - [x] Keep network troubleshooting as a special local diagnostic workflow, but run Word artifact QA on its generated `.docx`.
-    - [ ] Move remaining special document-producing workflows into a shared builder interface instead of letting each workflow hand-roll final delivery.
+    - [x] Move remaining special document-producing workflows into a shared builder interface instead of letting each workflow hand-roll final delivery.
 
 - [x] **19.9. Channel-Specific Delivery Only**
     - [x] iMac delivery opens or focuses the native app when appropriate.
@@ -870,7 +1006,7 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Latest-document path is recorded for created artifacts.
     - [x] Structured artifacts are recorded for direct document actions.
     - [x] Telegram last-document replies should keep important paths visible as text instead of only voice.
-    - [ ] Add a regression that asks for the last document by voice and verifies Telegram includes path text plus a useful summary.
+    - [x] Add a regression that asks for the last document by voice and verifies Telegram includes path text plus a useful summary.
 
 ### Canonical Memory IDs
 
@@ -888,7 +1024,7 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Forgotten canonical subjects block fallback recall from old duplicated stores.
     - [x] `/forget` marks matching canonical memory as forgotten and still removes derived preferences, lessons, summaries, history, session search rows, curated memory, and fuzzy traces.
     - [x] Add `canonical_memory_smoke.py` for save, recall, forget, and no-leak regression.
-    - [ ] Add a real migration command that reports dedupe counts and links old rows to canonical IDs instead of only backfilling active facts.
+    - [x] Add a real migration command that reports dedupe counts and links old rows to canonical IDs instead of only backfilling active facts.
 
 ### Memory Activation Rules
 
@@ -898,9 +1034,9 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Keep temporary test memories from activating unless query-relevant.
     - [x] Keep expired or forgotten canonical memory out of recall.
     - [x] Keep direct memory answers honest: if canonical memory has no active answer, Maya says she does not have it saved.
-    - [ ] Add scoring decay based on age and reinforcement count.
-    - [ ] Add explicit pin/unpin commands for canonical memories.
-    - [ ] Add a direct inspector that shows canonical memory IDs and activation class.
+    - [x] Add scoring decay based on age and reinforcement count.
+    - [x] Add explicit pin/unpin commands for canonical memories.
+    - [x] Add a direct inspector that shows canonical memory IDs and activation class.
 
 ### Weekly Memory Distillation
 
@@ -909,25 +1045,57 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Weekly memory samples active non-temporary canonical memories.
     - [x] Weekly memory excludes temporary and test-marker memories by default.
     - [x] Weekly summary reports canonical memory counts and canonical fact signals.
-    - [ ] Make live weekly provider distillation write new stable memories through canonical memory only.
-    - [ ] Record canonical memory IDs used in each weekly summary.
-    - [ ] Add Claude weekly memory review for overreach, false assumptions, unsafe memory, and confirmation-needed facts.
+    - [x] Make live weekly provider distillation write new stable memories through canonical memory only.
+    - [x] Record canonical memory IDs used in each weekly summary.
+    - [x] Add Claude weekly memory review for overreach, false assumptions, unsafe memory, and confirmation-needed facts.
+    - [x] Add `weekly_memory_runs` audit rows for manual, Telegram, and launchd weekly memory executions.
+    - [x] Make the launchd weekly memory job pass `--trigger-source launchd` so autonomous runs can be distinguished from manual runs.
+    - [x] Add `/weekly status` to show latest summary and recent weekly-memory run audit rows.
+    - [x] Add `/weekly run` to start a saved weekly-memory pass from Telegram.
+    - [x] Load `.env` for weekly provider agents so launchd can see Gemini and Claude keys.
+    - [x] Add a local weekly-memory durability guard that rejects transient global project facts, generated-artifact observations, trip-plan details, test facts, and sensitive data even if a provider approves them.
+    - [x] Run weekly memory manually with live providers and verify audit rows record provider calls, saved facts, rejected facts, and canonical memory IDs.
+    - [x] Add a user-facing `/weekly` formatter that hides raw paths, JSON blobs, provider debug text, and canonical IDs while keeping `/weekly status` as the audit view.
+    - [x] Verify one unattended launchd weekly memory run after the next scheduled Sunday 20:00 trigger.
+
+### Project And Task Retention
+
+- [x] **19.14. 90-Day Retention Layer**
+    - [x] Add project activity registry with `last_activity_at`, `retention_state`, `deletion_pending_at`, and tombstones.
+    - [x] Add task retention columns and use task `updated_at` as the activity signal.
+    - [x] Mark projects/tasks `deletion_pending` after 90 days without qualifying activity.
+    - [x] Keep a 7-day warning window before hard deletion.
+    - [x] Hard-delete Maya project/task/workflow/harness/search records only; never delete local project folders or files.
+    - [x] Renew project/task activity when Zainal opens, talks about, edits, or writes memory/progress for it.
+    - [x] Keep passive retrieval, listing, cleanup scans, and weekly distillation from renewing activity.
+    - [x] Run retention cleanup from `/memorycleanup` and weekly memory before distillation.
+    - [x] Show pending retention warnings in status/workflow desk.
+    - [x] Add regression coverage for 89-day active, 90-day pending, 7-day deletion, touch renewal, file preservation, task/workflow cleanup, and weekly-memory exclusion.
 
 ### Regression Tests
 
-- [x] **19.14. Local Smoke Coverage**
+- [x] **19.15. Local Smoke Coverage**
     - [x] Add artifact quality smoke test.
     - [x] Add canonical memory smoke test.
     - [x] Add both new smokes to `may1_rehearsal.py`.
     - [x] Update existing document smoke expectations for the new QA route labels.
     - [x] Run document, artifact quality, canonical memory, memory control, learning, weekly memory, Telegram routing, and iMac workflow smokes together.
 
-- [ ] **19.15. Manual Telegram/iMac Regression**
-    - [ ] Telegram text: create Word, Excel, PowerPoint, and HTML files; verify attachments, routes, costs, paths, and file quality.
-    - [ ] Telegram voice: create one document by voice; verify STT, route, cost, attachment, visible path text, and voice reply behavior.
-    - [ ] iMac text/voice: create one Word, Excel, PowerPoint, and HTML artifact; verify native app opening and same quality path.
-    - [ ] Memory: save, recall, forget, and recall-again for one temporary test fact and one normal preference.
-    - [ ] Weekly memory: dry run after temporary tests and verify test facts do not become durable weekly memory.
+- [x] **19.16. Manual Telegram Regression**
+    - [x] Telegram text Word: created `2-day-seoul-food-trip-v1.docx`; verified attachment, clean filename, route, cost, local Word QA, and Claude Opus review.
+    - [x] Telegram text Excel: created `seoul-budget-tracker-v2.xlsx`; verified attachment, clean filename, route, cost, traveler-count fix, local Excel QA, and Claude Opus review. Deeper food-trip quality upgrade remains tracked separately under 19.5.
+    - [x] Telegram text PowerPoint: created `2-day-seoul-food-trip-v1.pptx`; verified attachment, clean filename, route, cost, Visual QA pass, and Claude Opus review.
+    - [x] Defer HTML/app-building manual regression into the project-based `/complex` app-building lane.
+    - [x] Telegram voice: created `two-days-seoul-food-trip-v1.docx` by voice; verified xAI STT, route, cost, attachment, visible filename text, local Word QA, and Claude Opus review.
+    - [x] Memory temporary fact: saved, recalled, forgot, and confirmed no-leak recall for `my telegram memory test snack is hotteok`.
+    - [x] Weekly memory: ran fresh `2026-W22` dry run after temporary tests and verified forgotten test fact `hotteok` did not become durable weekly memory.
+
+- [ ] **19.17. Manual iMac Regression - June 8**
+    - [ ] iMac text/voice: create one Word, Excel, and PowerPoint artifact; verify native app opening and same quality path.
+    - [ ] Defer iMac HTML/app-building regression into the project-based `/complex` app-building lane.
+    - [ ] Confirm iMac live voice uses the same architecture as Telegram memory, document creation, workflow desk, and weekly memory.
+    - [ ] Verify native app continuity: open last document, open specific document, summarize document, and focus the correct app.
+    - [ ] Verify iMac voice long-work handoff: Grok voice acknowledges, parks or closes paid voice, and the normal Maya worker completes the task.
     - [x] Disable `ENABLE_LOCAL_WAKE_SCORER` for live use.
     - [x] Keep local wake experiments separate from paid Grok and out of the live path.
     - [x] Add voice device intent policy: Sony or `Zainal’s Headphone` allows Maya wake.
@@ -942,5 +1110,87 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Do not use xAI STT confirmation for the current one-stage headphone path.
     - [x] Avoid continuous long headphone capture because it can degrade media audio quality.
 
+## Phase 20: Kampung AI Hardening Sprint
+
+*Goal: Strengthen Maya into an inspectable, demo-ready, agentic AI system with reproducible quality gates.*
+
+- [x] **20.1. Sprint Documentation And Capability Memory**
+    - [x] Document memory self-heal guardrails, `/selfheal dryrun`, `/selfheal proceed`, `/selfheal abort`, force rejection, rollback path, and retrieval pass criteria in `KAMPUNG_AI.md`.
+    - [x] Track the scoped memory self-heal implementation in this checklist.
+    - [x] Document the Hardening Sprint scope in `KAMPUNG_AI.md`.
+    - [x] Add this Hardening Sprint checklist as the source of truth for the next hardening steps.
+    - [x] Document Kampung AI as the Maya Personal Agent Harness, not just a Telegram bot, model router, or LangGraph workflow set.
+    - [x] Record the target harness components: `MayaThreadManager`, `MayaEventStore`, `MayaToolRegistry`, `MayaPermissionKernel`, `MayaLoop`, and future internal `MayaAppServer`.
+    - [x] Record that public references must come from official/public sources, not leaked Claude Code source.
+    - [x] Add a compact "Maya current capabilities" section that records current percentages and capability boundaries so future sessions do not re-litigate what already exists.
+
+- [x] **20.1A. Maya Personal Agent Harness Spine**
+    - [x] Define a minimal internal SDK boundary for `start_thread`, `send_message`, `call_tool`, `request_approval`, `create_artifact`, `write_memory`, and `resume_thread`.
+    - [x] Add a `MayaThreadManager` wrapper over current Telegram, iMac, project, screen, voice, weekly-memory, and background workflow state.
+    - [x] Add a `MayaEventStore` append-only event spine while keeping current tables as domain/materialized views.
+    - [x] Add a formal `MayaToolRegistry` with input/output schema, permission scope, side-effect level, approval requirement, cost risk, and replay-safety classification.
+    - [x] Add a central `MayaPermissionKernel` before tool execution.
+    - [x] Document the `MayaLoop` in README and Maya Desk traces.
+    - [x] Defer local JSON-RPC/WebSocket `MayaAppServer` until the internal protocol is stable.
+
+- [x] **20.2. Refactor Files Over 300 Lines**
+    - [x] Run `code_health.py` and capture the current violation list.
+    - [x] Refactor files over 300 lines only where a real module boundary exists.
+    - [x] Keep behavior unchanged while extracting helpers, data models, command handlers, validators, templates, and delivery utilities.
+    - [x] Add or update targeted smokes for each extracted subsystem.
+    - [x] Require `code_health.py` to pass before the sprint is considered stable.
+    - [x] Verification evidence: `code_health.py` passes with no over-300-line violations; `local_ci.py` passes compile, code health, and scored eval; `scored_eval_suite.py` reports 19/19; all five `run_demo.py` workflows pass; `git diff --check` passes.
+
+- [x] **20.3. Dependency Manifest**
+    - [x] Create a machine-readable dependency manifest for Python packages, system tools, macOS permissions, local apps, launchd jobs, provider keys, MCP servers, and optional hardware.
+    - [x] Make the manifest distinguish required, optional, local-only, remote-only, and future hardware dependencies.
+    - [x] Wire `doctor.py` or a new readiness command to read the manifest and report missing items clearly.
+    - [x] Include Codex subscription-auth, Blender, ffmpeg, Office apps, Telegram token, Gemini, Claude, xAI, and weekly-memory launchd status.
+
+- [x] **20.4. Local CI First, GitHub Actions Later**
+    - [x] Create one local CI entrypoint that runs compile checks, code health, route tests, memory tests, document golden tests, Artisan smokes, Blender/Maker smokes, and Maya Desk smoke.
+    - [x] Ensure local CI does not require live provider calls by default.
+    - [x] Add an optional live-provider mode that is explicit and cost-aware.
+    - [x] Add GitHub Actions only after local CI is stable and the workflow can run without private macOS or provider secrets.
+
+- [x] **20.5. Scored Eval Suite**
+    - [x] Expand `golden_conversation_eval.py` into a scored eval runner with pass/fail totals.
+    - [x] Add categories for routing, memory save/forget, weekly memory, Word, Excel, PowerPoint, self-heal, Artisan, Blender/Maker, safety, and Maya Desk.
+    - [x] Store eval output as JSON and a human-readable summary.
+    - [x] Make failed evals show the exact capability and scenario that regressed.
+
+- [x] **20.6. Five Polished Demo Workflows**
+    - [x] Add one-command demo runner entrypoints such as `run_demo telegram_document`, `run_demo memory_weekly`, `run_demo self_heal`, `run_demo artisan_project`, and `run_demo blender_maker`.
+    - [x] Define demo pass/fail criteria for each of the five demo workflows before polishing the demos.
+    - [x] Create demo replay logs that record what Maya did, what tools/routes were used, what cost lane was recorded, and what artifacts were created.
+    - [x] Demo 1: Telegram creates Word, Excel, and PowerPoint artifacts with route, review, attachment, and local-file continuity.
+    - [x] Demo 2: Memory save, recall, forget, no-leak recall, and weekly distillation status.
+    - [x] Demo 3: `/complex` self-heal plan, approval gate, repair report, dry run, and rollback-safe proceed path.
+    - [x] Demo 4: Artisan project/app handoff with Gemini build brief, Codex subscription-auth guard, QA result, transcript, and delivery summary.
+    - [x] Demo 5: Blender/Maker 3D printable output with source, `.blend`, `.stl`, dimensions, README, preview, and no physical print action.
+
+- [x] **20.7. Public-Style Technical README**
+    - [x] Write a README for a technical investor/product audience.
+    - [x] Explain Maya's lanes, memory architecture, artifact quality model, `/complex`, Artisan, Blender/Maker, safety gates, workflow desk, and Maya Desk.
+    - [x] Add a system architecture diagram for the README.
+    - [x] Add a known limitations section that clearly says what is partial, local-only, scheduled later, or hardware-dependent.
+    - [x] Add a "what Maya will not do without approval" section covering repo apply, restart, deploy, delete, upload, booking, payment, credentials, physical printing, and external sends.
+    - [x] Add a small cost table showing normal, heavy, and demo usage expectations by lane.
+    - [x] Include demo workflows, dependency overview, local setup shape, limitations, and what is still private or local-only.
+    - [x] Avoid secrets, raw personal memory, and overclaiming unavailable capabilities.
+
+- [x] **20.8. Maya Desk As Product Surface**
+    - [x] Upgrade Maya Desk from debug report to local audit cockpit.
+    - [x] Show workflow status, approvals, routes, costs, artifacts, memory health, eval score, dependency readiness, provider readiness, and recent failures.
+    - [x] Add a generated report timestamp and clear pass/fail indicators.
+    - [x] Add a smoke test that verifies the report contains the core sections and no raw secrets.
+
+- [x] **20.9. Extra Hardening Requirements**
+    - [x] Add route/cost audit consistency checks so route labels, models, and cost flags do not drift.
+    - [x] Add capability readiness reporting so Maya can honestly say what is ready, partial, blocked, or future.
+    - [x] Add backup/rollback drills for memory and repo-apply paths.
+    - [x] Add privacy/redaction checks for public README, Maya Desk, demos, and any external report.
+    - [x] Ensure demo replay notes are linked from README, Maya Desk, and the eval suite so the five demos can be rerun without inventing prompts.
+
 ---
-*Updated May 23, 2026*
+*Updated June 2, 2026*
