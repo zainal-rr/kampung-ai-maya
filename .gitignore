@@ -9,7 +9,14 @@ session_history.db
 *.db
 *.sqlite
 *.sqlite3
-logs/
+logs/*
+!logs/demos/
+logs/demos/*
+!logs/demos/latest.json
+!logs/demos/latest.md
+!logs/evals/
+logs/evals/*
+!logs/evals/latest.json
 distilled_memories.log
 omi_sync/
 mudra_sync/

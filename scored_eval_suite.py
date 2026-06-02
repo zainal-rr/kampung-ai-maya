@@ -36,6 +36,7 @@ EVAL_CASES = (
     EvalCase("memory", "self-heal memory", ("self_heal_memory_smoke.py",)),
     EvalCase("weekly_memory", "weekly memory dry run", ("weekly_memory_smoke.py",)),
     EvalCase("weekly_memory", "weekly provider path", ("weekly_memory_provider_path_smoke.py",)),
+    EvalCase("research", "source-aware Gemini research", ("source_aware_research_smoke.py",)),
     EvalCase("memory", "Omi context sieve", ("omi_context_sieve_smoke.py",)),
     EvalCase("word", "word quality", ("word_quality_smoke.py",)),
     EvalCase("excel", "excel golden artifact", ("excel_golden_artifact_smoke.py",)),
@@ -53,6 +54,7 @@ EVAL_CASES = (
     EvalCase("harness", "tool registry", ("maya_tool_registry_smoke.py",)),
     EvalCase("harness", "permission kernel", ("maya_permission_kernel_smoke.py",)),
     EvalCase("dependencies", "dependency manifest", ("dependency_manifest_smoke.py",)),
+    EvalCase("demos", "demo evidence", ("demo_evidence_smoke.py",)),
     EvalCase("hardening", "hardening audit", ("hardening_audit_smoke.py",)),
 )
 

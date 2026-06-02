@@ -81,7 +81,7 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Use Gemini 3.1 Flash as the primary Telegram text/research model.
     - [x] Use Gemini 3.5 Flash as the premium Sight lane and remove the old Pro branch.
     - [x] Use Gemini for Omi summarization and memory distillation.
-    - [ ] Add a source-aware Gemini research workflow after API keys arrive.
+    - [x] Add a source-aware Gemini research workflow after API keys arrive.
     - [x] Use Gemini 3.1 Flash for normal camera snapshots and escalate to Gemini 3.5 Flash only when premium sight can plausibly help.
 - [ ] **2.4. The Steward (Claude Opus 4.8)**
     - [x] Add the Claude Steward lane for careful review requests.
@@ -1191,6 +1191,88 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add backup/rollback drills for memory and repo-apply paths.
     - [x] Add privacy/redaction checks for public README, Maya Desk, demos, and any external report.
     - [x] Ensure demo replay notes are linked from README, Maya Desk, and the eval suite so the five demos can be rerun without inventing prompts.
+
+---
+*Updated June 2, 2026*
+
+## Phase 21: Proof Packaging And Source-Aware Research
+
+*Goal: Make the current system easy to verify, safe to show, and harder to overclaim before adding more features.*
+
+- [x] **21.1. Lock The Current Work**
+    - [x] Push the Phase 20 baseline commits to GitHub.
+    - [x] Confirm `git status -sb` is clean after the push.
+    - [x] Create checkpoint tag `phase-20-hardening-complete`.
+    - [x] Keep this pushed baseline as the recoverable state before Phase 21 changes.
+
+- [x] **21.2. Source-Aware Gemini Research Workflow**
+    - [x] Add a source-aware Gemini research module with explicit source/research intent detection.
+    - [x] Use Gemini grounded search when `GOOGLE_API_KEY` is configured.
+    - [x] Format answers with source links and warn when citations are unavailable or not official.
+    - [x] Block sensitive/private-info requests before provider calls.
+    - [x] Route explicit research/source requests through `Gemini source-aware research`.
+    - [x] Preserve routing priority: `/complex`, commands, safety/policy, Artisan, Claude review, and Grok current/news remain ahead of source research.
+    - [x] Add fake-provider and assistant-route smoke coverage.
+
+- [x] **21.3. Clean Demo Evidence**
+    - [x] Keep old failed demo logs for internal history.
+    - [x] Add `logs/demos/latest.json` pointing only to the latest passing demo for each workflow.
+    - [x] Add `logs/demos/latest.md` with demo name, pass/fail, latest replay log path, artifacts/evidence, criteria, and command output evidence.
+    - [x] Redact private local home paths from public latest demo evidence.
+    - [x] Update README to point readers to `logs/demos/latest.md`.
+
+- [x] **21.4. Strengthen README For Outside Readers**
+    - [x] Add `Why Kampung AI Is Different`.
+    - [x] Add `What Is Implemented Now`.
+    - [x] Add `What Is Not Production Ready Yet`.
+    - [x] Add `How To Verify The System Locally`.
+    - [x] Add a five-demo table with commands and expected output.
+    - [x] Add safety and cost-control tables.
+
+- [x] **21.5. Make Maya Desk The Proof Surface**
+    - [x] Show latest eval score.
+    - [x] Link latest passing demo evidence logs.
+    - [x] Show dependency readiness.
+    - [x] Show provider readiness.
+    - [x] Show route and cost audit.
+    - [x] Show hardening audit summary and keep recent failures separate from passing proof.
+
+- [x] **21.6. Verify Local CI Is The Truth**
+    - [x] Keep `local_ci.py` as the default proof command.
+    - [x] Run Python compile checks.
+    - [x] Run blocking code health.
+    - [x] Run scored eval suite.
+    - [x] Run hardening audit smoke.
+    - [x] Run latest demo evidence check.
+    - [x] Keep live provider checks optional and explicit.
+
+- [x] **21.7. Add Demo Evidence Checker**
+    - [x] Validate the five latest demo logs exist.
+    - [x] Validate each latest demo passed.
+    - [x] Validate each demo has criteria.
+    - [x] Validate command output is captured.
+    - [x] Validate each demo has an artifact or evidence path.
+    - [x] Validate secret-shaped values do not appear in demo proof.
+
+- [x] **21.8. Add Public Redaction Pass**
+    - [x] Check README.
+    - [x] Check latest demo summary and JSON.
+    - [x] Check latest eval log.
+    - [x] Flag API keys, tokens, private keys, OTPs, bank/card data, personal private memory, and unnecessary local private paths in public-facing proof files.
+
+- [x] **21.9. Re-score After Proof Packaging**
+    - [x] Run `./venv/bin/python local_ci.py`.
+    - [x] Confirm scored eval output is current: 100.0%, 25/25 passing.
+    - [x] Confirm `hardening_audit.py` reports zero public redaction issues.
+    - [x] Record expected post-packaging scores: personal agent 8.0/10, engineering maturity 7.2/10, public technical credibility 6.8/10, product/investor readiness 6.3/10.
+
+- [x] **21.10. What Not To Add Yet**
+    - [x] Do not add more AI models.
+    - [x] Do not add more hardware features.
+    - [x] Do not add WhatsApp yet.
+    - [x] Do not add commercial onboarding yet.
+    - [x] Do not add cloud deployment yet.
+    - [x] Treat proof quality, not feature count, as the current bottleneck.
 
 ---
 *Updated June 2, 2026*

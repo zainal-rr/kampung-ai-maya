@@ -26,6 +26,8 @@ def run_local_ci(*, live_providers: bool = False) -> list[CheckResult]:
         _compile_check(),
         _code_health_check(required=True),
         _eval_check(),
+        _command_check("hardening audit", ("hardening_audit_smoke.py",)),
+        _command_check("latest demo evidence", ("demo_evidence.py", "--check")),
     ]
     if live_providers:
         results.append(_command_check("provider live text", ("provider_smoke.py", "--stage", "text", "--strict")))

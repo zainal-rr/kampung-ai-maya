@@ -4,6 +4,33 @@ Kampung AI is a personal agent harness. Maya is the user-facing identity; undern
 
 This is not just a Telegram bot, a model router, or a LangGraph demo. The product direction is a local-first personal agent runtime.
 
+## Why Kampung AI Is Different
+
+Kampung AI treats Maya as a personal agent harness, not a single chatbot surface. The core value is the combination of persistent threads, event traces, permission gates, canonical memory, local artifacts, replayable demos, and local computer actions across channels. Telegram and iMac are clients of the same runtime rather than separate assistants.
+
+## What Is Implemented Now
+
+| Area | Current state |
+| --- | --- |
+| Telegram | Text, voice-note STT, file delivery, route/cost audit, memory commands, latest-document follow-up |
+| Office artifacts | Word, Excel, and PowerPoint creation/editing with local validation and Claude review gates |
+| Memory | Canonical save/recall/forget, weekly distillation path, Omi context sieve, self-heal memory dry run |
+| Harness | Thread manager, event store, tool registry, permission kernel, SDK facade, approval-gated workflows |
+| Artisan/Codex | Local implementation handoff, app/project QA, apply-back approval boundary |
+| Blender/Maker | Template/export workflow for editable source, `.blend`, `.stl`, and print-safety status |
+| Proof surface | Local CI, scored evals, demo replay logs, hardening audit, Maya Desk |
+
+## What Is Not Production Ready Yet
+
+| Area | Current limitation |
+| --- | --- |
+| iMac live voice | Architecture is aligned, but live quality depends on macOS permissions/audio routing and separate live sessions |
+| Weekly automation | Manual/live status works; unattended scheduled proof needs continued observation |
+| Public onboarding | No commercial onboarding, cloud deployment, billing, or multi-user permissions yet |
+| Physical printing | Maya stops before slicing, printer upload, and physical print without explicit confirmation |
+| App building | Available through Artisan/Codex, but end-to-end project QA is still being hardened |
+| Provider routes | Live API availability is outside local CI and must be checked separately |
+
 ## Architecture
 
 ```mermaid
@@ -79,16 +106,15 @@ The natural iMac voice path is realtime Grok Voice Agent streaming with Ara. The
 
 ## Safety And Approval
 
-Maya will not do these without explicit approval:
-
-- Apply repo patches.
-- Commit, deploy, or restart services.
-- Delete files or resources.
-- Upload, send externally, or share sensitive material.
-- Submit forms, book travel, make purchases, or make payments.
-- Handle credentials, API keys, private keys, bank details, OTPs, or secrets.
-- Start slicing, printer upload, or physical 3D printing.
-- Run broad refactors or destructive cleanup.
+| Action | Default behavior |
+| --- | --- |
+| Local artifact creation inside Maya workspace | Allowed after request, then validated |
+| Repo patches or apply-back | Approval required |
+| Commit, deploy, restart, broad refactor | Approval required |
+| Delete files/resources | Approval required |
+| Upload, external send, booking, purchase, payment, submit | Approval required |
+| Secrets, API keys, private keys, OTP, bank/card details | Hard blocked |
+| Slicing, printer upload, physical 3D print | Approval required |
 
 Sensitive private exposure is hard-blocked even if requested.
 
@@ -96,17 +122,17 @@ Sensitive private exposure is hard-blocked even if requested.
 
 Replayable demos are available through `run_demo.py`:
 
-```bash
-./venv/bin/python run_demo.py telegram_document
-./venv/bin/python run_demo.py memory_weekly
-./venv/bin/python run_demo.py self_heal
-./venv/bin/python run_demo.py artisan_project
-./venv/bin/python run_demo.py blender_maker
-```
+| Demo | Command | Expected output |
+| --- | --- | --- |
+| Telegram document creation | `./venv/bin/python run_demo.py telegram_document` | Word/Excel/PPTX quality and Telegram delivery smokes pass |
+| Memory weekly | `./venv/bin/python run_demo.py memory_weekly` | Canonical memory and weekly dry-run smokes pass |
+| Self-heal | `./venv/bin/python run_demo.py self_heal` | Approval-gated self-heal and rollback guardrails pass |
+| Artisan project | `./venv/bin/python run_demo.py artisan_project` | Codex handoff, app QA, and delivery package smokes pass |
+| Blender/Maker | `./venv/bin/python run_demo.py blender_maker` | Maker/export workflow passes and stops before physical print |
 
-Each demo writes a replay log under `logs/demos/` with pass/fail criteria, commands, outputs, and artifact references when available.
+Each demo writes a replay log under `logs/demos/` with pass/fail criteria, commands, outputs, and artifact references when available. The public proof index is `logs/demos/latest.md`; old failed logs remain for internal history.
 
-## Local CI And Evals
+## How To Verify The System Locally
 
 Use local CI for no-provider regression checks:
 
@@ -122,6 +148,8 @@ Use the scored eval suite directly when needed:
 
 The eval suite writes JSON to `logs/evals/latest.json` and reports pass/fail scores across routing, memory, weekly memory, Word, Excel, PowerPoint, self-heal, Artisan, Blender/Maker, safety, Maya Desk, harness, and dependency readiness.
 
+Local CI is the default proof command. It runs Python compile checks, blocking code health, the scored eval suite, hardening audit, and latest demo evidence check. Live provider checks are optional and should not be required to claim local harness health.
+
 ## Dependency Readiness
 
 The machine-readable manifest is `dependency_manifest.json`. It tracks Python modules, local tools, macOS apps, provider keys, launchd jobs, permissions, MCP servers, Codex subscription auth, Blender, ffmpeg, Office apps, Telegram, Gemini, Claude, xAI, and weekly memory automation.
@@ -135,11 +163,12 @@ Check readiness with:
 
 ## Cost Shape
 
-| Usage mode | Expected lanes | Cost profile |
+| Usage mode | Expected lanes | Cost control model |
 | --- | --- | --- |
-| Normal day | Telegram text, memory, local files, light review | Low |
-| Heavy artifact day | Word, Excel, PowerPoint, Claude review, image generation | Medium |
-| Demo/hardening day | evals, demos, Artisan/Codex, Blender, provider checks | Medium to high if live providers are enabled |
+| Normal day | Telegram text, memory, local files, light review | Low; Gemini/Grok/Claude only when routed |
+| Heavy artifact day | Word, Excel, PowerPoint, Claude review, image generation | Medium; local validation before expensive review |
+| Demo/hardening day | evals, demos, Artisan/Codex, Blender, provider checks | Low locally; medium to high only if live providers are enabled |
+| Source-aware research | Gemini grounded search with citations | Used only for explicit research/source requests |
 
 Local CI and replay demos are designed to run without live provider calls by default.
 

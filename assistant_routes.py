@@ -120,6 +120,9 @@ class AssistantRouter:
         if self.model_lanes.should_use_steward_path(text):
             response = await self.model_lanes.steward_response(text, memory_context, skill_context)
             return RouteResult(response, "Claude Steward", "careful review request", bool(os.getenv("ANTHROPIC_API_KEY")))
+        if channel == "imac" and self.model_lanes.should_use_source_research_path(text):
+            response = await self.model_lanes.source_research_response(text, memory_context, skill_context, channel)
+            return RouteResult(response, "Gemini source-aware research", "source-aware research", bool(os.getenv("GOOGLE_API_KEY")))
         if channel == "telegram":
             return await self._route_telegram(text, memory_context, skill_context, topic_context, voice_note)
         if channel == "imac" and self._should_use_fast_imac_path(text):
@@ -143,6 +146,9 @@ class AssistantRouter:
         if self.model_lanes.should_use_pulse_path(text) and not malay_or_manglish:
             response = await self.model_lanes.pulse_response(text, memory_context, skill_context)
             return RouteResult(response, "Grok text/news", "current or news question", bool(os.getenv("XAI_API_KEY")))
+        if self.model_lanes.should_use_source_research_path(text):
+            response = await self.model_lanes.source_research_response(text, memory_context, skill_context, "telegram")
+            return RouteResult(response, "Gemini source-aware research", "source-aware research", bool(os.getenv("GOOGLE_API_KEY")))
         response = await fast_telegram_response(
             self.telegram_fast_responder,
             text,

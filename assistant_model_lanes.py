@@ -10,6 +10,7 @@ from language_policy import language_instruction
 from models import TheMind, TheNews, TheSenses, TheSteward
 from orchestrator_prompts import MIND_ESCALATION_PROMPT, TECHNICAL_KEYWORDS
 from provider_capabilities import CAPABILITIES, review_triggers
+from source_aware_research import format_source_research, should_use_source_research, source_aware_research
 from weather_lookup import current_weather_summary, is_weather_question
 
 
@@ -71,6 +72,10 @@ class ModelLanes:
             "myr", "usd", "x feed", "twitter",
         )
         return any(marker in lowered for marker in markers)
+
+    @staticmethod
+    def should_use_source_research_path(text: str) -> bool:
+        return should_use_source_research(text)
 
     @staticmethod
     def should_use_complex_path(text: str) -> bool:
@@ -190,6 +195,21 @@ class ModelLanes:
         reply = await self.pulse.chat(prompt)
         await record_usage(self.db_path, "grok_text_calls", 1, "current question")
         return reply
+
+    async def source_research_response(
+        self,
+        text: str,
+        memory_context: str,
+        skill_context: str,
+        channel: str = "telegram",
+    ) -> str:
+        result = await source_aware_research(
+            self.db_path or "",
+            text,
+            memory_context=memory_context,
+            skill_context=skill_context,
+        )
+        return format_source_research(result, channel=channel)
 
     @staticmethod
     def _prompt(system_prompt: str, text: str, memory_context: str, skill_context: str) -> list[dict[str, str]]:

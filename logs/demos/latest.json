@@ -1,0 +1,196 @@
+{
+  "schema": "kampung-ai.demo-evidence.latest.v1",
+  "passed": true,
+  "expected_demos": [
+    "telegram_document",
+    "memory_weekly",
+    "self_heal",
+    "artisan_project",
+    "blender_maker"
+  ],
+  "demos": [
+    {
+      "name": "telegram_document",
+      "title": "Telegram document creation",
+      "passed": true,
+      "json_log": "logs/demos/telegram_document-20260601T195035Z.json",
+      "replay_log": "logs/demos/telegram_document-20260601T195035Z.md",
+      "evidence_path": "logs/demos/telegram_document-20260601T195035Z.md",
+      "artifacts": [],
+      "criteria": [
+        "Word, Excel, and PowerPoint document-quality smokes pass.",
+        "Route and delivery continuity smokes pass.",
+        "No live provider call is required in replay mode."
+      ],
+      "results": [
+        {
+          "command": "document_route_flow_smoke.py",
+          "passed": true,
+          "returncode": 0,
+          "output": "document_route_flow_smoke: ok"
+        },
+        {
+          "command": "word_golden_artifact_smoke.py",
+          "passed": true,
+          "returncode": 0,
+          "output": "word_golden_artifact_smoke: ok"
+        },
+        {
+          "command": "excel_golden_artifact_smoke.py",
+          "passed": true,
+          "returncode": 0,
+          "output": "excel_golden_artifact_smoke: ok"
+        },
+        {
+          "command": "pptx_quality_gate_smoke.py",
+          "passed": true,
+          "returncode": 0,
+          "output": "pptx_quality_gate_smoke: ok"
+        },
+        {
+          "command": "telegram_delivery_file_smoke.py",
+          "passed": true,
+          "returncode": 0,
+          "output": "telegram_delivery_file_smoke: ok\nTelegram file upload failed for /private/var/folders/9k/bmn4krtn06s4fbm5mw3jmw380000gn/T/maya-telegram-file-xplq0j1b/Maya/artifacts/maya-notes.docx\nTraceback (most recent call last):\n  File \"<user-home>/projects/kampung-ai/telegram_delivery.py\", line 46, in send_text\n    await send_document_file(bot, chat_id, path, caption=path.name)\n  File \"<user-home>/projects/kampung-ai/telegram_delivery.py\", line 67, in send_document_file\n    await bot.send_document(\n    ...<5 lines>...\n    )\n  File \"<user-home>/projects/kampung-ai/telegram_delivery_file_smoke.py\", line 25, in send_document\n    raise TimeoutError(\"simulated upload timeout\")\nTimeoutError: simulated upload timeout"
+        }
+      ]
+    },
+    {
+      "name": "memory_weekly",
+      "title": "Memory save/forget and weekly distillation",
+      "passed": true,
+      "json_log": "logs/demos/memory_weekly-20260601T195032Z.json",
+      "replay_log": "logs/demos/memory_weekly-20260601T195032Z.md",
+      "evidence_path": "logs/demos/memory_weekly-20260601T195032Z.md",
+      "artifacts": [],
+      "criteria": [
+        "Canonical memory save/recall/forget works.",
+        "Memory command cleanup prevents forgotten-value leaks.",
+        "Weekly memory dry run completes without live provider calls."
+      ],
+      "results": [
+        {
+          "command": "canonical_memory_smoke.py",
+          "passed": true,
+          "returncode": 0,
+          "output": "canonical_memory_smoke: ok"
+        },
+        {
+          "command": "memory_control_smoke.py",
+          "passed": true,
+          "returncode": 0,
+          "output": "memory_control_smoke: ok"
+        },
+        {
+          "command": "weekly_memory_smoke.py",
+          "passed": true,
+          "returncode": 0,
+          "output": "weekly_memory_smoke: ok"
+        }
+      ]
+    },
+    {
+      "name": "self_heal",
+      "title": "Approval-gated self-heal",
+      "passed": true,
+      "json_log": "logs/demos/self_heal-20260601T195033Z.json",
+      "replay_log": "logs/demos/self_heal-20260601T195033Z.md",
+      "evidence_path": "logs/demos/self_heal-20260601T195033Z.md",
+      "artifacts": [],
+      "criteria": [
+        "Self-heal proposal/report path works.",
+        "Memory self-heal dry-run/proceed guardrails pass.",
+        "Complex agentic workflow pauses for approval and resumes safely."
+      ],
+      "results": [
+        {
+          "command": "self_healing_smoke.py",
+          "passed": true,
+          "returncode": 0,
+          "output": "self_healing_smoke: ok"
+        },
+        {
+          "command": "self_heal_memory_smoke.py",
+          "passed": true,
+          "returncode": 0,
+          "output": "self_heal_memory_smoke: ok"
+        },
+        {
+          "command": "complex_agentic_workflow_smoke.py",
+          "passed": true,
+          "returncode": 0,
+          "output": "complex_agentic_workflow_smoke: ok"
+        }
+      ]
+    },
+    {
+      "name": "artisan_project",
+      "title": "Artisan project/app handoff",
+      "passed": true,
+      "json_log": "logs/demos/artisan_project-20260601T195144Z.json",
+      "replay_log": "logs/demos/artisan_project-20260601T195144Z.md",
+      "evidence_path": "logs/demos/artisan_project-20260601T195144Z.md",
+      "artifacts": [],
+      "criteria": [
+        "Artisan runner captures workflow state.",
+        "App QA rejects broken assets and accepts complete projects.",
+        "Latest-app delivery packages a Telegram-ready zip."
+      ],
+      "results": [
+        {
+          "command": "artisan_runner_smoke.py",
+          "passed": true,
+          "returncode": 0,
+          "output": "artisan_runner_smoke: ok"
+        },
+        {
+          "command": "artisan_app_qa_smoke.py",
+          "passed": true,
+          "returncode": 0,
+          "output": "artisan_app_qa_smoke: ok\n127.0.0.1 - - [02/Jun/2026 03:51:27] \"GET / HTTP/1.1\" 200 -\n127.0.0.1 - - [02/Jun/2026 03:51:29] \"GET / HTTP/1.1\" 200 -\n127.0.0.1 - - [02/Jun/2026 03:51:29] \"GET /style.css HTTP/1.1\" 200 -\n127.0.0.1 - - [02/Jun/2026 03:51:29] \"GET /script.js HTTP/1.1\" 200 -\n127.0.0.1 - - [02/Jun/2026 03:51:29] code 404, message File not found\n127.0.0.1 - - [02/Jun/2026 03:51:29] \"GET /favicon.ico HTTP/1.1\" 404 -\n127.0.0.1 - - [02/Jun/2026 03:51:36] \"GET / HTTP/1.1\" 200 -\n127.0.0.1 - - [02/Jun/2026 03:51:37] \"GET / HTTP/1.1\" 200 -\n127.0.0.1 - - [02/Jun/2026 03:51:37] code 404, message File not found\n127.0.0.1 - - [02/Jun/2026 03:51:37] \"GET /missing.js HTTP/1.1\" 404 -\n127.0.0.1 - - [02/Jun/2026 03:51:37] code 404, message File not found\n127.0.0.1 - - [02/Jun/2026 03:51:37] \"GET /favicon.ico HTTP/1.1\" 404 -"
+        },
+        {
+          "command": "artisan_delivery_smoke.py",
+          "passed": true,
+          "returncode": 0,
+          "output": "artisan_delivery_smoke: ok"
+        }
+      ]
+    },
+    {
+      "name": "blender_maker",
+      "title": "Blender/Maker printable output",
+      "passed": true,
+      "json_log": "logs/demos/blender_maker-20260601T195130Z.json",
+      "replay_log": "logs/demos/blender_maker-20260601T195130Z.md",
+      "evidence_path": "logs/demos/blender_maker-20260601T195130Z.md",
+      "artifacts": [],
+      "criteria": [
+        "Maker templates create deterministic source/export records.",
+        "Blender can export real .blend and .stl files when available.",
+        "Delivery summary includes safety status and no physical print action."
+      ],
+      "results": [
+        {
+          "command": "artisan_maker_template_smoke.py",
+          "passed": true,
+          "returncode": 0,
+          "output": "artisan_maker_template_smoke: ok"
+        },
+        {
+          "command": "blender_maker_smoke.py",
+          "passed": true,
+          "returncode": 0,
+          "output": "blender_maker_smoke: ok"
+        },
+        {
+          "command": "artisan_delivery_smoke.py",
+          "passed": true,
+          "returncode": 0,
+          "output": "artisan_delivery_smoke: ok"
+        }
+      ]
+    }
+  ],
+  "issues": []
+}

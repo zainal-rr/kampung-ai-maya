@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from dependency_manifest import readiness_summary
+from demo_evidence import load_latest, validate_latest_demo_evidence
 from permission_policy import SECRET_PATTERNS
 from route_tracker import _model_for_lane
 from self_heal_memory import guardrails_text
@@ -34,6 +35,7 @@ def route_cost_audit() -> list[AuditItem]:
         "Gemini Flash role-based Word draft + local Word QA + Claude Word review": "claude",
         "xAI STT + Gemini Flash text": "grok-2-audio",
         "Artisan Codex app": "codex",
+        "Gemini source-aware research": "gemini",
         "GPT complex": "gpt-5.5",
         "command": "none",
     }
@@ -76,21 +78,39 @@ def public_report_redaction_issues(paths: list[Path]) -> list[str]:
         for pattern in SECRET_PATTERNS:
             if pattern.search(text):
                 issues.append(f"{path}: secret-shaped value matched {pattern.pattern}")
+        if "/Users/zainalabidinjamal/" in text:
+            issues.append(f"{path}: private local home path found")
     return issues
+
+
+def demo_evidence_items() -> list[AuditItem]:
+    payload = load_latest()
+    issues = validate_latest_demo_evidence(payload)
+    detail = "latest demo evidence PASS" if not issues else "; ".join(f"{i.demo}: {i.issue}" for i in issues)
+    return [AuditItem("latest demo evidence", bool(payload) and not issues, detail)]
+
+
+def public_redaction_paths() -> list[Path]:
+    return [
+        Path("README.md"),
+        Path("logs/demos/latest.json"),
+        Path("logs/demos/latest.md"),
+        Path("logs/evals/latest.json"),
+    ]
 
 
 def hardening_audit_summary() -> str:
     route_items = route_cost_audit()
     rollback_items = rollback_drill_items()
-    readme = Path("README.md")
-    desk = Path("logs/evals/latest.json")
-    privacy_issues = public_report_redaction_issues([readme, desk])
+    demo_items = demo_evidence_items()
+    privacy_issues = public_report_redaction_issues(public_redaction_paths())
     lines = ["Hardening audit:"]
     lines.append(f"1) route/cost audit: {_count_passed(route_items)}")
     lines.append("2) capability readiness:\n" + capability_readiness_report())
     lines.append(f"3) rollback drills: {_count_passed(rollback_items)}")
-    lines.append(f"4) privacy/redaction issues: {len(privacy_issues)}")
-    lines.append("5) demo replay notes: run_demo.py writes logs/demos/*.md and README links the commands")
+    lines.append(f"4) demo evidence: {_count_passed(demo_items)}")
+    lines.append(f"5) privacy/redaction issues: {len(privacy_issues)}")
+    lines.append("6) demo replay notes: logs/demos/latest.md points to the latest passing replay for each demo")
     return "\n".join(lines)
 
 

@@ -8,7 +8,9 @@ from pathlib import Path
 from approval_inbox import approval_items
 from cost_tracker import usage_summary_text
 from curated_memory import curated_memory_status
+from demo_evidence import load_latest
 from dependency_manifest import dependency_statuses, readiness_summary
+from hardening_audit import hardening_audit_summary, route_cost_audit
 from harness_artifact_store import latest_artifacts
 from maya_event_store import MayaEventStore
 from mcp_registry import recent_mcp_usage
@@ -45,6 +47,7 @@ async def _html(db_path: str) -> str:
     deps = dependency_statuses()
     dep_summary = readiness_summary()
     eval_payload = _latest_eval()
+    demo_payload = load_latest()
     self_heal = await latest_self_heal_report(db_path)
     events = await MayaEventStore(db_path).list(limit=12)
     generated = datetime.now(UTC).isoformat(timespec="seconds").replace("+00:00", "Z")
@@ -69,6 +72,10 @@ async def _html(db_path: str) -> str:
 <section><h2>Memory Health</h2><pre>{escape(await curated_memory_status(db_path))}</pre></section>
 <section><h2>Weekly Memory</h2><pre>{escape(await weekly_memory_status_text(db_path))}</pre></section>
 {_section("Dependency Readiness", [f"{d.id}: {d.status} ({d.requirement})" for d in deps])}
+{_section("Provider Readiness", _provider_items(deps))}
+{_section("Latest Passing Demos", _latest_demo_items(demo_payload))}
+{_section("Route And Cost Audit", [f"{i.name}: {'PASS' if i.passed else 'CHECK'} | {i.detail}" for i in route_cost_audit()])}
+<section><h2>Hardening Audit</h2><pre>{escape(hardening_audit_summary())}</pre></section>
 {_section("Harness Traces", [f"{e['created_at']} {e['thread_id']} {e['event_type']}: {e['summary']}" for e in events])}
 {_section("Recent Failures", _failure_items(eval_payload, self_heal))}
 {_section("Approvals", approvals)}
@@ -108,6 +115,22 @@ def _latest_eval() -> dict:
         return json.loads(path.read_text(encoding="utf-8"))
     except json.JSONDecodeError:
         return {}
+
+
+def _latest_demo_items(payload: dict) -> list[str]:
+    if not payload:
+        return ["No latest demo evidence found."]
+    items = [
+        f"{demo.get('name')}: {'PASS' if demo.get('passed') else 'FAIL'} | {demo.get('evidence_path')}"
+        for demo in payload.get("demos", [])
+    ]
+    if payload.get("issues"):
+        items.extend(f"issue: {issue.get('demo')} - {issue.get('issue')}" for issue in payload["issues"])
+    return items
+
+
+def _provider_items(deps: list) -> list[str]:
+    return [f"{d.id}: {d.status} ({d.detail})" for d in deps if d.category == "provider_key"]
 
 
 def _eval_badge(payload: dict) -> str:
