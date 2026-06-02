@@ -24,7 +24,7 @@ class CheckResult:
 def run_local_ci(*, live_providers: bool = False) -> list[CheckResult]:
     results = [
         _compile_check(),
-        _code_health_check(required=False),
+        _code_health_check(required=True),
         _eval_check(),
     ]
     if live_providers:

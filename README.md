@@ -144,7 +144,7 @@ Generate it through the Maya command path or directly from `maya_desk.py` caller
 
 ## Known Limitations
 
-- Some legacy Python files still exceed the 300-line target. `local_ci.py` reports this as a warning until behavior-preserving refactors are completed.
+- No root Python file currently exceeds the 300-line hard limit. Files in the 280 to 300 line range remain urgent refactor candidates and are reported by `code_health.py`.
 - iMac live voice quality depends on local macOS permissions, audio routing, and separate live testing.
 - Weekly memory automation is implemented, but unattended scheduled proof still needs ongoing observation.
 - Physical 3D printing is not automated. Maya stops at local model files unless Zainal explicitly confirms slicing/upload/print actions later.
