@@ -49,6 +49,7 @@ from document_actions_smoke_helpers import (
 async def main() -> None:
     with tempfile.TemporaryDirectory(prefix="maya-doc-actions-") as tmp:
         old_google = os.environ.pop("GOOGLE_API_KEY", None)
+        old_anthropic = os.environ.pop("ANTHROPIC_API_KEY", None)
         os.environ["MAYA_WORKSPACE_ROOT"] = str(Path(tmp) / "Maya")
         db_path = str(Path(tmp) / "smoke.db")
         root = Path(tmp) / "projects"
@@ -261,6 +262,8 @@ async def main() -> None:
             da.artifact_preflight_with_gemini = old_preflight
             if old_google:
                 os.environ["GOOGLE_API_KEY"] = old_google
+            if old_anthropic:
+                os.environ["ANTHROPIC_API_KEY"] = old_anthropic
 
 
 

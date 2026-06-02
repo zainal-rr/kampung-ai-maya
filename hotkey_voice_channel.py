@@ -13,7 +13,12 @@ from voice_agent_audio import VoiceAgentAudioCapture
 from voice_agent_session import build_voice_agent_session
 from voice_context import build_imac_voice_context
 from xai_realtime_stream import XaiRealtimeStreamingSession
-from xai_voice_handoff import VOICE_HANDOFF_KEY, pop_voice_handoff_request
+from xai_voice_handoff import (
+    VOICE_HANDOFF_KEY,
+    clear_voice_handoffs,
+    complete_voice_handoff_request,
+    pop_voice_handoff_request,
+)
 
 
 class HotkeyVoiceChannel:
@@ -164,6 +169,8 @@ class HotkeyVoiceChannel:
         for key in keys:
             with contextlib.suppress(Exception):
                 await delete_preference(self.assistant.db_path, key)
+        with contextlib.suppress(Exception):
+            await clear_voice_handoffs(self.assistant.db_path, reason="manual hotkey stop")
 
     async def _run_voice_session(self) -> None:
         self.stop_requested = False
@@ -173,6 +180,9 @@ class HotkeyVoiceChannel:
                 await self.assistant.voice.speak("Voice mode is off.")
                 return
             if os.getenv("MAYA_HOTKEY_VOICE_MODE", "streaming") == "diagnostic":
+                if os.getenv("MAYA_ENABLE_DIAGNOSTIC_FFMPEG_CAPTURE", "0") != "1":
+                    print("maya-hotkey> diagnostic ffmpeg capture disabled", flush=True)
+                    return
                 await self._run_diagnostic_capture()
                 return
             context = await build_imac_voice_context(self.assistant)
@@ -210,7 +220,17 @@ class HotkeyVoiceChannel:
         if not request:
             return
         print(f"maya-hotkey-handoff> {request}", flush=True)
-        response = await self.assistant.handle_text(request, channel="imac", speak_reply=True)
+        try:
+            response = await self.assistant.handle_text(request, channel="imac", speak_reply=True)
+        except Exception as exc:
+            await complete_voice_handoff_request(
+                self.assistant.db_path,
+                request,
+                result=f"failed: {exc}",
+                status="failed",
+            )
+            raise
+        await complete_voice_handoff_request(self.assistant.db_path, request, result=response)
         print(f"maya-hotkey-handoff-reply> {response}", flush=True)
 
     def _hotkey_debounced(self) -> bool:

@@ -59,7 +59,9 @@ The current internal harness spine is implemented through:
 
 Maya uses canonical memory as the truth layer for saved facts, with preferences, lessons, session search, and curated memory acting as views or indexes. Direct memory questions search canonical memory first. Forgotten memories must not leak back from raw transcript history.
 
-Weekly memory distillation reads canonical memory and selected summaries, excludes temporary test memory by default, and must never recreate forgotten memories.
+Omi ambient transcripts pass through the context sieve before storage. Noise, low-signal chatter, and sensitive text are rejected; accepted transcript context is stored as lower-priority ambient memory, not as normal preferences.
+
+Weekly memory distillation reads canonical memory and selected summaries, excludes temporary test memory by default, and must never recreate forgotten memories. Gemini Flash is the default weekly distiller, Gemini Premium is reserved for dense or ambiguous weeks, and Claude reviews memory candidates before safe canonical writes.
 
 ## Artifact Quality
 
@@ -68,7 +70,12 @@ Word, Excel, PowerPoint, and HTML/app workflows use local file builders and qual
 - Word: scenario-specific structure, no filler, no empty headings, local `.docx` validation, Claude review.
 - Excel: useful workbook structure, formulas, domain-specific rows, clean pastel headers, local workbook validation.
 - PowerPoint: dark/editorial default, short visible text, speaker notes, image insertion where useful, visual QA, Claude review.
+- Office edits: `/edit` and natural follow-ups update the latest Word, Excel, or PowerPoint file in place by default, keep a hidden backup, rerun QA, and restore the original if QA fails.
 - App building: project-folder workflow through Artisan/Codex, not loose one-file apps unless explicitly requested.
+
+## Voice Handoff
+
+The natural iMac voice path is realtime Grok Voice Agent streaming with Ara. The older ffmpeg capture mode is diagnostic-only and requires explicit diagnostic environment flags. Long spoken work is parked into a durable SQLite handoff queue so Grok voice can close while Maya's normal worker lane completes the task.
 
 ## Safety And Approval
 
@@ -146,6 +153,7 @@ Generate it through the Maya command path or directly from `maya_desk.py` caller
 
 - No root Python file currently exceeds the 300-line hard limit. Files in the 280 to 300 line range remain urgent refactor candidates and are reported by `code_health.py`.
 - iMac live voice quality depends on local macOS permissions, audio routing, and separate live testing.
+- Parked voice handoff is code-smoke-tested; full live proof still needs a real iMac voice session.
 - Weekly memory automation is implemented, but unattended scheduled proof still needs ongoing observation.
 - Physical 3D printing is not automated. Maya stops at local model files unless Zainal explicitly confirms slicing/upload/print actions later.
 - App building is available through Artisan/Codex, but project QA and demo coverage are still being hardened.

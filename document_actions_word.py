@@ -88,8 +88,13 @@ class DocumentWordMixin:
         path = Path(raw)
         if not path.exists():
             return f"I cannot find the last document at {path}."
-        if path.suffix.lower() != ".docx":
-            return "I can edit the latest Word document first. Excel and PowerPoint editing are still separate work."
+        suffix = path.suffix.lower()
+        if suffix == ".pptx":
+            return await self._edit_latest_powerpoint(path, instruction, channel, save_copy=save_copy)
+        if suffix == ".xlsx":
+            return await self._edit_latest_excel(path, instruction, channel, save_copy=save_copy)
+        if suffix != ".docx":
+            return "I can edit the latest Word, Excel, or PowerPoint file first. Tell me which file to use."
         if action_permission("edit_document") != "allow":
             return "I need your confirmation before editing that document."
         try:

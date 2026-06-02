@@ -2,6 +2,7 @@ from __future__ import annotations
 
 from document_actions_context import *
 from document_actions_content_helpers import (
+    _attach,
     _budget_filename_topic,
     _budget_rows,
     _budget_title,
@@ -14,9 +15,95 @@ from document_actions_content_helpers import (
     _strip_quality_words,
     _travel_budget_topic,
 )
+from office_edit_helpers import (
+    backup_office_file,
+    edited_office_topic,
+    pptx_edit_request,
+    pptx_outline,
+    xlsx_edit_request,
+    xlsx_snapshot,
+)
 
 
 class DocumentOfficeMixin:
+    async def _edit_latest_powerpoint(self, path: Path, instruction: str, channel: str, *, save_copy: bool = False) -> str:
+        if action_permission("edit_presentation") != "allow":
+            return "I need your confirmation before editing that presentation."
+        try:
+            current = await asyncio.to_thread(pptx_outline, path)
+            topic = edited_office_topic(path, instruction, current)
+            preflight = await self._artifact_preflight("pptx", topic)
+            self.last_model_lane = f"{preflight.lane_prefix} + Gemini Flash PowerPoint edit"
+            self.last_cost_recorded = preflight.cost_recorded
+            draft = await self._draft_markdown(pptx_edit_request(topic, instruction, current), preflight)
+        except Exception as exc:
+            return document_generation_failed("PowerPoint edit", exc)
+        if not draft:
+            return document_generation_failed("PowerPoint edit", RuntimeError("Gemini returned no edited deck content."))
+        target = versioned_path(path) if save_copy else path
+        backup = await asyncio.to_thread(backup_office_file, path)
+        slides = await style_sections(self.db_path, slides_from_markdown(draft.content, topic))
+        reviewed = await review_presentation_slides(self.db_path, topic, slides)
+        if reviewed != slides:
+            self.last_model_lane += " + Claude presentation design review"
+            slides = reviewed
+        qa = await create_powerpoint_with_qa(self.db_path, target, topic.title(), slides, DIRECT_DOC_RUN_ID, LAST_DOC_KEY)
+        if not qa.passed:
+            await self._restore_failed_edit(path, target, backup, save_copy)
+            self.last_model_lane += " + PowerPoint edit restore"
+            return _attach(
+                f"I tried to update the latest PowerPoint, but QA failed: {qa.summary()} I kept the original unchanged.",
+                path,
+                channel,
+            )
+        await self._remember(target, f"Edited PowerPoint draft: {qa.summary()}", False)
+        if save_copy:
+            return await self._done_powerpoint("edited PowerPoint copy", target, channel)
+        return _attach("Done. I updated the latest PowerPoint in place. I kept an internal backup before editing.", target, channel)
+
+    async def _edit_latest_excel(self, path: Path, instruction: str, channel: str, *, save_copy: bool = False) -> str:
+        if action_permission("edit_document") != "allow":
+            return "I need your confirmation before editing that workbook."
+        try:
+            current = await asyncio.to_thread(xlsx_snapshot, path)
+            topic = edited_office_topic(path, instruction, current)
+            preflight = await self._artifact_preflight("xlsx", topic)
+            self.last_model_lane = f"{preflight.lane_prefix} + Gemini Flash Excel edit"
+            self.last_cost_recorded = preflight.cost_recorded
+            draft = await self._draft_markdown(xlsx_edit_request(topic, instruction, current), preflight)
+        except Exception as exc:
+            return document_generation_failed("Excel edit", exc)
+        if not draft:
+            return document_generation_failed("Excel edit", RuntimeError("Gemini returned no edited workbook content."))
+        target = versioned_path(path) if save_copy else path
+        backup = await asyncio.to_thread(backup_office_file, path)
+        if _budget_topic(f"{topic} {instruction}"):
+            headers, rows = _budget_rows(f"{topic} {instruction}")
+        else:
+            headers, rows = spreadsheet_from_markdown(topic, draft.content)
+        headers, rows = await style_table(self.db_path, headers, rows)
+        await asyncio.to_thread(create_xlsx, target, topic.title(), headers, rows)
+        quality = await self._excel_quality(target, topic)
+        if not quality.passed:
+            await self._restore_failed_edit(path, target, backup, save_copy)
+            self.last_model_lane += " + Excel edit restore"
+            return _attach(
+                f"I tried to update the latest Excel workbook, but QA failed: {quality.short_issue_text()}. I kept the original unchanged.",
+                path,
+                channel,
+            )
+        await self._remember(target, f"Edited Excel workbook: {quality.summary}", False)
+        if save_copy:
+            return await self._done("edited Excel copy", target, channel, "Microsoft Excel")
+        return _attach("Done. I updated the latest Excel workbook in place. I kept an internal backup before editing.", target, channel)
+
+    async def _restore_failed_edit(self, original: Path, target: Path, backup: Path | None, save_copy: bool) -> None:
+        if save_copy and target.exists():
+            await asyncio.to_thread(target.unlink)
+        elif backup:
+            await asyncio.to_thread(shutil.copy2, backup, original)
+        await upsert_preference(self.db_path, LAST_DOC_KEY, str(original), source="document")
+
     async def _create_powerpoint(self, topic: str, channel: str) -> str:
         quick = _quick_request(topic)
         topic = _strip_quality_words(topic)
@@ -131,15 +218,19 @@ class DocumentOfficeMixin:
         return await self._finish_excel(path, "Excel draft", topic, project_scoped, channel)
 
     async def _finish_excel(self, path: Path, label: str, topic: str, project_scoped: bool, channel: str) -> str:
-        local_qa = await asyncio.to_thread(validate_xlsx_path, path, topic)
-        self.last_model_lane += " + local Excel QA"
-        review_qa = await review_artifact_quality(self.db_path, "xlsx", topic, await asyncio.to_thread(extract_xlsx_text, path))
-        if review_qa.review_model:
-            self.last_model_lane += " + Claude Excel review"
-        elif review_qa.warnings:
-            self.last_model_lane += " + Claude Excel review skipped"
-        quality = local_qa.merge(review_qa)
+        quality = await self._excel_quality(path, topic)
         await self._remember(path, f"Created {label}: {quality.summary}", project_scoped)
         if not quality.passed:
             return await self._draft_with_issues(label, path, channel, "Microsoft Excel", quality.short_issue_text())
         return await self._done(label, path, channel, "Microsoft Excel")
+
+    async def _excel_quality(self, path: Path, topic: str) -> ArtifactQualityResult:
+        local_qa = await asyncio.to_thread(validate_xlsx_path, path, topic)
+        if "local Excel QA" not in self.last_model_lane:
+            self.last_model_lane += " + local Excel QA"
+        review_qa = await review_artifact_quality(self.db_path, "xlsx", topic, await asyncio.to_thread(extract_xlsx_text, path))
+        if review_qa.review_model and "Claude Excel review" not in self.last_model_lane:
+            self.last_model_lane += " + Claude Excel review"
+        elif review_qa.warnings and "Claude Excel review" not in self.last_model_lane:
+            self.last_model_lane += " + Claude Excel review skipped"
+        return local_qa.merge(review_qa)

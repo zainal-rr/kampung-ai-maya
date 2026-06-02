@@ -65,7 +65,8 @@ async def live_weekly_canonical_distillation(
         memory_ids.append(memory_id)
         saved += 1
     if provider_calls:
-        await record_usage(db_path, "gemini_premium_text_calls", 1, "weekly memory distillation")
+        distiller_lane = getattr(distiller_agent, "usage_lane", "gemini_premium_text_calls")
+        await record_usage(db_path, str(distiller_lane), 1, "weekly memory distillation")
     if reviewer_agent:
         await record_usage(db_path, "claude_steward_calls", 1, "weekly memory review")
     return LiveWeeklyMemoryResult(

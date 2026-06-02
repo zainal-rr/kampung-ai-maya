@@ -82,6 +82,7 @@ class FakeAssistant:
 
 async def main():
     os.environ["MAYA_HOTKEY_VOICE_MODE"] = "diagnostic"
+    os.environ["MAYA_ENABLE_DIAGNOSTIC_FFMPEG_CAPTURE"] = "1"
     tmp = tempfile.TemporaryDirectory(prefix="maya-hotkey-smoke-")
     db_path = str(Path(tmp.name) / "smoke.db")
     await init_db(db_path)

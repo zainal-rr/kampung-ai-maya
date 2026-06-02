@@ -21,6 +21,10 @@ def _word_repair_request(topic: str, issues: str, current: str) -> str:
 
 def _document_edit_request(text: str) -> tuple[str, bool] | None:
     cleaned = " ".join(str(text).strip().split())
+    slash = re.match(r"^/edit(?:\s+(.+))?$", cleaned, re.I)
+    if slash:
+        instruction = (slash.group(1) or "").strip(" .")
+        return (instruction or "make the latest file better according to the current context", False)
     cleaned = re.sub(r"^(?:maya\s+|please\s+|can you\s+|could you\s+|would you\s+|help me\s+)+", "", cleaned, flags=re.I).strip()
     save_copy = bool(re.search(r"\b(?:new version|new copy|create a copy|make a copy|save a copy|copy|duplicate|don't overwrite|do not overwrite|without overwriting)\b", cleaned, re.I))
     copy_match = re.match(

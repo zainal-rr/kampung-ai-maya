@@ -38,8 +38,11 @@ async def execute_voice_tool(db_path: str, name: str, args: dict) -> str:
         request = str(args.get("request") or question).strip()
         if not request:
             return "I need the exact request before I can hand it off."
-        await save_voice_handoff_request(db_path, request)
-        return "Handoff saved. Tell Zainal you will handle it outside the paid voice session now."
+        handoff_id = await save_voice_handoff_request(db_path, request)
+        return (
+            f"Handoff parked as {handoff_id}. Tell Zainal you will handle it outside "
+            "the paid voice session now."
+        )
     extra = await execute_visual_context_tool(db_path, name, question)
     if extra is not None:
         return extra

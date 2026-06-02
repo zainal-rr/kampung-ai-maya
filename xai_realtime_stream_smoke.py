@@ -51,7 +51,7 @@ async def main():
         db_path = str(Path(tmp) / "smoke.db")
         await init_db(db_path)
         output = await execute_voice_tool(db_path, HANDOFF_TOOL_NAME, {"request": "make a Word document about routers"})
-        assert "Handoff saved" in output
+        assert "Handoff parked" in output
         assert await pop_voice_handoff_request(db_path) == "make a Word document about routers"
         assert await pop_voice_handoff_request(db_path) is None
     os.environ["XAI_VOICE_ENABLE_SEARCH_TOOLS"] = "1"

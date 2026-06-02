@@ -54,13 +54,13 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Stream audio chunks to Grok Voice Agent instead of recording a local PCM file first.
     - [x] Use server-side turn detection for live Grok voice conversation.
     - [x] Stream Ara audio back as it arrives instead of waiting for full WAV playback.
-    - [ ] Treat the current `ffmpeg` capture path as diagnostic only, not the natural iMac voice path.
+    - [x] Treat the current `ffmpeg` capture path as diagnostic only, not the natural iMac voice path.
     - [x] Prevent the real iMac voice-agent path from falling back to separate TTS after wake.
     - [x] Add iMac voice policy so short Malay/Manglish can stay on Grok while longer or style-sensitive Malay/Manglish routes to Gemini plus Ara.
     - [x] Add natural Ara thinking fillers for slower Malay/Manglish quality turns.
     - [x] Record the long-work handoff rule: acknowledge by voice, idle or close paid speech-to-speech while background work runs, then reopen voice for follow-up or final delivery.
     - [x] Decouple realtime voice from document, browser, coding, and memory worker tools so Grok voice records a handoff instead of doing long work itself.
-    - [ ] Add parked voice-session state so Maya can keep short conversation alive while background agents work, without letting Grok execute the work.
+    - [x] Add parked voice-session state so Maya can keep short conversation alive while background agents work, without letting Grok execute the work.
     - [x] Live-test the real xAI websocket adapter after the xAI key arrives; pre-May-25 iMac test passed with Office artifact creation by voice.
 - [ ] **2.2. The Mind (GPT-5.5)**
     - [x] Implement "Escalation Logic" for high-complexity strategy.
@@ -80,7 +80,7 @@ This document tracks the technical and operational roadmap for building the stan
 - [ ] **2.3. The Sight (Gemini 3.1 Flash with 3.5 Flash premium escalation)**
     - [x] Use Gemini 3.1 Flash as the primary Telegram text/research model.
     - [x] Use Gemini 3.5 Flash as the premium Sight lane and remove the old Pro branch.
-    - [ ] Use Gemini for Omi summarization and memory distillation.
+    - [x] Use Gemini for Omi summarization and memory distillation.
     - [ ] Add a source-aware Gemini research workflow after API keys arrive.
     - [x] Use Gemini 3.1 Flash for normal camera snapshots and escalate to Gemini 3.5 Flash only when premium sight can plausibly help.
 - [ ] **2.4. The Steward (Claude Opus 4.8)**
@@ -154,9 +154,9 @@ This document tracks the technical and operational roadmap for building the stan
 - [ ] **4.1. Tailscale Ingress**
     - [ ] Configure auto-sync for Omi transcripts via Tailscale.
 - [ ] **4.2. The Context Sieve**
-    - [ ] Implement filter node to strip silence/noise from ambient feeds.
-    - [ ] Store distilled Omi memories in the shared memory system.
-    - [ ] Let Gemini own Omi transcript summarization and memory extraction.
+    - [x] Implement filter node to strip silence/noise from ambient feeds.
+    - [x] Store distilled Omi memories in the shared memory system.
+    - [x] Let Gemini own Omi transcript summarization and memory extraction.
 - [x] **4.3. Omi Adapter Seam**
     - [x] Normalize `.txt` and `.json` transcript files through a dedicated adapter.
     - [x] Keep the Omi watcher optional until the hardware flow matters.
@@ -302,8 +302,8 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add a launchd weekly memory job for Sunday 20:00 using the documented reflection cadence.
     - [x] System Health Heartbeat logic.
 - [ ] **8.3. Unified Memory**
-    - [ ] Merge iMac, Telegram, and Omi interactions into one shared memory model.
-    - [ ] Prioritize direct interactions over ambient memory.
+    - [x] Merge iMac, Telegram, and Omi interactions into one shared memory model.
+    - [x] Prioritize direct interactions over ambient memory.
     - [x] Add a no-key weekly memory dry-run pass for iMac, Telegram, and Omi-ready storage.
     - [x] Save prepared weekly summaries into local weekly summary storage.
     - [x] Make Sunday reflection read the prepared weekly summary instead of processing raw logs live.
@@ -326,9 +326,9 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Save safe iMac voice session summaries after hotkey sessions end.
     - [x] Add manual `save this conversation for memory` session checkpoint.
     - [x] Add `memory_control_smoke.py` and include it in launch rehearsal.
-    - [ ] Let Gemini 3.1 Flash summarize weekly raw logs and remove conversational noise.
-    - [ ] Let Gemini 3.5 Flash handle premium weekly synthesis when the week is dense, ambiguous, or needs stronger language quality.
-    - [ ] Let Claude review weekly memory candidates for overreach, false assumptions, vague preferences, and unsafe memory.
+    - [x] Let Gemini 3.1 Flash summarize weekly raw logs and remove conversational noise.
+    - [x] Let Gemini 3.5 Flash handle premium weekly synthesis when the week is dense, ambiguous, or needs stronger language quality.
+    - [x] Let Claude review weekly memory candidates for overreach, false assumptions, vague preferences, and unsafe memory.
     - [ ] Use GPT-5.5 only for high-value weekly memory shaping when the summary needs stricter judgement.
     - [ ] Promote dry-run weekly facts into local preferences, lessons, and tasks after provider review is available.
     - [x] Keep preferences separate from event memory.
@@ -337,10 +337,10 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Keep preference questions scoped to the preference layer instead of broad keyword-based archive search.
     - [x] Keep archive/project lore disabled by default for this new project.
     - [x] Clear legacy archive/state so this project starts from a fresh memory baseline.
-    - [ ] Prevent personality drift from ambient transcripts alone.
+    - [x] Prevent personality drift from ambient transcripts alone.
 - [ ] **8.4. Quantum Experiments**
-    - [ ] Keep Quantum Leaf outside live routing until corrected smoke tests prove it is reliable.
-    - [ ] Fix the Quantum Leaf smoke test so mixed-route expectations are actually checked.
+    - [x] Keep Quantum Leaf outside live routing until corrected smoke tests prove it is reliable.
+    - [x] Fix the Quantum Leaf smoke test so mixed-route expectations are actually checked.
     - [x] Add a deterministic quantum advisory layer for themes, vibes, hidden links, and "how should I think" framing.
     - [x] Keep the quantum layer out of dates, tasks, permissions, security, costs, money, delete, send, booking, and exact-rule paths.
     - [x] Make the advisory layer disableable by `ENABLE_QUANTUM_ADVISORY`.
@@ -627,12 +627,12 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Send generated Office files back through Telegram when the request comes from Telegram.
     - [x] Open generated documents locally when the request comes from the iMac.
     - [x] Add `document_actions_smoke.py` and include it in launch rehearsal.
-    - [ ] Add `/edit` and natural `edit` routing for latest-document refinement across Telegram and iMac.
+    - [x] Add `/edit` and natural `edit` routing for latest-document refinement across Telegram and iMac.
     - [x] Add natural latest-Word edit routing for follow-ups like `update that to 4 days`; update the latest `.docx` in place by default, keep an internal hidden backup, restore on QA failure, and create a visible new version only when Zainal asks for a copy/new version.
-    - [ ] Let Maya edit existing Word documents from structured chat instructions.
-    - [ ] Let Maya edit existing PowerPoint decks from structured chat instructions.
-    - [ ] Let Maya edit existing Excel workbooks from structured chat instructions.
-    - [ ] Ensure edit workflows create a safe new version or update in place only when appropriate, then rerun artifact QA.
+    - [x] Let Maya edit existing Word documents from structured chat instructions.
+    - [x] Let Maya edit existing PowerPoint decks from structured chat instructions.
+    - [x] Let Maya edit existing Excel workbooks from structured chat instructions.
+    - [x] Ensure edit workflows create a safe new version or update in place only when appropriate, then rerun artifact QA.
     - [x] Add PPTX visual QA before Maya calls PowerPoint output polished.
     - [x] Render created or revised PPTX files and check for placeholder text, ellipsis overflow, truncated copy, missing readable text, and render count mismatch.
     - [x] Add one bounded PPTX auto-revision pass before delivery.

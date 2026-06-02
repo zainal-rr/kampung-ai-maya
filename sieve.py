@@ -5,7 +5,8 @@ import logging
 from models import TheSenses
 from hardware_event_store import record_hardware_event
 from omi_adapter import load_omi_transcript
-from storage import add_knowledge_chunk, init_db
+from omi_context_sieve import ingest_omi_decision, is_omi_noise, sieve_omi_transcript
+from storage import init_db
 
 logger = logging.getLogger("maya.omi")
 
@@ -24,31 +25,12 @@ class SieveNode:
 
     def is_noise(self, text: str) -> bool:
         """Simple heuristic to skip obviously useless transcripts."""
-        noise_markers = ["[silence]", "[music]", "[unintelligible]", "unknown speaker"]
-        text_lower = text.lower()
-        
-        if len(text.strip()) < 15: # Too short
-            return True
-        if any(marker in text_lower for marker in noise_markers):
-            return True
-        return False
+        return is_omi_noise(text)
 
     async def extract_high_value_intent(self, transcript: str) -> str:
         """Uses TheSenses (Gemini 3.1 Flash) to distill the transcript into a memory chunk."""
-        prompt = [
-            {"role": "system", "content": "You are the Sieve Node for Kampung AI. "
-                                          "Your job is to take a raw transcript (English, Malay, or Manglish) and distill it into a concise, high-value memory chunk. "
-                                          "Focus on: Decisions made, tasks mentioned, people named, or new facts learned. "
-                                          "If the transcript is just small talk, return 'NO_VALUE'."},
-            {"role": "user", "content": f"Transcript: {transcript}"}
-        ]
-        
-        try:
-            distilled = await self.senses.chat(prompt)
-            return distilled.strip()
-        except Exception as e:
-            logger.error("Gemini distillation failed: %s", e)
-            return "ERROR_PROCESSING"
+        decision = await sieve_omi_transcript(transcript, self._distill_with_gemini)
+        return decision.summary if decision.accepted else "NO_VALUE"
 
     async def process_file(self, filename: str):
         """Processes a single transcript file."""
@@ -71,27 +53,29 @@ class SieveNode:
             )
             content = transcript.text
             
-            if self.is_noise(content):
-                logger.info("Skipping %s: Noise detected.", filename)
-                os.remove(file_path)
-                return
-
-            distilled = await self.extract_high_value_intent(content)
-            
-            if distilled != "NO_VALUE" and distilled != "ERROR_PROCESSING":
+            decision = await sieve_omi_transcript(content, self._distill_with_gemini)
+            if decision.accepted:
                 logger.info("Distilled high-value memory from %s.", filename)
-                await add_knowledge_chunk(
+                await ingest_omi_decision(
                     self.db_path,
-                    distilled,
-                    category="omi_transcript",
-                    tags=transcript.source_tag,
+                    decision,
+                    source_ref=f"{transcript.source_name}:{transcript.timestamp or filename}",
                 )
+            else:
+                logger.info("Skipping %s: %s.", filename, decision.status)
             
             # Move to processed or delete
             os.remove(file_path)
             
         except Exception as e:
             logger.error("Failed to process %s: %s", filename, e)
+
+    async def _distill_with_gemini(self, prompt: str) -> str:
+        try:
+            return (await self.senses.chat([{"role": "user", "content": prompt}])).strip()
+        except Exception as e:
+            logger.error("Gemini Omi distillation failed: %s", e)
+            return ""
 
     async def run(self):
         """Polls the watch directory for new Tailscale syncs."""
