@@ -430,5 +430,17 @@ Phase 21 is a proof-quality sprint, not a feature expansion sprint.
 - **Do Not Add Yet:** Do not add more models, hardware features, WhatsApp, commercial onboarding, or cloud deployment in this phase. The current bottleneck is proof quality.
 - **Expected Packaging Score:** After Phase 21 verification passes, the target score is personal agent 8.0/10, engineering maturity 7.2/10, public technical credibility 6.8/10, and product/investor readiness 6.3/10.
 
+## 16. Phase 22 Real-World Reliability And Live Proof
+Phase 22 is the transition from local proof to repeated real-world proof. It should not add major new features. It should make it clear what passed in deterministic smokes, what passed in user-observed live tests, and what still requires physical iMac or hardware validation.
+
+- **No Overclaiming:** Telegram and earlier iMac Office voice tests can be recorded as passed based on user-observed evidence. iMac long-work voice handoff, native app continuity, Omi, Mudra, and physical hardware behavior remain `manual-live-required` until tested on the actual devices.
+- **Live Evidence Store:** `live_test_evidence.py` records live/manual proof separately from smoke-test proof. It distinguishes `passed`, `pending-field-test`, and `manual-live-required` instead of treating all green local tests as live readiness.
+- **Maya Desk Separation:** Maya Desk should show latest passing demos, live evidence, browser field-test scenarios, and 7-day reliability soak status as separate sections. Passing smokes do not erase unresolved live-only work.
+- **Browser Field Tests:** Real browser maturity should be proven with practical tasks: finding flights, changing dates, comparing cheaper options, safe form filling, source-aware research, and stopping before booking, payment, login, passport, OTP, upload, or final submit. `browser_field_tests.py` is the deterministic prompt/safety checklist; real Chrome/browser runs still need field recording.
+- **7-Day Reliability Soak:** `live_reliability_soak.py` tracks daily counts for missed replies, wrong routes, voice timeouts, memory mistakes, file delivery failures, browser failures, cost spikes, and false saved claims. A clean local CI does not substitute for seven normal-use days.
+- **Hardware Boundary:** Omi and Mudra stay as adapter seams until real transcript sync, privacy filtering, proximity, and gesture events are captured. Gesture mapping should happen only after hardware proof, not before.
+- **Local Checkpoint Rule:** Phase 22 may be committed locally for rollback, but it should not be pushed until Zainal explicitly asks. This keeps the pushed Phase 20/21 baseline recoverable while Phase 22 proof tools are being validated.
+- **Current Working Scores:** After Telegram and earlier iMac Office tests, a fair working estimate is personal agent 8.3/10, engineering maturity 7.5/10, public technical credibility 7.1/10, daily reliability 7.2/10, and product readiness 6.5/10. These should improve only after real soak/browser/hardware evidence, not from documentation alone.
+
 ---
-*Updated June 2, 2026*
+*Updated June 3, 2026*

@@ -1281,3 +1281,57 @@ This document tracks the technical and operational roadmap for building the stan
 
 ---
 *Updated June 3, 2026*
+
+## Phase 22: Real-World Reliability And Live Proof
+
+*Goal: Move from deterministic proof to repeated real-world reliability without overclaiming hardware or live voice readiness.*
+
+- [x] **22.1. Local Checkpoint**
+    - [x] Commit the Maya skill creation lifecycle repair locally.
+    - [x] Keep the Phase 22 branch local-only until Zainal explicitly asks for a push.
+    - [x] Preserve the pushed Phase 20/21 baseline as the recoverable remote state.
+
+- [x] **22.2. Live Evidence Tracking**
+    - [x] Add `live_test_evidence.py` as the source for live/manual proof status.
+    - [x] Record Telegram document, voice-note, memory, route, and file-delivery regression as passed.
+    - [x] Record pre-May-25 iMac voice Office artifact creation as passed based on Zainal's live result.
+    - [x] Keep iMac long-work voice handoff as `manual-live-required`.
+    - [x] Keep iMac native app continuity as `manual-live-required`.
+    - [x] Keep Omi transcript sync and Mudra gesture/proximity as `manual-live-required`.
+    - [x] Add smoke coverage for live evidence defaults and updates.
+
+- [x] **22.3. Maya Desk Live Proof Separation**
+    - [x] Show live evidence separately from latest passing demo logs.
+    - [x] Show 7-day reliability soak status.
+    - [x] Show browser field-test scenarios.
+    - [x] Keep smoke-test proof and live/manual proof visibly distinct.
+
+- [x] **22.4. Browser Field-Test Proof**
+    - [x] Add `browser_field_tests.py` with practical prompts for flights, date changes, cheaper comparisons, source-aware research, safe field fill, and booking/payment/private-data stop points.
+    - [x] Add deterministic smoke coverage for browser routing and safety boundaries.
+    - [ ] Run real browser sessions and record outcomes for the prepared prompts.
+
+- [x] **22.5. 7-Day Reliability Soak**
+    - [x] Add `live_reliability_soak.py` to track missed replies, wrong routes, voice timeouts, memory mistakes, file delivery failures, browser failures, cost spikes, and false saved claims.
+    - [x] Add deterministic smoke coverage for clean and failing soak days.
+    - [ ] Complete seven normal-use daily live soak records.
+    - [ ] Review any soak failures and convert repeated failures into repair tasks.
+
+- [ ] **22.6. Hardware And Live Voice Proof**
+    - [ ] Validate Omi real transcript sync.
+    - [ ] Validate Omi privacy filtering and ambient memory behavior.
+    - [ ] Validate Mudra proximity event parsing with real hardware.
+    - [ ] Validate Mudra gesture events before mapping gestures to actions.
+    - [ ] Validate iMac live long-work voice handoff with paid voice parking and later state resume.
+
+- [ ] **22.7. Phase 22 Closeout**
+    - [x] Update `KAMPUNG_AI.md` with Phase 22 reliability architecture.
+    - [x] Update `README.md` with live proof boundaries and Maya Desk proof separation.
+    - [x] Update this checklist as the Phase 22 source of truth.
+    - [x] Run targeted Phase 22 smokes.
+    - [x] Run `local_ci.py`.
+    - [x] Commit Phase 22 locally.
+    - [x] Do not push Phase 22 until explicitly requested.
+
+---
+*Updated June 3, 2026*

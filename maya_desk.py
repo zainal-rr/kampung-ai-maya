@@ -12,6 +12,9 @@ from demo_evidence import load_latest
 from dependency_manifest import dependency_statuses, readiness_summary
 from hardening_audit import hardening_audit_summary, route_cost_audit
 from harness_artifact_store import latest_artifacts
+from browser_field_tests import browser_field_scenarios
+from live_reliability_soak import format_soak_status
+from live_test_evidence import load_live_evidence
 from maya_event_store import MayaEventStore
 from mcp_registry import recent_mcp_usage
 from route_tracker import last_route_text
@@ -74,6 +77,9 @@ async def _html(db_path: str) -> str:
 {_section("Dependency Readiness", [f"{d.id}: {d.status} ({d.requirement})" for d in deps])}
 {_section("Provider Readiness", _provider_items(deps))}
 {_section("Latest Passing Demos", _latest_demo_items(demo_payload))}
+{_section("Live Test Evidence", _live_evidence_items())}
+<section><h2>7-Day Reliability Soak</h2><pre>{escape(format_soak_status())}</pre></section>
+{_section("Browser Field Tests", _browser_field_items())}
 {_section("Route And Cost Audit", [f"{i.name}: {'PASS' if i.passed else 'CHECK'} | {i.detail}" for i in route_cost_audit()])}
 <section><h2>Hardening Audit</h2><pre>{escape(hardening_audit_summary())}</pre></section>
 {_section("Harness Traces", [f"{e['created_at']} {e['thread_id']} {e['event_type']}: {e['summary']}" for e in events])}
@@ -131,6 +137,14 @@ def _latest_demo_items(payload: dict) -> list[str]:
 
 def _provider_items(deps: list) -> list[str]:
     return [f"{d.id}: {d.status} ({d.detail})" for d in deps if d.category == "provider_key"]
+
+
+def _live_evidence_items() -> list[str]:
+    return [f"{item.area}: {item.status} | {item.title}" for item in load_live_evidence()]
+
+
+def _browser_field_items() -> list[str]:
+    return [f"{item.status}: {item.name} | {item.evidence}" for item in browser_field_scenarios()]
 
 
 def _eval_badge(payload: dict) -> str:

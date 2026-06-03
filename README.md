@@ -26,6 +26,7 @@ Kampung AI treats Maya as a personal agent harness, not a single chatbot surface
 | --- | --- |
 | iMac live voice | Architecture is aligned, but live quality depends on macOS permissions/audio routing and separate live sessions |
 | Weekly automation | Manual/live status works; unattended scheduled proof needs continued observation |
+| Browser field workflows | Deterministic route/safety checks exist; real browser reliability still needs repeated field runs |
 | Public onboarding | No commercial onboarding, cloud deployment, billing, or multi-user permissions yet |
 | Physical printing | Maya stops before slicing, printer upload, and physical print without explicit confirmation |
 | App building | Available through Artisan/Codex, but end-to-end project QA is still being hardened |
@@ -184,6 +185,13 @@ Local CI and replay demos are designed to run without live provider calls by def
 
 Maya Desk is the local audit cockpit. It should show workflow status, approvals, routes, costs, artifacts, memory health, eval score, dependency readiness, provider readiness, recent failures, and harness traces.
 
+Maya Desk separates proof types:
+
+- latest passing demos: deterministic replay proof
+- live test evidence: user-observed or hardware-required proof
+- 7-day reliability soak: normal-use reliability counters
+- browser field tests: practical browser prompts plus safety boundaries
+
 Generate it through the Maya command path or directly from `maya_desk.py` callers.
 
 ## Known Limitations
@@ -193,6 +201,8 @@ Generate it through the Maya command path or directly from `maya_desk.py` caller
 - Parked voice handoff is code-smoke-tested; full live proof still needs a real iMac voice session.
 - June 8 iMac regression and hardware/live proof scripts are readiness proof, not substitutes for physical voice, Mudra, or Omi tests.
 - Weekly memory automation is implemented, but unattended scheduled proof still needs ongoing observation.
+- The 7-day reliability soak is not complete until seven normal-use daily records exist.
+- Real browser field reliability is not complete until live browser sessions are recorded for the prepared prompts.
 - Physical 3D printing is not automated. Maya stops at local model files unless Zainal explicitly confirms slicing/upload/print actions later.
 - App building is available through Artisan/Codex, but project QA and demo coverage are still being hardened.
 - Provider-dependent routes need live keys and can fail independently of local harness health.
