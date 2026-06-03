@@ -190,7 +190,10 @@ Maya Desk separates proof types:
 - latest passing demos: deterministic replay proof
 - live test evidence: user-observed or hardware-required proof
 - 7-day reliability soak: normal-use reliability counters
+- 30-day reliability scorecard: coverage, success rates, uptime, failures, and corrections
 - browser field tests: practical browser prompts plus safety boundaries
+- browser benchmark: deterministic route/safety score plus separately recorded live score
+- trace metrics: recent event counts and failure-like trace rows
 
 Generate it through the Maya command path or directly from `maya_desk.py` callers.
 
@@ -202,6 +205,7 @@ Generate it through the Maya command path or directly from `maya_desk.py` caller
 - June 8 iMac regression and hardware/live proof scripts are readiness proof, not substitutes for physical voice, Mudra, or Omi tests.
 - Weekly memory automation is implemented, but unattended scheduled proof still needs ongoing observation.
 - The 7-day reliability soak is not complete until seven normal-use daily records exist.
+- The 30-day reliability scorecard is not complete until thirty normal-use daily records exist.
 - Real browser field reliability is not complete until live browser sessions are recorded for the prepared prompts.
 - Physical 3D printing is not automated. Maya stops at local model files unless Zainal explicitly confirms slicing/upload/print actions later.
 - App building is available through Artisan/Codex, but project QA and demo coverage are still being hardened.

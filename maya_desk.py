@@ -15,6 +15,7 @@ from harness_artifact_store import latest_artifacts
 from browser_field_tests import browser_field_scenarios
 from live_reliability_soak import format_soak_status
 from live_test_evidence import load_live_evidence
+from maya_desk_metrics import browser_benchmark_text, failure_metric_items, reliability_metric_text, trace_metric_items
 from maya_event_store import MayaEventStore
 from mcp_registry import recent_mcp_usage
 from route_tracker import last_route_text
@@ -79,11 +80,15 @@ async def _html(db_path: str) -> str:
 {_section("Latest Passing Demos", _latest_demo_items(demo_payload))}
 {_section("Live Test Evidence", _live_evidence_items())}
 <section><h2>7-Day Reliability Soak</h2><pre>{escape(format_soak_status())}</pre></section>
+<section><h2>30-Day Reliability Scorecard</h2><pre>{escape(reliability_metric_text())}</pre></section>
 {_section("Browser Field Tests", _browser_field_items())}
+<section><h2>Browser Benchmark</h2><pre>{escape(browser_benchmark_text())}</pre></section>
 {_section("Route And Cost Audit", [f"{i.name}: {'PASS' if i.passed else 'CHECK'} | {i.detail}" for i in route_cost_audit()])}
 <section><h2>Hardening Audit</h2><pre>{escape(hardening_audit_summary())}</pre></section>
+{_section("Trace Metrics", await trace_metric_items(db_path))}
 {_section("Harness Traces", [f"{e['created_at']} {e['thread_id']} {e['event_type']}: {e['summary']}" for e in events])}
 {_section("Recent Failures", _failure_items(eval_payload, self_heal))}
+{_section("Failure Trace Metrics", await failure_metric_items(db_path))}
 {_section("Approvals", approvals)}
 {_section("Artifacts", [f"{a.get('kind')}: {a.get('path') or a.get('url')}" for a in artifacts])}
 {_section("Active Skills", [s["name"] for s in active])}

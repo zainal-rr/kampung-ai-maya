@@ -13,6 +13,14 @@ SOAK_PATH = Path("logs") / "live_tests" / "reliability_soak.json"
 @dataclass(frozen=True)
 class SoakDay:
     day: str
+    telegram_replies: int = 0
+    imac_voice_turns: int = 0
+    file_deliveries: int = 0
+    browser_workflows: int = 0
+    memory_ops: int = 0
+    workflow_recoveries: int = 0
+    uptime_minutes: int = 0
+    estimated_cost_usd: float = 0
     missed_replies: int = 0
     wrong_routes: int = 0
     voice_timeouts: int = 0
@@ -21,6 +29,7 @@ class SoakDay:
     browser_failures: int = 0
     cost_spikes: int = 0
     false_saved_claims: int = 0
+    user_corrections: int = 0
     notes: str = ""
 
 
@@ -44,13 +53,21 @@ def record_soak_day(day: SoakDay, path: Path = SOAK_PATH) -> None:
     rows = [row for row in load_soak(path) if row.day != day.day]
     rows.append(day)
     rows.sort(key=lambda item: item.day)
-    save_soak(rows[-7:], path)
+    save_soak(rows[-30:], path)
 
 
-def soak_summary(days: list[SoakDay] | None = None) -> dict[str, int | bool]:
-    rows = days if days is not None else load_soak()
+def soak_summary(days: list[SoakDay] | None = None, *, window_days: int = 7) -> dict[str, int | bool | float]:
+    rows = (days if days is not None else load_soak())[-window_days:]
     totals = {
         "days_recorded": len(rows),
+        "telegram_replies": sum(day.telegram_replies for day in rows),
+        "imac_voice_turns": sum(day.imac_voice_turns for day in rows),
+        "file_deliveries": sum(day.file_deliveries for day in rows),
+        "browser_workflows": sum(day.browser_workflows for day in rows),
+        "memory_ops": sum(day.memory_ops for day in rows),
+        "workflow_recoveries": sum(day.workflow_recoveries for day in rows),
+        "uptime_minutes": sum(day.uptime_minutes for day in rows),
+        "estimated_cost_usd": round(sum(day.estimated_cost_usd for day in rows), 2),
         "missed_replies": sum(day.missed_replies for day in rows),
         "wrong_routes": sum(day.wrong_routes for day in rows),
         "voice_timeouts": sum(day.voice_timeouts for day in rows),
@@ -59,9 +76,21 @@ def soak_summary(days: list[SoakDay] | None = None) -> dict[str, int | bool]:
         "browser_failures": sum(day.browser_failures for day in rows),
         "cost_spikes": sum(day.cost_spikes for day in rows),
         "false_saved_claims": sum(day.false_saved_claims for day in rows),
+        "user_corrections": sum(day.user_corrections for day in rows),
+    }
+    failure_keys = {
+        "missed_replies",
+        "wrong_routes",
+        "voice_timeouts",
+        "memory_mistakes",
+        "file_delivery_failures",
+        "browser_failures",
+        "cost_spikes",
+        "false_saved_claims",
+        "user_corrections",
     }
     totals["seven_day_complete"] = totals["days_recorded"] >= 7
-    totals["clean_soak"] = all(value == 0 for key, value in totals.items() if key not in {"days_recorded", "seven_day_complete", "clean_soak"})
+    totals["clean_soak"] = all(totals[key] == 0 for key in failure_keys)
     return totals
 
 
@@ -94,6 +123,14 @@ def _now() -> str:
 def main() -> None:
     parser = argparse.ArgumentParser()
     parser.add_argument("--record-today", action="store_true")
+    parser.add_argument("--telegram-replies", type=int, default=0)
+    parser.add_argument("--imac-voice-turns", type=int, default=0)
+    parser.add_argument("--file-deliveries", type=int, default=0)
+    parser.add_argument("--browser-workflows", type=int, default=0)
+    parser.add_argument("--memory-ops", type=int, default=0)
+    parser.add_argument("--workflow-recoveries", type=int, default=0)
+    parser.add_argument("--uptime-minutes", type=int, default=0)
+    parser.add_argument("--estimated-cost-usd", type=float, default=0)
     parser.add_argument("--missed-replies", type=int, default=0)
     parser.add_argument("--wrong-routes", type=int, default=0)
     parser.add_argument("--voice-timeouts", type=int, default=0)
@@ -102,12 +139,21 @@ def main() -> None:
     parser.add_argument("--browser-failures", type=int, default=0)
     parser.add_argument("--cost-spikes", type=int, default=0)
     parser.add_argument("--false-saved-claims", type=int, default=0)
+    parser.add_argument("--user-corrections", type=int, default=0)
     parser.add_argument("--notes", default="")
     args = parser.parse_args()
     if args.record_today:
         record_soak_day(
             SoakDay(
                 day=date.today().isoformat(),
+                telegram_replies=args.telegram_replies,
+                imac_voice_turns=args.imac_voice_turns,
+                file_deliveries=args.file_deliveries,
+                browser_workflows=args.browser_workflows,
+                memory_ops=args.memory_ops,
+                workflow_recoveries=args.workflow_recoveries,
+                uptime_minutes=args.uptime_minutes,
+                estimated_cost_usd=args.estimated_cost_usd,
                 missed_replies=args.missed_replies,
                 wrong_routes=args.wrong_routes,
                 voice_timeouts=args.voice_timeouts,
@@ -116,6 +162,7 @@ def main() -> None:
                 browser_failures=args.browser_failures,
                 cost_spikes=args.cost_spikes,
                 false_saved_claims=args.false_saved_claims,
+                user_corrections=args.user_corrections,
                 notes=args.notes,
             )
         )

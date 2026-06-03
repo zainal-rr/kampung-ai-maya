@@ -30,10 +30,17 @@ async def main() -> None:
             "Dependency Readiness",
             "Provider Readiness",
             "Latest Passing Demos",
+            "Live Test Evidence",
+            "7-Day Reliability Soak",
+            "30-Day Reliability Scorecard",
+            "Browser Field Tests",
+            "Browser Benchmark",
             "Route And Cost Audit",
             "Hardening Audit",
+            "Trace Metrics",
             "Harness Traces",
             "Recent Failures",
+            "Failure Trace Metrics",
             "Cost",
         ):
             assert section in html

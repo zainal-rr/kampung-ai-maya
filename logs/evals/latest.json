@@ -1,8 +1,8 @@
 {
-  "created_at": "2026-06-03T04:53:59Z",
-  "passed": 33,
+  "created_at": "2026-06-03T05:24:53Z",
+  "passed": 35,
   "failed": 0,
-  "total": 33,
+  "total": 35,
   "score": 100.0,
   "results": [
     {
@@ -53,6 +53,13 @@
       "passed": true,
       "returncode": 0,
       "output": "browser_field_tests_smoke: ok"
+    },
+    {
+      "category": "browser",
+      "name": "browser benchmark",
+      "passed": true,
+      "returncode": 0,
+      "output": "browser_benchmark_smoke: ok"
     },
     {
       "category": "memory",
@@ -158,6 +165,13 @@
       "passed": true,
       "returncode": 0,
       "output": "live_reliability_soak_smoke: ok"
+    },
+    {
+      "category": "live",
+      "name": "30-day reliability scorecard",
+      "passed": true,
+      "returncode": 0,
+      "output": "reliability_scorecard_smoke: ok"
     },
     {
       "category": "safety",

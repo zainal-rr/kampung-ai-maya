@@ -1324,13 +1324,22 @@ This document tracks the technical and operational roadmap for building the stan
     - [ ] Validate Mudra gesture events before mapping gestures to actions.
     - [ ] Validate iMac live long-work voice handoff with paid voice parking and later state resume.
 
-- [ ] **22.7. Phase 22 Closeout**
+- [x] **22.7. 9-Path Proof Tooling**
+    - [x] Add `reliability_scorecard.py` for a 30-day reliability scorecard.
+    - [x] Extend `live_reliability_soak.py` to store 30 days and track success totals, uptime minutes, estimated cost, workflow recoveries, and user corrections.
+    - [x] Add `browser_benchmark.py` to score deterministic browser route/safety readiness separately from live browser outcomes.
+    - [x] Add Maya Desk trace metrics, failure-like trace metrics, browser benchmark status, and 30-day reliability status.
+    - [x] Add smoke coverage for the reliability scorecard and browser benchmark.
+    - [ ] Complete 30 normal-use daily records before claiming 9/10 daily reliability.
+    - [ ] Record live browser benchmark outcomes before claiming browser-agent maturity.
+
+- [ ] **22.8. Phase 22 Closeout**
     - [x] Update `KAMPUNG_AI.md` with Phase 22 reliability architecture.
     - [x] Update `README.md` with live proof boundaries and Maya Desk proof separation.
     - [x] Update this checklist as the Phase 22 source of truth.
     - [x] Run targeted Phase 22 smokes.
     - [x] Run `local_ci.py`.
-    - [x] Commit Phase 22 locally.
+    - [x] Commit latest Phase 22 proof-tooling changes locally.
     - [x] Do not push Phase 22 until explicitly requested.
 
 ---
