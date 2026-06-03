@@ -117,6 +117,7 @@ BASE_CHECKS = (
     Check("secret detection", ("secret_detection_smoke.py",)),
     Check("demo evidence", ("demo_evidence_smoke.py",)),
     Check("skill usage", ("skill_usage_smoke.py",)),
+    Check("Maya skill creation", ("youtube_skill_creation_maya_smoke.py",)),
     Check("skill learning loop", ("skill_learning_loop_smoke.py",)),
     Check("skill outcome", ("skill_outcome_smoke.py",)),
     Check("skill memory", ("skill_memory_smoke.py",)),

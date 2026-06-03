@@ -1,8 +1,8 @@
 {
-  "created_at": "2026-06-02T19:39:38Z",
-  "passed": 29,
+  "created_at": "2026-06-02T20:21:04Z",
+  "passed": 30,
   "failed": 0,
-  "total": 29,
+  "total": 30,
   "score": 100.0,
   "results": [
     {
@@ -186,6 +186,13 @@
       "passed": true,
       "returncode": 0,
       "output": "maya_permission_kernel_smoke: ok"
+    },
+    {
+      "category": "skills",
+      "name": "Maya skill creation",
+      "passed": true,
+      "returncode": 0,
+      "output": "youtube_skill_creation_maya_smoke: ok"
     },
     {
       "category": "dependencies",

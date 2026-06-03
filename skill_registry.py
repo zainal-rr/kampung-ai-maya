@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from skill_learning_store import increment_skill_usage
+from skill_learning_store import get_skill_learning_metadata, increment_skill_usage
 from skill_outcome_store import record_skill_outcome
 from skill_store import latest_skill_usage, list_custom_skills, record_skill_usage
 from security_manifest import SecurityManifest, get_manifest, upsert_manifest
@@ -78,8 +78,9 @@ class SkillRegistry:
                 relevant.append((score, skill))
         relevant.sort(key=lambda item: item[0], reverse=True)
 
-        custom = await list_custom_skills(self.db_path, limit=limit, status="active")
-        custom_lines = [f"- {row['name']}: {row['description']}" for row in custom[:2]]
+        custom = await list_custom_skills(self.db_path, limit=50, status="active")
+        matching_custom = [row for row in custom if await _custom_skill_matches(self.db_path, row, query)]
+        custom_lines = [f"- {row['name']}: {row['description']}" for row in matching_custom[:2]]
         skill_lines = [f"- {item.name}: {item.description}" for _, item in relevant[:limit]]
         lines = skill_lines + custom_lines
         if not lines:
@@ -92,7 +93,7 @@ class SkillRegistry:
                 query=query,
                 reason="keyword match",
             )
-        for row in custom[:2]:
+        for row in matching_custom[:2]:
             await record_skill_usage(
                 self.db_path,
                 skill_id=str(row["skill_id"]),
@@ -152,6 +153,20 @@ def _artifact_marker(response: str) -> str:
     if marker not in response:
         return ""
     return response.split(marker, 1)[1].split("]", 1)[0][:120]
+
+
+async def _custom_skill_matches(db_path: str, row: dict[str, str], query: str) -> bool:
+    haystack = " ".join(
+        str(row.get(key, ""))
+        for key in ("skill_id", "name", "description")
+    ).lower()
+    metadata = await get_skill_learning_metadata(db_path, str(row.get("skill_id", "")))
+    if metadata:
+        haystack += " " + " ".join(str(metadata.get(key, "")) for key in ("triggers", "non_triggers", "tools_needed"))
+    tokens = {token for token in query.lower().replace("/", " ").split() if len(token) >= 4}
+    if not tokens:
+        return False
+    return any(token.rstrip("ing") in haystack for token in tokens)
 
 
 async def ensure_builtin_skill_manifests(db_path: str) -> None:

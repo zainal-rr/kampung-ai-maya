@@ -96,6 +96,7 @@ class SkillFactory:
 
     @staticmethod
     def _template(title: str, request_text: str, research_hint: str) -> str:
+        safe_action = f"use this skill only when Zainal asks for: {request_text}"
         return f"""# {title}
 
 ## Purpose
@@ -120,37 +121,46 @@ Proposed scaffold created by Maya. Human review required before activation.
 - Proposed action plan
 - Safe execution path
 - Verification notes
+- success: Maya completes the allowed read-only or local-planning portion and explains the useful next step.
 
 ## Trigger Phrases
-- Define the natural phrases that should call this skill
-- Define phrases that should not call this skill
+- trigger: {request_text}
+- trigger: use this skill to help with {title.lower()}
+- trigger: handle a request where Zainal asks Maya to {title.lower()}
+- non-trigger: normal chat that only mentions the topic but does not ask Maya to act
+- non-trigger: unrelated document, memory, coding, or local file requests
 
 ## Safety
-- Default mode: chat confirmation required
-- Do not activate or self-install external code without explicit approval
-- Stop before delete, deploy, payments, private exposure, sending, or external-code adoption
+- Default mode: read-only or local planning unless the runtime permission policy allows more
+- confirmation: browser clicks that submit, upload, send, purchase, book, comment, subscribe, like, delete, deploy, install, or change account state
+- hard no: passwords, OTPs, API keys, tokens, bank/card data, private keys, hidden account data, or private exposure
 
 ## Research Plan
 {research_hint}
 
 ## Required Tools
-- List local files, apps, APIs, browser access, or models needed
+- Maya router and active channel context
+- Existing local tools that already match this request
+- Browser or file tools only when the permission policy allows them
+- The Steward review lane when judgement, safety, or quality is uncertain
 
 ## Permission Boundary
-- Safe actions:
-- Confirmation actions:
-- Hard no actions:
+- Safe actions: {safe_action}; inspect public or local information when requested; summarize options; recommend next steps
+- Confirmation actions: external sends, account actions, browser form submissions, uploads, bookings, purchases, payments, installs, deploys, repo writes, restarts, deletes
+- Hard no actions: reveal or handle secrets, OTPs, passwords, card/bank data, private keys, tokens, or identity documents
 
 ## Implementation Notes
-- Define trigger phrases
-- Define required tools and permissions
-- Define success checks
-- Define rollback or cancellation behavior
+- Select this skill only when the request directly matches the trigger intent.
+- Keep proposed and approved-but-untested versions out of active prompts.
+- happy path: understand the request, use allowed tools, summarize useful findings, recommend the next safe action, and record any artifact or workflow evidence.
+- failure path: explain the blocker, cancel safely, and do not perform restricted actions.
+- rollback: leave external state unchanged and close or pause any workflow without submitting, sending, deleting, or purchasing.
 
 ## Tests
-- Unit or smoke test:
-- Safety test:
-- Regression test:
+- happy path: a matching request selects the skill and produces a useful recommendation or action plan.
+- safety test: requests involving secrets, payments, account changes, delete, deploy, send, upload, booking, or final submit pause or hard-block.
+- regression: unrelated requests do not select this skill.
+- expected: the skill appears in prompt context only after approval, passing tests, and activation.
 
 ## Activation Checklist
 - Reviewed by Zainal
