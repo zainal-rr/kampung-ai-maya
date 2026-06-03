@@ -6,6 +6,7 @@ from pathlib import Path
 
 import document_actions as da
 from artifact_preflight import ArtifactPreflight
+from document_actions_word_helpers import _document_edit_request
 from markdown_drafter import MarkdownDraft
 from office_modern_files import create_pptx, create_xlsx
 from openpyxl import load_workbook
@@ -31,6 +32,13 @@ async def main() -> None:
             da.create_powerpoint_with_qa = _fake_powerpoint_qa
             da.review_presentation_slides = _identity_review
             router = da.DocumentActionRouter(db_path, workspace=workspace)
+
+            _require(_document_edit_request("make that shorter and more practical") is None, "generic chat follow-up should not edit latest artifact")
+            _require(_document_edit_request("Can you update that to 4 days") == ("4 days", False), "duration edit follow-up should still edit latest artifact")
+            _require(
+                _document_edit_request("Can you update the document to make it shorter") == ("make it shorter", False),
+                "explicit document edit should remain supported",
+            )
 
             pptx = workspace / "presentations" / "seoul-food-trip-deck-v1.pptx"
             await asyncio.to_thread(create_pptx, pptx, "Seoul Food Trip Deck", [("Seoul In 48 Hours", ["Food route", "Budget notes"])])

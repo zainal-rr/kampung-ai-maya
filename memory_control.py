@@ -5,6 +5,7 @@ import re
 
 from canonical_memory import forget_canonical_memory, search_relevant_canonical_memories
 from curated_memory import curated_memory_status, forget_curated_memory
+from memory_display import canonical_lines, lesson_lines, preference_lines, summary_lines
 from retention_policy import run_retention_cleanup
 from session_memory_store import list_session_summaries
 from storage import list_preferences
@@ -203,10 +204,10 @@ async def memory_sources_text(db_path: str, query: str = "") -> str:
     lessons = await _list_lessons(db_path, query)
     summaries = await list_session_summaries(db_path, limit=2)
     lines = ["Memory sources:", await curated_memory_status(db_path)]
-    lines.extend(_canonical_lines(canonical))
-    lines.extend(_preference_lines(preferences, query))
-    lines.extend(_lesson_lines(lessons))
-    lines.extend(_summary_lines(summaries))
+    lines.extend(canonical_lines(canonical))
+    lines.extend(preference_lines(preferences, query))
+    lines.extend(lesson_lines(lessons))
+    lines.extend(summary_lines(summaries))
     return "\n".join(lines) if len(lines) > 1 else "Memory sources:\n1) No visible memory found yet."
 
 
@@ -264,35 +265,3 @@ async def _list_lessons(db_path: str, query: str) -> list[dict[str, str]]:
             )
         rows = await cursor.fetchall()
     return [dict(row) for row in rows]
-
-
-def _preference_lines(items: list[dict[str, str]], query: str) -> list[str]:
-    visible = [item for item in items if "chat_id" not in item["key"].lower()]
-    if query:
-        visible = [item for item in visible if query in f"{item['key']} {item['value']}".lower()]
-    return [
-        f"1) Preference: {item['value']} | source: {item['source']} | confidence: high"
-        for item in visible[:5]
-    ]
-
-
-def _canonical_lines(items: list[str]) -> list[str]:
-    return [
-        f"0) Canonical memory: {item} | source: canonical | confidence: high"
-        for item in items[:5]
-    ]
-
-
-def _lesson_lines(items: list[dict[str, str]]) -> list[str]:
-    return [
-        f"2) Lesson: {item['normalized_rule']} | source: {item['source']} | confidence: {item['confidence']}"
-        for item in items[:5]
-    ]
-
-
-def _summary_lines(items: list[dict[str, str | int]]) -> list[str]:
-    lines = []
-    for item in items[:2]:
-        preview = " ".join(str(item["summary"]).split())[:120]
-        lines.append(f"3) Context summary: {preview} | source: {item['source']} | confidence: medium")
-    return lines

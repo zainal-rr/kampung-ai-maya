@@ -8,7 +8,7 @@ from complex_lane import complex_plan_response as run_complex_plan_response
 from cost_tracker import record_usage
 from language_policy import language_instruction
 from models import TheMind, TheNews, TheSenses, TheSteward
-from orchestrator_prompts import MIND_ESCALATION_PROMPT, TECHNICAL_KEYWORDS
+from orchestrator_prompts import MIND_ESCALATION_PROMPT
 from provider_capabilities import CAPABILITIES, review_triggers
 from source_aware_research import format_source_research, should_use_source_research, source_aware_research
 from weather_lookup import current_weather_summary, is_weather_question
@@ -49,14 +49,81 @@ class ModelLanes:
             "do you remember ",
         )):
             return False
-        upper = text.upper()
+        conversational_test_markers = (
+            "testing maya",
+            "test maya",
+            "keep testing",
+            "what should i focus on",
+            "what should we test",
+            "what tests should",
+        )
+        strong_implementation_markers = (
+            "debug",
+            "fix bug",
+            "fix this",
+            "implement",
+            "refactor",
+            "patch",
+            "write code",
+            "generate code",
+            "run tests",
+            "stack trace",
+        )
+        if any(marker in lowered for marker in conversational_test_markers) and not any(
+            marker in lowered for marker in strong_implementation_markers
+        ):
+            return False
         artisan_markers = (
             " app", "web app", "website", "frontend", "dashboard", "vite",
             "blender", "3d print", "3d-print", "stl", "3mf", "printable",
             "phone stand",
         )
-        return any(keyword in upper for keyword in TECHNICAL_KEYWORDS) or any(
-            marker in lowered for marker in artisan_markers
+        implementation_verbs = (
+            "add",
+            "build",
+            "change",
+            "code",
+            "create",
+            "debug",
+            "fix",
+            "implement",
+            "make",
+            "modify",
+            "patch",
+            "refactor",
+            "remove",
+            "repair",
+            "run",
+            "update",
+            "write",
+        )
+        code_markers = (
+            " api",
+            " bash",
+            " class",
+            " code",
+            " css",
+            " database",
+            " error",
+            " function",
+            " html",
+            " javascript",
+            " program",
+            " python",
+            " react",
+            " script",
+            " sql",
+            " typescript",
+            " ui",
+        )
+        has_implementation_verb = any(
+            lowered.startswith(f"{verb} ") or f" {verb} " in f" {lowered} "
+            for verb in implementation_verbs
+        )
+        has_artisan_target = any(marker in lowered for marker in artisan_markers)
+        has_code_target = any(marker in f" {lowered}" for marker in code_markers)
+        return any(marker in lowered for marker in strong_implementation_markers) or (
+            has_implementation_verb and (has_artisan_target or has_code_target)
         )
 
     @staticmethod

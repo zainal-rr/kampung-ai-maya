@@ -38,15 +38,43 @@ def _document_edit_request(text: str) -> tuple[str, bool] | None:
         return copy_match.group(1).strip(" ."), True
     cleaned = re.sub(r"\b(?:as\s+a\s+)?(?:new version|new copy|create a copy|make a copy|save a copy|copy|duplicate|don't overwrite|do not overwrite|without overwriting)\b", " ", cleaned, flags=re.I)
     cleaned = re.sub(r"^(?:and|then)\s+", "", " ".join(cleaned.split()), flags=re.I)
-    patterns = (
-        r"^(?:update|edit|revise|change|modify)\s+(?:that|it|this|the\s+last\s+(?:document|doc|file)|the\s+(?:document|doc|file))\s*(?:to|into|with|so\s+that)?\s*(.+)$",
-        r"^(?:make|turn)\s+(?:that|it|this|the\s+last\s+(?:document|doc|file)|the\s+(?:document|doc|file))\s+(?:into|a|an)?\s*(.+)$",
+    patterns: tuple[tuple[str, bool], ...] = (
+        (
+            r"^(?:update|edit|revise|change|modify)\s+"
+            r"(that|it|this|the\s+last\s+(?:document|doc|file)|the\s+(?:document|doc|file|deck|presentation|powerpoint|spreadsheet|excel|workbook))\s*"
+            r"(?:to|into|with|so\s+that)?\s*(.+)$",
+            True,
+        ),
+        (
+            r"^(?:make|turn)\s+"
+            r"(that|it|this|the\s+last\s+(?:document|doc|file)|the\s+(?:document|doc|file|deck|presentation|powerpoint|spreadsheet|excel|workbook))\s+"
+            r"(?:into|a|an)?\s*(.+)$",
+            True,
+        ),
     )
-    for pattern in patterns:
+    for pattern, requires_document_signal in patterns:
         match = re.match(pattern, cleaned, re.I)
-        if match and match.group(1).strip():
-            return match.group(1).strip(" ."), save_copy
+        if match and match.group(2).strip():
+            target = match.group(1)
+            instruction = match.group(2).strip(" .")
+            explicit_target = not re.fullmatch(r"that|it|this", target, re.I)
+            if explicit_target or not requires_document_signal or _looks_like_document_edit_instruction(instruction):
+                return instruction, save_copy
     return None
+
+
+def _looks_like_document_edit_instruction(instruction: str) -> bool:
+    lowered = " ".join(str(instruction).lower().split())
+    return bool(
+        re.search(r"\b\d{1,2}\s*[- ]?\s*(?:day|days|slides?|pages?|rows?|columns?)\b", lowered)
+        or re.search(
+            r"\b(?:add|append|remove|delete|include|insert|replace|rewrite|rename|reformat|format|"
+            r"heading|title|section|chapter|slide|speaker notes?|presenter notes?|image|photo|chart|"
+            r"table|sheet|worksheet|formula|budget|itinerary|recommendations?|config|putty|ssh|cli|"
+            r"router|excel|spreadsheet|workbook|powerpoint|presentation|deck|word|document|doc|file)\b",
+            lowered,
+        )
+    )
 
 
 def _backup_word_file(path: Path) -> Path:

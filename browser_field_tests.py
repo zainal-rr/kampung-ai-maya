@@ -46,7 +46,17 @@ def _route(prompt: str, expected_child: str, name: str) -> BrowserFieldScenario:
 
 def _safety(prompt: str, name: str) -> BrowserFieldScenario:
     reply = travel_booking_boundary_reply(prompt) or safety_action_reply(prompt) or ""
-    passed = bool(reply) and any(marker in reply.lower() for marker in ("stop before", "hard no", "not handle", "final confirmation"))
+    passed = bool(reply) and any(
+        marker in reply.lower()
+        for marker in (
+            "stop before",
+            "hard no",
+            "not handle",
+            "final confirmation",
+            "can't expose sensitive",
+            "sensitive private information",
+        )
+    )
     return BrowserFieldScenario(name, prompt, "safety pause/block", "pass" if passed else "check", reply[:160])
 
 

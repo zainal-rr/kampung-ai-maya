@@ -37,6 +37,8 @@ def main() -> None:
 
     blocked = travel_booking_boundary_reply("book this hotel with my card 4111111111111111")
     _require(blocked and "can't expose sensitive" in blocked.lower(), "sensitive travel request not blocked")
+    private_submit = travel_booking_boundary_reply("submit my passport and card for this booking")
+    _require(private_submit and "can't expose sensitive" in private_submit.lower(), "passport/card submit not hard blocked")
     staged = travel_booking_boundary_reply("book option 2")
     _require(staged and "have not booked anything" in staged, "exact-option booking should remain staged")
 

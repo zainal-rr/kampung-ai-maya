@@ -46,9 +46,22 @@ async def fast_telegram_response(
     support_context = "\n\n".join(block for block in (memory_context, skill_context) if block)
     prompt = [
         {"role": "system", "content": TELEGRAM_VOICE_SYSTEM_PROMPT if voice_note else TELEGRAM_FAST_SYSTEM_PROMPT},
+        {"role": "system", "content": _telegram_length_instruction(text, voice_note)},
         {"role": "system", "content": language_instruction(text)},
         {"role": "system", "content": support_context or "No extra support context."},
         {"role": "system", "content": topic_context or "No recent thread context."},
         {"role": "user", "content": text},
     ]
     return await responder.chat(prompt)
+
+
+def _telegram_length_instruction(text: str, voice_note: bool) -> str:
+    lowered = " ".join(str(text).lower().split())
+    if voice_note:
+        return "For Telegram voice, keep the reply natural and short unless the user asks for detail."
+    if any(marker in lowered for marker in ("shorter", "more practical", "keep it short", "simple answer", "too long")):
+        return (
+            "The user is asking for a shorter or more practical version. Reply in at most "
+            "two short lines. No nested bullets, no explanations, no extra context."
+        )
+    return "Keep Telegram text concise by default; use structure only when it genuinely helps."

@@ -7,6 +7,10 @@ from permission_policy import contains_sensitive_info, hard_no_private_exposure_
 
 FINAL_ACTION_RE = re.compile(r"\b(book|reserve|purchase|pay|checkout|submit|confirm booking|complete booking)\b", re.I)
 EXACT_SELECTION_RE = re.compile(r"\b(option|listing|flight|hotel|stay|room|result)\s*(?:number\s*)?(\d+)\b", re.I)
+TRAVEL_PRIVATE_RE = re.compile(
+    r"\b(passport|card|credit card|debit card|cvv|otp|2fa|password|bank|private identifier)\b",
+    re.I,
+)
 
 
 def travel_booking_safety_footer(option_count: int = 0) -> str:
@@ -18,7 +22,7 @@ def travel_booking_safety_footer(option_count: int = 0) -> str:
 
 
 def travel_booking_boundary_reply(text: str) -> str | None:
-    if contains_sensitive_info(text):
+    if contains_sensitive_info(text) or TRAVEL_PRIVATE_RE.search(text):
         return hard_no_private_exposure_text()
     lowered = " ".join(text.lower().split())
     if FINAL_ACTION_RE.search(lowered):

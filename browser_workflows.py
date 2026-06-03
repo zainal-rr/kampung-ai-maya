@@ -118,12 +118,31 @@ class HumanBrowserWorkflowRouter:
         if not task:
             return None
         lowered = _clean(text)
+        if _looks_like_general_question(lowered):
+            return None
         if any(word in lowered for word in MISSING_SKILL_WORDS):
             return None
         if any(word in lowered for word in SENSITIVE_WORDS):
             return "I can help prepare the next step, but I will stop before booking, payment, submission, or private details."
-        filter_words = ("cheaper", "earlier", "later", "date", "tomorrow", "baggage", "direct", "nonstop", "filter", "sort")
-        if not any(word in lowered for word in filter_words):
+        filter_patterns = (
+            r"\bcheaper\b",
+            r"\bearlier\b",
+            r"\blater\b",
+            r"\bdate\b",
+            r"\btomorrow\b",
+            r"\bbaggage\b",
+            r"\bdirect\b",
+            r"\bnonstop\b",
+            r"\bfilter\b",
+            r"\bsort\b",
+        )
+        action_patterns = (
+            r"^(?:make|find|show|sort|filter|change|set|use|compare)\b",
+            r"^(?:earlier|later|cheaper|tomorrow|direct|nonstop)\b",
+        )
+        if not any(re.search(pattern, lowered) for pattern in filter_patterns):
+            return None
+        if not any(re.search(pattern, lowered) for pattern in action_patterns):
             return None
         if task.retry_count >= 4:
             return "I have tried a few browser refinements already. Tell me the exact filter or site you want next."
@@ -209,6 +228,19 @@ def _is_browser_start(text: str) -> bool:
     if "flight" in lowered and any(word in lowered for word in ("check", "find", "search", "book", "compare")):
         return True
     return bool(re.match(r"^(?:browse|search|look up|google|check online|find online)\s+.+", lowered))
+
+
+def _looks_like_general_question(lowered: str) -> bool:
+    return lowered.startswith((
+        "how does ",
+        "how do ",
+        "what is ",
+        "what are ",
+        "what was ",
+        "why ",
+        "explain ",
+        "relate ",
+    ))
 
 
 def _open_search_new_tab(browser, query: str) -> None:
