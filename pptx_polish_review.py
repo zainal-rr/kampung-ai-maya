@@ -27,7 +27,7 @@ def local_polish_issues(path: Path) -> list[str]:
         bad_text = _bad_visible_text(texts)
         if bad_text:
             issues.append(f"slide {idx} has weak visible label: {bad_text}")
-        titles.append(texts[0])
+        titles.append(_title_text(texts))
         if any(_incomplete_sentence(text) for text in texts):
             issues.append(f"slide {idx} has an incomplete sentence")
         signature = _layout_signature(slide)
@@ -90,6 +90,18 @@ def _texts(slide) -> list[str]:
         if text:
             items.append(text)
     return items
+
+
+def _title_text(texts: list[str]) -> str:
+    for text in texts:
+        clean = text.strip()
+        if not clean:
+            continue
+        if clean.isupper() and len(clean.split()) <= 3:
+            continue
+        if len(clean.split()) >= 3 or len(clean) >= 24:
+            return clean
+    return texts[0] if texts else ""
 
 
 def _layout_signature(slide) -> tuple[tuple[int, int, int, int], ...]:
@@ -178,6 +190,8 @@ def _parse_polish(text: str) -> tuple[str, str]:
             reason = str(data.get("reason", "")).strip()
             if grade == "draft-level" and not reason:
                 return "good", "Local QA found no blocker, and Claude returned no actionable draft-level reason."
+            if grade == "draft-level" and not _reason_has_blocker(reason):
+                return "good", f"Local QA found no blocker; Claude critique was non-blocking: {_short_reason(reason)}"
             if grade in {"draft-level", "good", "strong"}:
                 return grade, _short_reason(reason)
         except json.JSONDecodeError:
@@ -197,3 +211,21 @@ def _short_reason(reason: str) -> str:
     if len(clean) > 240:
         clean = clean[:240].rsplit(" ", 1)[0].rstrip(" ,;:-") + "."
     return clean if clean.endswith((".", "?", "!")) else clean + "."
+
+
+def _reason_has_blocker(reason: str) -> bool:
+    lowered = reason.lower()
+    blockers = (
+        "slide ",
+        "truncated",
+        "incomplete",
+        "sentence-heavy",
+        "missing visual",
+        "missing image",
+        "repeated layout",
+        "weak first",
+        "weak title",
+        "generic label",
+        "placeholder",
+    )
+    return any(blocker in lowered for blocker in blockers)

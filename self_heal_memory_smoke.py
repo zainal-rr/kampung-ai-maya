@@ -30,6 +30,7 @@ async def main() -> None:
 
         dryrun = await handle_memory_self_heal_command(db_path, "dryrun", root=root)
         _require("No memory" in dryrun and "Rollback command" in dryrun, "dryrun should not write and must show rollback")
+        _require("core memory" in dryrun.lower() and "zainal profile" in dryrun.lower(), "dryrun should name core/profile memory explicitly")
         _require("latest document" in dryrun and "Office artifact quality" in dryrun, "dryrun missing pass criteria")
 
         force = await command_to_text(db_path, parse_command("/selfheal force"))

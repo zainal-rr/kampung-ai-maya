@@ -11,6 +11,7 @@ from document_actions_word_helpers import (
     _word_edit_request,
     _word_repair_request,
 )
+from word_simple_edit import apply_simple_docx_edit, simple_docx_edit_instruction
 
 
 class DocumentWordMixin:
@@ -99,6 +100,8 @@ class DocumentWordMixin:
             return "I can edit the latest Word, Excel, or PowerPoint file first. Tell me which file to use."
         if action_permission("edit_document") != "allow":
             return "I need your confirmation before editing that document."
+        if simple_docx_edit_instruction(instruction):
+            return await self._simple_word_edit(path, instruction, channel, save_copy=save_copy)
         try:
             current = await asyncio.to_thread(extract_docx_text, path)
             topic = _edited_word_topic(path, instruction, current)
@@ -126,11 +129,7 @@ class DocumentWordMixin:
             if "Word edit restore" not in self.last_model_lane:
                 self.last_model_lane += " + Word edit restore"
             await upsert_preference(self.db_path, LAST_DOC_KEY, str(path), source="document")
-            return _attach(
-                f"I tried to update the latest Word document, but QA failed: {quality.short_issue_text()}. I kept the original unchanged.",
-                path,
-                channel,
-            )
+            return f"I tried to update the latest Word document, but QA failed: {quality.short_issue_text()}. I kept the original unchanged."
         await self._remember(target, f"Edited Word draft: {quality.summary}", False)
         if not quality.passed:
             return await self._draft_with_issues("edited Word draft", target, channel, "Microsoft Word", quality.short_issue_text())
@@ -142,3 +141,29 @@ class DocumentWordMixin:
                 return _attach(prefix, target, channel)
             return prefix if "opened it on the iMac" not in reply else f"{prefix} I opened it on the iMac."
         return reply
+
+    async def _simple_word_edit(self, path: Path, instruction: str, channel: str, *, save_copy: bool = False) -> str:
+        current = await asyncio.to_thread(extract_docx_text, path)
+        topic = _edited_word_topic(path, instruction, current)
+        preflight = await self._artifact_preflight("docx", topic)
+        self.last_model_lane = f"{preflight.lane_prefix} + local Word edit"
+        self.last_cost_recorded = preflight.cost_recorded
+        target = versioned_path(path) if save_copy else path
+        backup = await asyncio.to_thread(_backup_word_file, path)
+        if save_copy:
+            await asyncio.to_thread(shutil.copy2, path, target)
+        await asyncio.to_thread(apply_simple_docx_edit, target, instruction)
+        quality = await self._word_quality(target, topic)
+        if not quality.passed:
+            if save_copy and target.exists():
+                await asyncio.to_thread(target.unlink)
+            elif backup:
+                await asyncio.to_thread(shutil.copy2, backup, path)
+            if "Word edit restore" not in self.last_model_lane:
+                self.last_model_lane += " + Word edit restore"
+            await upsert_preference(self.db_path, LAST_DOC_KEY, str(path), source="document")
+            return f"I tried to update the latest Word document, but QA failed: {quality.short_issue_text()}. I kept the original unchanged."
+        await self._remember(target, f"Edited Word draft: {quality.summary}", False)
+        if save_copy:
+            return await self._done("edited Word copy", target, channel, "Microsoft Word")
+        return _attach("Done. I updated the latest Word document in place. I kept an internal backup before editing.", target, channel)

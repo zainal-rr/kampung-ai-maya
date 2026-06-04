@@ -51,6 +51,32 @@ def _travel_budget_topic(topic: str) -> bool:
     )
 
 
+def _task_tracker_topic(topic: str) -> bool:
+    lowered = topic.lower()
+    if any(word in lowered for word in ("budget", "expense", "cost", "variance", "spend")):
+        return False
+    tracker_marker = any(word in lowered for word in ("task tracker", "work tracker", "status tracker", "tracking sheet", "tracker"))
+    office_marker = any(word in lowered for word in ("office", "work", "team", "project", "owner", "due date", "status", "priority"))
+    return tracker_marker and office_marker
+
+
+def _task_tracker_rows(topic: str) -> tuple[list[str], list[list[str]]]:
+    lowered = topic.lower()
+    title_prefix = "Office" if "office" in lowered or "work" in lowered else "Project"
+    rows = [
+        ["Prepare weekly operations update", "Owner TBD", "Date TBD", "Not Started", "High", "Collect input before Friday."],
+        ["Confirm budget review inputs", "Owner TBD", "Date TBD", "Not Started", "High", "Ask owner to add source numbers."],
+        ["Follow up pending approvals", "Owner TBD", "Date TBD", "In Progress", "Medium", "Track blockers and decision owner."],
+        ["Review supplier delivery status", "Owner TBD", "Date TBD", "Not Started", "Medium", "Update once delivery date is confirmed."],
+        ["Send Friday priority summary", "Owner TBD", "Date TBD", "Not Started", "Low", "Keep summary concise for the team."],
+    ]
+    headers = ["Task", "Owner", "Due Date", "Status", "Priority", "Notes"]
+    if "department" in lowered or "team" in lowered:
+        headers.insert(1, "Team")
+        rows = [[row[0], title_prefix, *row[1:]] for row in rows]
+    return headers, rows
+
+
 def _budget_rows(topic: str) -> tuple[list[str], list[list[str]]]:
     first_row = 4
     categories = [

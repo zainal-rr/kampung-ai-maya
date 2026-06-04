@@ -105,6 +105,8 @@ Word, Excel, PowerPoint, and HTML/app workflows use local file builders and qual
 
 The natural iMac voice path is realtime Grok Voice Agent streaming with Ara. The older ffmpeg capture mode is diagnostic-only and requires explicit diagnostic environment flags. Long spoken work is parked into a durable SQLite handoff queue so Grok voice can close while Maya's normal worker lane completes the task.
 
+Voice transcripts are lightly cleaned before intent routing so filler words, self-corrections, background-noise markers, repeated starts, and cut-off endings do not break normal commands. Spoken aliases such as `show route`, `show status`, `weekly status`, `self heal dry run`, `this is complex...`, `remember...`, `forget...`, and `create skill...` route to the same command paths as slash commands.
+
 ## Safety And Approval
 
 | Action | Default behavior |
@@ -155,9 +157,44 @@ Use the prepared live-proof checklists before the June 8 iMac and hardware sessi
 ./venv/bin/python hardware_live_proof.py
 ```
 
+Prepare and score browser field-test readiness without a live logged-in browser session:
+
+```bash
+./venv/bin/python browser_field_tests.py
+./venv/bin/python browser_benchmark.py --init
+```
+
+These browser commands define route, safety, pass criteria, and evidence requirements. They do not replace actual Chrome, Telegram, or iMac browser runs.
+
+Run the deterministic Grok transcript replay without live provider spend:
+
+```bash
+./venv/bin/python grok_voice_transcript_replay_500.py
+```
+
+The June 4, 2026 replay passed 500/500 cases across voice-to-worker handoff, routing, memory, documents, `/complex`, safety, parked voice behavior, skill creation/approval, healing commands, slashless spoken commands, travel price capture, and noisy/cut-off transcripts. This proves transcript handling and worker routing logic, not the physical microphone, websocket, or speaker path.
+
+Run the broader Phase 22 software-readiness benchmark:
+
+```bash
+./venv/bin/python phase22_readiness_700.py
+```
+
+The June 4, 2026 readiness run passed 700/700 checks across document QA, browser/agent routing and safety, `/complex`, memory time travel, Blender/Maker software export, voice lifecycle simulation, paid-voice safety, park/resume simulation, 30-day reliability simulation, hardware boundaries, and multitasking. It is deterministic software proof, not physical iMac voice, paid billing, Bambu print, Omi, Mudra, or real elapsed 30-day proof.
+
+Run the Maya assistant-pipeline voice transcript replay:
+
+```bash
+./venv/bin/python maya_voice_transcript_replay_700.py
+```
+
+The June 4, 2026 Maya replay passed 700/700 voice-style transcripts by sending them through `KampungAssistant.handle_text(..., input_type="voice")`. Long work parked through the Grok handoff tool before Maya's worker lane handled it. This proves the voice-transcript-to-worker path more directly than component tests, but still does not prove physical microphone, xAI websocket, Ara speaker output, live billing, Telegram upload, Bambu printing, Omi, or Mudra.
+
 The eval suite writes JSON to `logs/evals/latest.json` and reports pass/fail scores across routing, memory, weekly memory, Word, Excel, PowerPoint, iMac readiness, hardware/live readiness, self-heal, Artisan, Blender/Maker, safety, Maya Desk, harness, and dependency readiness.
 
 Local CI is the default proof command. It runs Python compile checks, blocking code health, the scored eval suite, hardening audit, and latest demo evidence check. Live provider checks are optional and should not be required to claim local harness health.
+
+Operational progress should be read conservatively: deterministic software proof is strong, but the current overall Kampung AI operational estimate is about 82-84% until real iMac long-work voice, live browser field runs, Omi/Mudra hardware, printer boundaries, and 30-day reliability evidence are recorded.
 
 ## Dependency Readiness
 
@@ -194,6 +231,9 @@ Maya Desk separates proof types:
 - browser field tests: practical browser prompts plus safety boundaries
 - browser benchmark: deterministic route/safety score plus separately recorded live score
 - trace metrics: recent event counts and failure-like trace rows
+- proof boundary snapshot: what deterministic proof shows versus what still requires physical/live validation
+- operational score estimate: conservative progress by subsystem
+- pending physical/live proof: iMac voice, live browser, Omi/Mudra, Maker/printer, and reliability soak gaps
 
 Generate it through the Maya command path or directly from `maya_desk.py` callers.
 
@@ -201,7 +241,7 @@ Generate it through the Maya command path or directly from `maya_desk.py` caller
 
 - No root Python file currently exceeds the 300-line hard limit. Files in the 280 to 300 line range remain urgent refactor candidates and are reported by `code_health.py`.
 - iMac live voice quality depends on local macOS permissions, audio routing, and separate live testing.
-- Parked voice handoff is code-smoke-tested; full live proof still needs a real iMac voice session.
+- Parked voice handoff is deterministic-replay-tested; full live proof still needs a real iMac voice session.
 - June 8 iMac regression and hardware/live proof scripts are readiness proof, not substitutes for physical voice, Mudra, or Omi tests.
 - Weekly memory automation is implemented, but unattended scheduled proof still needs ongoing observation.
 - The 7-day reliability soak is not complete until seven normal-use daily records exist.

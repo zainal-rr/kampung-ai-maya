@@ -10,6 +10,7 @@ from pathlib import Path
 
 from audio_devices import bin_path
 from telegram import Bot
+from telegram.error import NetworkError, RetryAfter, TimedOut
 
 from voice import VoiceNode
 from vision_markup import split_image_marker
@@ -24,36 +25,44 @@ ALLOWED_FILE_ROOTS = (maya_workspace_root, legacy_workspace_root)
 ALLOWED_DOWNLOAD_PREFIXES = ("maya-", "kampung-")
 
 
-async def send_text(bot: Bot, chat_id: int, text: str) -> None:
+async def send_text(bot: Bot, chat_id: int, text: str) -> list[dict[str, str]]:
+    events: list[dict[str, str]] = []
     clean_text, image_path = split_image_marker(text)
     clean_text, file_paths = split_file_markers(clean_text)
     chunks = _chunk_text(clean_text)
     if not chunks:
         chunks = []
     for chunk in chunks:
-        await bot.send_message(chat_id=chat_id, text=chunk)
+        await _telegram_call_with_retry(bot.send_message, chat_id=chat_id, text=chunk)
+        events.append({"kind": "text", "status": "sent", "path": "", "chars": str(len(chunk))})
     if image_path and image_path.exists():
         try:
             with image_path.open("rb") as image_file:
-                await bot.send_photo(chat_id=chat_id, photo=image_file)
+                await _telegram_call_with_retry(bot.send_photo, chat_id=chat_id, photo=image_file)
+            events.append({"kind": "photo", "status": "sent", "path": str(image_path)})
         finally:
             image_path.unlink(missing_ok=True)
     for path in file_paths:
         try:
             if _is_image_file(path):
                 await send_photo_file(bot, chat_id, path, caption=path.name)
+                events.append({"kind": "photo", "status": "sent", "path": str(path)})
             else:
                 await send_document_file(bot, chat_id, path, caption=path.name)
+                events.append({"kind": "document", "status": "sent", "path": str(path)})
         except Exception as exc:
             logger.exception("Telegram file upload failed for %s", path)
-            await bot.send_message(chat_id=chat_id, text=_file_upload_failure(path, exc))
+            await _telegram_call_with_retry(bot.send_message, chat_id=chat_id, text=_file_upload_failure(path, exc))
+            events.append({"kind": "file", "status": "failed", "path": str(path), "error": exc.__class__.__name__})
+    return events
 
 
 async def send_photo_file(bot: Bot, chat_id: int, path: Path, caption: str = "") -> None:
     if not path.exists() or not path.is_file():
         return
     with path.open("rb") as image_file:
-        await bot.send_photo(
+        await _telegram_call_with_retry(
+            bot.send_photo,
             chat_id=chat_id,
             photo=image_file,
             caption=caption[:MAX_TELEGRAM_CAPTION] or None,
@@ -64,7 +73,8 @@ async def send_document_file(bot: Bot, chat_id: int, path: Path, caption: str = 
     if not path.exists() or not path.is_file():
         return
     with path.open("rb") as document_file:
-        await bot.send_document(
+        await _telegram_call_with_retry(
+            bot.send_document,
             chat_id=chat_id,
             document=document_file,
             caption=caption[:MAX_TELEGRAM_CAPTION] or None,
@@ -91,14 +101,16 @@ async def send_speech(
             voice_note_path = await _voice_note_path(audio_path)
         if voice_note_path:
             with voice_note_path.open("rb") as voice_file:
-                sent_message = await bot.send_voice(
+                sent_message = await _telegram_call_with_retry(
+                    bot.send_voice,
                     chat_id=chat_id,
                     voice=voice_file,
                     caption=caption[:MAX_TELEGRAM_CAPTION] or None,
                 )
         else:
             with audio_path.open("rb") as audio_file:
-                sent_message = await bot.send_audio(
+                sent_message = await _telegram_call_with_retry(
+                    bot.send_audio,
                     chat_id=chat_id,
                     audio=audio_file,
                     caption=caption[:MAX_TELEGRAM_CAPTION] or None,
@@ -111,6 +123,24 @@ async def send_speech(
                 voice_note_path.unlink()
         await voice.cleanup_file(audio_path)
     return sent_message
+
+
+async def _telegram_call_with_retry(method, **kwargs):
+    attempts = int(os.getenv("TELEGRAM_SEND_RETRY_ATTEMPTS", "3"))
+    base_delay = float(os.getenv("TELEGRAM_SEND_RETRY_DELAY", "1.5"))
+    last_exc = None
+    for attempt in range(max(1, attempts)):
+        try:
+            return await method(**kwargs)
+        except RetryAfter as exc:
+            last_exc = exc
+            await asyncio.sleep(float(getattr(exc, "retry_after", base_delay)))
+        except (NetworkError, TimedOut) as exc:
+            last_exc = exc
+            if attempt >= attempts - 1:
+                break
+            await asyncio.sleep(base_delay * (2 ** attempt))
+    raise last_exc or RuntimeError("Telegram send failed")
 
 
 def _telegram_voice_text(text: str) -> str:

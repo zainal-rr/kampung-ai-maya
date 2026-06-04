@@ -11,7 +11,7 @@ from project_actions import project_status
 from retention_policy import retention_status_summary
 from route_tracker import last_route_text
 from screen_session import screen_sight_status
-from self_healing import self_heal_text
+from self_heal_store import latest_self_heal_report
 from storage import get_preference
 from telegram_voice_state import voice_enabled
 from vision_session import guided_sight_status
@@ -42,10 +42,17 @@ async def status_text(db_path: str) -> str:
         f"11) cost: {(await usage_summary_text(db_path)).splitlines()[0]}\n"
         f"12) provider readiness: {provider_readiness_text().splitlines()[0]}\n"
         f"13) last route: {(await last_route_text(db_path)).splitlines()[0]}\n"
-        f"14) self heal: {(await self_heal_text(db_path)).splitlines()[0]}\n"
+        f"14) self heal: {await _self_heal_status_line(db_path)}\n"
         f"15) retention: {await retention_status_summary(db_path)}\n"
         f"16) local permissions: {permission_summary()}"
     )
+
+
+async def _self_heal_status_line(db_path: str) -> str:
+    report = await latest_self_heal_report(db_path)
+    if not report:
+        return "no open repair proposal"
+    return f"latest proposal #{report['id']}: {str(report['issue']).splitlines()[0][:80]}"
 
 
 def command_help() -> str:
@@ -81,9 +88,11 @@ def command_help() -> str:
         "r) /cost: show usage estimate\n"
         "s) /providers: show provider readiness\n"
         "t) /route: show last routing decision\n"
-        "u) /context: show compacted context\n"
-        "v) /weekly: show weekly reflection\n"
-        "w) /newtopic: reset current topic\n"
-        "x) /selfheal: run safe self-heal check\n"
+        "u) /delivery: show last Telegram delivery attempt\n"
+        "v) /turn: show last Telegram processing timing/status\n"
+        "w) /context: show compacted context\n"
+        "x) /weekly: show weekly reflection\n"
+        "y) /newtopic: reset current topic\n"
+        "z) /selfheal: run safe self-heal check\n"
         "You can still talk normally: open project Kampung AI, show my tasks, remember my preference."
     )

@@ -40,17 +40,19 @@ async def main() -> None:
         _require(files == [path.resolve()], "file marker path was not parsed")
 
         bot = FakeBot()
-        await send_text(bot, 123, text)
+        events = await send_text(bot, 123, text)
         _require(bot.messages == [(123, "Here is the file.")], "message delivery failed")
         _require(len(bot.documents) == 1, "document was not delivered")
         _require(bot.documents[0][2] == "maya-notes.docx", "document caption was not set")
+        _require(any(item["kind"] == "document" and item["status"] == "sent" for item in events), "delivery event did not record sent document")
 
         failing_bot = FailingBot()
-        await send_text(failing_bot, 124, text)
+        failed_events = await send_text(failing_bot, 124, text)
         _require(
             any("Telegram upload timed out or failed" in message for _, message in failing_bot.messages),
             "upload failure should send a visible fallback path message",
         )
+        _require(any(item["status"] == "failed" for item in failed_events), "delivery event did not record failed upload")
 
         long_bot = FakeBot()
         await send_text(long_bot, 456, "x" * (MAX_TELEGRAM_TEXT + 50))

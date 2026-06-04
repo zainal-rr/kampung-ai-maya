@@ -37,7 +37,7 @@ def summary_from_text(paragraphs: list[str], fallback: str) -> str:
 
 def topic_needs_formula(topic: str) -> bool:
     lowered = topic.lower()
-    return any(word in lowered for word in ("budget", "tracker", "expense", "total", "spend"))
+    return any(word in lowered for word in ("budget", "expense", "total", "spend", "cost", "variance", "estimated", "actual"))
 
 
 def food_trip_workbook(topic: str) -> bool:

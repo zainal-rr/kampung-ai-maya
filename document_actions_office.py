@@ -13,13 +13,17 @@ from document_actions_content_helpers import (
     _prefixed_lane,
     _quick_request,
     _strip_quality_words,
+    _task_tracker_rows,
+    _task_tracker_topic,
     _travel_budget_topic,
 )
 from office_edit_helpers import (
+    apply_simple_xlsx_edit,
     backup_office_file,
     edited_office_topic,
     pptx_edit_request,
     pptx_outline,
+    simple_xlsx_edit_instruction,
     xlsx_edit_request,
     xlsx_snapshot,
 )
@@ -51,11 +55,7 @@ class DocumentOfficeMixin:
         if not qa.passed:
             await self._restore_failed_edit(path, target, backup, save_copy)
             self.last_model_lane += " + PowerPoint edit restore"
-            return _attach(
-                f"I tried to update the latest PowerPoint, but QA failed: {qa.summary()} I kept the original unchanged.",
-                path,
-                channel,
-            )
+            return f"I tried to update the latest PowerPoint, but QA failed: {qa.summary()} I kept the original unchanged."
         await self._remember(target, f"Edited PowerPoint draft: {qa.summary()}", False)
         if save_copy:
             return await self._done_powerpoint("edited PowerPoint copy", target, channel)
@@ -64,6 +64,26 @@ class DocumentOfficeMixin:
     async def _edit_latest_excel(self, path: Path, instruction: str, channel: str, *, save_copy: bool = False) -> str:
         if action_permission("edit_document") != "allow":
             return "I need your confirmation before editing that workbook."
+        if simple_xlsx_edit_instruction(instruction):
+            current = await asyncio.to_thread(xlsx_snapshot, path)
+            topic = edited_office_topic(path, instruction, current)
+            preflight = await self._artifact_preflight("xlsx", topic)
+            self.last_model_lane = _prefixed_lane("local Excel edit", preflight)
+            self.last_cost_recorded = bool(preflight and preflight.cost_recorded)
+            target = versioned_path(path) if save_copy else path
+            backup = await asyncio.to_thread(backup_office_file, path)
+            if save_copy:
+                await asyncio.to_thread(shutil.copy2, path, target)
+            await asyncio.to_thread(apply_simple_xlsx_edit, target, instruction)
+            quality = await self._excel_quality(target, topic)
+            if not quality.passed:
+                await self._restore_failed_edit(path, target, backup, save_copy)
+                self.last_model_lane += " + Excel edit restore"
+                return f"I tried to update the latest Excel workbook, but QA failed: {quality.short_issue_text()}. I kept the original unchanged."
+            await self._remember(target, f"Edited Excel workbook: {quality.summary}", False)
+            if save_copy:
+                return await self._done("edited Excel copy", target, channel, "Microsoft Excel")
+            return _attach("Done. I updated the latest Excel workbook in place. I kept an internal backup before editing.", target, channel)
         try:
             current = await asyncio.to_thread(xlsx_snapshot, path)
             topic = edited_office_topic(path, instruction, current)
@@ -87,11 +107,7 @@ class DocumentOfficeMixin:
         if not quality.passed:
             await self._restore_failed_edit(path, target, backup, save_copy)
             self.last_model_lane += " + Excel edit restore"
-            return _attach(
-                f"I tried to update the latest Excel workbook, but QA failed: {quality.short_issue_text()}. I kept the original unchanged.",
-                path,
-                channel,
-            )
+            return f"I tried to update the latest Excel workbook, but QA failed: {quality.short_issue_text()}. I kept the original unchanged."
         await self._remember(target, f"Edited Excel workbook: {quality.summary}", False)
         if save_copy:
             return await self._done("edited Excel copy", target, channel, "Microsoft Excel")
@@ -184,6 +200,12 @@ class DocumentOfficeMixin:
             headers, rows = await style_table(self.db_path, headers, rows)
             await asyncio.to_thread(create_xlsx, path, "Kampung AI Testing Comparison", headers, rows)
             return await self._finish_excel(path, "Excel testing comparison", topic, project_scoped, channel)
+        if _task_tracker_topic(topic):
+            self.last_model_lane = _prefixed_lane("Local office task tracker workbook", preflight)
+            headers, rows = _task_tracker_rows(topic)
+            headers, rows = await style_table(self.db_path, headers, rows)
+            await asyncio.to_thread(create_xlsx, path, "Office Task Tracker", headers, rows)
+            return await self._finish_excel(path, "Excel task tracker", topic, project_scoped, channel)
         if _budget_topic(topic):
             if _travel_budget_topic(topic):
                 from travel_budget import create_travel_budget_excel

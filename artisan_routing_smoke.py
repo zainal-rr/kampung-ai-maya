@@ -15,6 +15,14 @@ def main() -> None:
         "test-planning question should not route to Artisan",
     )
     _require(
+        not ModelLanes.should_use_artisan_path("Compare OpenHands and Claude Code briefly."),
+        "product comparison should not route to Artisan just because it says Claude Code",
+    )
+    _require(
+        not ModelLanes.should_use_artisan_path("explain Claude Code architecture"),
+        "explanation prompt should not route to Artisan",
+    )
+    _require(
         ModelLanes.should_use_artisan_path("debug this python function"),
         "coding debug request should route to Artisan",
     )

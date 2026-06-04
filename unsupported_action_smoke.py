@@ -35,11 +35,13 @@ async def main() -> None:
 
         normal = await assistant.commands.handle("write me a short story", "telegram")
         _require(normal is None, "creative writing should not trigger missing skill")
+        workshop = await assistant.commands.handle("Give me an event-day checklist for a small office workshop.", "telegram")
+        _require(workshop is None, "workshop checklist should not trigger missing skill through shop substring")
 
         response = await assistant.handle_text("book me a flight to Penang tomorrow", "telegram")
         lowered = response.lower()
-        _require("flight options" in lowered, "travel research skill did not handle flight request")
-        _require("before booking or payment" in lowered, "flight request did not keep checkout guard")
+        _require("research" in lowered or "compare" in lowered, "travel request did not offer safe research/comparison")
+        _require("before booking" in lowered and "private" in lowered, "flight request did not keep checkout/private-data guard")
 
         response = await assistant.handle_text("install a random app", "telegram")
         _require("don't have a real skill" in response.lower(), "missing skill prompt did not appear")

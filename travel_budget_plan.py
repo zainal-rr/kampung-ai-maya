@@ -25,6 +25,7 @@ def _parse_plan_updates(text: str) -> dict:
         changes["accommodation_type"] = "hotel via Booking.com"
     if "airbnb" in lowered:
         changes["accommodation_type"] = "Airbnb"
+    changes.update(_parse_price_mentions(text))
     if any(word in lowered for word in ("middle", "mid range", "mid-range", "high end", "high-end", "4 star", "5 star", "guest favourite", "guest favorite")):
         changes["accommodation_preference"] = "middle to high-end; hotel 4-5 star or Airbnb guest favourite"
     destination = re.search(r"\b(?:to|in|for)\s+([A-Z][A-Za-z ,/]{2,50})(?:\s+from|\s+on|\s+for|\s+with|$)", text)
@@ -60,6 +61,55 @@ def _parse_plan_updates(text: str) -> dict:
                 changes["destination"] = place.title()
                 break
     return changes
+
+
+def _parse_price_mentions(text: str) -> dict:
+    changes: dict[str, object] = {}
+    price_specs = (
+        ("stay_price_airbnb_myr", "Airbnb", r"airbnb"),
+        ("stay_price_booking_myr", "Booking.com hotel", r"booking\.com|hotel"),
+        ("selected_stay_price_myr", "selected stay", r"accommodation|stay"),
+        ("selected_flight_price_myr", "flight", r"flight|flights|airfare|air\s*ticket"),
+    )
+    stay_options: list[str] = []
+    for key, provider, label_pattern in price_specs:
+        amount = _first_price_for_label(text, label_pattern)
+        if amount is None:
+            continue
+        changes[key] = amount
+        if key == "selected_flight_price_myr":
+            changes.setdefault("flight_preference", "selected flight price provided by user")
+        else:
+            stay_options.append(f"{provider}: MYR {amount}")
+            if "selected_stay_price_myr" not in changes or key != "selected_stay_price_myr":
+                changes["selected_stay_price_myr"] = amount
+                changes["selected_stay_provider"] = provider
+                changes["accommodation_type"] = provider
+    if stay_options:
+        changes["stay_price_notes"] = "; ".join(stay_options)
+    return changes
+
+
+def _first_price_for_label(text: str, label_pattern: str) -> int | float | None:
+    patterns = (
+        rf"\b(?:{label_pattern})\b[^.,;\n]{{0,40}}?(?:rm|myr)\s*(?P<amount>\d[\d,]*(?:\.\d+)?)",
+        rf"(?:rm|myr)\s*(?P<amount>\d[\d,]*(?:\.\d+)?)[^.,;\n]{{0,30}}?\b(?:{label_pattern})\b",
+    )
+    for pattern in patterns:
+        match = re.search(pattern, text, re.IGNORECASE)
+        if match:
+            return _price_value(match.group("amount"))
+    return None
+
+
+def _price_value(raw: str) -> int | float | None:
+    try:
+        value = float(raw.replace(",", ""))
+    except ValueError:
+        return None
+    if value <= 0:
+        return None
+    return int(value) if value.is_integer() else round(value, 2)
 
 
 def _template_request(text: str) -> bool:

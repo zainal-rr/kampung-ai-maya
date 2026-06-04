@@ -9,6 +9,15 @@ def document_request(text: str) -> tuple[str, str, bool] | None:
     draft = _draft_in_file_request(cleaned)
     if draft:
         return draft
+    excel_with_details = re.match(
+        r"^(?:create|make|write|give|draft|prepare|generate)\s+(?:me\s+)?(?:an?\s+)?(.+?)\s+"
+        r"(?:in|as)\s+(?:an?\s+)?(?:excel|xlsx|spreadsheet|sheet)(?: file| workbook)?\s+with\s+(.+)$",
+        cleaned,
+        re.IGNORECASE,
+    )
+    if excel_with_details:
+        topic = f"{excel_with_details.group(1).strip()} with {excel_with_details.group(2).strip()}"
+        return "xlsx", clean_topic(topic), "this project" in cleaned.lower()
     patterns = (
         (r"^(?:create|make|write|give)\s+(?:me\s+)?(?:an?\s+)?(?:md|markdown)(?: file| note)?(?: for this project)?\s+(?:about|on|for)?\s*(.+)$", "md"),
         (r"^(?:create|make|write|give)\s+(?:me\s+)?(?:an?\s+)?(?:html)(?: file| page| app)?(?: for this project)?\s+(?:about|on|for)?\s*(.+)$", "html"),
@@ -20,7 +29,7 @@ def document_request(text: str) -> tuple[str, str, bool] | None:
         (r"^(?:create|make|write|give)\s+(?:me\s+)?(?:an?\s+)?(.+?)\s+(?:word doc|word document|work document|docx|doc|document|word)(?: file)?(?: for this project)?(?:\s+(?:about|on|for)\s+(.+))?$", "docx"),
         (r"^(?:create|make|write|give)\s+(?:me\s+)?(?:an?\s+)?(?:budgeting\s+|budget\s+|expense\s+)?(?:excel|xlsx|spreadsheet|sheet)(?: file| tracker)?(?: for this project)?\s+(?:about|on|for)?\s*(.+)$", "xlsx"),
         (r"^(?:create|make|write|give|draft|prepare|generate)\s+(?:me\s+)?(?:an?\s+)?(.+?)\s+(?:in|as)\s+(?:an?\s+)?(?:excel|xlsx|spreadsheet|sheet)(?: file| workbook)?(?: for this project)?$", "xlsx"),
-        (r"^(?:make|create|craft)\s+(?:me\s+)?(?:a\s+)?(?:powerpoint|presentation|pptx|slides)\s+(?:on|about|for)\s+(.+)$", "pptx"),
+        (r"^(?:make|create|craft)\s+(?:me\s+)?(?:an?\s+)?(?:(?:small|quick|short|simple|polished|visual)\s+)*(?:powerpoint|presentation|pptx|slides)(?: file| deck)?\s+(?:on|about|for)\s+(.+)$", "pptx"),
         (r"^(?:create|make|write|give|draft|prepare|generate)\s+(?:me\s+)?(?:an?\s+)?(.+?)\s+(?:in|as)\s+(?:an?\s+)?(?:powerpoint|presentation|pptx|slides)(?: file| deck)?(?: for this project)?$", "pptx"),
     )
     for pattern, kind in patterns:

@@ -18,6 +18,11 @@ async def handle_memory_lookup(memory: MemoryService, text: str) -> str | None:
         query = f"my {direct.group(1).strip()}"
         snippets = filter_user_visible_memory(await memory.search_direct_fact(query, limit=3))
         return format_memory_reply(query, snippets, False) if snippets else "I don't have that saved yet."
+    prefer = re.match(r"^what\s+(?:do|did)\s+i\s+prefer(?:\s+(.+?))?\??$", text, re.I)
+    if prefer:
+        query = " ".join(part for part in ("I prefer", prefer.group(1) or "") if part).strip()
+        snippets = filter_user_visible_memory(await memory.search_direct_fact(query, limit=3))
+        return format_memory_reply(query, snippets, False) if snippets else "I don't have that saved yet."
 
     match = re.match(r"^(?:what do you remember about|search memory for|show memory about)\s+(.+)$", text, re.I)
     if not match:

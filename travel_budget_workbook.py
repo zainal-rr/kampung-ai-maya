@@ -35,8 +35,8 @@ def _single_sheet_budget(ws, plan: dict, party: TravelParty) -> None:
     ws.append(["Category", "Estimated Cost MYR", "Actual Cost MYR", "Variance MYR", "Notes", "", "", ""])
     snapshot_table_header = ws.max_row
     snapshot_first = ws.max_row + 1
-    flight_total_cell = "I17"
-    stay_total_cell = "G21"
+    flight_total_cell = "I18"
+    stay_total_cell = "G22"
     daily_total_range = "G25:G38"
     food_total_range = "D43:D49"
     food_actual_range = "E43:E49"
@@ -54,7 +54,19 @@ def _single_sheet_budget(ws, plan: dict, party: TravelParty) -> None:
     ws.append(["Airline / option", "Route", "Depart", "Arrive", "Duration", "Stops", "Price per person MYR", "Travelers", "Total MYR", "Notes"])
     flight_table_header = ws.max_row
     flight_row = ws.max_row + 1
-    ws.append([_selected_flight_label(plan), _route_label(plan), "", "", "", "", "", '=IF($B$3="","",$B$3)', f'=IF(OR(G{flight_row}="",H{flight_row}=""),"",G{flight_row}*H{flight_row})', "Enter selected flight details"])
+    flight_price = plan.get("selected_flight_price_myr", "")
+    ws.append([
+        _selected_flight_label(plan),
+        _route_label(plan),
+        "",
+        "",
+        "",
+        "",
+        flight_price,
+        '=IF($B$3="","",$B$3)',
+        f'=IF(OR(G{flight_row}="",H{flight_row}=""),"",G{flight_row}*H{flight_row})',
+        "User-provided flight price" if flight_price else "Enter selected flight details",
+    ])
     _add_table(ws, "SelectedFlight", f"A{flight_table_header}:J{flight_row}")
     ws.append([])
 
@@ -62,7 +74,17 @@ def _single_sheet_budget(ws, plan: dict, party: TravelParty) -> None:
     ws.append(["Provider", "Name", "Area / Location", "Check-in", "Check-out", "Nights", "Total MYR", "Notes"])
     stay_table_header = ws.max_row
     stay_row = ws.max_row + 1
-    ws.append([plan.get("accommodation_type", ""), "", "", "=F3", "=H3", "", "", "Enter accommodation details"])
+    stay_total = plan.get("selected_stay_price_myr", "")
+    ws.append([
+        plan.get("selected_stay_provider") or plan.get("accommodation_type", ""),
+        "",
+        "",
+        "=F3",
+        "=H3",
+        "",
+        stay_total,
+        plan.get("stay_price_notes") or ("User-provided stay price" if stay_total else "Enter accommodation details"),
+    ])
     _add_table(ws, "SelectedStay", f"A{stay_table_header}:H{stay_row}")
     ws.append([])
 
@@ -109,6 +131,8 @@ def _single_sheet_budget(ws, plan: dict, party: TravelParty) -> None:
             ["Call participants", "not used for traveler count", "Maya must ask for explicit traveler count"],
             ["Flight choice", plan.get("flight_preference", "not selected yet"), "Saved after Maya asks you which flight to keep"],
             ["Accommodation", plan.get("accommodation_type", "not selected yet"), "Saved after Maya asks hotel or Airbnb"],
+            ["Flight price MYR", plan.get("selected_flight_price_myr", "not provided"), "Captured from user request when spoken or typed"],
+            ["Stay price MYR", plan.get("selected_stay_price_myr", "not provided"), plan.get("stay_price_notes") or "Captured from Airbnb, Booking.com, hotel, or stay price mention"],
             ["Safety", "Stop before payment/login/private details", "No card, passport, OTP, password, or final submit"],
         ]
     for row in assumptions:

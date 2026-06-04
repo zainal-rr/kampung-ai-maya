@@ -31,7 +31,7 @@ async def create_powerpoint_with_qa(
     qa = PptxQualityResult(False, ["PowerPoint QA did not run"], [], 0, "")
     visual_note = ""
     for attempt in range(attempts):
-        qa, visual_note = await _run_powerpoint_attempt(db_path, path, title, _attempt_slides(slides, attempt), run_id, auto_improve)
+        qa, visual_note = await _run_powerpoint_attempt(db_path, path, title, _attempt_slides(slides, attempt, title), run_id, auto_improve)
         qa.revisions = attempt
         if qa.passed:
             break
@@ -72,6 +72,10 @@ async def _run_powerpoint_attempt(
         if revised.passed or len(revised.issues) < len(qa.issues):
             qa = revised
             qa.revisions = 1
+    topic_issues = await asyncio.to_thread(_topic_fit_issues, title, path)
+    if topic_issues:
+        qa.passed = False
+        qa.issues.extend(topic_issues)
     if auto_improve and qa.passed and local_polish_issues(path):
         qa = await asyncio.to_thread(rebuild_topic_safe, path, slides)
         qa.revisions = 1
@@ -121,6 +125,25 @@ def _reviewer_model() -> str:
     if not os.getenv("ANTHROPIC_API_KEY"):
         return "local-pptx-qa"
     return os.getenv("CLAUDE_STEWARD_MODEL", CAPABILITIES["steward"].default_model)
+
+
+def _topic_fit_issues(title: str, path: Path) -> list[str]:
+    lowered_title = str(title).lower()
+    if not any(word in lowered_title for word in ("office", "priority", "priorities", "weekly", "team")):
+        return []
+    deck = Presentation(path)
+    text = " ".join(
+        " ".join(getattr(shape, "text", "").split()).lower()
+        for slide in deck.slides
+        for shape in slide.shapes
+    )
+    office_markers = ("office", "weekly", "week", "priority", "priorities", "team", "owner", "deep work", "scorecard")
+    technical_markers = ("router", "wifi", "wan", "lan", "dhcp", "dns", "admin password", "running config")
+    if any(marker in text for marker in office_markers):
+        return []
+    if any(marker in text for marker in technical_markers):
+        return ["deck content does not match weekly office priorities topic"]
+    return ["deck content is too generic for weekly office priorities topic"]
 
 
 def _artifact_review_text(qa: PptxQualityResult, visual_note: str) -> str:
@@ -177,19 +200,19 @@ def _max_attempts(auto_improve: bool) -> int:
     return max(1, min(configured, 6))
 
 
-def _attempt_slides(slides: list[tuple[str, list[str]]], attempt: int) -> list[tuple[str, list[str]]]:
+def _attempt_slides(slides: list[tuple[str, list[str]]], attempt: int, title: str = "") -> list[tuple[str, list[str]]]:
     if attempt <= 0:
         return slides
     if attempt >= 2:
-        return _rescue_slides(slides)
+        return _rescue_slides(slides, title)
     repaired: list[tuple[str, list[str]]] = []
     for title, bullets in slides:
         repaired.append((_stronger_slide_title(title), [_stronger_bullet(bullet) for bullet in bullets]))
     return repaired
 
 
-def _rescue_slides(slides: list[tuple[str, list[str]]]) -> list[tuple[str, list[str]]]:
-    text = " ".join([title for title, _ in slides] + [bullet for _, bullets in slides for bullet in bullets]).lower()
+def _rescue_slides(slides: list[tuple[str, list[str]]], title: str = "") -> list[tuple[str, list[str]]]:
+    text = " ".join([title] + [title for title, _ in slides] + [bullet for _, bullets in slides for bullet in bullets]).lower()
     if any(word in text for word in ("food", "restaurant", "cafe", "seoul", "trip", "travel", "itinerary")):
         return [
             ("Seoul In 48 Hours", ["Food-first route", "Dark editorial guide", "Two focused days"]),
@@ -198,6 +221,14 @@ def _rescue_slides(slides: list[tuple[str, list[str]]]) -> list[tuple[str, list[
             ("Budget The Splurge", ["KRW daily budget", "One splurge dinner", "Cash for market stalls"]),
             ("Queue Tools Protect Plan", ["Naver Maps", "Catchtable reservation", "Rain backup plan"]),
             ("Leave With A Ready Plan", ["Book anchor meals", "Save backup pins", "Keep transit simple"]),
+        ]
+    if any(word in text for word in ("office", "priority", "priorities", "weekly", "work", "team")):
+        return [
+            ("Focus The Week Around Three Outcomes", ["Critical work", "Blocked work", "Decision work"]),
+            ("Separate Urgent From Important", ["Must finish", "Can wait", "Needs owner"]),
+            ("Protect The Deep Work Window", ["No meeting block", "One escalation lane", "End of day review"]),
+            ("Make Ownership Visible", ["Named owner", "Due date", "Status signal"]),
+            ("Close With A Friday Scorecard", ["Done", "Blocked", "Next week"]),
         ]
     if any(word in text for word in ("router", "wifi", "network", "config", "technical", "setup")):
         return [

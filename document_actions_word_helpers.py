@@ -38,16 +38,18 @@ def _document_edit_request(text: str) -> tuple[str, bool] | None:
         return copy_match.group(1).strip(" ."), True
     cleaned = re.sub(r"\b(?:as\s+a\s+)?(?:new version|new copy|create a copy|make a copy|save a copy|copy|duplicate|don't overwrite|do not overwrite|without overwriting)\b", " ", cleaned, flags=re.I)
     cleaned = re.sub(r"^(?:and|then)\s+", "", " ".join(cleaned.split()), flags=re.I)
+    if _looks_like_text_transform(cleaned):
+        return None
     patterns: tuple[tuple[str, bool], ...] = (
         (
             r"^(?:update|edit|revise|change|modify)\s+"
-            r"(that|it|this|the\s+last\s+(?:document|doc|file)|the\s+(?:document|doc|file|deck|presentation|powerpoint|spreadsheet|excel|workbook))\s*"
+            r"(that\s+(?:document|doc|file|deck|presentation|powerpoint|spreadsheet|excel|workbook)|this\s+(?:document|doc|file|deck|presentation|powerpoint|spreadsheet|excel|workbook)|the\s+last\s+(?:document|doc|file)|the\s+(?:document|doc|file|deck|presentation|powerpoint|spreadsheet|excel|workbook)|that|it|this)\s*"
             r"(?:to|into|with|so\s+that)?\s*(.+)$",
             True,
         ),
         (
             r"^(?:make|turn)\s+"
-            r"(that|it|this|the\s+last\s+(?:document|doc|file)|the\s+(?:document|doc|file|deck|presentation|powerpoint|spreadsheet|excel|workbook))\s+"
+            r"(that\s+(?:document|doc|file|deck|presentation|powerpoint|spreadsheet|excel|workbook)|this\s+(?:document|doc|file|deck|presentation|powerpoint|spreadsheet|excel|workbook)|the\s+last\s+(?:document|doc|file)|the\s+(?:document|doc|file|deck|presentation|powerpoint|spreadsheet|excel|workbook)|that|it|this)\s+"
             r"(?:into|a|an)?\s*(.+)$",
             True,
         ),
@@ -57,10 +59,20 @@ def _document_edit_request(text: str) -> tuple[str, bool] | None:
         if match and match.group(2).strip():
             target = match.group(1)
             instruction = match.group(2).strip(" .")
+            instruction = re.sub(r"^(?:a|an)\s+", "", instruction, flags=re.I)
             explicit_target = not re.fullmatch(r"that|it|this", target, re.I)
             if explicit_target or not requires_document_signal or _looks_like_document_edit_instruction(instruction):
                 return instruction, save_copy
     return None
+
+
+def _looks_like_text_transform(cleaned: str) -> bool:
+    return bool(re.match(
+        r"^(?:make|turn)\s+(?:that|it|this)\s+(?:into|a|an)\s+"
+        r"(?:meeting minutes?|minutes?|email|message|slack note|note|summary|subject line|reply|response)\b",
+        cleaned,
+        re.I,
+    ))
 
 
 def _looks_like_document_edit_instruction(instruction: str) -> bool:

@@ -6,7 +6,8 @@ import re
 from browser_agent_state import BrowserAgentState, observation_id, task_type_for
 from browser_control import BrowserController, element_summary, page_summary
 from browser_cost_policy import escalation_decision, local_decision
-from permission_policy import action_permission, contains_sensitive_info, hard_no_private_exposure_text
+from browser_followup_policy import looks_like_general_question, looks_like_writing_or_advice_request
+from permission_policy import action_permission, contains_sensitive_info, hard_no_private_exposure_text, safe_sensitive_guidance
 from screen_service import MacScreenService
 from storage import delete_preference, get_preference, upsert_preference
 from utils import OSBridge
@@ -31,7 +32,7 @@ class HumanBrowserWorkflowRouter:
 
     async def handle(self, text: str, channel: str) -> str | None:
         return (
-            await self._start(text)
+            await self._start(text, channel)
             or await self._status(text)
             or await self._inspect(text)
             or await self._fill(text)
@@ -49,13 +50,20 @@ class HumanBrowserWorkflowRouter:
         await delete_preference(self.db_path, PENDING_CLICK_KEY)
         return await self._click_target(target, sensitive=True)
 
-    async def _start(self, text: str) -> str | None:
+    async def _start(self, text: str, channel: str) -> str | None:
         if not _is_browser_start(text):
             return None
         task_type = task_type_for(text)
-        state = BrowserAgentState(text.strip(), text.strip(), task_type, steps=["opened search"])
+        state = BrowserAgentState(text.strip(), text.strip(), task_type, steps=[])
         if action_permission("travel_search" if task_type == "flight_search" else "browse_web") != "allow":
             return "I need your confirmation before browsing for that."
+        if channel == "telegram":
+            state.steps.append("queued browser search from Telegram")
+            await self._save(state)
+            if task_type == "flight_search":
+                return "I queued the flight search. I can compare options on the iMac browser when it is safe to take over Chrome, and I will stop before booking or payment."
+            return "I queued the browser search. I can open and inspect Chrome when it is safe to take over the iMac browser."
+        state.steps.append("opened search")
         await asyncio.to_thread(_open_search_new_tab, self.browser, state.query)
         await self._save(state)
         if task_type == "flight_search":
@@ -118,9 +126,13 @@ class HumanBrowserWorkflowRouter:
         if not task:
             return None
         lowered = _clean(text)
-        if _looks_like_general_question(lowered):
+        if looks_like_general_question(lowered):
+            return None
+        if looks_like_writing_or_advice_request(lowered):
             return None
         if any(word in lowered for word in MISSING_SKILL_WORDS):
+            return None
+        if safe_sensitive_guidance(lowered):
             return None
         if any(word in lowered for word in SENSITIVE_WORDS):
             return "I can help prepare the next step, but I will stop before booking, payment, submission, or private details."
@@ -228,19 +240,6 @@ def _is_browser_start(text: str) -> bool:
     if "flight" in lowered and any(word in lowered for word in ("check", "find", "search", "book", "compare")):
         return True
     return bool(re.match(r"^(?:browse|search|look up|google|check online|find online)\s+.+", lowered))
-
-
-def _looks_like_general_question(lowered: str) -> bool:
-    return lowered.startswith((
-        "how does ",
-        "how do ",
-        "what is ",
-        "what are ",
-        "what was ",
-        "why ",
-        "explain ",
-        "relate ",
-    ))
 
 
 def _open_search_new_tab(browser, query: str) -> None:

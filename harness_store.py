@@ -181,6 +181,7 @@ async def get_active_run(db_path: str, channel: str | None = None) -> dict | Non
 
 async def list_active_runs(db_path: str, channel: str | None = None, limit: int = 10) -> list[dict]:
     await init_harness_db(db_path)
+    await expire_stale_runs(db_path)
     where = "status IN ('running', 'paused')"
     params: tuple[str | int, ...]
     if channel:
@@ -202,6 +203,22 @@ async def list_active_runs(db_path: str, channel: str | None = None, limit: int 
         )
         rows = await cursor.fetchall()
     return [_row_to_run(row) for row in rows]
+
+
+async def expire_stale_runs(db_path: str, running_minutes: int = 90) -> int:
+    await init_harness_db(db_path)
+    async with aiosqlite.connect(db_path) as db:
+        result = await db.execute(
+            """
+            UPDATE harness_runs
+            SET status = 'expired', updated_at = CURRENT_TIMESTAMP
+            WHERE status = 'running'
+              AND updated_at < datetime('now', ?)
+            """,
+            (f"-{int(running_minutes)} minutes",),
+        )
+        await db.commit()
+    return int(result.rowcount or 0)
 
 
 async def get_run(db_path: str, run_id: str) -> dict | None:

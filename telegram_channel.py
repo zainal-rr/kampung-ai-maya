@@ -1,6 +1,7 @@
 import os
 import asyncio
 import logging
+import time
 
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filters
@@ -8,6 +9,8 @@ from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filte
 from assistant import KampungAssistant
 from channel_gateway import channel_envelope
 from telegram_audit import record_telegram_command
+from telegram_channel_audit import record_delivery_event, record_turn_event
+from telegram_command_direct import is_direct_command_reply
 from telegram_commands import bot_commands, command_to_text, parse_command, voice_enabled
 from telegram_delivery_state import last_voice_message_id, save_last_voice_message_id
 from telegram_delivery import send_document_file, send_photo_file, send_speech, send_text, split_file_markers
@@ -70,43 +73,15 @@ class TelegramChannel:
         if self._is_direct_command_reply(command_text):
             if parsed.name != "route":
                 await record_route(self.assistant.db_path, "command", "command", f"/{parsed.name}", False)
+            started = time.monotonic()
             await self._send_response(update, context, command_text, input_type="command")
+            await self._record_turn(update, "command", text, "completed", started, len(command_text))
             return
         await self._handle_text(update, context, command_text, input_type="command")
 
     @staticmethod
     def _is_direct_command_reply(text: str) -> bool:
-        return text.startswith((
-            "Telegram shortcuts:",
-            "Maya shortcuts:",
-            "/",
-            "Telegram voice replies",
-            "Use /remember",
-            "Use /forget",
-            "Use /createskill",
-            "Use /complex",
-            "Usage estimate,",
-            "Last route:",
-            "Last artifact review:",
-            "No artifact review",
-            "Context window:",
-            "No route recorded yet.",
-            "Maya status:",
-            "Memory sources:",
-            "Forget result:",
-            "Memory cleanup:",
-            "Weekly memory status:",
-            "Weekly memory run completed.",
-            "Self heal check:",
-            "Provider readiness:",
-            "I can see now.",
-            "I stopped seeing.",
-            "I can see your screen now.",
-            "I stopped looking at your screen.",
-            "Use /screen to toggle",
-            "I could not open the local camera preview.",
-            "Local camera preview is disabled.",
-        ))
+        return is_direct_command_reply(text)
 
     async def _record_command(self, update: Update, command: str, args: str, mapped_text: str, result_type: str):
         chat_id = str(update.effective_chat.id) if update.effective_chat else ""
@@ -120,15 +95,22 @@ class TelegramChannel:
         )
 
     async def _handle_text(self, update: Update, context: ContextTypes.DEFAULT_TYPE, text: str, input_type: str = "text"):
+        started = time.monotonic()
         envelope = channel_envelope("telegram", text)
-        response = await self.assistant.handle_text(
-            str(envelope.get("text", text)),
-            channel="telegram",
-            speak_reply=False,
-            input_type=input_type,
-            channel_external_id=str(update.effective_chat.id) if update.effective_chat else "",
-        )
-        await self._send_response(update, context, response, input_type=input_type)
+        prompt = str(envelope.get("text", text))
+        try:
+            response = await self.assistant.handle_text(
+                prompt,
+                channel="telegram",
+                speak_reply=False,
+                input_type=input_type,
+                channel_external_id=str(update.effective_chat.id) if update.effective_chat else "",
+            )
+            await self._send_response(update, context, response, input_type=input_type)
+            await self._record_turn(update, input_type, prompt, "completed", started, len(response))
+        except Exception as exc:
+            await self._record_turn(update, input_type, prompt, "failed", started, 0, exc.__class__.__name__)
+            raise
 
     async def _send_response(self, update: Update, context: ContextTypes.DEFAULT_TYPE, response: str, input_type: str = "text"):
         if not update.effective_chat:
@@ -137,17 +119,21 @@ class TelegramChannel:
         should_send_voice = await self._should_send_voice(input_type)
         if should_send_voice and (not self.require_ara or os.getenv("XAI_API_KEY")):
             clean_response, file_paths = split_file_markers(response)
+            delivery_events = []
             if self.include_text:
-                await send_text(context.bot, chat_id, response)
+                delivery_events = await send_text(context.bot, chat_id, response)
             else:
                 if _should_send_voice_text_companion(clean_response, bool(file_paths)):
-                    await send_text(context.bot, chat_id, response)
+                    delivery_events = await send_text(context.bot, chat_id, response)
                     file_paths = []
                 for path in file_paths:
                     if path.suffix.lower() in {".jpg", ".jpeg", ".png", ".webp"}:
                         await send_photo_file(context.bot, chat_id, path, caption=path.name)
+                        delivery_events.append({"kind": "photo", "status": "sent", "path": str(path)})
                     else:
                         await send_document_file(context.bot, chat_id, path, caption=path.name)
+                        delivery_events.append({"kind": "document", "status": "sent", "path": str(path)})
+            await self._record_delivery(chat_id, input_type, response, delivery_events)
             await self._delete_previous_voice(context, chat_id)
             sent_message = await send_speech(
                 context.bot,
@@ -159,7 +145,32 @@ class TelegramChannel:
             if message_id:
                 await save_last_voice_message_id(self.assistant.db_path, chat_id, int(message_id))
             return
-        await send_text(context.bot, chat_id, response)
+        delivery_events = await send_text(context.bot, chat_id, response)
+        await self._record_delivery(chat_id, input_type, response, delivery_events)
+
+    async def _record_delivery(self, chat_id: int, input_type: str, response: str, events: list[dict[str, str]]) -> None:
+        await record_delivery_event(self.assistant.db_path, chat_id=chat_id, input_type=input_type, response=response, events=events)
+
+    async def _record_turn(
+        self,
+        update: Update,
+        input_type: str,
+        prompt: str,
+        status: str,
+        started: float,
+        response_chars: int,
+        error: str = "",
+    ) -> None:
+        await record_turn_event(
+            self.assistant.db_path,
+            update,
+            input_type=input_type,
+            prompt=prompt,
+            status=status,
+            started=started,
+            response_chars=response_chars,
+            error=error,
+        )
 
     async def _delete_previous_voice(self, context: ContextTypes.DEFAULT_TYPE, chat_id: int) -> None:
         if not self.delete_previous_voice:

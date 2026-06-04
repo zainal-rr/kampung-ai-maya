@@ -1294,6 +1294,9 @@ This document tracks the technical and operational roadmap for building the stan
 - [x] **22.2. Live Evidence Tracking**
     - [x] Add `live_test_evidence.py` as the source for live/manual proof status.
     - [x] Record Telegram document, voice-note, memory, route, and file-delivery regression as passed.
+    - [x] Record the June 3 Telegram Web cross-function text run: 200 planned tests, 200 PASS, 0 CHECK, 0 FAIL. Evidence: `logs/live_tests/telegram_cross_function_200_2026-06-03.md`.
+    - [x] Record that the final 200-test run explicitly covered Telegram text chat, memory, safety, Word create/edit/send/review, Excel create/edit/review, PowerPoint create/edit/send/review, `/complex`, skills, browser-safe routing, current/news/research, Malay/Manglish, delivery audit, turn audit, and route/cost/provider inspection.
+    - [x] Record that the report uses delivery-log verification only for Telegram Web bubble-capture misses, not as a substitute for failed Maya delivery.
     - [x] Record pre-May-25 iMac voice Office artifact creation as passed based on Zainal's live result.
     - [x] Keep iMac long-work voice handoff as `manual-live-required`.
     - [x] Keep iMac native app continuity as `manual-live-required`.
@@ -1309,11 +1312,15 @@ This document tracks the technical and operational roadmap for building the stan
 - [x] **22.4. Browser Field-Test Proof**
     - [x] Add `browser_field_tests.py` with practical prompts for flights, date changes, cheaper comparisons, source-aware research, safe field fill, and booking/payment/private-data stop points.
     - [x] Add deterministic smoke coverage for browser routing and safety boundaries.
+    - [x] Expand browser field scenarios to include Airbnb, Booking.com, YouTube navigation, product comparison, search-result selection, popup/page-change recovery, official-source research, payment stop, upload stop, and private travel-data refusal.
+    - [x] Add explicit live-run pass criteria and safety boundaries for each browser benchmark case.
     - [ ] Run real browser sessions and record outcomes for the prepared prompts.
 
 - [x] **22.5. 7-Day Reliability Soak**
     - [x] Add `live_reliability_soak.py` to track missed replies, wrong routes, voice timeouts, memory mistakes, file delivery failures, browser failures, cost spikes, and false saved claims.
     - [x] Add deterministic smoke coverage for clean and failing soak days.
+    - [x] Run a one-day Telegram Web stress pass across chat, memory, documents, audit, safety, workflow, current/news, browser-safe, skill, and meta prompts.
+    - [x] Fix and prove the June 3 weak paths found by the stress pass: early safety gate, stale browser-workflow hijack, Artisan false-positive routing, unsupported-action false positives, Word transit-tip edit, Excel notes-column edit, Excel task-tracker creation, and PowerPoint topic/title QA.
     - [ ] Complete seven normal-use daily live soak records.
     - [ ] Review any soak failures and convert repeated failures into repair tasks.
 
@@ -1333,14 +1340,56 @@ This document tracks the technical and operational roadmap for building the stan
     - [ ] Complete 30 normal-use daily records before claiming 9/10 daily reliability.
     - [ ] Record live browser benchmark outcomes before claiming browser-agent maturity.
 
-- [ ] **22.8. Phase 22 Closeout**
+- [x] **22.8. Grok Voice Transcript Replay Proof**
+    - [x] Add `voice_transcript_policy.py` for deterministic long-work parking classification and transcript noise notes.
+    - [x] Add `voice_command_aliases.py` so spoken iMac commands like `show route`, `show status`, `weekly status`, `self heal dry run`, `this is complex...`, `remember...`, `forget...`, and `create skill...` can route without slash syntax.
+    - [x] Add voice transcript cleanup for filler words, self-correction, background-noise markers, repeated starts, and dangling cut-off endings before voice intent routing.
+    - [x] Preserve the rule that Grok Voice Agent does not execute long document, browser, skill, coding, memory, or project work; it parks the request for Maya's normal worker lane.
+    - [x] Add explicit travel price capture for spoken or typed flight, Airbnb, Booking.com, hotel, accommodation, and stay prices so budget workbooks can preserve those values.
+    - [x] Add `grok_voice_transcript_replay_500.py` and `grok_voice_replay_fakes.py` for isolated deterministic replay without live provider spend.
+    - [x] Run the 500-case replay. Result: 500 PASS, 0 FAIL. Evidence: `logs/live_tests/grok_voice_transcript_replay_500_2026-06-04.md`.
+    - [x] Confirm the replay covered voice-to-worker handoff, routing, memory, documents, `/complex`, safety gates, parked voice behavior, Grok-not-long-work policy, final response shape, live skills, skill creation/suggestion/approval, healing commands, travel budget price capture, slashless spoken commands, and noisy/cut-off transcripts.
+    - [x] Keep real paid iMac voice handoff live validation under 22.6; deterministic transcript replay is not physical microphone/websocket proof.
+
+- [x] **22.9. Phase 22 Readiness 700 Proof**
+    - [x] Add `phase22_readiness_700.py` as the consolidated software-readiness benchmark for June 8 preparation.
+    - [x] Cover document quality: Word render/visual QA, Excel formulas/format/domain/usefulness checks, PowerPoint render/notes/dark-theme/aspect-ratio checks, and failed-quality boundaries.
+    - [x] Cover browser/agent workflow: YouTube, flight search, Booking.com/Airbnb comparison, product/research prompts, safe form filling, source-aware routing, and stop-before-login/payment/upload/submit behavior.
+    - [x] Cover `/complex`: plan, approval, checkpoint, rollback, trace, repair/report, and final-report expectations.
+    - [x] Cover memory over time: canonical canaries, aged recall, forget/no-leak behavior, simulated 30-day scorecard, and saturation-safe proof boundaries.
+    - [x] Cover Blender/Maker software path: deterministic maker templates, Blender export QA, mesh/dimension proof, no ready-to-print overclaim, and physical-print approval boundaries.
+    - [x] Cover voice readiness simulation: session open/close, handoff parked, worker started/completed, voice resume state, paid-session duration guard, and no long work in Grok voice.
+    - [x] Cover multitasking simulation: Maya can keep short conversation state separate while a worker continues document/background work and appends relevant context.
+    - [x] Run the 700-case readiness benchmark. Result: 700 PASS, 0 FAIL. Evidence: `logs/live_tests/phase22_readiness_700_2026-06-04.md`.
+    - [x] Keep physical proof separate: this does not claim real iMac microphone/websocket/speaker, paid billing, Bambu print execution, Omi, Mudra, or real elapsed 30-day reliability.
+
+- [x] **22.10. Maya Voice Transcript Replay 700 Proof**
+    - [x] Add `maya_voice_transcript_replay_700.py` to send 700 noisy voice-style transcripts through `KampungAssistant.handle_text(..., input_type="voice")`.
+    - [x] Ensure long-work transcripts first park through the Grok handoff tool, then Maya's worker lane handles the request.
+    - [x] Cover document creation, memory save/recall/forget, spoken routing commands, `/complex`, safety gates, skill request/approval, browser-safe routing, travel price capture, and daily conversation.
+    - [x] Keep replay state isolated in a temporary DB and temporary skill/workspace folders so test memories and skill scaffolds do not pollute Maya's real memory.
+    - [x] Run the 700-case Maya voice transcript replay. Result: 700 PASS, 0 FAIL. Evidence: `logs/live_tests/maya_voice_transcript_replay_700_2026-06-04.md`.
+    - [x] Keep physical proof separate: this does not claim real microphone, xAI websocket, Ara speaker output, live paid billing, Telegram upload, Bambu print execution, Omi, or Mudra.
+
+- [ ] **22.11. Phase 22 Closeout**
     - [x] Update `KAMPUNG_AI.md` with Phase 22 reliability architecture.
     - [x] Update `README.md` with live proof boundaries and Maya Desk proof separation.
     - [x] Update this checklist as the Phase 22 source of truth.
+    - [x] Align Phase 22 progress language so the current operational estimate is 82 to 84 percent, not an overclaimed 88 percent.
+    - [x] Improve Maya Desk with proof-boundary snapshot, operational score estimate, and pending physical/live proof sections.
+    - [x] Strengthen the June 8 iMac live-test checklist with voice, Telegram/browser, Office, memory, `/complex`, parked voice handoff, and evidence-capture prompts.
+    - [x] Prepare browser benchmark evidence requirements with deterministic route/safety proof and live-run scoring placeholders.
+    - [x] Run `/selfheal dryrun` equivalent locally. Result: no memory/files/cache/services changed; current core/profile 42%/82%; projected 42%/37%; latest document preserved.
     - [x] Run targeted Phase 22 smokes.
+    - [x] Rerun `phase22_readiness_700.py`. Result: 700 PASS, 0 FAIL.
+    - [x] Rerun `maya_voice_transcript_replay_700.py`. Result: 700 PASS, 0 FAIL.
+    - [x] Rerun `grok_voice_transcript_replay_500.py`. Result: 500 PASS, 0 FAIL.
     - [x] Run `local_ci.py`.
-    - [x] Commit latest Phase 22 proof-tooling changes locally.
-    - [x] Do not push Phase 22 until explicitly requested.
+    - [x] Run redaction check on the June 3 Telegram Web 200-test report.
+    - [x] Keep live-only work separate: iMac paid voice, live browser field sessions, Omi/Mudra, physical print, seven-day soak, and 30-day reliability remain pending until actual evidence exists.
+    - [x] Zainal explicitly approved pushing this Phase 22 state on June 4, 2026.
+    - [x] Verify GitHub reports `zainal-rr/kampung-ai-maya` as `PRIVATE` before pushing.
+    - [x] Push the verified Phase 22 closeout commit to the private GitHub remote.
 
 ---
-*Updated June 3, 2026*
+*Updated June 4, 2026*

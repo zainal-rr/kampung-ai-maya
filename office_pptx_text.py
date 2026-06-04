@@ -68,6 +68,12 @@ def _visual_title(title: str, index: int) -> str:
         day = day_match.group(1).title().replace(" ", " ")
         topic = _title_words(day_match.group(2), 3)
         return f"{day}: {topic}" if topic else f"{day}: Plan"
+    if lowered.startswith("configure ") or "configure in blocks" in lowered:
+        return "Configure In Blocks"
+    if "admin surface" in lowered:
+        return "Lock The Admin Surface"
+    if "rollback" in lowered:
+        return "Keep Rollback Ready"
     mappings = (
         (("anchor", "standout meal"), "Anchor Each Day Around One Meal"),
         (("backup", "famous"), "Pair Famous Stops With Backups"),

@@ -51,6 +51,43 @@ def xlsx_snapshot(path: Path, limit: int = 7000) -> str:
     return "\n".join(lines)[:limit]
 
 
+def simple_xlsx_edit_instruction(instruction: str) -> bool:
+    lowered = " ".join(str(instruction).lower().split())
+    return any(marker in lowered for marker in ("add a notes column", "add notes column", "add a note column", "add note column"))
+
+
+def apply_simple_xlsx_edit(path: Path, instruction: str) -> str:
+    if not simple_xlsx_edit_instruction(instruction):
+        raise ValueError("unsupported simple Excel edit")
+    book = load_workbook(path)
+    changed = 0
+    for sheet in book.worksheets:
+        header_row = _likely_header_row(sheet)
+        col = sheet.max_column + 1
+        header = "Additional Notes" if _row_has_notes(sheet, header_row) else "Notes"
+        sheet.cell(row=header_row, column=col, value=header)
+        for row in range(header_row + 1, sheet.max_row + 1):
+            if any(sheet.cell(row=row, column=existing).value not in (None, "") for existing in range(1, col)):
+                sheet.cell(row=row, column=col, value="Editable notes")
+        changed += 1
+    book.save(path)
+    return f"added notes column on {changed} sheet(s)"
+
+
+def _likely_header_row(sheet) -> int:
+    best_row = 1
+    best_count = 0
+    for row in range(1, min(sheet.max_row, 12) + 1):
+        count = sum(1 for cell in sheet[row] if cell.value not in (None, ""))
+        if count > best_count:
+            best_row, best_count = row, count
+    return best_row
+
+
+def _row_has_notes(sheet, row: int) -> bool:
+    return any("note" in str(cell.value or "").lower() for cell in sheet[row])
+
+
 def edited_office_topic(path: Path, instruction: str, current: str) -> str:
     base = re.sub(r"-v\d+$", "", path.stem).replace("-", " ").strip().title()
     day_match = re.search(r"\b(\d{1,2})\s*[- ]?\s*(?:day|days)\b", instruction, re.I)

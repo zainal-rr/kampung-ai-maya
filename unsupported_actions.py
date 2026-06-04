@@ -35,11 +35,19 @@ def unsupported_action_subject(text: str) -> str | None:
     if candidate in BARE_CONTROL_WORDS:
         return None
 
-    if any(hint in candidate for hint in MISSING_SKILL_HINTS):
+    if any(_has_word_or_phrase(candidate, hint) for hint in MISSING_SKILL_HINTS):
         return text.strip()
-    if any(hint in candidate for hint in SUPPORTED_ACTION_HINTS):
+    if any(_has_word_or_phrase(candidate, hint) for hint in SUPPORTED_ACTION_HINTS):
         return None
 
     if any(candidate.startswith(f"{verb} ") or candidate == verb for verb in ACTION_PATTERNS):
         return text.strip()
     return None
+
+
+def _has_word_or_phrase(text: str, marker: str) -> bool:
+    words = marker.strip().split()
+    if not words:
+        return False
+    pattern = r"\b" + r"\s+".join(re.escape(word) for word in words) + r"\b"
+    return re.search(pattern, text) is not None

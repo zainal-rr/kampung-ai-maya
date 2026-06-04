@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 
+from artisan_route_policy import should_use_artisan_path as artisan_route_should_use
 from artisan_runner import create_artisan_implementation_request
 from complex_agentic_bridge import should_route_complex_plan
 from complex_lane import complex_plan_response as run_complex_plan_response
@@ -38,93 +39,7 @@ class ModelLanes:
 
     @staticmethod
     def should_use_artisan_path(text: str) -> bool:
-        lowered = text.lower().strip()
-        if lowered.startswith((
-            "remember ",
-            "remember that ",
-            "what is my ",
-            "what's my ",
-            "what was my ",
-            "what are my ",
-            "do you remember ",
-        )):
-            return False
-        conversational_test_markers = (
-            "testing maya",
-            "test maya",
-            "keep testing",
-            "what should i focus on",
-            "what should we test",
-            "what tests should",
-        )
-        strong_implementation_markers = (
-            "debug",
-            "fix bug",
-            "fix this",
-            "implement",
-            "refactor",
-            "patch",
-            "write code",
-            "generate code",
-            "run tests",
-            "stack trace",
-        )
-        if any(marker in lowered for marker in conversational_test_markers) and not any(
-            marker in lowered for marker in strong_implementation_markers
-        ):
-            return False
-        artisan_markers = (
-            " app", "web app", "website", "frontend", "dashboard", "vite",
-            "blender", "3d print", "3d-print", "stl", "3mf", "printable",
-            "phone stand",
-        )
-        implementation_verbs = (
-            "add",
-            "build",
-            "change",
-            "code",
-            "create",
-            "debug",
-            "fix",
-            "implement",
-            "make",
-            "modify",
-            "patch",
-            "refactor",
-            "remove",
-            "repair",
-            "run",
-            "update",
-            "write",
-        )
-        code_markers = (
-            " api",
-            " bash",
-            " class",
-            " code",
-            " css",
-            " database",
-            " error",
-            " function",
-            " html",
-            " javascript",
-            " program",
-            " python",
-            " react",
-            " script",
-            " sql",
-            " typescript",
-            " ui",
-        )
-        has_implementation_verb = any(
-            lowered.startswith(f"{verb} ") or f" {verb} " in f" {lowered} "
-            for verb in implementation_verbs
-        )
-        has_artisan_target = any(marker in lowered for marker in artisan_markers)
-        has_code_target = any(marker in f" {lowered}" for marker in code_markers)
-        return any(marker in lowered for marker in strong_implementation_markers) or (
-            has_implementation_verb and (has_artisan_target or has_code_target)
-        )
+        return artisan_route_should_use(text)
 
     @staticmethod
     def artisan_lane() -> str:

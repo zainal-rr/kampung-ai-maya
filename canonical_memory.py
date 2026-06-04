@@ -8,7 +8,6 @@ import aiosqlite
 
 from canonical_memory_scoring import activation_score
 from canonical_memory_usage import mark_canonical_used
-
 STOPWORDS = {"a", "an", "are", "is", "my", "the", "that", "this", "to", "for", "of", "me", "i"}
 TEST_MARKERS = ("test", "regression", "telegram test", "smoke", "temporary")
 
@@ -117,33 +116,38 @@ async def search_canonical_direct_fact(db_path: str, query: str, limit: int = 3)
     subject_key = subject_key_from_text(query)
     if not subject_key:
         return []
+    query_tokens = memory_tokens(subject_key)
     async with aiosqlite.connect(db_path) as db:
         db.row_factory = aiosqlite.Row
-        forgotten = await db.execute(
+        active = await db.execute(
             """
-            SELECT 1 FROM canonical_memory_items
-            WHERE subject_key = ? AND status IN ('forgotten', 'expired', 'superseded')
-            LIMIT 1
-            """,
-            (subject_key,),
-        )
-        if await forgotten.fetchone():
-            return None
-        cursor = await db.execute(
-            """
-            SELECT memory_id, content
+            SELECT memory_id, subject_key, content
             FROM canonical_memory_items
-            WHERE subject_key = ? AND status = 'active'
+            WHERE status = 'active'
               AND (expires_at IS NULL OR expires_at > datetime('now'))
-            ORDER BY pinned DESC, updated_at DESC
-            LIMIT ?
-            """,
-            (subject_key, limit),
+            ORDER BY updated_at DESC
+            LIMIT 80
+            """
         )
-        rows = await cursor.fetchall()
+        rows = [row for row in await active.fetchall() if _direct_fact_match(query_tokens, subject_key, row["subject_key"], row["content"])][:limit]
+        if not rows:
+            forgotten = await db.execute(
+                """
+                SELECT subject_key, content FROM canonical_memory_items
+                WHERE status IN ('forgotten', 'expired', 'superseded')
+                ORDER BY updated_at DESC
+                LIMIT 80
+                """
+            )
+            if any(_direct_fact_match(query_tokens, subject_key, row["subject_key"], row["content"]) for row in await forgotten.fetchall()):
+                return None
     await mark_canonical_used(db_path, [str(row["memory_id"]) for row in rows])
     return [str(row["content"]) for row in rows]
 
+def _direct_fact_match(query_tokens: set[str], subject_key: str, row_subject: str, row_content: str) -> bool:
+    return row_subject == subject_key or (
+        len(query_tokens) >= 2 and query_tokens.issubset(memory_tokens(f"{row_subject} {row_content}"))
+    )
 
 async def search_relevant_canonical_memories(db_path: str, query: str, limit: int = 5) -> list[str]:
     await init_canonical_memory_db(db_path)
@@ -181,11 +185,10 @@ async def search_relevant_canonical_memories(db_path: str, query: str, limit: in
     await mark_canonical_used(db_path, [memory_id for _, memory_id, _content in selected])
     return [content for _, _memory_id, content in selected]
 
-
 async def forget_canonical_memory(db_path: str, query: str) -> int:
     await init_canonical_memory_db(db_path)
     subject_key = subject_key_from_text(query)
-    tokens = memory_tokens(query)
+    tokens = memory_tokens(subject_key or query)
     async with aiosqlite.connect(db_path) as db:
         db.row_factory = aiosqlite.Row
         cursor = await db.execute(
@@ -251,46 +254,36 @@ async def backfill_canonical_memory(db_path: str) -> int:
         created += 1
     return created
 
-
 def subject_key_from_text(text: str) -> str:
     cleaned = " ".join(str(text).strip().rstrip(".?!").split()).lower()
     cleaned = re.sub(r"^(?:remember that|remember|save this memory[: ]*)\s+", "", cleaned)
     direct = re.match(r"^(?:what(?:'s| is)|do you know)\s+my\s+(.+)$", cleaned)
-    if direct:
-        cleaned = "my " + direct.group(1)
+    if direct: cleaned = "my " + direct.group(1)
+    prefer = re.match(r"^what\s+(?:do|did)\s+i\s+prefer(?:\s+(.+))?$", cleaned)
+    if prefer: cleaned = "i prefer " + (prefer.group(1) or "")
     match = re.match(r"^(.+?)\s+(?:is|are|=)\s+.+$", cleaned)
-    if match:
-        cleaned = match.group(1)
+    if match: cleaned = match.group(1)
     return "_".join(token for token in _ordered_memory_tokens(cleaned) if token)
-
 
 def value_from_text(text: str) -> str:
     cleaned = " ".join(str(text).strip().rstrip(".?!").split())
     match = re.match(r"^.+?\s+(?:is|are|=)\s+(.+)$", cleaned, re.I)
     return match.group(1).strip() if match else cleaned
 
-
 def memory_tokens(text: str) -> set[str]:
     return {token for token in re.findall(r"[a-z0-9]+", str(text).lower()) if len(token) > 1 and token not in STOPWORDS}
-
 
 def _ordered_memory_tokens(text: str) -> list[str]:
     return [token for token in re.findall(r"[a-z0-9]+", str(text).lower()) if len(token) > 1 and token not in STOPWORDS]
 
-
 def is_temporary_memory(content: str, subject_key: str) -> bool:
-    lowered = f"{subject_key} {content}".lower()
-    return any(marker in lowered for marker in TEST_MARKERS)
-
+    return any(marker in f"{subject_key} {content}".lower() for marker in TEST_MARKERS)
 
 def _memory_id(kind: str, subject_key: str, scope: str) -> str:
-    digest = hashlib.sha1(f"{kind}:{subject_key}:{scope}".encode("utf-8")).hexdigest()[:16]
-    return f"mem_{digest}"
-
+    return f"mem_{hashlib.sha1(f'{kind}:{subject_key}:{scope}'.encode('utf-8')).hexdigest()[:16]}"
 
 def _expiry() -> str:
     return (datetime.now(timezone.utc) + timedelta(days=14)).strftime("%Y-%m-%d %H:%M:%S")
-
 
 def _internal_memory(key: str, value: str) -> bool:
     lowered = f"{key} {value}".lower()

@@ -20,6 +20,8 @@ class BrowserBenchmarkCase:
     expected: str
     deterministic_status: str
     deterministic_evidence: str
+    pass_criteria: str = ""
+    safety_boundary: str = ""
     live_status: str = "not-run"
     live_evidence: str = ""
     updated_at: str = ""
@@ -58,6 +60,8 @@ def record_browser_live_result(case_id: str, live_status: str, evidence: str, pa
                     case.expected,
                     case.deterministic_status,
                     case.deterministic_evidence,
+                    case.pass_criteria,
+                    case.safety_boundary,
                     live_status,
                     evidence,
                     _now(),
@@ -96,6 +100,8 @@ def format_browser_benchmark(cases: list[BrowserBenchmarkCase] | None = None) ->
     ]
     for case in rows:
         lines.append(f"- {case.id}: deterministic={case.deterministic_status}, live={case.live_status}, {case.name}")
+        lines.append(f"  pass: {case.pass_criteria or 'live evidence recorded'}")
+        lines.append(f"  boundary: {case.safety_boundary or 'standard browser safety boundary'}")
     lines.append("Rule: deterministic pass is not browser maturity; live runs must be recorded separately.")
     return "\n".join(lines)
 
@@ -118,6 +124,8 @@ def _from_scenario(case_id: str, scenario: BrowserFieldScenario, old: BrowserBen
         scenario.expected,
         scenario.status,
         scenario.evidence,
+        scenario.pass_criteria,
+        scenario.safety_boundary,
         old.live_status if old else "not-run",
         old.live_evidence if old else "",
         old.updated_at if old else "",

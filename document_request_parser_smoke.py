@@ -13,6 +13,7 @@ CASES = (
     ("make me a Seoul food trip budget tracker in Excel", ("xlsx", "Seoul food trip budget tracker", False)),
     ("make me a router setup comparison in Excel", ("xlsx", "router setup comparison", False)),
     ("make me a Seoul food trip deck in PowerPoint", ("pptx", "Seoul food trip deck", False)),
+    ("make me a small PowerPoint deck about weekly office priorities", ("pptx", "weekly office priorities", False)),
 )
 
 

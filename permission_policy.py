@@ -120,7 +120,22 @@ def is_private_exposure(text: str) -> bool:
     lowered = " ".join(text.lower().strip().split())
     if not contains_sensitive_info(lowered):
         return False
+    if safe_sensitive_guidance(lowered):
+        return False
     return lowered.startswith(EXPOSURE_STARTERS)
+
+
+def safe_sensitive_guidance(text: str) -> bool:
+    guidance_markers = (
+        "password policy",
+        "safe password",
+        "password rules",
+        "password guidance",
+        "what should not be sent",
+        "review expense claims safely",
+        "handle expense claims safely",
+    )
+    return any(marker in " ".join(text.lower().split()) for marker in guidance_markers)
 
 
 def action_permission(action_type: str, content: str = "") -> str:

@@ -4,6 +4,8 @@ import aiosqlite
 
 from canonical_memory import init_canonical_memory_db
 from retention_policy import init_retention_db
+from telegram_delivery_log import init_telegram_delivery_log_db
+from telegram_turn_log import init_telegram_turn_log_db
 from storage_tasks import (
     cancel_matching_tasks,
     claim_due_tasks,
@@ -20,6 +22,8 @@ from voice_session_log import init_voice_session_log_db
 async def init_db(db_path: str) -> None:
     await init_canonical_memory_db(db_path)
     await init_voice_session_log_db(db_path)
+    await init_telegram_delivery_log_db(db_path)
+    await init_telegram_turn_log_db(db_path)
     async with aiosqlite.connect(db_path) as db:
         await db.execute(
             """

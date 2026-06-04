@@ -23,7 +23,9 @@ from storage import delete_preference, get_preference, upsert_preference
 START_MARKERS = (
     "check flight",
     "find flight",
+    "find flights",
     "search flight",
+    "search flights",
     "book flight",
     "browse ",
     "search online",
@@ -41,9 +43,6 @@ START_MARKERS = (
     "create an xlsx",
     "create an md",
     "make a markdown",
-    "draft ",
-    "prepare ",
-    "generate ",
     "draw ",
     "create drawing",
     "open project",
@@ -68,7 +67,6 @@ FOLLOWUP_MARKERS = (
     "show me",
     "save it",
     "use this project",
-    "compare them",
     "click ",
     "fill ",
 )
@@ -211,8 +209,10 @@ class HarnessRouter:
 
     async def _stop(self, channel: str) -> str:
         active = await get_active_run(self.db_path, channel)
+        browser_task = await get_preference(self.db_path, "maya_browser_workflow")
+        await delete_preference(self.db_path, "maya_browser_workflow")
         if not active:
-            return "No active workflow right now."
+            return "Okay. I closed the active browser task." if browser_task else "No active workflow right now."
         await record_event(self.db_path, active["run_id"], "cancelled", "Cancelled by user.")
         await finish_run(self.db_path, active["run_id"], status="cancelled")
         await self.runner.update_checkpoint(active, {"graph_status": "cancelled", "pending_approval": {}})
@@ -284,13 +284,13 @@ def _is_start(lowered: str) -> bool:
 
 
 def _is_followup(lowered: str) -> bool:
+    if lowered.startswith(("compare ", "explain ", "what is ", "what are ")):
+        return False
     return any(marker in lowered for marker in FOLLOWUP_MARKERS)
 
 
 def _thread_id(workflow_type: str, text: str, run_id: str) -> str:
-    if run_id.startswith("task_"):
-        return f"harness:background:{run_id.removeprefix('task_')}"
-    return f"harness:{run_id}"
+    return f"harness:background:{run_id.removeprefix('task_')}" if run_id.startswith("task_") else f"harness:{run_id}"
 
 
 def _continuing_prefix(active: dict) -> str:

@@ -5,6 +5,8 @@ import tempfile
 from pathlib import Path
 
 from artifact_quality import validate_docx_path, validate_html_content, validate_xlsx_path
+from artifact_quality_extractors import topic_needs_formula
+from document_actions_content_helpers import _task_tracker_rows
 from office_modern_files import create_docx, create_xlsx
 from powerpoint_quality_context import powerpoint_quality_context
 from skill_evaluator import evaluate_skill_scaffold
@@ -42,6 +44,8 @@ async def main() -> None:
             ["Category", "Estimated", "Actual", "Variance"],
             [["Flights", 100, 90, "=C4-B4"], ["Total", "=SUM(B4:B4)", "=SUM(C4:C4)", "=SUM(D4:D4)"]],
         )
+        task_headers, task_rows = _task_tracker_rows("office task tracker with owner due date status priority")
+        task_xlsx = create_xlsx(root / "task-tracker.xlsx", "Office Task Tracker", task_headers, task_rows)
         good_html = (
             "<!DOCTYPE html><html><head><style>body{font-family:system-ui}</style></head>"
             "<body><main><input id='x'><button id='b'>Save</button></main>"
@@ -51,6 +55,9 @@ async def main() -> None:
         bad_html = "<.DOCTYPE html><html><head><style>body{font family:system ui}</style></head><body></body></html>"
         _require(validate_docx_path(docx).passed, "docx quality should pass")
         _require(validate_xlsx_path(xlsx, "budget tracker").passed, "xlsx quality should pass")
+        _require(validate_xlsx_path(task_xlsx, "office task tracker with owner due date status priority").passed, "task tracker xlsx should pass")
+        _require(topic_needs_formula("Seoul food trip budget tracker"), "budget trackers should require formulas")
+        _require(not topic_needs_formula("office task tracker with owner due date status priority"), "non-budget task tracker should not require budget formulas")
         _require(validate_html_content("planner", good_html).passed, "html quality should pass")
         _require(not validate_html_content("planner", bad_html).passed, "broken html quality should fail")
     print("artifact_quality_smoke: ok")

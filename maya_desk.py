@@ -71,6 +71,9 @@ async def _html(db_path: str) -> str:
 <div class="card"><strong>Approvals</strong><br>{_status_badge(not approvals, f"{len(approvals)} pending")}</div>
 <div class="card"><strong>Recent Self Heal</strong><br>{escape(str(self_heal.get("issue") if self_heal else "none"))}</div>
 </div></section>
+{_section("Proof Boundary Snapshot", _proof_boundary_items())}
+{_section("Operational Score Estimate", _score_items())}
+{_section("Pending Physical Or Live Proof", _pending_physical_items())}
 <section><h2>Workflows</h2><pre>{escape(await workflow_desk_text(db_path))}</pre></section>
 <section><h2>Last Route</h2><pre>{escape(await last_route_text(db_path))}</pre></section>
 <section><h2>Memory Health</h2><pre>{escape(await curated_memory_status(db_path))}</pre></section>
@@ -142,6 +145,38 @@ def _latest_demo_items(payload: dict) -> list[str]:
 
 def _provider_items(deps: list) -> list[str]:
     return [f"{d.id}: {d.status} ({d.detail})" for d in deps if d.category == "provider_key"]
+
+
+def _proof_boundary_items() -> list[str]:
+    return [
+        "Deterministic proof: local CI, scored evals, 500 Grok transcript replay, 700 readiness benchmark, and 700 Maya voice-transcript replay.",
+        "User-observed live proof: Telegram Web text/document/memory run and earlier iMac Office artifact creation by voice.",
+        "Not yet live proof: real iMac long-work voice parking, live browser field runs, Omi/Mudra hardware, Bambu/printer execution, and 30 elapsed days.",
+        "Rule: a local deterministic pass can raise software readiness, but it must not be reported as physical or operational reliability proof.",
+    ]
+
+
+def _score_items() -> list[str]:
+    return [
+        "Telegram text/docs/memory: about 92%.",
+        "Voice transcript-to-worker logic: about 90% deterministic proof; real iMac voice remains about 70-75% until live proof.",
+        "Document creation: about 90-92%; needs continued PPTX human-quality sampling before claiming 95%.",
+        "Memory architecture: about 85-87%; live self-heal and long-run proof remain.",
+        "Browser/agent workflow: about 78-82%; live browser benchmark evidence is still missing.",
+        "Agentic workflow: about 80-83%; needs more checkpointed execution and rollback proof.",
+        "Blender/Maker software path: about 78-82%; physical print proof remains separate.",
+        "Overall Kampung AI: about 82-84% operationally until live voice, live browser, hardware, and 30-day evidence exist.",
+    ]
+
+
+def _pending_physical_items() -> list[str]:
+    return [
+        "June 8 iMac voice: microphone, xAI websocket, Ara speaker output, paid-session parking, and resume behavior.",
+        "Live browser: logged-in Chrome sessions with URL/text/screenshot evidence and stop-before-sensitive-action behavior.",
+        "Hardware: Omi transcript sync/privacy filtering and Mudra proximity/gesture event capture.",
+        "Maker: Blender/MCP or local Blender export validation plus no unattended physical print action.",
+        "Reliability: seven normal-use soak days and a 30-day scorecard before 9/10 daily reliability claims.",
+    ]
 
 
 def _live_evidence_items() -> list[str]:

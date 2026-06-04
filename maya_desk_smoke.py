@@ -23,6 +23,9 @@ async def main() -> None:
         assert "Maya Desk" in html
         for section in (
             "Readiness",
+            "Proof Boundary Snapshot",
+            "Operational Score Estimate",
+            "Pending Physical Or Live Proof",
             "Workflows",
             "Last Route",
             "Memory Health",
