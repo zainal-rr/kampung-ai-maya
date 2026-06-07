@@ -14,6 +14,7 @@ from telegram_command_direct import is_direct_command_reply
 from telegram_commands import bot_commands, command_to_text, parse_command, voice_enabled
 from telegram_delivery_state import last_voice_message_id, save_last_voice_message_id
 from telegram_delivery import send_document_file, send_photo_file, send_speech, send_text, split_file_markers
+from telegram_photo_input import describe_telegram_photo
 from telegram_voice_input import transcribe_telegram_voice
 from route_tracker import record_route
 
@@ -60,6 +61,26 @@ class TelegramChannel:
             return
         await self._handle_text(update, context, text, input_type="voice note")
 
+    async def handle_photo_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        started = time.monotonic()
+        caption = (getattr(update.effective_message, "caption", "") or "").strip()
+        prompt = caption or "[Telegram photo]"
+        try:
+            response = await describe_telegram_photo(update, context, self.assistant.db_path)
+            if not response:
+                await record_route(self.assistant.db_path, "photo", "Gemini Flash sight", "empty Telegram photo", False)
+                response = "I could not read that photo yet. Try sending it again with a short caption."
+            else:
+                await record_route(self.assistant.db_path, "photo", "Gemini Flash sight", "Telegram photo", True)
+            await self._send_response(update, context, response, input_type="photo")
+            await self._record_turn(update, "photo", prompt, "completed", started, len(response), response=response)
+        except Exception as exc:
+            logger.exception("Telegram photo handling failed")
+            await record_route(self.assistant.db_path, "photo", "Gemini Flash sight", f"photo failed: {exc}", False)
+            response = "I could not read that photo yet. I logged it in /route."
+            await self._send_response(update, context, response, input_type="photo error")
+            await self._record_turn(update, "photo", prompt, "failed", started, 0, exc.__class__.__name__)
+
     async def handle_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
         text = _update_text(update)
         if not text:
@@ -75,7 +96,7 @@ class TelegramChannel:
                 await record_route(self.assistant.db_path, "command", "command", f"/{parsed.name}", False)
             started = time.monotonic()
             await self._send_response(update, context, command_text, input_type="command")
-            await self._record_turn(update, "command", text, "completed", started, len(command_text))
+            await self._record_turn(update, "command", text, "completed", started, len(command_text), response=command_text)
             return
         await self._handle_text(update, context, command_text, input_type="command")
 
@@ -107,7 +128,7 @@ class TelegramChannel:
                 channel_external_id=str(update.effective_chat.id) if update.effective_chat else "",
             )
             await self._send_response(update, context, response, input_type=input_type)
-            await self._record_turn(update, input_type, prompt, "completed", started, len(response))
+            await self._record_turn(update, input_type, prompt, "completed", started, len(response), response=response)
         except Exception as exc:
             await self._record_turn(update, input_type, prompt, "failed", started, 0, exc.__class__.__name__)
             raise
@@ -160,6 +181,7 @@ class TelegramChannel:
         started: float,
         response_chars: int,
         error: str = "",
+        response: str = "",
     ) -> None:
         await record_turn_event(
             self.assistant.db_path,
@@ -169,6 +191,7 @@ class TelegramChannel:
             status=status,
             started=started,
             response_chars=response_chars,
+            response_preview=response,
             error=error,
         )
 
@@ -203,6 +226,7 @@ class TelegramChannel:
         )
         app.add_handler(MessageHandler(filters.COMMAND, self.handle_command))
         app.add_handler(MessageHandler(filters.VOICE | filters.AUDIO, self.handle_voice_message))
+        app.add_handler(MessageHandler(filters.PHOTO, self.handle_photo_message))
         app.add_handler(MessageHandler(filters.TEXT & (~filters.COMMAND), self.handle_message))
 
         print("Telegram channel is live.")
@@ -227,8 +251,6 @@ def _update_text(update: Update) -> str:
 
 
 def _should_send_voice_text_companion(text: str, has_files: bool) -> bool:
-    if has_files:
-        return True
     lowered = text.lower()
     return "/users/" in lowered or "path:" in lowered or "last document:" in lowered
 

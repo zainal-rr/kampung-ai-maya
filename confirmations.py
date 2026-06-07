@@ -31,7 +31,9 @@ async def get_pending_confirmation(db_path: str, channel: str) -> dict[str, str 
             """
             SELECT *
             FROM tasks
-            WHERE status = 'awaiting_confirmation' AND channel = ?
+            WHERE status = 'awaiting_confirmation'
+              AND channel = ?
+              AND datetime(updated_at) >= datetime('now', '-30 minutes')
             ORDER BY updated_at DESC, created_at DESC
             LIMIT 1
             """,

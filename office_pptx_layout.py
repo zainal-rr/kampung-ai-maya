@@ -48,29 +48,29 @@ def _content_slide(slide, title: str, bullets: list[str], index: int, total: int
     _footer(slide, index, total, theme)
 
 
-def _content_slide_visual(slide, title: str, bullets: list[str], index: int, total: int, theme: str) -> None:
+def _content_slide_visual(slide, title: str, bullets: list[str], index: int, total: int, theme: str, deck_topic: str = "") -> None:
     dark = theme == "dark"
     _accent_bar(slide, theme)
     _text_box(slide, _short(title, 54, complete=False), 0.72, 0.52, 11.25, 0.72, 30, DARK_TEXT if dark else FOREST, True)
     items = bullets[:3] or ["Context", "Choice", "Next step"]
     if index % 3 == 0:
-        _content_slide_visual_wide(slide, title, items, index, total, theme)
+        _content_slide_visual_wide(slide, title, items, index, total, theme, deck_topic)
         return
     image_left = index % 2 == 1
     image_x = 0.8 if image_left else 6.5
     text_x = 7.15 if image_left else 0.9
     _image_panel(slide, image_x, 1.38, 5.85, 4.95, theme)
-    _text_box(slide, _slide_kicker(title), text_x, 1.52, 3.05, 0.28, 11, DARK_ACCENT if dark else GOLD, True)
+    _text_box(slide, _slide_kicker(title, deck_topic), text_x, 1.52, 3.05, 0.28, 11, DARK_ACCENT if dark else GOLD, True)
     _text_box(slide, _short(items[0], 56, complete=False), text_x, 1.96, 4.75, 1.02, 25, DARK_TEXT if dark else INK, True)
     for idx, bullet in enumerate(items[1:] or items[:1]):
         _visual_callout(slide, bullet, text_x, 3.34 + idx * 1.38, theme)
     _footer(slide, index, total, theme)
 
 
-def _content_slide_visual_wide(slide, title: str, items: list[str], index: int, total: int, theme: str) -> None:
+def _content_slide_visual_wide(slide, title: str, items: list[str], index: int, total: int, theme: str, deck_topic: str = "") -> None:
     dark = theme == "dark"
     _image_panel(slide, 0.86, 1.34, 11.65, 2.62, theme)
-    _text_box(slide, _slide_kicker(title), 0.92, 4.42, 2.4, 0.28, 11, DARK_ACCENT if dark else GOLD, True)
+    _text_box(slide, _slide_kicker(title, deck_topic), 0.92, 4.42, 2.4, 0.28, 11, DARK_ACCENT if dark else GOLD, True)
     _text_box(slide, _short(items[0], 56, complete=False), 0.9, 4.78, 3.65, 0.7, 22, DARK_TEXT if dark else INK, True)
     for idx, bullet in enumerate(items[1:] or items[:1]):
         _visual_callout(slide, bullet, 4.95 + idx * 3.68, 4.68, theme)

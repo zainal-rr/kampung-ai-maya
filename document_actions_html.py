@@ -18,7 +18,7 @@ class DocumentHtmlMixin:
             return f"I can't write to {path}."
         await asyncio.to_thread(path.parent.mkdir, parents=True, exist_ok=True)
         await asyncio.to_thread(path.write_text, content, "utf-8")
-        await self._remember(path, "Created Markdown draft", project_scoped)
+        await self._remember(path, "Created Markdown draft", project_scoped, channel, "md", topic)
         return await self._done("Markdown draft", path, channel, app_name=None)
 
     async def _create_html(self, topic: str, project_scoped: bool, channel: str) -> str:
@@ -52,11 +52,11 @@ class DocumentHtmlMixin:
             return f"I can't write to {path}."
         await asyncio.to_thread(path.parent.mkdir, parents=True, exist_ok=True)
         await asyncio.to_thread(path.write_text, content, "utf-8")
-        await self._remember(path, f"Created HTML app: {html_qa.summary}", project_scoped)
         if review_rejected:
             return await self._draft_with_issues("HTML draft", path, channel, None, "Claude HTML review rejected the file")
         if not html_qa.passed:
             return await self._draft_with_issues("HTML draft", path, channel, None, html_qa.short_issue_text())
+        await self._remember(path, f"Created HTML app: {html_qa.summary}", project_scoped, channel, "html", topic)
         return await self._done("HTML file", path, channel, app_name=None)
 
     async def _html_draft(self, topic: str) -> tuple[MarkdownDraft | None, str]:

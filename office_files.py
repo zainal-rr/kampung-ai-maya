@@ -60,7 +60,7 @@ def create_xlsx(path: Path, title: str, headers: list[str], rows: list[list[str]
     with ZipFile(path, "w", ZIP_DEFLATED) as book:
         book.writestr("[Content_Types].xml", _xlsx_content_types())
         book.writestr("_rels/.rels", _xlsx_root_rels())
-        book.writestr("xl/workbook.xml", _xlsx_workbook())
+        book.writestr("xl/workbook.xml", _xlsx_workbook(title))
         book.writestr("xl/_rels/workbook.xml.rels", _xlsx_workbook_rels())
         book.writestr("xl/styles.xml", _xlsx_styles())
         book.writestr("xl/worksheets/sheet1.xml", _xlsx_sheet(title, headers, rows))
@@ -244,11 +244,12 @@ def _xlsx_workbook_rels() -> str:
     return _rels([("rId1", "worksheet", "worksheets/sheet1.xml"), ("rId2", "styles", "styles.xml")], True)
 
 
-def _xlsx_workbook() -> str:
+def _xlsx_workbook(title: str) -> str:
+    sheet_name = _xlsx_sheet_name(title)
     return (
         '<workbook xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main" '
         'xmlns:r="http://schemas.openxmlformats.org/officeDocument/2006/relationships">'
-        '<sheets><sheet name="Maya Draft" sheetId="1" r:id="rId1"/></sheets></workbook>'
+        f'<sheets><sheet name="{escape(sheet_name)}" sheetId="1" r:id="rId1"/></sheets></workbook>'
     )
 
 
@@ -259,7 +260,19 @@ def _xlsx_styles() -> str:
 def _xlsx_sheet(title: str, headers: list[str], rows: list[list[str]]) -> str:
     all_rows = [[title], [], headers] + rows
     body = "".join(_xlsx_row(index, row) for index, row in enumerate(all_rows, start=1))
-    return f'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main"><sheetData>{body}</sheetData></worksheet>'
+    views = (
+        '<sheetViews><sheetView workbookViewId="0">'
+        '<pane ySplit="3" topLeftCell="A4" activePane="bottomLeft" state="frozen"/>'
+        '<selection pane="bottomLeft"/>'
+        '</sheetView></sheetViews>'
+    )
+    return f'<worksheet xmlns="http://schemas.openxmlformats.org/spreadsheetml/2006/main">{views}<sheetData>{body}</sheetData></worksheet>'
+
+
+def _xlsx_sheet_name(title: str) -> str:
+    cleaned = re.sub(r"[\[\]\*\?/\\:]", " ", title).strip()
+    cleaned = " ".join(cleaned.split()) or "Maya Sheet"
+    return cleaned[:31]
 
 
 def _xlsx_row(index: int, values: list[str]) -> str:

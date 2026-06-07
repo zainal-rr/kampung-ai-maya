@@ -41,14 +41,46 @@ async def main() -> None:
                 "smoke",
                 "last_doc",
             )
+            quality_path = root / "kampung-ai-document-quality.pptx"
+            quality_qa = await create_powerpoint_with_qa(
+                db_path,
+                quality_path,
+                "Kampung AI Document Quality",
+                [
+                    ("Make Artifact Quality Visible", ["Draft", "Build", "Validate"]),
+                    ("Review Before Delivery", ["Local QA", "Claude review", "Repair loop"]),
+                    ("Unify Every Channel", ["Telegram", "iMac", "Same pipeline"]),
+                    ("Track The Proof", ["Route", "Cost", "Review"]),
+                    ("Ship Only When Ready", ["Pass gate", "Attach file", "Record summary"]),
+                ],
+                "smoke",
+                "last_doc",
+            )
         finally:
             pptx_visual_assets.generate_gemini_image = old_generate
             _restore_env("GOOGLE_API_KEY", old_google)
             _restore_env("ENABLE_PPTX_GEMINI_IMAGES", old_enabled)
         _require(qa.passed, f"multi-visual PowerPoint flow should pass: {qa.issues}")
+        _require(quality_qa.passed, f"document-quality PowerPoint flow should pass: {quality_qa.issues}")
         deck = Presentation(path)
         image_count = sum(1 for slide in deck.slides for shape in slide.shapes if getattr(shape, "shape_type", None) == 13)
         _require(image_count >= len(deck.slides), f"expected at least one inserted image per slide, got {image_count} for {len(deck.slides)} slides")
+        quality_deck = Presentation(quality_path)
+        quality_image_count = sum(1 for slide in quality_deck.slides for shape in slide.shapes if getattr(shape, "shape_type", None) == 13)
+        _require(
+            quality_image_count >= len(quality_deck.slides),
+            f"expected document-quality deck visuals, got {quality_image_count} for {len(quality_deck.slides)} slides",
+        )
+        quality_text = " ".join(
+            " ".join(getattr(shape, "text", "").split())
+            for slide in quality_deck.slides
+            for shape in slide.shapes
+        )
+        _require("FOOD ROUTE" not in quality_text, "document-quality deck should not contain stale FOOD ROUTE label")
+        _require("FOOD PLAN" not in quality_text, "document-quality deck should not contain stale FOOD PLAN label")
+        _require("QUALITY" in quality_text or "REVIEW" in quality_text, "document-quality deck should use quality-specific labels")
+        _require("Focus The Week Around Three Outcomes" not in quality_text, "document-quality deck should not be rebuilt as office-priorities rescue deck")
+        _require("Artifact Quality" in quality_text or "Review The Artifact" in quality_text, "document-quality rescue should keep artifact-quality semantics")
         visible_text = " ".join(
             " ".join(getattr(shape, "text", "").split())
             for slide in deck.slides
@@ -59,6 +91,8 @@ async def main() -> None:
 
 
 async def _fake_generate(prompt: str, path: Path) -> Path:
+    if "document quality" in prompt.lower() or "kampung ai" in prompt.lower():
+        raise RuntimeError("forced image fallback")
     path.parent.mkdir(parents=True, exist_ok=True)
     Image.new("RGB", (1280, 720), (236, 244, 239)).save(path)
     return path

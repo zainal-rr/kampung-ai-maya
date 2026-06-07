@@ -11,8 +11,21 @@ DEFAULT_SLUG_LENGTH = 40
 
 def named_artifact_path(folder: Path, topic: str, suffix: str, *, max_slug: int = DEFAULT_SLUG_LENGTH) -> Path:
     suffix = suffix if suffix.startswith(".") else f".{suffix}"
-    base = safe_slug(_filename_topic(topic), max_length=max_slug)
+    base = short_artifact_stem(topic, suffix)
     return versioned_path(folder / f"{base}-v1{suffix}")
+
+
+def short_artifact_stem(topic: str, suffix: str = "") -> str:
+    cleaned = _remove_parameters(_filename_topic(topic))
+    subject = _subject_word(cleaned)
+    purpose = _purpose_words(cleaned, suffix)
+    words = []
+    for word in [*subject, *purpose]:
+        if word and word not in words:
+            words.append(word)
+        if len(words) >= 3:
+            break
+    return safe_slug(" ".join(words) or "maya-work", max_length=40)
 
 
 def _filename_topic(topic: str) -> str:
@@ -28,6 +41,87 @@ def _filename_topic(topic: str) -> str:
     )
     cleaned = re.sub(r"\b(?:please|for me)\b", " ", cleaned, flags=re.I)
     return " ".join(cleaned.split()) or "maya-work"
+
+
+def _remove_parameters(text: str) -> str:
+    cleaned = str(text or "")
+    cleaned = re.sub(
+        r"\b(?:for|with)?\s*(?:\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten)\s*[- ]?\s*(?:day|days)\b",
+        " ",
+        cleaned,
+        flags=re.I,
+    )
+    cleaned = re.sub(
+        r"\b(?:for|with)?\s*(?:\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten)\s*(?:people|persons?|travelers?|travellers?|pax|adults?|guests?)\b",
+        " ",
+        cleaned,
+        flags=re.I,
+    )
+    cleaned = re.sub(r"\b(?:make|create|write|draft|prepare|generate|me|please|can you|could you|may i)\b", " ", cleaned, flags=re.I)
+    cleaned = re.sub(r"\b(?:word|docx|document|doc|excel|xlsx|spreadsheet|sheet|powerpoint|pptx|presentation|slides?)\b", " ", cleaned, flags=re.I)
+    return " ".join(cleaned.split()).strip()
+
+
+def _subject_word(text: str) -> list[str]:
+    lowered = text.lower()
+    known_subjects = (
+        ("kampung ai", ["kampung", "ai"]),
+        ("kuala lumpur", ["kuala", "lumpur"]),
+        ("hong kong", ["hong", "kong"]),
+        ("new york", ["new", "york"]),
+        ("router", ["router"]),
+        ("tokyo", ["tokyo"]),
+        ("seoul", ["seoul"]),
+        ("kyoto", ["kyoto"]),
+        ("osaka", ["osaka"]),
+        ("bangkok", ["bangkok"]),
+        ("singapore", ["singapore"]),
+        ("monthly", ["monthly"]),
+        ("office", ["office"]),
+        ("drone", ["drone"]),
+    )
+    for marker, words in known_subjects:
+        if re.search(rf"\b{re.escape(marker)}\b", lowered):
+            return words
+    tokens = [token for token in re.findall(r"[a-z0-9]+", lowered) if token not in _FILENAME_STOP_WORDS]
+    return tokens[:1]
+
+
+def _purpose_words(text: str, suffix: str) -> list[str]:
+    lowered = text.lower()
+    if "template" in lowered:
+        if any(word in lowered for word in ("budget", "expense", "expenses", "cost", "spend", "spending")):
+            return ["budget", "template"]
+        return ["template"]
+    if any(word in lowered for word in ("deck", "slides", "presentation")) or suffix.endswith("pptx"):
+        return ["deck"]
+    if any(word in lowered for word in ("app", "planner", "dashboard")) or suffix.endswith("html"):
+        return ["app"]
+    if suffix.endswith("xlsx") and any(word in lowered for word in ("budget", "expense", "expenses", "cost", "spend", "spending")):
+        return ["budget", "tracker"]
+    if any(word in lowered for word in ("config", "configuration")):
+        return ["config"]
+    if any(word in lowered for word in ("budget", "expense", "expenses", "cost", "spend", "spending")):
+        return ["budget", "tracker"] if "tracker" in lowered or suffix.endswith("xlsx") else ["budget"]
+    if "proposal" in lowered:
+        return ["proposal"]
+    if "itinerary" in lowered:
+        return ["itinerary"]
+    if any(word in lowered for word in ("food trip", "trip", "travel", "holiday", "vacation")):
+        return ["itinerary"]
+    if "guide" in lowered or "setup" in lowered:
+        return ["guide"]
+    if suffix.endswith("xlsx"):
+        return ["tracker"]
+    if suffix.endswith("docx"):
+        return ["document"]
+    return []
+
+
+_FILENAME_STOP_WORDS = {
+    "a", "an", "the", "for", "to", "in", "on", "about", "of", "with", "and", "or", "my", "our",
+    "file", "real", "editable", "proper", "complete", "short", "quick", "simple",
+}
 
 
 def _strip_delivery_instructions(text: str) -> str:

@@ -12,7 +12,7 @@ Kampung AI treats Maya as a personal agent harness, not a single chatbot surface
 
 | Area | Current state |
 | --- | --- |
-| Telegram | Text, voice-note STT, file delivery, route/cost audit, memory commands, latest-document follow-up |
+| Telegram | Text, photo/image understanding, voice-note STT, file delivery, route/cost audit, memory commands, latest-document follow-up |
 | Office artifacts | Word, Excel, and PowerPoint creation/editing with local validation and Claude review gates |
 | Memory | Canonical save/recall/forget, weekly distillation path, Omi context sieve, self-heal memory dry run |
 | Harness | Thread manager, event store, tool registry, permission kernel, SDK facade, approval-gated workflows |
@@ -99,6 +99,8 @@ Word, Excel, PowerPoint, and HTML/app workflows use local file builders and qual
 - Excel: useful workbook structure, formulas, domain-specific rows, clean pastel headers, local workbook validation.
 - PowerPoint: dark/editorial default, short visible text, speaker notes, image insertion where useful, visual QA, Claude review.
 - Office edits: `/edit` and natural follow-ups update the latest Word, Excel, or PowerPoint file in place by default, keep a hidden backup, rerun QA, and restore the original if QA fails.
+- Artifact sessions: Telegram and iMac share the same active artifact state for 24 hours, so follow-ups such as `change it to four days` update the intended document state and QA against that new state instead of only reusing a filename.
+- Filenames: generated artifacts use short subject-purpose names such as `tokyo-itinerary-v1.docx`, `router-config-v1.docx`, and `tokyo-budget-tracker-v1.xlsx`; parameters stay in content and metadata.
 - App building: project-folder workflow through Artisan/Codex, not loose one-file apps unless explicitly requested.
 
 ## Voice Handoff
@@ -189,6 +191,14 @@ Run the Maya assistant-pipeline voice transcript replay:
 ```
 
 The June 4, 2026 Maya replay passed 700/700 voice-style transcripts by sending them through `KampungAssistant.handle_text(..., input_type="voice")`. Long work parked through the Grok handoff tool before Maya's worker lane handled it. This proves the voice-transcript-to-worker path more directly than component tests, but still does not prove physical microphone, xAI websocket, Ara speaker output, live billing, Telegram upload, Bambu printing, Omi, or Mudra.
+
+Run the broad Telegram post-STT voice transcript replay:
+
+```bash
+./venv/bin/python voice_telegram_transcript_replay_10000.py
+```
+
+The June 5, 2026 replay covers 10,000 deterministic Telegram voice transcript cases across artifact creation, latest-document edits, natural slashless commands, paid-voice park/handoff decisions, and normal-chat negatives. It proves Maya's post-STT routing layer can handle messy human phrasing without requiring exact example prompts.
 
 The eval suite writes JSON to `logs/evals/latest.json` and reports pass/fail scores across routing, memory, weekly memory, Word, Excel, PowerPoint, iMac readiness, hardware/live readiness, self-heal, Artisan, Blender/Maker, safety, Maya Desk, harness, and dependency readiness.
 

@@ -41,14 +41,20 @@ def _prefixed_lane(lane: str, preflight: ArtifactPreflight | None) -> str:
 
 
 def _budget_topic(topic: str) -> bool:
-    return any(word in topic.lower() for word in ("budget", "budgeting", "expense", "cost", "trip"))
+    low = topic.lower()
+    budget_markers = ("budget", "budgeting", "expense", "cost", "spend", "spending", "tracker", "trip")
+    food_markers = ("food", "restaurant", "restaurants", "meal", "meals", "mill", "mills", "mail", "mails", "dining", "cafe", "cafes")
+    return any(word in low for word in budget_markers) or any(word in low for word in food_markers)
 
 
 def _travel_budget_topic(topic: str) -> bool:
     low = topic.lower()
-    return any(word in low for word in ("travel", "trip", "holiday", "vacation", "flight", "hotel", "airbnb")) and any(
-        word in low for word in ("budget", "budgeting", "expense", "cost")
-    )
+    destination_marker = any(word in low for word in ("seoul", "tokyo", "kyoto", "osaka", "bangkok", "singapore", "taipei", "hong kong"))
+    duration_marker = bool(re.search(r"\b(?:\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten)\s*[- ]?\s*days?\b", low))
+    travel_marker = destination_marker or duration_marker or any(word in low for word in ("travel", "trip", "holiday", "vacation", "flight", "hotel", "airbnb"))
+    food_marker = any(word in low for word in ("food", "restaurant", "restaurants", "meal", "meals", "mill", "mills", "mail", "mails", "dining", "cafe", "cafes"))
+    budget_marker = any(word in low for word in ("budget", "budgeting", "expense", "cost", "spend", "spending", "tracker"))
+    return (budget_marker and (travel_marker or food_marker)) or (food_marker and travel_marker)
 
 
 def _task_tracker_topic(topic: str) -> bool:
@@ -78,6 +84,46 @@ def _task_tracker_rows(topic: str) -> tuple[list[str], list[list[str]]]:
 
 
 def _budget_rows(topic: str) -> tuple[list[str], list[list[str]]]:
+    lowered = topic.lower()
+    if any(word in lowered for word in ("household", "home", "monthly", "family")) and not _travel_budget_topic(topic):
+        first_row = 4
+        categories = [
+            ("Housing", "Rent or mortgage", "Monthly", "Owner TBD", "Add due date and payment account manually."),
+            ("Utilities", "Electricity, water, gas", "Monthly", "Owner TBD", "Track bill due dates and actuals."),
+            ("Groceries", "Supermarket and household supplies", "Weekly", "Owner TBD", "Use actuals from receipts."),
+            ("Transport", "Fuel, parking, tolls, public transit", "Monthly", "Owner TBD", "Separate commute from optional trips if needed."),
+            ("Phone And Internet", "Mobile plans and broadband", "Monthly", "Owner TBD", "Check for duplicate subscriptions."),
+            ("Insurance And Medical", "Insurance, clinic, pharmacy", "Monthly", "Owner TBD", "Keep sensitive policy numbers out of the sheet."),
+            ("Subscriptions", "Streaming, cloud, apps, memberships", "Monthly", "Owner TBD", "Cancel unused recurring items."),
+            ("Savings", "Emergency fund or sinking funds", "Monthly", "Owner TBD", "Treat savings as a planned category."),
+            ("Dining And Leisure", "Restaurants, cafes, entertainment", "Monthly", "Owner TBD", "Set a cap before the month starts."),
+            ("Buffer", "Unplanned household costs", "Monthly", "Owner TBD", "Use this instead of hiding overspend."),
+        ]
+        rows = []
+        for idx, (category, item, frequency, owner, note) in enumerate(categories):
+            row_num = first_row + idx
+            rows.append([
+                category,
+                item,
+                "",
+                "",
+                f'=IF(OR(D{row_num}="",C{row_num}=""),"",D{row_num}-C{row_num})',
+                frequency,
+                owner,
+                note,
+            ])
+        total_row = first_row + len(rows)
+        rows.append([
+            "Total",
+            "All household categories",
+            f"=SUM(C{first_row}:C{total_row - 1})",
+            f"=SUM(D{first_row}:D{total_row - 1})",
+            f"=SUM(E{first_row}:E{total_row - 1})",
+            "",
+            "",
+            "Formula row for monthly estimate, actual, and variance.",
+        ])
+        return ["Category", "Item", "Estimated MYR", "Actual MYR", "Variance MYR", "Frequency", "Owner", "Notes"], rows
     first_row = 4
     categories = [
         ("Flights", "Add fare after search"),
@@ -114,7 +160,6 @@ def _budget_rows(topic: str) -> tuple[list[str], list[list[str]]]:
         f"=SUM(H{first_row}:H{total_row - 1})",
         "Formula row",
     ])
-    lowered = topic.lower()
     if "tokyo" in lowered:
         rows[0][1] = "Tokyo flights or train"
         rows[1][1] = "Tokyo stay"

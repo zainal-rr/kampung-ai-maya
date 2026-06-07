@@ -90,7 +90,7 @@ def create_pptx(path: Path, title: str, slides: list[tuple[str, list[str]]], the
         if index == 0:
             _title_slide(slide, visible_heading, visible_bullets, selected_theme)
         elif visual_topic:
-            _content_slide_visual(slide, visible_heading, visible_bullets, index, len(slides), selected_theme)
+            _content_slide_visual(slide, visible_heading, visible_bullets, index, len(slides), selected_theme, title)
         else:
             _content_slide(slide, visible_heading, visible_bullets, index, len(slides), selected_theme)
         _speaker_notes(slide, heading, bullets)
@@ -115,6 +115,8 @@ def _pptx_visual_topic(topic: str) -> bool:
     markers = (
         "food", "restaurant", "cafe", "trip", "travel", "itinerary", "tourism",
         "venue", "hotel", "product", "pitch", "brand", "marketing", "lifestyle",
+        "ai", "agent", "workflow", "system", "quality", "document", "artifact",
+        "process", "strategy", "roadmap", "technical",
     )
     return any(marker in lowered for marker in markers)
 

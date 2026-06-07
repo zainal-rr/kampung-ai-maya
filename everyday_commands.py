@@ -21,6 +21,29 @@ from everyday_document_summary import (
 )
 
 
+def _latest_draft_request(cleaned: str) -> bool:
+    words = set(cleaned.split())
+    if not ({"draft", "rough"} & words):
+        return False
+    if cleaned.startswith(("draft ", "make ", "create ", "write ", "prepare ", "build ", "generate ")):
+        return False
+    retrieval_markers = (
+        "give me",
+        "send me",
+        "show me",
+        "open",
+        "where is",
+        "do you have",
+        "if any",
+        "any draft",
+        "any rough",
+        "the draft",
+        "the rough",
+        "rough draft",
+    )
+    return any(marker in cleaned for marker in retrieval_markers)
+
+
 class EverydayCommandRouter:
     def __init__(self, db_path: str, bridge: OSBridge | None = None):
         self.db_path = db_path
@@ -106,6 +129,22 @@ class EverydayCommandRouter:
         }:
             self._mark("latest document")
             return await self._open_latest_document(channel)
+        if cleaned in {
+            "give me the rough",
+            "send me the rough",
+            "show me the rough",
+            "give me the draft",
+            "send me the draft",
+            "show me the draft",
+            "send draft",
+            "send the draft",
+            "send rough draft",
+            "send the rough draft",
+            "show rough draft",
+            "show the rough draft",
+        } or _latest_draft_request(cleaned):
+            self._mark("draft document")
+            return await self._open_latest_draft(channel)
         if cleaned in {
             "open latest file",
             "open the last file",
@@ -201,6 +240,22 @@ class EverydayCommandRouter:
         except Exception as exc:
             return f"I found the last document at {path}, but I could not open it: {exc}"
         return f"I opened the last document: {path}"
+
+    async def _open_latest_draft(self, channel: str) -> str:
+        path = await get_preference(self.db_path, "maya_last_draft_document_path")
+        if not path:
+            return "I do not have a rejected draft saved right now."
+        document_path = Path(path)
+        if not document_path.exists():
+            return f"I had a draft path saved, but I cannot find it now: {path}"
+        summary = await self._document_summary(path)
+        if channel == "telegram":
+            return f"Draft document: {path}\nSummary: {summary}\n[file:{path}]"
+        try:
+            self.bridge.open_file(path, None)
+        except Exception as exc:
+            return f"I found the draft at {path}, but I could not open it: {exc}"
+        return f"I opened the draft: {path}"
 
     async def _document_summary(self, path: str) -> str:
         document_path = Path(path)

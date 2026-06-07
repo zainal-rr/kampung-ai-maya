@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from document_actions_context import *
+from artifact_retry_policy import artifact_qa_max_attempts
 from document_actions_content_helpers import (
     _attach,
     _budget_filename_topic,
@@ -35,7 +36,8 @@ class DocumentOfficeMixin:
             return "I need your confirmation before editing that presentation."
         try:
             current = await asyncio.to_thread(pptx_outline, path)
-            topic = edited_office_topic(path, instruction, current)
+            session = await active_artifact_session(self.db_path, channel, str(path))
+            topic = _office_session_edit_topic(session, "pptx", instruction) if session else edited_office_topic(path, instruction, current)
             preflight = await self._artifact_preflight("pptx", topic)
             self.last_model_lane = f"{preflight.lane_prefix} + Gemini Flash PowerPoint edit"
             self.last_cost_recorded = preflight.cost_recorded
@@ -57,6 +59,8 @@ class DocumentOfficeMixin:
             self.last_model_lane += " + PowerPoint edit restore"
             return f"I tried to update the latest PowerPoint, but QA failed: {qa.summary()} I kept the original unchanged."
         await self._remember(target, f"Edited PowerPoint draft: {qa.summary()}", False)
+        if session:
+            await update_artifact_session_after_edit(self.db_path, session, channel, target, instruction)
         if save_copy:
             return await self._done_powerpoint("edited PowerPoint copy", target, channel)
         return _attach("Done. I updated the latest PowerPoint in place. I kept an internal backup before editing.", target, channel)
@@ -64,9 +68,10 @@ class DocumentOfficeMixin:
     async def _edit_latest_excel(self, path: Path, instruction: str, channel: str, *, save_copy: bool = False) -> str:
         if action_permission("edit_document") != "allow":
             return "I need your confirmation before editing that workbook."
+        session = await active_artifact_session(self.db_path, channel, str(path))
         if simple_xlsx_edit_instruction(instruction):
             current = await asyncio.to_thread(xlsx_snapshot, path)
-            topic = edited_office_topic(path, instruction, current)
+            topic = _office_session_edit_topic(session, "xlsx", instruction) if session else edited_office_topic(path, instruction, current)
             preflight = await self._artifact_preflight("xlsx", topic)
             self.last_model_lane = _prefixed_lane("local Excel edit", preflight)
             self.last_cost_recorded = bool(preflight and preflight.cost_recorded)
@@ -81,12 +86,14 @@ class DocumentOfficeMixin:
                 self.last_model_lane += " + Excel edit restore"
                 return f"I tried to update the latest Excel workbook, but QA failed: {quality.short_issue_text()}. I kept the original unchanged."
             await self._remember(target, f"Edited Excel workbook: {quality.summary}", False)
+            if session:
+                await update_artifact_session_after_edit(self.db_path, session, channel, target, instruction)
             if save_copy:
                 return await self._done("edited Excel copy", target, channel, "Microsoft Excel")
             return _attach("Done. I updated the latest Excel workbook in place. I kept an internal backup before editing.", target, channel)
         try:
             current = await asyncio.to_thread(xlsx_snapshot, path)
-            topic = edited_office_topic(path, instruction, current)
+            topic = _office_session_edit_topic(session, "xlsx", instruction) if session else edited_office_topic(path, instruction, current)
             preflight = await self._artifact_preflight("xlsx", topic)
             self.last_model_lane = f"{preflight.lane_prefix} + Gemini Flash Excel edit"
             self.last_cost_recorded = preflight.cost_recorded
@@ -109,6 +116,8 @@ class DocumentOfficeMixin:
             self.last_model_lane += " + Excel edit restore"
             return f"I tried to update the latest Excel workbook, but QA failed: {quality.short_issue_text()}. I kept the original unchanged."
         await self._remember(target, f"Edited Excel workbook: {quality.summary}", False)
+        if session:
+            await update_artifact_session_after_edit(self.db_path, session, channel, target, instruction)
         if save_copy:
             return await self._done("edited Excel copy", target, channel, "Microsoft Excel")
         return _attach("Done. I updated the latest Excel workbook in place. I kept an internal backup before editing.", target, channel)
@@ -166,10 +175,10 @@ class DocumentOfficeMixin:
                 include_deck=False,
             )
         label = "starter PowerPoint draft" if quick else "PowerPoint draft"
-        return await self._done_powerpoint(f"{label}. {qa.summary()}", path, channel)
+        return await self._done_powerpoint(f"{label}. {qa.summary()}", path, channel, topic)
 
-    async def _done_powerpoint(self, label: str, path: Path, channel: str) -> str:
-        await self._remember(path, f"Created {label}", False)
+    async def _done_powerpoint(self, label: str, path: Path, channel: str, topic: str = "") -> str:
+        await self._remember(path, f"Created {label}", False, channel, "pptx", topic)
         if channel == "telegram":
             return await self._attach_powerpoint(f"Done. I created a {label}.", path, channel)
         await asyncio.to_thread(open_created_file, path, self.bridge, "Microsoft PowerPoint")
@@ -222,7 +231,12 @@ class DocumentOfficeMixin:
             headers, rows = _budget_rows(topic)
             headers, rows = await style_table(self.db_path, headers, rows)
             await asyncio.to_thread(create_xlsx, path, _budget_title(topic), headers, rows)
-            return await self._finish_excel(path, "Excel budget tracker", topic, project_scoped, channel)
+            async def rebuild_budget(attempt: int, quality: ArtifactQualityResult) -> None:
+                fresh_headers, fresh_rows = _budget_rows(f"{topic} {quality.short_issue_text()}")
+                fresh_headers, fresh_rows = await style_table(self.db_path, fresh_headers, fresh_rows)
+                await asyncio.to_thread(create_xlsx, path, _budget_title(topic), fresh_headers, fresh_rows)
+
+            return await self._finish_excel(path, "Excel budget tracker", topic, project_scoped, channel, rebuild=rebuild_budget)
         try:
             draft = await self._draft_markdown(topic, preflight)
         except Exception as exc:
@@ -237,13 +251,37 @@ class DocumentOfficeMixin:
         headers, rows = spreadsheet_from_markdown(topic, draft.content)
         headers, rows = await style_table(self.db_path, headers, rows)
         await asyncio.to_thread(create_xlsx, path, topic.title(), headers, rows)
-        return await self._finish_excel(path, "Excel draft", topic, project_scoped, channel)
+        async def rebuild_generic(attempt: int, quality: ArtifactQualityResult) -> None:
+            repair_topic = (
+                "Repair this Excel workbook draft. Return corrected Markdown table content only.\n"
+                f"Original request: {topic}\n"
+                f"QA issues to fix: {quality.short_issue_text()}\n"
+                "The workbook must have useful headers, populated rows, and formulas when the request implies totals, budgets, costs, or tracking."
+            )
+            repaired = await self._draft_markdown(repair_topic, preflight)
+            if not repaired:
+                return
+            fresh_headers, fresh_rows = spreadsheet_from_markdown(topic, repaired.content)
+            fresh_headers, fresh_rows = await style_table(self.db_path, fresh_headers, fresh_rows)
+            await asyncio.to_thread(create_xlsx, path, topic.title(), fresh_headers, fresh_rows)
 
-    async def _finish_excel(self, path: Path, label: str, topic: str, project_scoped: bool, channel: str) -> str:
+        return await self._finish_excel(path, "Excel draft", topic, project_scoped, channel, rebuild=rebuild_generic)
+
+    async def _finish_excel(self, path: Path, label: str, topic: str, project_scoped: bool, channel: str, rebuild=None) -> str:
         quality = await self._excel_quality(path, topic)
-        await self._remember(path, f"Created {label}: {quality.summary}", project_scoped)
+        attempts = 1
+        max_attempts = artifact_qa_max_attempts("xlsx")
+        while not quality.passed and rebuild and attempts < max_attempts:
+            attempts += 1
+            result = rebuild(attempts, quality)
+            if asyncio.iscoroutine(result):
+                await result
+            if "Excel repair pass" not in self.last_model_lane:
+                self.last_model_lane += " + Excel repair pass"
+            quality = await self._excel_quality(path, topic)
         if not quality.passed:
             return await self._draft_with_issues(label, path, channel, "Microsoft Excel", quality.short_issue_text())
+        await self._remember(path, f"Created {label}: {quality.summary}", project_scoped, channel, "xlsx", topic)
         return await self._done(label, path, channel, "Microsoft Excel")
 
     async def _excel_quality(self, path: Path, topic: str) -> ArtifactQualityResult:
@@ -256,3 +294,6 @@ class DocumentOfficeMixin:
         elif review_qa.warnings and "Claude Excel review" not in self.last_model_lane:
             self.last_model_lane += " + Claude Excel review skipped"
         return local_qa.merge(review_qa)
+def _office_session_edit_topic(session, artifact_type: str, instruction: str) -> str:
+    state = apply_artifact_edit_delta(session.state, instruction)
+    return topic_from_state(artifact_type, state, fallback=session.topic)

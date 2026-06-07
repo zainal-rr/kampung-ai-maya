@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 
+from travel_parameters import extract_destination
 from word_quality import detect_word_intent
 from word_quality_travel import explicit_day_count
 
@@ -61,14 +62,7 @@ def _is_short_food_trip(text: str) -> bool:
 
 
 def _has_destination(text: str) -> bool:
-    known = (
-        "seoul", "tokyo", "kyoto", "osaka", "bangkok", "singapore", "jakarta",
-        "kuala lumpur", "kl ", "penang", "melaka", "taipei", "hong kong",
-        "london", "paris", "new york", "istanbul", "dubai",
-    )
-    if any(place in f"{text} " for place in known):
-        return True
-    return bool(re.search(r"\b(?:in|to|for)\s+[a-z][a-z]+(?:\s+[a-z][a-z]+)?\b", text))
+    return bool(extract_destination(text))
 
 
 def _has_specific_subject(text: str) -> bool:

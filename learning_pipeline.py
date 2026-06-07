@@ -12,6 +12,7 @@ from lesson_store import (
 )
 from assistant_command_helpers import is_user_visible_memory
 from canonical_memory import upsert_canonical_memory
+from memory_perspective import normalize_user_perspective_memory
 from permission_policy import contains_sensitive_info, hard_no_private_exposure_text
 from self_improvement_policy import verified_learning_message
 from storage import get_preference, upsert_preference
@@ -171,6 +172,8 @@ class LearningPipeline:
             match = re.match(pattern, text, re.IGNORECASE)
             if match:
                 return self._normalize_rule(match.group(1).strip(), lowered)
+        if self._is_direct_test_fact(text, lowered):
+            return self._normalize_rule(text.strip(), lowered)
         return None
 
     def _implicit_lesson(self, text: str) -> tuple[str, str, str] | None:
@@ -199,7 +202,15 @@ class LearningPipeline:
         return self._normalize_rule(text.strip(), lowered)
 
     @staticmethod
+    def _is_direct_test_fact(text: str, lowered: str) -> bool:
+        if not any(marker in f" {lowered} " for marker in (" test ", " regression ", " temporary ")):
+            return False
+        return bool(re.match(r"^my\s+.+?\s+(?:is|are|=)\s+.+$", text, re.IGNORECASE))
+
+    @staticmethod
     def _normalize_rule(text: str, lowered: str) -> tuple[str, str, str]:
+        text = normalize_user_perspective_memory(text)
+        lowered = text.lower()
         if any(word in lowered for word in ("cerita", "story", "karang", "essay")):
             return (
                 "For cerita or story replies, use flowing paragraph form and natural local rhythm.",

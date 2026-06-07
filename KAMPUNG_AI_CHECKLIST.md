@@ -375,6 +375,10 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Block normal Telegram text from falling through to any auto GPT-5.5 orchestrator path.
     - [x] Route incoming Telegram voice notes through transcription and then the normal Telegram routing path.
     - [x] Do not force English for xAI STT on Telegram voice notes.
+    - [x] Route incoming Telegram photos through a dedicated photo handler instead of ignoring photo-only messages.
+    - [x] Download the largest Telegram photo variant and send it to Gemini Flash vision with the caption as user intent.
+    - [x] Record Telegram photo route/cost as `photo` plus `Gemini Flash sight`.
+    - [x] Add smoke coverage for Telegram photo download, caption prompt, privacy boundary, and vision handoff.
     - [x] Force Malay or Manglish Telegram answers through Gemini before Ara speaks them.
     - [x] Keep Telegram voice as Ara voice notes instead of Grok Voice Agent sessions.
     - [x] Make Telegram Ara voice replies the locked default, with text-only fallback until the xAI key exists.
@@ -927,15 +931,31 @@ This document tracks the technical and operational roadmap for building the stan
         - [x] Canonicalize or reject generic headings such as Role And Assumptions, Working Context, and Key Decisions when the scenario does not call for them.
         - [x] Make local Word QA inspect scenario headings and content depth, not only `.docx` openability.
         - [x] Accept short natural Word requests such as `Seoul food trip doc`, `router setup guide in Word`, and `proposal doc for Kampung AI`.
+        - [x] Add a layered natural artifact parser so phrases like `Can you make me a food trip document to Seoul for two days?` route without one-off regex patches.
+        - [x] Add voice transcript repair for split artifact requests such as `It needs to be in document` so Maya creates and attaches the file instead of promising future work.
+        - [x] Add focused 500-case post-STT artifact replay covering Word, Excel, PowerPoint, split clauses, filler words, wakephrase glitches, and filename-noise rejection.
+        - [x] Add broad 10,000-case Telegram post-STT replay covering artifact creation, latest-document edits, natural slashless commands, paid-voice long-work parking, normal-chat negatives, filler words, cutoffs, disturbances, wakephrase glitches, and filename-noise rejection.
         - [x] Ask one short clarification question when essential artifact parameters are missing instead of creating generic files.
+        - [x] Resolve travel document destinations from explicit wording or clear recent context, ask when missing, and reject destination mismatches during Word QA.
         - [x] Default short city food-trip documents to a compact 2-day plan and reject internal duration mismatches.
         - [x] Strengthen router/WiFi technical guides with required admin password, SSID, WiFi password, WPA2/WPA3, firmware, and verification content.
         - [x] Repair proposal drafts before delivery when they contain empty Out of Scope labels, incomplete tiered frameworks, or raw markdown dividers.
-        - [x] Add a one-pass Word repair loop after local QA/Claude rejection before Maya delivers the file as a draft.
+        - [x] Replace one-pass Word repair with bounded internal Word QA retries before Maya delivers or reports a hard failure.
+        - [x] Raise default artifact QA retry cap to 10 attempts for Word/Excel and PowerPoint visual QA, while keeping environment overrides available.
+        - [x] Add bounded internal Excel rebuild retries for travel-budget and generic spreadsheet creation before Maya delivers or reports a hard failure.
         - [x] Add a Word quality smoke test that builds real `.docx` files and validates multiple everyday scenarios.
         - [x] Add Word golden artifact smoke tests that inspect real `.docx` content for travel, router, and proposal scenarios.
         - [x] Add natural latest-document Word edit support so short follow-ups such as `update that to 4 days` update in place, while explicit copy/new-version requests create a new visible version.
         - [x] Fix natural Word edit parsing so `the document` does not get partially matched as `doc`, corrupting titles such as `Ument`.
+        - [x] Add shared artifact session state for Telegram and iMac so follow-up edits use artifact type, path, topic, structured state, revision count, status, and expiry instead of only a latest-file string.
+        - [x] Set active artifact session lifetime to 24 hours, with successful new artifact creation making that channel's artifact active.
+        - [x] Apply edit deltas such as duration, people count, and destination changes to the active artifact state before rebuilding or editing the file.
+        - [x] QA edited artifacts against the new intended state, not the stale original title or previous topic.
+        - [x] Add Telegram and iMac artifact-session continuity smoke coverage for create-then-edit flows.
+        - [x] Enforce short two-to-three-word artifact filenames and keep parameters/noisy voice fragments in metadata/content instead of filenames.
+        - [x] Remove obsolete parser-only edit smoke coverage that could pass while the real artifact continuity path failed.
+        - [x] Route creation-verb itinerary, guide, proposal, report, config, checklist, and travel-plan requests to Word when no explicit artifact type is present, while keeping bare `document` ambiguous.
+        - [x] Track rejected local drafts separately so `give me the rough` or `send me the draft` attaches the rough file instead of falling through to normal chat.
         - [x] Add PuTTY/router CLI Word QA so terminal edit requests require actual sample config commands, placeholder explanation, verification commands, and save/rollback guidance.
     - [x] Upgrade Excel output so workbooks feel immediately useful, visually polished, and domain-specific by default.
         - [x] Replace weak generic sheet names such as `Maya Draft` with meaningful sheet names.

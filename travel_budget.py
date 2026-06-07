@@ -7,6 +7,7 @@ from pathlib import Path
 
 from artifact_naming import named_artifact_path
 from artifact_builder import ArtifactBuilder
+from artifact_sessions import active_artifact_session
 
 from markdown_drafter import draft_markdown_with_gemini
 from storage import get_preference, upsert_preference
@@ -66,15 +67,21 @@ async def create_travel_budget_excel(
     bridge = bridge or OSBridge()
     saved_plan = await _load_plan(db_path)
     parsed = _parse_plan_updates(request)
+    context_plan = await _artifact_context_plan(db_path, channel, request, parsed)
     use_saved_context = _current_trip_reference(request) or not parsed.get("destination")
     plan = dict(saved_plan) if use_saved_context else {}
+    if context_plan and _should_use_artifact_context(request, parsed, context_plan):
+        for key, value in context_plan.items():
+            if value not in (None, "") and key not in plan:
+                plan[key] = value
     if parsed:
         plan.update(parsed)
     if _food_trip_request(request):
         plan["food_focus"] = True
         plan.setdefault("days", 2)
     party = await infer_travel_party(db_path)
-    template_mode = _template_request(request) or not _trip_specific_request(request, parsed)
+    trip_specific = _trip_specific_request(request, parsed)
+    template_mode = (_template_request(request) and not trip_specific) or not trip_specific
     if template_mode:
         plan = _template_plan()
     else:
@@ -99,6 +106,17 @@ async def create_travel_budget_excel(
     plan["gemini_notes"] = await _travel_budget_notes(db_path, request, plan, template_mode, preflight_context)
     _build_workbook(path, plan, party)
     label = "travel budget template" if template_mode else _traveler_phrase(plan)
+
+    async def rebuild_workbook(attempt: int, quality) -> None:
+        plan["gemini_notes"] = await _travel_budget_notes(
+            db_path,
+            f"{request}. Repair failed workbook QA attempt {attempt}: {quality.short_issue_text()}",
+            plan,
+            template_mode,
+            preflight_context,
+        )
+        _build_workbook(path, plan, party)
+
     artifact = await ArtifactBuilder(db_path, bridge).finish_xlsx(
         path,
         request,
@@ -106,6 +124,7 @@ async def create_travel_budget_excel(
         run_id=TRAVEL_BUDGET_RUN_ID,
         source_tool="travel_budget",
         label=f"an editable {label}",
+        rebuild=rebuild_workbook,
     )
     return artifact.reply
 
@@ -115,6 +134,35 @@ async def infer_travel_party(db_path: str) -> TravelParty:
     if plan.get("people_count"):
         return TravelParty(max(1, int(plan["people_count"])), "saved travel plan")
     return TravelParty(1, "default until traveler count is explicit")
+
+
+async def _artifact_context_plan(db_path: str, channel: str, request: str, parsed: dict) -> dict:
+    try:
+        session = await active_artifact_session(db_path, channel)
+    except Exception:
+        return {}
+    if not session:
+        return {}
+    state = dict(session.state or {})
+    plan: dict[str, object] = {}
+    destination = state.get("destination") or state.get("subject")
+    if destination:
+        plan["destination"] = str(destination)
+    if state.get("days"):
+        plan["days"] = int(state["days"])
+    if state.get("people"):
+        plan["people_count"] = int(state["people"])
+        plan["people_source"] = f"latest {session.artifact_type} context"
+    return plan
+
+
+def _should_use_artifact_context(request: str, parsed: dict, context_plan: dict) -> bool:
+    lowered = str(request or "").lower()
+    if _current_trip_reference(request) or "itinerary" in lowered or "latest" in lowered or "current" in lowered:
+        return True
+    parsed_destination = str(parsed.get("destination") or "").strip().lower()
+    context_destination = str(context_plan.get("destination") or "").strip().lower()
+    return bool(parsed_destination and context_destination and parsed_destination == context_destination)
 
 
 async def _load_plan(db_path: str) -> dict:

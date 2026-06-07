@@ -19,10 +19,13 @@ async def review_presentation_slides(db_path: str, topic: str, slides: Slides) -
         os.getenv("ANTHROPIC_API_KEY", "dummy"),
         os.getenv("CLAUDE_STEWARD_MODEL", CAPABILITIES["steward"].default_model),
     )
-    response = await steward.chat([
-        {"role": "system", "content": await _system_prompt(db_path)},
-        {"role": "user", "content": _user_prompt(topic, slides)},
-    ])
+    try:
+        response = await steward.chat([
+            {"role": "system", "content": await _system_prompt(db_path)},
+            {"role": "user", "content": _user_prompt(topic, slides)},
+        ])
+    except Exception:
+        return slides
     reviewed = _parse_slides(response)
     if reviewed:
         await record_usage(db_path, "claude_steward_calls", 1, "presentation review")

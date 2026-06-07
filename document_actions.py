@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from document_actions_context import *
+from artifact_retry_policy import artifact_qa_max_attempts, qa_retry_exhausted_message
 from document_actions_content_helpers import (
     _append_text,
     _artifact_kind,
@@ -9,6 +10,10 @@ from document_actions_content_helpers import (
     _should_defer_html_app_to_artisan,
 )
 from document_actions_word_helpers import _document_edit_request
+from artifact_clarification_state import consume_pending_artifact_request, save_pending_artifact_request
+from artifact_discourse_context import resolve_referenced_artifact_topic
+from artifact_semantic_enrichment import enrich_artifact_topic
+from artifact_semantic_resolver import resolve_semantic_artifact_intent
 from document_actions_html import DocumentHtmlMixin
 from document_actions_office import DocumentOfficeMixin
 from document_actions_word import DocumentWordMixin
@@ -66,20 +71,70 @@ class DocumentActionRouter(DocumentHtmlMixin, DocumentWordMixin, DocumentOfficeM
         update = markdown_update(text)
         if update:
             return await self._update_markdown(update, channel)
+        pending = await consume_pending_artifact_request(self.db_path, channel, text)
+        if pending:
+            kind, topic = pending
+            return await self._handle_document_request(kind, topic, False, channel)
         edit = _document_edit_request(text)
         if edit:
             instruction, save_copy = edit
             return await self._edit_latest_document(instruction, channel, save_copy=save_copy)
         request = document_request(text)
         if request is None:
-            return None
-        kind, topic, project_scoped = request
+            semantic = await resolve_semantic_artifact_intent(self.db_path, text)
+            if semantic:
+                if semantic.action == "clarify":
+                    await save_pending_artifact_request(self.db_path, channel, text)
+                    self.last_model_lane = semantic.lane or "semantic clarification"
+                    self.last_cost_recorded = semantic.cost_recorded
+                    return semantic.question
+                if semantic.action == "edit":
+                    reply = await self._edit_latest_document(semantic.instruction, channel, save_copy=semantic.save_copy)
+                    self._prepend_semantic_lane(semantic)
+                    return reply
+                if semantic.action == "create":
+                    request = (semantic.kind, semantic.topic, False)
+                    self._pending_semantic_lane = semantic
+            if request is not None:
+                pass
+            else:
+                clarification = artifact_intent_clarification(text)
+                if clarification:
+                    await save_pending_artifact_request(self.db_path, channel, text)
+                    self.last_model_lane = "clarification"
+                    self.last_cost_recorded = False
+                    return clarification
+                return None
+        else:
+            kind, topic, project_scoped = request
+            topic = await resolve_referenced_artifact_topic(self.db_path, channel, topic, text)
+            enriched_topic, _domain, _parameters = enrich_artifact_topic(kind, topic, text)
+            request = (kind, enriched_topic, project_scoped)
+        pending_semantic = getattr(self, "_pending_semantic_lane", None)
+        if pending_semantic is not None:
+            self._pending_semantic_lane = None
+            kind, topic, project_scoped = request
+            topic = await resolve_referenced_artifact_topic(self.db_path, channel, topic, text)
+            reply = await self._handle_document_request(kind, topic, project_scoped, channel)
+            self._prepend_semantic_lane(pending_semantic)
+            return reply
+        return await self._handle_document_request(*request, channel)
+
+    async def _handle_document_request(self, kind: str, topic: str, project_scoped: bool, channel: str) -> str:
+        if kind == "clarify":
+            return topic
         if project_scoped and not await active_project(self.db_path):
             return "No active project yet. Open or create a project first, then I can put it under that project's docs folder."
         if contains_sensitive_info(topic):
             return hard_no_private_exposure_text()
         if action_permission("create_document" if kind != "pptx" else "create_presentation") != "allow":
             return "I need your confirmation before creating that document."
+        resolution = await resolve_artifact_parameters(self.db_path, kind, topic, channel)
+        if resolution.question:
+            self.last_model_lane = "clarification"
+            self.last_cost_recorded = False
+            return resolution.question
+        topic = resolution.topic
         question = artifact_parameter_question(kind, topic, channel)
         if question:
             self.last_model_lane = "clarification"
@@ -88,7 +143,7 @@ class DocumentActionRouter(DocumentHtmlMixin, DocumentWordMixin, DocumentOfficeM
         if kind == "md":
             return await self._create_markdown(topic, project_scoped, channel)
         if kind == "html":
-            if _should_defer_html_app_to_artisan(text):
+            if _should_defer_html_app_to_artisan(topic):
                 return None
             return await self._create_html(topic, project_scoped, channel)
         if kind == "docx":
@@ -96,6 +151,16 @@ class DocumentActionRouter(DocumentHtmlMixin, DocumentWordMixin, DocumentOfficeM
         if kind == "xlsx":
             return await self._create_excel(topic, project_scoped, channel)
         return await self._create_powerpoint(topic, channel)
+
+    def _prepend_semantic_lane(self, semantic) -> None:
+        if not getattr(semantic, "lane", ""):
+            return
+        if self.last_model_lane:
+            if semantic.lane not in self.last_model_lane:
+                self.last_model_lane = f"{semantic.lane} + {self.last_model_lane}"
+        else:
+            self.last_model_lane = semantic.lane
+        self.last_cost_recorded = self.last_cost_recorded or bool(getattr(semantic, "cost_recorded", False))
 
     async def _update_markdown(self, note: str, channel: str) -> str:
         path = await self._markdown_target()
@@ -118,8 +183,19 @@ class DocumentActionRouter(DocumentHtmlMixin, DocumentWordMixin, DocumentOfficeM
         folder = {"md": "notes", "html": "artifacts", "docx": "documents", "xlsx": "spreadsheets"}.get(kind, "documents")
         return named_artifact_path(self.workspace / folder, topic, kind)
 
-    async def _remember(self, path: Path, action: str, project_scoped: bool) -> None:
+    async def _remember(
+        self,
+        path: Path,
+        action: str,
+        project_scoped: bool,
+        channel: str = "imac",
+        artifact_type: str = "",
+        topic: str = "",
+    ) -> None:
         await upsert_preference(self.db_path, LAST_DOC_KEY, str(path), source="document")
+        await upsert_preference(self.db_path, LAST_DRAFT_DOC_KEY, "", source="document")
+        if topic:
+            await record_artifact_session(self.db_path, channel, artifact_type or path.suffix.lower().lstrip("."), path, topic)
         await record_structured_artifact(
             self.db_path,
             DIRECT_DOC_RUN_ID,
@@ -152,15 +228,9 @@ class DocumentActionRouter(DocumentHtmlMixin, DocumentWordMixin, DocumentOfficeM
         return await draft_markdown_with_gemini(self.db_path, topic)
 
     async def _draft_with_issues(self, label: str, path: Path, channel: str, app_name: str | None, issues: str) -> str:
-        message = f"I created a {label} at {path}, but QA found: {issues}. I’m keeping it as a draft."
-        if channel == "imac":
-            try:
-                opened_app = await asyncio.to_thread(open_created_file, path, self.bridge, app_name)
-                suffix = f" in {opened_app}" if opened_app else ""
-                return f"{message} I opened it on the iMac{suffix}."
-            except Exception as exc:
-                return f"{message} I could not open it: {exc}"
-        return _attach(message, path, channel)
+        await upsert_preference(self.db_path, LAST_DRAFT_DOC_KEY, str(path), source="document")
+        suffix = path.suffix.lower().lstrip(".") or label
+        return qa_retry_exhausted_message(label, artifact_qa_max_attempts(suffix))
 
     async def _done(self, label: str, path: Path, channel: str, app_name: str | None) -> str:
         article = "an" if label.lower().startswith("excel") else "a"

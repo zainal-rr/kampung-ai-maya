@@ -5,7 +5,7 @@ import math
 import os
 from pathlib import Path
 
-from PIL import Image
+from PIL import Image, ImageDraw
 from pptx import Presentation
 from pptx.util import Inches
 
@@ -19,7 +19,9 @@ def topic_benefits_from_visuals(topic: str) -> bool:
     markers = (
         "food", "trip", "travel", "restaurant", "itinerary", "product", "pitch",
         "venue", "place", "city", "architecture", "concept", "diagram", "visual",
-        "brand", "marketing", "tourism", "hotel", "cafe",
+        "brand", "marketing", "tourism", "hotel", "cafe", "ai", "agent",
+        "workflow", "system", "quality", "document", "artifact", "process",
+        "technical", "strategy", "roadmap",
     )
     return any(marker in lowered for marker in markers)
 
@@ -33,14 +35,60 @@ async def add_gemini_visual_asset(path: Path, topic: str) -> tuple[bool, str]:
         return False, "Gemini image generation unavailable: GOOGLE_API_KEY not configured."
     prompts = _image_prompts(path, topic)
     image_paths: list[Path] = []
+    fallback_used = False
+    timeout_s = _image_timeout_seconds()
     try:
         for index, prompt in enumerate(prompts, 1):
             image_path = workspace_dir("artifacts", create=True) / "pptx-images" / f"{safe_slug(topic, 56)}-{index}.png"
-            await generate_gemini_image(prompt, image_path)
+            if fallback_used:
+                await asyncio.to_thread(_fallback_visual, image_path, topic, index)
+            else:
+                try:
+                    await asyncio.wait_for(generate_gemini_image(prompt, image_path), timeout=timeout_s)
+                except Exception:
+                    fallback_used = True
+                    await asyncio.to_thread(_fallback_visual, image_path, topic, index)
             image_paths.append(image_path)
     except Exception as exc:
         return False, f"Gemini image generation failed: {exc}"
-    return await asyncio.to_thread(_insert_visuals, path, image_paths)
+    inserted, note = await asyncio.to_thread(_insert_visuals, path, image_paths)
+    if inserted and fallback_used:
+        note = f"{note} Gemini image generation timed out or failed; inserted local abstract fallback visuals."
+    return inserted, note
+
+
+def _image_timeout_seconds() -> float:
+    try:
+        return max(5.0, min(90.0, float(os.getenv("PPTX_GEMINI_IMAGE_TIMEOUT", "25"))))
+    except ValueError:
+        return 25.0
+
+
+def _fallback_visual(path: Path, topic: str, index: int) -> Path:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    width, height = 1280, 720
+    image = Image.new("RGB", (width, height), (13, 18, 27))
+    draw = ImageDraw.Draw(image)
+    palette = [(54, 73, 92), (211, 161, 74), (74, 111, 97), (30, 38, 55), (232, 238, 230)]
+    for y in range(0, height, 18):
+        shade = min(255, 18 + y // 12)
+        draw.rectangle([0, y, width, y + 18], fill=(13, min(35, shade), min(50, shade + 8)))
+    for step in range(9):
+        x = 90 + step * 130
+        y = 110 + ((step * 53 + index * 47) % 330)
+        color = palette[(step + index) % len(palette)]
+        draw.rounded_rectangle([x, y, x + 210, y + 96], radius=18, fill=color, outline=(232, 238, 230), width=2)
+    for step in range(7):
+        x1 = 150 + step * 145
+        y1 = 520 - ((step * 41 + index * 29) % 180)
+        x2 = min(width - 120, x1 + 160)
+        y2 = max(80, y1 - 95)
+        draw.line([x1, y1, x2, y2], fill=(211, 161, 74), width=6)
+        draw.ellipse([x2 - 10, y2 - 10, x2 + 10, y2 + 10], fill=(211, 161, 74))
+    draw.rectangle([70, 590, 760, 604], fill=(211, 161, 74))
+    draw.rectangle([70, 620, 520, 630], fill=(232, 238, 230))
+    image.save(path)
+    return path
 
 
 def _image_prompts(path: Path, topic: str) -> list[str]:
@@ -72,6 +120,12 @@ def _image_prompt(topic: str, slide_topic: str, index: int) -> str:
             )
     elif any(word in lowered for word in ("cyber", "security", "architecture", "risk", "incident", "command")):
         style = "Use dark premium technical editorial imagery with high contrast and controlled light."
+    elif any(word in lowered for word in ("ai", "agent", "workflow", "system", "quality", "document", "artifact", "process", "strategy", "roadmap")):
+        style = (
+            "Use premium abstract product-system editorial imagery: layered documents, "
+            "workflow paths, review checkpoints, subtle interface surfaces, controlled dark lighting, "
+            "and high-end technology composition."
+        )
     else:
         style = "Use polished editorial imagery with a clear subject and strong composition."
     return (

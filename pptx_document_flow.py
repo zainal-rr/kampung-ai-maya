@@ -13,6 +13,7 @@ from pptx import Presentation
 from pptx_quality_gate import inspect_pptx_quality, PptxQualityResult
 from pptx_topic_reviser import rebuild_topic_safe
 from pptx_visual_assets import add_gemini_visual_asset, required_visual_image_count, topic_benefits_from_visuals
+from pptx_slide_repair import attempt_slides, max_pptx_attempts
 from provider_capabilities import CAPABILITIES
 from storage import upsert_preference
 
@@ -27,11 +28,11 @@ async def create_powerpoint_with_qa(
     auto_improve: bool = True,
 ) -> PptxQualityResult:
     slides = _normalize_slides(title, slides)
-    attempts = _max_attempts(auto_improve)
+    attempts = max_pptx_attempts(auto_improve)
     qa = PptxQualityResult(False, ["PowerPoint QA did not run"], [], 0, "")
     visual_note = ""
     for attempt in range(attempts):
-        qa, visual_note = await _run_powerpoint_attempt(db_path, path, title, _attempt_slides(slides, attempt, title), run_id, auto_improve)
+        qa, visual_note = await _run_powerpoint_attempt(db_path, path, title, attempt_slides(slides, attempt, title), run_id, auto_improve)
         qa.revisions = attempt
         if qa.passed:
             break
@@ -182,107 +183,19 @@ def _polish_reason_contains_blocker(polish: str) -> bool:
         "held back from strong by incomplete",
         "weak spot",
         "weak spots",
+        "mismatch",
+        "mismatched",
+        "off-topic",
+        "off topic",
+        "leftover",
+        "stray",
+        "does not belong",
         "truncated",
         "fragment like",
         "fragments like",
         "a couple of",
     )
     return any(blocker in lowered for blocker in blockers)
-
-
-def _max_attempts(auto_improve: bool) -> int:
-    if not auto_improve:
-        return 1
-    try:
-        configured = int(os.getenv("PPTX_QA_MAX_ATTEMPTS", "4"))
-    except ValueError:
-        configured = 4
-    return max(1, min(configured, 6))
-
-
-def _attempt_slides(slides: list[tuple[str, list[str]]], attempt: int, title: str = "") -> list[tuple[str, list[str]]]:
-    if attempt <= 0:
-        return slides
-    if attempt >= 2:
-        return _rescue_slides(slides, title)
-    repaired: list[tuple[str, list[str]]] = []
-    for title, bullets in slides:
-        repaired.append((_stronger_slide_title(title), [_stronger_bullet(bullet) for bullet in bullets]))
-    return repaired
-
-
-def _rescue_slides(slides: list[tuple[str, list[str]]], title: str = "") -> list[tuple[str, list[str]]]:
-    text = " ".join([title] + [title for title, _ in slides] + [bullet for _, bullets in slides for bullet in bullets]).lower()
-    if any(word in text for word in ("food", "restaurant", "cafe", "seoul", "trip", "travel", "itinerary")):
-        return [
-            ("Seoul In 48 Hours", ["Food-first route", "Dark editorial guide", "Two focused days"]),
-            ("Start With Two Anchor Meals", ["Day 1: market classics", "Day 2: cafe and BBQ", "One reservation backup"]),
-            ("Follow The Neighborhood Spine", ["Jongno morning market", "Myeongdong lunch window", "Seongsu cafe block"]),
-            ("Budget The Splurge", ["KRW daily budget", "One splurge dinner", "Cash for market stalls"]),
-            ("Queue Tools Protect Plan", ["Naver Maps", "Catchtable reservation", "Rain backup plan"]),
-            ("Leave With A Ready Plan", ["Book anchor meals", "Save backup pins", "Keep transit simple"]),
-        ]
-    if any(word in text for word in ("office", "priority", "priorities", "weekly", "work", "team")):
-        return [
-            ("Focus The Week Around Three Outcomes", ["Critical work", "Blocked work", "Decision work"]),
-            ("Separate Urgent From Important", ["Must finish", "Can wait", "Needs owner"]),
-            ("Protect The Deep Work Window", ["No meeting block", "One escalation lane", "End of day review"]),
-            ("Make Ownership Visible", ["Named owner", "Due date", "Status signal"]),
-            ("Close With A Friday Scorecard", ["Done", "Blocked", "Next week"]),
-        ]
-    if any(word in text for word in ("router", "wifi", "network", "config", "technical", "setup")):
-        return [
-            ("Sequence The Setup Safely", ["Prerequisites first", "Small config blocks", "Verify before saving"]),
-            ("Lock The Admin Surface", ["Change admin password", "Use WPA2 or WPA3", "Back up current config"]),
-            ("Configure In Blocks", ["WAN and LAN", "DHCP scope", "WiFi name and password"]),
-            ("Verify Before Save", ["Check interface state", "Test DNS and internet", "Confirm client join"]),
-            ("Keep Rollback Ready", ["Export config", "Document changes", "Know reset path"]),
-        ]
-    if any(word in text for word in ("proposal", "strategy", "roadmap", "quality", "business")):
-        return [
-            ("Make The Decision Clear", ["Current gap", "Recommended path", "Approval ask"]),
-            ("Show The Cost Of Waiting", ["Quality risk", "Manual rework", "Slow delivery"]),
-            ("Use A Repeatable Pipeline", ["Draft", "Build", "Validate", "Review", "Repair"]),
-            ("Roll Out In Phases", ["Word first", "Excel second", "PowerPoint third"]),
-            ("Approve The Next Gate", ["Owner", "Timeline", "Success signal"]),
-        ]
-    first = slides[0][0] if slides else "Presentation"
-    return [
-        (first, ["Clear framing", "One main decision", "Short visual story"]),
-        ("Start With The Real Context", ["What matters", "Who decides", "Why now"]),
-        ("Show The Main Tradeoff", ["Option A", "Option B", "Constraint"]),
-        ("Make The Recommendation Visible", ["Best path", "Risk control", "Next action"]),
-        ("Close With The Decision", ["Owner", "Timeline", "Success signal"]),
-    ]
-
-
-def _stronger_slide_title(title: str) -> str:
-    clean = " ".join(str(title).split()).strip(" .")
-    lowered = clean.lower()
-    replacements = (
-        (("daily anchor", "anchor each day", "one food anchor"), "Anchor Each Day Around One Meal"),
-        (("famous", "backup"), "Pair Famous Stops With Backups"),
-        (("budget", "splurge", "cost"), "Spend Intentionally, Not Randomly"),
-        (("logistics", "transit", "route"), "Cluster Meals To Cut Transit"),
-        (("local", "rules"), "Eat Better By Reading Local Cues"),
-        (("next", "recommend"), "Book Anchors, Leave Room To Explore"),
-    )
-    for keywords, replacement in replacements:
-        if any(keyword in lowered for keyword in keywords):
-            return replacement
-    return clean
-
-
-def _stronger_bullet(text: str) -> str:
-    clean = " ".join(str(text).split()).strip(" .")
-    lowered = clean.lower()
-    if lowered in {"zones", "key idea", "context", "choice", "next step"}:
-        return "Cluster the route by neighborhood."
-    if lowered.endswith((" so you", " for", " from", " to", " with", " by", " as")):
-        return clean.rsplit(" ", 1)[0]
-    if lowered.endswith((" when", " where", " because")):
-        return clean.rsplit(" ", 1)[0]
-    return clean
 
 
 def _normalize_slides(title: str, slides: list[tuple[str, list[str]]]) -> list[tuple[str, list[str]]]:

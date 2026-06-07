@@ -244,7 +244,12 @@ async def review_artifact_quality(
             timeout=max(10, timeout),
         )
     except Exception as exc:
-        return ArtifactQualityResult(artifact_type, passed=True, summary=f"Claude review failed open: {exc}", warnings=[str(exc)])
+        return ArtifactQualityResult(
+            artifact_type,
+            passed=True,
+            summary="Claude review unavailable; local validation is the delivery gate for this artifact.",
+            warnings=[f"Claude review failed open: {type(exc).__name__}"],
+        )
     await record_usage(db_path, "claude_steward_calls", 1, f"{artifact_type} artifact review")
     first = response.strip().splitlines()[0] if response.strip() else ""
     rejected = first.lower().startswith("reject") or response.lower().startswith("reject")

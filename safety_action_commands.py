@@ -12,6 +12,8 @@ def safety_action_reply(text: str) -> str | None:
         return None
     if is_private_exposure(cleaned) or _looks_like_private_exposure(cleaned):
         return hard_no_private_exposure_text()
+    if _looks_like_sensitive_data_use(cleaned):
+        return hard_no_private_exposure_text()
     if _looks_like_delete_file(cleaned):
         return (
             "Deleting files needs confirmation. I have not deleted anything. "
@@ -54,12 +56,22 @@ def _looks_like_private_exposure(text: str) -> bool:
         "paste",
         "submit",
         "upload",
+        "publish",
         "print",
         "display",
     )
     if any(re.search(rf"\b{verb}\b", text) for verb in exposure_verbs):
         return True
     return bool(re.match(r"^(?:what is|what's|do you know|can you remember)\b", text))
+
+
+def _looks_like_sensitive_data_use(text: str) -> bool:
+    if not contains_sensitive_info(text):
+        return False
+    if _looks_like_safe_sensitive_guidance(text):
+        return False
+    verbs = ("use", "save", "store", "fill", "put", "include", "add", "type")
+    return any(re.search(rf"\b{verb}\b", text) for verb in verbs)
 
 
 def _looks_like_safe_sensitive_guidance(text: str) -> bool:

@@ -9,7 +9,15 @@ import shutil
 from pathlib import Path
 
 from artifact_naming import named_artifact_path, versioned_path
+from artifact_sessions import (
+    active_artifact_session,
+    apply_artifact_edit_delta,
+    record_artifact_session,
+    topic_from_state,
+    update_artifact_session_after_edit,
+)
 from artifact_parameters import artifact_parameter_question
+from artifact_parameter_resolver import resolve_artifact_parameters
 from artifact_preflight import ArtifactPreflight, artifact_preflight_with_gemini
 from artifact_quality import (
     ArtifactQualityResult,
@@ -23,6 +31,7 @@ from artifact_quality import (
 from cost_spreadsheet import kampung_ai_cost_rows
 from created_file_opener import open_created_file
 from document_failures import document_generation_failed
+from document_natural_artifact_parser import artifact_intent_clarification
 from document_request_parser import document_request, markdown_update
 from document_style import style_document_text, style_sections, style_table
 from html_reviewer import review_html_app
@@ -58,4 +67,5 @@ from workspace_paths import workspace_dir
 
 logger = logging.getLogger("document_actions")
 LAST_DOC_KEY = "maya_last_document_path"
+LAST_DRAFT_DOC_KEY = "maya_last_draft_document_path"
 DIRECT_DOC_RUN_ID = "direct_document_actions"

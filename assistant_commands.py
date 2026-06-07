@@ -9,7 +9,7 @@ from assistant_briefing_helpers import handle_weekly_reflection
 from assistant_confirmation_helpers import resolve_pending_confirmation
 from assistant_memory_commands import handle_memory_lookup
 from assistant_schedule_commands import handle_reminder_command, handle_summary_task_command
-from assistant_skill_helpers import queue_skill_scaffold
+from assistant_skill_creation import handle_explicit_skill_scaffold_approval, handle_skill_creation_request
 from artisan_apply import apply_latest_artisan_repo_changes
 from artisan_runner import latest_artisan_summary_text, latest_artisan_transcript_text
 from assistant_task_helpers import create_sensitive_send_task, format_open_tasks, parse_task_delete_request
@@ -61,6 +61,11 @@ class AssistantCommandRouter:
             self.last_lane = "command"
             self.last_reason = "private exposure block"
             return hard_no_private_exposure_text()
+        explicit_skill_approval = await self._handle_explicit_skill_scaffold_approval(clean_text, channel)
+        if explicit_skill_approval is not None:
+            self.last_lane = "command"
+            self.last_reason = "explicit skill scaffold approval"
+            return explicit_skill_approval
         workflow_confirmation = await self.workflows.handle_confirmation(clean_text)
         if workflow_confirmation is not None:
             self.last_lane = "command"
@@ -80,6 +85,7 @@ class AssistantCommandRouter:
             self._handle_safety_actions,
             self._handle_voice_session_command,
             self._handle_everyday_commands,
+            self._handle_skill_creation,
             self._handle_document_actions,
             self._handle_imac_workflows,
             self._handle_local_creation_actions,
@@ -88,7 +94,6 @@ class AssistantCommandRouter:
             self._handle_local_actions,
             self._handle_routine_commands,
             self._handle_send_to_telegram,
-            self._handle_skill_creation,
             self._handle_task_deletion,
             self._handle_task_listing,
             self._handle_context_window,
@@ -181,16 +186,10 @@ class AssistantCommandRouter:
         return await self.routines.handle(text, channel)
 
     async def _handle_skill_creation(self, text: str, channel: str) -> str | None:
-        match = re.match(r"^(?:create|make|draft)\s+(?:a\s+)?skill\s+(?:for|to)\s+(.+)$", text, re.IGNORECASE)
-        if not match:
-            return None
-        subject = match.group(1).strip()
-        return await queue_skill_scaffold(
-            self.db_path,
-            subject,
-            channel,
-            "I can draft a new skill scaffold for that gap. Do you want me to do it?",
-        )
+        return await handle_skill_creation_request(self.db_path, text, channel)
+
+    async def _handle_explicit_skill_scaffold_approval(self, text: str, channel: str) -> str | None:
+        return await handle_explicit_skill_scaffold_approval(self.db_path, text)
 
     async def _handle_unsupported_action(self, text: str, channel: str) -> str | None:
         subject = unsupported_action_subject(text)

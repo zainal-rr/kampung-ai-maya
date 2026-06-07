@@ -67,6 +67,15 @@ async def main() -> None:
         telegram_send = await router.handle("send me the last document", "telegram")
         _require(telegram_send is not None and f"[file:{path}]" in telegram_send, "Telegram send should attach exact last document")
 
+        draft_path = Path(tmp) / "Maya" / "presentations" / "rejected-quality-draft-v1.pptx"
+        draft_path.write_bytes(b"pptx")
+        await upsert_preference(db_path, "maya_last_draft_document_path", str(draft_path), source="document")
+        rough_reply = await router.handle("give me the rough draft if any", "telegram")
+        _require(rough_reply is not None and f"[file:{draft_path}]" in rough_reply, "rough draft retrieval should attach saved draft")
+        _require(router.last_reason == "draft document", "rough draft retrieval should use draft-document route")
+        creation_reply = await router.handle("draft the document for tomorrow", "telegram")
+        _require(creation_reply is None, "creation-style draft prompt should not be treated as latest-draft retrieval")
+
         imac_open = await router.handle("open the last document", "imac")
         _require(imac_open is not None and "opened" in imac_open.lower(), "iMac open should open the exact last document")
         _require(bridge.opened[-1][0] == str(path), "iMac opened the wrong latest document")

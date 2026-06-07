@@ -2,16 +2,35 @@ from __future__ import annotations
 
 import re
 
+_COUNT_WORDS = {
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+    "nine": 9,
+    "ten": 10,
+}
+_COUNT_PATTERN = r"\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten"
+
 
 def _parse_plan_updates(text: str) -> dict:
     lowered = text.lower()
     changes: dict[str, object] = {}
-    days = re.search(r"\b(\d{1,2})\s*[- ]?\s*day\b", lowered)
+    days = re.search(rf"\b({_COUNT_PATTERN})\s*[- ]?\s*days?\b", lowered)
     if days:
-        changes["days"] = max(1, min(31, int(days.group(1))))
-    people = re.search(r"\b(\d{1,2})\s+(?:people|person|persons|travellers|travelers|guests|adults)\b", lowered)
+        changes["days"] = max(1, min(31, _count_value(days.group(1))))
+    people = re.search(rf"\b({_COUNT_PATTERN})\s+(?:people|person|persons|travellers|travelers|guest|guests|adult|adults|pax|pack|packs)\b", lowered)
+    if not people:
+        people = re.search(
+            rf"\b(?:number of people|people count|traveler count|traveller count|people|persons|guests|adults|pax)\s*(?:is|are|=|:)?\s*({_COUNT_PATTERN})\b",
+            lowered,
+        )
     if people:
-        changes["people_count"] = max(1, min(20, int(people.group(1))))
+        changes["people_count"] = max(1, min(20, _count_value(people.group(1))))
         changes["people_source"] = "explicit user request"
     if "cheapest" in lowered:
         changes["flight_preference"] = "cheapest"
@@ -28,9 +47,9 @@ def _parse_plan_updates(text: str) -> dict:
     changes.update(_parse_price_mentions(text))
     if any(word in lowered for word in ("middle", "mid range", "mid-range", "high end", "high-end", "4 star", "5 star", "guest favourite", "guest favorite")):
         changes["accommodation_preference"] = "middle to high-end; hotel 4-5 star or Airbnb guest favourite"
-    destination = re.search(r"\b(?:to|in|for)\s+([A-Z][A-Za-z ,/]{2,50})(?:\s+from|\s+on|\s+for|\s+with|$)", text)
+    destination = re.search(r"\b(?:to|in|for)\s+([A-Z][A-Za-z ,/]{2,50}?)(?:\s+from|\s+on|\s+for|\s+with|\s+and\s+for|\s+and\s+with|$)", text)
     if destination:
-        value = " ".join(destination.group(1).split()).strip(" .,")
+        value = _clean_destination_value(destination.group(1))
         if not re.search(r"\b(excel|budget|sheet|flight|hotel|airbnb|trip)\b", value, re.I):
             changes["destination"] = value
     destination = re.search(
@@ -40,7 +59,7 @@ def _parse_plan_updates(text: str) -> dict:
         text,
     )
     if destination:
-        value = " ".join(destination.group(1).split()).strip(" .,")
+        value = _clean_destination_value(destination.group(1))
         if not re.search(r"\b(excel|budget|tracker|sheet)\b", value, re.I):
             changes["destination"] = value
     leading_destination = re.search(
@@ -50,7 +69,7 @@ def _parse_plan_updates(text: str) -> dict:
         text,
     )
     if leading_destination:
-        value = " ".join(leading_destination.group(1).split()).strip(" .,")
+        value = _clean_destination_value(leading_destination.group(1))
         if not re.search(r"\b(excel|budget|tracker|sheet|travel)\b", value, re.I):
             changes["destination"] = value
     if "destination" not in changes:
@@ -61,6 +80,25 @@ def _parse_plan_updates(text: str) -> dict:
                 changes["destination"] = place.title()
                 break
     return changes
+
+
+def _count_value(raw: str) -> int:
+    value = raw.strip().lower()
+    if value.isdigit():
+        return int(value)
+    return _COUNT_WORDS.get(value, 1)
+
+
+def _clean_destination_value(raw: str) -> str:
+    value = " ".join(str(raw or "").split()).strip(" .,")
+    value = re.sub(r"\s+\b(?:and|also)\b$", "", value, flags=re.I).strip(" .,")
+    value = re.sub(
+        r"\s+\b(?:food|foods|meal|meals|mill|mills|mail|mails|restaurant|restaurants|dining|cafe|cafes|budget|budgets|tracker|tracking|expense|expenses|cost|costs|spend|spending|spreadsheet|sheet|excel|xlsx|workbook|plan)\b.*$",
+        "",
+        value,
+        flags=re.I,
+    ).strip(" .,")
+    return value
 
 
 def _parse_price_mentions(text: str) -> dict:
@@ -114,12 +152,42 @@ def _price_value(raw: str) -> int | float | None:
 
 def _template_request(text: str) -> bool:
     low = text.lower()
-    return "template" in low or "travel sheet" in low or "specifically for travelling" in low or "travel purposes" in low
+    return (
+        "template" in low
+        or "travel sheet" in low
+        or "travel budget excel" in low
+        or "travel budget spreadsheet" in low
+        or "travel budget sheet" in low
+        or "travel budget workbook" in low
+        or "specifically for travelling" in low
+        or "travel purposes" in low
+    )
 
 
 def _food_trip_request(text: str) -> bool:
     low = text.lower()
-    return any(word in low for word in ("food trip", "restaurant", "restaurants", "eat", "eating", "foodie", "food highlights"))
+    food_markers = (
+        "food",
+        "food trip",
+        "food budget",
+        "food tracker",
+        "restaurant",
+        "restaurants",
+        "meal",
+        "meals",
+        "mill",
+        "mills",
+        "mail",
+        "mails",
+        "dining",
+        "cafe",
+        "cafes",
+        "eat",
+        "eating",
+        "foodie",
+        "food highlights",
+    )
+    return any(word in low for word in food_markers)
 
 
 def _trip_specific_request(text: str, parsed: dict) -> bool:

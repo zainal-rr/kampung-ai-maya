@@ -8,6 +8,7 @@ import document_actions as da
 from artifact_preflight import ArtifactPreflight
 from document_actions_word_helpers import _document_edit_request
 from markdown_drafter import MarkdownDraft
+from office_edit_helpers import apply_simple_xlsx_edit
 from office_modern_files import create_pptx, create_xlsx
 from openpyxl import load_workbook
 from pptx import Presentation
@@ -38,6 +39,39 @@ async def main() -> None:
             _require(
                 _document_edit_request("Can you update the document to make it shorter") == ("make it shorter", False),
                 "explicit document edit should remain supported",
+            )
+            _require(
+                _document_edit_request("change the number of people in the worksheet to two") == ("the number of people in the worksheet to two", False),
+                "worksheet people-count edit should route to latest artifact",
+            )
+            _require(
+                _document_edit_request("change it to two person now?") == ("two person now?", False),
+                "pronoun people-count edit should route to latest artifact",
+            )
+            _require(
+                _document_edit_request("change that to one traveler") == ("one traveler", False),
+                "singular traveler edit should route to latest artifact",
+            )
+            _require(
+                _document_edit_request("In a Tokyo dining cost tracker, today's number of people is 2.")
+                == ("today's number of people is 2 in Tokyo dining cost tracker", False),
+                "contextual tracker people-count edit should route to latest artifact",
+            )
+            _require(
+                _document_edit_request("change the day to 5 days") == ("the day to 5 days", False),
+                "day-count edit should route to latest artifact",
+            )
+            _require(
+                _document_edit_request("change the location to Tokyo") == ("the location to Tokyo", False),
+                "location edit should route to latest artifact",
+            )
+            _require(
+                _document_edit_request("update the destination to Osaka") == ("the destination to Osaka", False),
+                "destination edit should route to latest artifact",
+            )
+            _require(
+                _document_edit_request("add a simple PuTTY command section") == ("a simple PuTTY command section", False),
+                "add-section follow-up should route to latest artifact edit",
             )
 
             pptx = workspace / "presentations" / "seoul-food-trip-deck-v1.pptx"
@@ -72,6 +106,21 @@ async def main() -> None:
             ]
             _require(formulas, "xlsx edit produced no formulas")
             _require(await get_preference(db_path, LAST_DOC_KEY) == str(xlsx), "xlsx latest path changed unexpectedly")
+
+            traveler_sheet = workspace / "spreadsheets" / "traveler-count-v1.xlsx"
+            book = load_workbook(xlsx)
+            sheet = book.active
+            sheet.insert_rows(1, 3)
+            sheet["A3"] = "Travelers"
+            sheet["B3"] = 2
+            sheet["B5"] = "This 2-day budget is for two people, with 15,000 JPY per day for the pair."
+            book.save(traveler_sheet)
+            await asyncio.to_thread(apply_simple_xlsx_edit, traveler_sheet, "change that to three travelers")
+            updated = await asyncio.to_thread(load_workbook, traveler_sheet, data_only=False)
+            _require(updated.active["B3"].value == 3, "traveler edit should update B3")
+            note = str(updated.active["B5"].value)
+            _require("two people" not in note.lower() and "the pair" not in note.lower(), "traveler edit left stale people-count prose")
+            _require("3 people" in note, "traveler edit did not sync people-count prose")
         finally:
             da.artifact_preflight_with_gemini = old_preflight
             da.draft_markdown_with_gemini = old_draft

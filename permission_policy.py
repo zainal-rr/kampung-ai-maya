@@ -56,6 +56,7 @@ SENSITIVE_PATH_PARTS = {
 SENSITIVE_MARKERS = (
     "password",
     "passcode",
+    "bank details",
     "bank account",
     "account number",
     "credit card",
@@ -89,6 +90,7 @@ EXPOSURE_STARTERS = (
     "reveal",
     "export",
     "upload",
+    "publish",
     "copy",
     "paste",
     "print",

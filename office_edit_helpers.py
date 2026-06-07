@@ -53,12 +53,15 @@ def xlsx_snapshot(path: Path, limit: int = 7000) -> str:
 
 def simple_xlsx_edit_instruction(instruction: str) -> bool:
     lowered = " ".join(str(instruction).lower().split())
-    return any(marker in lowered for marker in ("add a notes column", "add notes column", "add a note column", "add note column"))
+    return any(marker in lowered for marker in ("add a notes column", "add notes column", "add a note column", "add note column")) or _people_count_from_text(lowered) is not None
 
 
 def apply_simple_xlsx_edit(path: Path, instruction: str) -> str:
     if not simple_xlsx_edit_instruction(instruction):
         raise ValueError("unsupported simple Excel edit")
+    people_count = _people_count_from_text(instruction)
+    if people_count is not None:
+        return _apply_people_count_edit(path, people_count)
     book = load_workbook(path)
     changed = 0
     for sheet in book.worksheets:
@@ -72,6 +75,110 @@ def apply_simple_xlsx_edit(path: Path, instruction: str) -> str:
         changed += 1
     book.save(path)
     return f"added notes column on {changed} sheet(s)"
+
+
+_COUNT_WORDS = {
+    "one": 1,
+    "two": 2,
+    "three": 3,
+    "four": 4,
+    "five": 5,
+    "six": 6,
+    "seven": 7,
+    "eight": 8,
+    "nine": 9,
+    "ten": 10,
+}
+
+
+def _people_count_from_text(text: str) -> int | None:
+    lowered = " ".join(str(text).lower().split())
+    count_pattern = r"\d{1,2}|" + "|".join(_COUNT_WORDS)
+    patterns = (
+        rf"\b(?:number of people|people count|traveler count|traveller count|travelers?|travellers?|people|pax|adults?|guests?)\s*(?:is|are|=|:|to)?\s*({count_pattern})\b",
+        rf"\b({count_pattern})\s*(?:people|persons?|travelers?|travellers?|pax|adults?|guests?)\b",
+    )
+    for pattern in patterns:
+        match = re.search(pattern, lowered, re.I)
+        if match:
+            raw = match.group(1).lower()
+            value = _COUNT_WORDS.get(raw, int(raw) if raw.isdigit() else 0)
+            if value:
+                return max(1, min(20, value))
+    return None
+
+
+def _apply_people_count_edit(path: Path, people_count: int) -> str:
+    book = load_workbook(path)
+    changed: list[str] = []
+    old_counts: set[int] = set()
+    for sheet in book.worksheets:
+        for row in sheet.iter_rows():
+            for cell in row:
+                label = " ".join(str(cell.value or "").lower().split())
+                if label in {"travelers", "travellers", "people count", "traveler count", "traveller count"}:
+                    target = sheet.cell(row=cell.row, column=cell.column + 1)
+                    if isinstance(target.value, int):
+                        old_counts.add(target.value)
+                    elif isinstance(target.value, str) and target.value.strip().isdigit():
+                        old_counts.add(int(target.value.strip()))
+                    target.value = people_count
+                    source = sheet.cell(row=cell.row, column=cell.column + 3)
+                    if source.value not in (None, "") or cell.column + 3 <= sheet.max_column:
+                        source.value = "explicit user edit"
+                    changed.append(f"{sheet.title}!{target.coordinate}")
+    if not changed:
+        raise ValueError("could not find traveler/people count cells to update")
+    text_updates = _sync_people_count_text(book, people_count, old_counts)
+    book.save(path)
+    detail = f"updated people count to {people_count} in {', '.join(changed[:6])}"
+    return f"{detail}; updated {text_updates} related text cell(s)" if text_updates else detail
+
+
+def _sync_people_count_text(book, people_count: int, old_counts: set[int]) -> int:
+    changed = 0
+    for sheet in book.worksheets:
+        for row in sheet.iter_rows():
+            for cell in row:
+                if not isinstance(cell.value, str):
+                    continue
+                updated = _replace_people_count_text(cell.value, people_count, old_counts)
+                if updated != cell.value:
+                    cell.value = updated
+                    changed += 1
+    return changed
+
+
+def _replace_people_count_text(text: str, people_count: int, old_counts: set[int]) -> str:
+    updated = str(text)
+    replacement_people = f"{people_count} {'person' if people_count == 1 else 'people'}"
+    replacement_travelers = f"{people_count} {'traveler' if people_count == 1 else 'travelers'}"
+    count_words = "|".join(_COUNT_WORDS)
+    count_values = sorted(
+        {*[str(value) for value in old_counts if value != people_count], *_COUNT_WORDS.keys()},
+        key=len,
+        reverse=True,
+    )
+    count_pattern = r"(?:\d{1,2}|" + count_words + r")"
+    updated = re.sub(
+        rf"\b{count_pattern}\s+(?:people|persons?|pax|adults?|guests?)\b",
+        replacement_people,
+        updated,
+        flags=re.I,
+    )
+    updated = re.sub(
+        rf"\b{count_pattern}\s+(?:travelers?|travellers?)\b",
+        replacement_travelers,
+        updated,
+        flags=re.I,
+    )
+    updated = re.sub(r"\bfor the pair\b", f"for {replacement_people}", updated, flags=re.I)
+    updated = re.sub(r"\bfor both(?: travelers?| travellers?| people)?\b", f"for {replacement_people}", updated, flags=re.I)
+    updated = re.sub(r"\bper\s+traveler\b", "per traveler", updated, flags=re.I)
+    # Keep old explicit count markers from surviving in compact prose such as "two-person trip".
+    for raw in count_values:
+        updated = re.sub(rf"\b{raw}\s*[- ]person\b", f"{people_count}-person", updated, flags=re.I)
+    return updated
 
 
 def _likely_header_row(sheet) -> int:

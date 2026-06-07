@@ -5,6 +5,7 @@ from artifact_parameters import artifact_parameter_question
 
 def main() -> None:
     _expect("docx", "Seoul food trip", "")
+    _expect("docx", "solo trip food for two days", "Which city or destination")
     _expect("docx", "travel itinerary", "Which city or destination")
     _expect("docx", "Kyoto travel itinerary", "How many days")
     _expect("docx", "router setup guide", "")

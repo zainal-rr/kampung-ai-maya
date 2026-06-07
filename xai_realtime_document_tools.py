@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from document_actions_word_helpers import _document_edit_request
 from document_actions import DocumentActionRouter
 from route_tracker import record_route
 
@@ -48,6 +49,8 @@ async def execute_desktop_file_tool(db_path: str, request: str) -> str:
 
 def _normalize_request(request: str) -> str:
     cleaned = " ".join(request.strip().split())
+    if _document_edit_request(cleaned):
+        return cleaned
     lowered = cleaned.lower()
     if any(word in lowered for word in ("budget", "budgeting", "expenses", "cost")) and not any(
         word in lowered for word in ("excel", "xlsx", "spreadsheet", "sheet")

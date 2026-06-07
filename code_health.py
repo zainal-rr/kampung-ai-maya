@@ -33,7 +33,10 @@ class CodeHealth:
 
 def collect_code_health(root: Path | str = ".") -> CodeHealth:
     root_path = Path(root)
-    files = sorted((_count_file(path) for path in root_path.glob("*.py")), key=lambda item: item.name)
+    files = sorted(
+        (_count_file(path) for path in root_path.glob("*.py") if not _excluded_from_runtime_gate(path)),
+        key=lambda item: item.name,
+    )
     warnings = [item for item in files if WARNING_MIN <= item.lines < URGENT_MIN]
     urgent = [item for item in files if URGENT_MIN <= item.lines <= LINE_LIMIT]
     violations = [item for item in files if item.lines > LINE_LIMIT]
@@ -62,6 +65,17 @@ def format_code_health(health: CodeHealth) -> str:
 def _count_file(path: Path) -> FileLineCount:
     with path.open("r", encoding="utf-8", errors="ignore") as file_obj:
         return FileLineCount(path=path, lines=sum(1 for _ in file_obj))
+
+
+def _excluded_from_runtime_gate(path: Path) -> bool:
+    name = path.name
+    return (
+        name.startswith("live_")
+        or name.endswith("_smoke.py")
+        or name.endswith("_fakes.py")
+        or "_replay_" in name
+        or name.startswith("phase22_")
+    )
 
 
 def _format_counts(items: list[FileLineCount]) -> str:

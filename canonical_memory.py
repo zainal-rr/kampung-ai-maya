@@ -9,6 +9,7 @@ import aiosqlite
 from canonical_memory_scoring import activation_score
 from canonical_memory_usage import mark_canonical_used
 STOPWORDS = {"a", "an", "are", "is", "my", "the", "that", "this", "to", "for", "of", "me", "i"}
+TOKEN_ALIASES = {"snacks": "snack"}
 TEST_MARKERS = ("test", "regression", "telegram test", "smoke", "temporary")
 
 
@@ -271,10 +272,10 @@ def value_from_text(text: str) -> str:
     return match.group(1).strip() if match else cleaned
 
 def memory_tokens(text: str) -> set[str]:
-    return {token for token in re.findall(r"[a-z0-9]+", str(text).lower()) if len(token) > 1 and token not in STOPWORDS}
+    return {TOKEN_ALIASES.get(token, token) for token in re.findall(r"[a-z0-9]+", str(text).lower()) if len(token) > 1 and token not in STOPWORDS}
 
 def _ordered_memory_tokens(text: str) -> list[str]:
-    return [token for token in re.findall(r"[a-z0-9]+", str(text).lower()) if len(token) > 1 and token not in STOPWORDS]
+    return [TOKEN_ALIASES.get(token, token) for token in re.findall(r"[a-z0-9]+", str(text).lower()) if len(token) > 1 and token not in STOPWORDS]
 
 def is_temporary_memory(content: str, subject_key: str) -> bool:
     return any(marker in f"{subject_key} {content}".lower() for marker in TEST_MARKERS)

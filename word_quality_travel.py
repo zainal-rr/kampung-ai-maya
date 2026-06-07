@@ -2,6 +2,8 @@ from __future__ import annotations
 
 import re
 
+from travel_parameters import destination_names_in_text, extract_destination
+
 
 def travel_day_headings(topic: str) -> tuple[str, ...]:
     days = explicit_day_count(topic) or default_travel_days(topic)
@@ -40,9 +42,10 @@ def travel_default_note(topic: str) -> str:
 
 def travel_consistency_issues(topic: str, paragraphs: list[str], headings: list[str]) -> list[str]:
     expected = explicit_day_count(topic) or default_travel_days(topic)
-    if expected <= 1 or expected > 4:
-        return []
     issues: list[str] = []
+    issues.extend(destination_consistency_issues(topic, paragraphs, headings))
+    if expected <= 1 or expected > 4:
+        return issues
     heading_norms = [normalize_heading(heading) for heading in headings]
     missing = [f"Day {day} Plan" for day in range(1, expected + 1) if f"day {day} plan" not in heading_norms]
     if missing:
@@ -52,6 +55,23 @@ def travel_consistency_issues(topic: str, paragraphs: list[str], headings: list[
     wrong = sorted(day for day in declared if day != expected)
     if wrong:
         issues.append(f"travel document declares {wrong[0]} days but expected {expected}")
+    return issues
+
+
+def destination_consistency_issues(topic: str, paragraphs: list[str], headings: list[str]) -> list[str]:
+    expected = extract_destination(topic)
+    if not expected:
+        return []
+    joined = " ".join([*headings, *paragraphs])
+    found = destination_names_in_text(joined)
+    expected_norm = normalize(expected)
+    found_norms = {normalize(item) for item in found}
+    issues: list[str] = []
+    if expected_norm not in found_norms:
+        issues.append(f"travel document missing expected destination: {expected}")
+    wrong = sorted(item for item in found if normalize(item) != expected_norm)
+    if wrong:
+        issues.append(f"travel document destination mismatch: expected {expected}, found {wrong[0]}")
     return issues
 
 

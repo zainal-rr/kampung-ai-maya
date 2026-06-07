@@ -114,8 +114,19 @@ def _run_case(case: EvalCase) -> EvalResult:
         env=env,
         timeout=90,
     )
-    output = (proc.stdout + proc.stderr).strip()
+    output = _sanitize_eval_output((proc.stdout + proc.stderr).strip())
     return EvalResult(case.category, case.name, proc.returncode == 0, proc.returncode, output[-2000:])
+
+
+def _sanitize_eval_output(output: str) -> str:
+    replacements = {
+        str(ROOT): "<PROJECT_ROOT>",
+        str(Path.home()): "<HOME>",
+    }
+    sanitized = output
+    for raw, marker in replacements.items():
+        sanitized = sanitized.replace(raw, marker)
+    return sanitized
 
 
 def main() -> None:

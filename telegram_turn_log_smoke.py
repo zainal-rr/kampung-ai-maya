@@ -22,11 +22,13 @@ async def main() -> None:
             status="completed",
             duration_ms=321,
             response_chars=9,
+            response_preview="yes, I am here",
         )
         latest = await latest_telegram_turn_text(db_path)
         _require("Last Telegram turn:" in latest, "latest turn header missing")
         _require("status: completed" in latest, "turn status missing")
         _require("duration ms: 321" in latest, "turn duration missing")
+        _require("response: yes, I am here" in latest, "turn response preview missing")
         print("telegram_turn_log_smoke: ok")
 
 

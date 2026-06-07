@@ -1,10 +1,15 @@
 from __future__ import annotations
 
 from document_actions_context import *
+from artifact_retry_policy import artifact_qa_max_attempts
 from document_actions_content_helpers import _attach
 from document_actions_word_helpers import (
     _backup_word_file,
     _edited_word_topic,
+    _generic_technical_troubleshooting_repair_markdown,
+    _generic_technical_troubleshooting_topic,
+    _router_network_repair_markdown,
+    _router_network_topic,
     _router_putty_repair_markdown,
     _router_putty_topic,
     _word_document_title,
@@ -35,13 +40,17 @@ class DocumentWordMixin:
         self.last_cost_recorded = True
         await self._build_word_doc(path, topic, draft.content)
         quality = await self._word_quality(path, topic)
-        if not quality.passed:
-            repaired = await self._repair_word_doc(path, topic, quality)
-            if repaired:
-                quality = await self._word_quality(path, topic)
-        await self._remember(path, f"Created Word draft: {quality.summary}", project_scoped)
+        attempts = 1
+        max_attempts = artifact_qa_max_attempts("docx")
+        while not quality.passed and attempts < max_attempts:
+            attempts += 1
+            repaired = await self._repair_word_doc(path, topic, quality, attempts)
+            if not repaired:
+                break
+            quality = await self._word_quality(path, topic)
         if not quality.passed:
             return await self._draft_with_issues("Word draft", path, channel, "Microsoft Word", quality.short_issue_text())
+        await self._remember(path, f"Created Word draft: {quality.summary}", project_scoped, channel, "docx", topic)
         return await self._done("Word draft", path, channel, "Microsoft Word")
 
     async def _build_word_doc(self, path: Path, topic: str, markdown: str) -> None:
@@ -62,11 +71,21 @@ class DocumentWordMixin:
             self.last_model_lane += " + Claude Word review skipped"
         return local_qa.merge(review_qa)
 
-    async def _repair_word_doc(self, path: Path, topic: str, quality: ArtifactQualityResult) -> bool:
+    async def _repair_word_doc(self, path: Path, topic: str, quality: ArtifactQualityResult, attempt: int = 2) -> bool:
         if _router_putty_topic(topic):
             await self._build_word_doc(path, "Router Setup Guide With PuTTY Config", _router_putty_repair_markdown())
             if "Word deterministic PuTTY repair" not in self.last_model_lane:
                 self.last_model_lane += " + Word deterministic PuTTY repair"
+            return True
+        if _router_network_topic(topic):
+            await self._build_word_doc(path, "Router And WiFi Setup Guide", _router_network_repair_markdown())
+            if "Word deterministic router repair" not in self.last_model_lane:
+                self.last_model_lane += " + Word deterministic router repair"
+            return True
+        if _generic_technical_troubleshooting_topic(topic):
+            await self._build_word_doc(path, "Technical Troubleshooting Guide", _generic_technical_troubleshooting_repair_markdown())
+            if "Word deterministic technical repair" not in self.last_model_lane:
+                self.last_model_lane += " + Word deterministic technical repair"
             return True
         try:
             current = await asyncio.to_thread(extract_docx_text, path)
@@ -79,8 +98,9 @@ class DocumentWordMixin:
         if not draft:
             return False
         await self._build_word_doc(path, topic, draft.content)
-        if "Word repair pass" not in self.last_model_lane:
-            self.last_model_lane += " + Word repair pass"
+        marker = f"Word repair pass {attempt}"
+        if marker not in self.last_model_lane:
+            self.last_model_lane += f" + {marker}"
         self.last_cost_recorded = True
         return True
 
@@ -100,11 +120,12 @@ class DocumentWordMixin:
             return "I can edit the latest Word, Excel, or PowerPoint file first. Tell me which file to use."
         if action_permission("edit_document") != "allow":
             return "I need your confirmation before editing that document."
+        session = await active_artifact_session(self.db_path, channel, str(path))
         if simple_docx_edit_instruction(instruction):
-            return await self._simple_word_edit(path, instruction, channel, save_copy=save_copy)
+            return await self._simple_word_edit(path, instruction, channel, save_copy=save_copy, session=session)
         try:
             current = await asyncio.to_thread(extract_docx_text, path)
-            topic = _edited_word_topic(path, instruction, current)
+            topic = _session_edit_topic(session, "docx", instruction) if session else _edited_word_topic(path, instruction, current)
             preflight = await self._artifact_preflight("docx", topic)
             self.last_model_lane = f"{preflight.lane_prefix} + Gemini Flash Word edit"
             self.last_cost_recorded = preflight.cost_recorded
@@ -117,10 +138,14 @@ class DocumentWordMixin:
         backup = await asyncio.to_thread(_backup_word_file, path)
         await self._build_word_doc(target, topic, draft.content)
         quality = await self._word_quality(target, topic)
-        if not quality.passed:
-            repaired = await self._repair_word_doc(target, topic, quality)
-            if repaired:
-                quality = await self._word_quality(target, topic)
+        attempts = 1
+        max_attempts = artifact_qa_max_attempts("docx")
+        while not quality.passed and attempts < max_attempts:
+            attempts += 1
+            repaired = await self._repair_word_doc(target, topic, quality, attempts)
+            if not repaired:
+                break
+            quality = await self._word_quality(target, topic)
         if not quality.passed:
             if save_copy and target.exists():
                 await asyncio.to_thread(target.unlink)
@@ -130,7 +155,9 @@ class DocumentWordMixin:
                 self.last_model_lane += " + Word edit restore"
             await upsert_preference(self.db_path, LAST_DOC_KEY, str(path), source="document")
             return f"I tried to update the latest Word document, but QA failed: {quality.short_issue_text()}. I kept the original unchanged."
-        await self._remember(target, f"Edited Word draft: {quality.summary}", False)
+        await self._remember(target, f"Edited Word draft: {quality.summary}", False, channel, "docx", topic)
+        if session:
+            await update_artifact_session_after_edit(self.db_path, session, channel, target, instruction)
         if not quality.passed:
             return await self._draft_with_issues("edited Word draft", target, channel, "Microsoft Word", quality.short_issue_text())
         label = "edited Word copy" if save_copy else "updated Word document"
@@ -142,9 +169,9 @@ class DocumentWordMixin:
             return prefix if "opened it on the iMac" not in reply else f"{prefix} I opened it on the iMac."
         return reply
 
-    async def _simple_word_edit(self, path: Path, instruction: str, channel: str, *, save_copy: bool = False) -> str:
+    async def _simple_word_edit(self, path: Path, instruction: str, channel: str, *, save_copy: bool = False, session=None) -> str:
         current = await asyncio.to_thread(extract_docx_text, path)
-        topic = _edited_word_topic(path, instruction, current)
+        topic = _session_edit_topic(session, "docx", instruction) if session else _edited_word_topic(path, instruction, current)
         preflight = await self._artifact_preflight("docx", topic)
         self.last_model_lane = f"{preflight.lane_prefix} + local Word edit"
         self.last_cost_recorded = preflight.cost_recorded
@@ -163,7 +190,14 @@ class DocumentWordMixin:
                 self.last_model_lane += " + Word edit restore"
             await upsert_preference(self.db_path, LAST_DOC_KEY, str(path), source="document")
             return f"I tried to update the latest Word document, but QA failed: {quality.short_issue_text()}. I kept the original unchanged."
-        await self._remember(target, f"Edited Word draft: {quality.summary}", False)
+        await self._remember(target, f"Edited Word draft: {quality.summary}", False, channel, "docx", topic)
+        if session:
+            await update_artifact_session_after_edit(self.db_path, session, channel, target, instruction)
         if save_copy:
             return await self._done("edited Word copy", target, channel, "Microsoft Word")
         return _attach("Done. I updated the latest Word document in place. I kept an internal backup before editing.", target, channel)
+
+
+def _session_edit_topic(session, artifact_type: str, instruction: str) -> str:
+    state = apply_artifact_edit_delta(session.state, instruction)
+    return topic_from_state(artifact_type, state, fallback=session.topic)

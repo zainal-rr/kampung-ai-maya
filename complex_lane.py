@@ -111,12 +111,26 @@ async def _review_plan(lanes, text: str, plan: str, memory_context: str, skill_c
         "safety issues, overengineering, unclear tests, and practical gaps. Do not implement. "
         "Keep the review under 350 words. Start with PASS or REVISE. List only blocking or high-value issues.",
         f"Original request:\n{text}\n\nPlan to review:\n{plan}",
-        memory_context,
-        skill_context,
+        _compact_block(memory_context, 7000),
+        _compact_block(skill_context, 2500),
     )
-    review = await lanes.steward.chat(prompt)
+    try:
+        review = await lanes.steward.chat(prompt)
+    except Exception as exc:
+        return (
+            "REVISE: Steward review unavailable because the Claude review provider failed. "
+            f"Provider error: {type(exc).__name__}. Treat this plan as unreviewed and keep it proposal-only "
+            "until a later review passes."
+        )
     await record_usage(lanes.db_path, "claude_steward_calls", 1, "complex plan review")
     return review
+
+
+def _compact_block(text: str, limit: int) -> str:
+    clean = " ".join(str(text or "").split())
+    if len(clean) <= limit:
+        return clean
+    return clean[:limit].rsplit(" ", 1)[0].rstrip() + "\n[truncated for provider safety]"
 
 
 def _wants_agentic_workflow(text: str) -> bool:

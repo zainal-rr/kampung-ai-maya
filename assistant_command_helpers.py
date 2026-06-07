@@ -16,8 +16,13 @@ def confirmation_decision(text: str) -> str | None:
 
 def _looks_like_user_request(text: str) -> bool:
     request_markers = (
-        " cakap", " speak", " reply", " write", " create", " make", " tell",
-        " buat", " karang", " explain", " summarize", " open", " show",
+        " cakap", " speak", " reply", " write", " create", " make", " give",
+        " build", " prepare", " generate", " draft", " put", " need", " want",
+        " tell", " buat", " karang", " explain", " summarize", " open", " show",
+        " excel", " sheet", " spreadsheet", " workbook", " document", " deck",
+        " slides", " powerpoint", " word", " change", " update", " set", " edit",
+        " modify", " revise", " switch", " what", " why", " how", " where",
+        " do", " does", " did", " is", " are", " should",
     )
     if text in {"okay", "ok", "yes", "sure", "go ahead", "do it"}:
         return False

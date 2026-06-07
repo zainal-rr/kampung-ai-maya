@@ -25,6 +25,11 @@ class FakeSteward:
         return "Review body"
 
 
+class FailingSteward:
+    async def chat(self, messages):
+        raise RuntimeError("provider failed")
+
+
 class FakePremiumSight:
     def __init__(self):
         self.calls = 0
@@ -63,6 +68,9 @@ async def main() -> None:
             _require(lanes.should_use_complex_path("this is complex architecture strategy"), "explicit complex missed")
             _require(lanes.should_use_plan_path("make a plan for architecture"), "plan path missed")
             reply = await lanes.complex_plan_response("make a plan for architecture", "", "")
+            lanes.steward = FailingSteward()
+            fallback_reply = await lanes.complex_plan_response("make a plan for architecture", "", "")
+            lanes.steward = FakeSteward()
             post = await lanes.post_implementation_review("request", "plan", "changed files", "tests passed")
             run_id = reply.rsplit("Workflow:", 1)[1].strip()
             workflow = await complex_workflow_status(db_path, run_id)
@@ -74,6 +82,9 @@ async def main() -> None:
     _require("Plan body" in reply, "GPT plan missing")
     _require("Research context body" in str(lanes.mind.messages), "Gemini premium research context missing")
     _require("Steward review" in reply and "Review body" in reply, "Claude review missing")
+    _require("Plan body" in fallback_reply, "fallback complex plan missing")
+    _require("Steward review" in fallback_reply, "fallback review section missing")
+    _require("review unavailable" in fallback_reply.lower(), "Claude failure should be explicit, not generic failure")
     _require("Workflow:" in reply, "complex workflow id missing")
     _require("research_agent_finished" in workflow, "research subagent was not recorded")
     _require("graph_planner_agent_finished" in workflow, "graph planner was not recorded")

@@ -15,11 +15,16 @@ async def init_telegram_turn_log_db(db_path: str) -> None:
                 status TEXT NOT NULL,
                 duration_ms INTEGER DEFAULT 0,
                 response_chars INTEGER DEFAULT 0,
+                response_preview TEXT DEFAULT '',
                 error TEXT DEFAULT '',
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
             """
         )
+        cursor = await db.execute("PRAGMA table_info(telegram_turn_events)")
+        columns = {str(row[1]) for row in await cursor.fetchall()}
+        if "response_preview" not in columns:
+            await db.execute("ALTER TABLE telegram_turn_events ADD COLUMN response_preview TEXT DEFAULT ''")
         await db.commit()
 
 
@@ -32,6 +37,7 @@ async def record_telegram_turn(
     status: str,
     duration_ms: int = 0,
     response_chars: int = 0,
+    response_preview: str = "",
     error: str = "",
 ) -> None:
     await init_telegram_turn_log_db(db_path)
@@ -39,11 +45,20 @@ async def record_telegram_turn(
         await db.execute(
             """
             INSERT INTO telegram_turn_events (
-                chat_id, input_type, prompt_preview, status, duration_ms, response_chars, error
+                chat_id, input_type, prompt_preview, status, duration_ms, response_chars, response_preview, error
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """,
-            (str(chat_id), input_type, prompt[:300], status, int(duration_ms), int(response_chars), error[:500]),
+            (
+                str(chat_id),
+                input_type,
+                prompt[:300],
+                status,
+                int(duration_ms),
+                int(response_chars),
+                response_preview[:1000],
+                error[:500],
+            ),
         )
         await db.commit()
 
@@ -54,7 +69,7 @@ async def latest_telegram_turn_text(db_path: str) -> str:
         db.row_factory = aiosqlite.Row
         cursor = await db.execute(
             """
-            SELECT input_type, prompt_preview, status, duration_ms, response_chars, error, created_at
+            SELECT input_type, prompt_preview, status, duration_ms, response_chars, response_preview, error, created_at
             FROM telegram_turn_events
             ORDER BY id DESC
             LIMIT 1
@@ -72,6 +87,8 @@ async def latest_telegram_turn_text(db_path: str) -> str:
         f"5) prompt: {row['prompt_preview']}",
         f"6) time: {row['created_at']}",
     ]
+    if row["response_preview"]:
+        lines.append(f"7) response: {row['response_preview']}")
     if row["error"]:
-        lines.append(f"7) error: {row['error']}")
+        lines.append(f"8) error: {row['error']}")
     return "\n".join(lines)

@@ -65,6 +65,16 @@ def _food_restaurant_rows(plan: dict, template_mode: bool) -> list[dict[str, obj
             _food_row("Day 2", "Maple Tree House Itaewon", "Korean BBQ", 90, "https://www.google.com/maps/search/?api=1&query=Maple+Tree+House+Itaewon+Seoul", "Higher-budget BBQ option", "Use as the splurge meal if budget allows", "Optional"),
             _food_row("Flexible", "Isaac Toast", "Breakfast toast", 20, "https://www.google.com/maps/search/?api=1&query=Isaac+Toast+Seoul", "Fast breakfast/snack option", "Use when the itinerary needs a quick meal", "Medium"),
         ]
+    if "tokyo" in destination:
+        return [
+            _food_row("Day 1", "Tsukiji Outer Market", "Seafood bowl, tamagoyaki, grilled skewers", 90, "https://www.google.com/maps/search/?api=1&query=Tsukiji+Outer+Market+Tokyo", "Classic market crawl with many small bites", "Go early and share items to avoid overspending", "High"),
+            _food_row("Day 1", "Ichiran Shibuya", "Tonkotsu ramen", 55, "https://www.google.com/maps/search/?api=1&query=Ichiran+Shibuya+Tokyo", "Easy solo-friendly ramen stop", "Use as a reliable backup if plans slip", "Medium"),
+            _food_row("Day 1", "Uobei Shibuya Dogenzaka", "Conveyor sushi", 60, "https://www.google.com/maps/search/?api=1&query=Uobei+Shibuya+Dogenzaka+Tokyo", "Fast sushi with predictable pricing", "Good for a controlled-budget dinner", "Medium"),
+            _food_row("Day 2", "Gyukatsu Motomura Shinjuku", "Beef cutlet set", 75, "https://www.google.com/maps/search/?api=1&query=Gyukatsu+Motomura+Shinjuku+Tokyo", "Popular beef cutlet meal", "Queue before peak dinner or keep a backup nearby", "High"),
+            _food_row("Day 2", "Afuri Harajuku", "Yuzu shio ramen", 55, "https://www.google.com/maps/search/?api=1&query=Afuri+Harajuku+Tokyo", "Lighter ramen near Harajuku/Omotesando", "Works well between shopping and cafe stops", "Medium"),
+            _food_row("Day 2", "Tonkatsu Maisen Aoyama", "Tonkatsu set", 70, "https://www.google.com/maps/search/?api=1&query=Tonkatsu+Maisen+Aoyama+Tokyo", "Classic tonkatsu option", "Use as the splurge if skipping gyukatsu", "Optional"),
+            _food_row("Flexible", "Lawson or 7-Eleven Tokyo", "Onigiri, sandwich, drink", 25, "https://www.google.com/maps/search/?api=1&query=Lawson+Tokyo", "Convenience store breakfast or late snack", "Keep this as the cheap buffer meal", "Medium"),
+        ]
     place = str(plan.get("destination") or "Destination").strip() or "Destination"
     return [
         _food_row("Day 1", f"{place} signature restaurant", "Signature local dish", 50, _maps_search(f"{place} best restaurant signature dish"), "Replace with chosen restaurant", "Pick one must-try local dish", "High"),

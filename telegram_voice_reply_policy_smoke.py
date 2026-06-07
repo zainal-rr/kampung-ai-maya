@@ -136,7 +136,7 @@ async def main() -> None:
             )
         finally:
             telegram_channel.send_speech = old_send_speech
-        assert file_bot.text_sent is True
+        assert file_bot.text_sent is False
         assert file_bot.voice_sent is True
         assert len(file_bot.documents) == 1
         summary_bot = FakeBot()

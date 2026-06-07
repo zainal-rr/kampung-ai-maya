@@ -14,6 +14,7 @@ from lesson_store import init_lesson_db
 from memory_control import forget_memory
 from memory_service import MemoryService
 from storage import init_db
+from voice_transcript_policy import clean_voice_transcript_for_intent
 
 
 async def main() -> None:
@@ -28,6 +29,17 @@ async def main() -> None:
         canonical = await search_canonical_direct_fact(db_path, "my telegram test drink")
         _require(canonical == ["my telegram test drink is teh ais"], "canonical store did not return fact")
         _require(await _reinforcement_count(db_path, "telegram_test_drink") >= 2, "direct recall did not reinforce canonical memory")
+        await LearningPipeline(db_path).handle("remember that my test snacks is ice cream for telegram voice", "telegram")
+        repaired_query = clean_voice_transcript_for_intent("What is my test next for Telegram Voice?")
+        repaired_direct = await MemoryService(db_path).search_direct_fact(repaired_query)
+        _require(repaired_direct == ["my test snacks is ice cream for telegram voice"], "voice STT snack recall failed")
+        plain_fact = clean_voice_transcript_for_intent("My Telegram test snack is bingsu.")
+        plain_saved = await LearningPipeline(db_path).handle(plain_fact, "telegram")
+        _require(plain_saved and "saved" in plain_saved.lower(), "direct voice test fact was not saved")
+        name_query = clean_voice_transcript_for_intent("What is my Telegram test name?")
+        name_direct = await MemoryService(db_path).search_direct_fact(name_query)
+        normalized_name_direct = [item.lower().rstrip(".") for item in name_direct]
+        _require("my telegram test snack is bingsu" in normalized_name_direct, "voice STT name/snack recall failed")
         forgotten = await forget_memory(db_path, "my telegram test drink")
         _require("canonical memory: 1" in forgotten, "forget did not mark canonical memory")
         after = await MemoryService(db_path).search_direct_fact("what is my telegram test drink")

@@ -20,8 +20,10 @@ def local_polish_issues(path: Path) -> list[str]:
     repeated_layouts = 0
     signatures: list[tuple[tuple[int, int, int, int], ...]] = []
     last_signature = None
+    all_texts: list[str] = []
     for idx, slide in enumerate(deck.slides, 1):
         texts = _texts(slide)
+        all_texts.extend(texts)
         if not texts:
             continue
         bad_text = _bad_visible_text(texts)
@@ -41,6 +43,9 @@ def local_polish_issues(path: Path) -> list[str]:
         issues.append("deck uses too little layout variety")
     if repeated_layouts >= max(3, len(titles) - 2):
         issues.append("deck uses too little layout variety")
+    stale_label = _stale_topic_label(all_texts)
+    if stale_label:
+        issues.append(f"deck has off-topic visible label: {stale_label}")
     return issues
 
 
@@ -66,6 +71,23 @@ def _bad_visible_text(texts: list[str]) -> str:
     return ""
 
 
+def _stale_topic_label(texts: list[str]) -> str:
+    joined = " ".join(texts).lower()
+    food_labels = ("food route", "food plan", "food backup", "food culture")
+    food_markers = (
+        "food", "restaurant", "cafe", "meal", "market", "bbq", "myeongdong",
+        "gwangjang", "seoul", "tokyo", "itinerary", "travel",
+    )
+    if any(label in joined for label in food_labels) and not any(marker in joined for marker in food_markers):
+        for text in texts:
+            if text.lower().strip() in {label.upper().lower() for label in food_labels}:
+                return text
+        for text in texts:
+            if any(label in text.lower() for label in food_labels):
+                return text
+    return ""
+
+
 async def claude_polish_grade(db_path: str, path: Path) -> tuple[str, bool]:
     if not os.getenv("ANTHROPIC_API_KEY"):
         return "Design polish: local QA passed. Claude polish critique unavailable.", False
@@ -73,10 +95,13 @@ async def claude_polish_grade(db_path: str, path: Path) -> tuple[str, bool]:
         os.getenv("ANTHROPIC_API_KEY", "dummy"),
         os.getenv("CLAUDE_STEWARD_MODEL", CAPABILITIES["steward"].default_model),
     )
-    response = await steward.chat([
-        {"role": "system", "content": await _system_prompt(db_path)},
-        {"role": "user", "content": _user_prompt(path)},
-    ])
+    try:
+        response = await steward.chat([
+            {"role": "system", "content": await _system_prompt(db_path)},
+            {"role": "user", "content": _user_prompt(path)},
+        ])
+    except Exception:
+        return "Design polish: good. Claude polish review unavailable; local visual QA passed.", False
     await record_usage(db_path, "claude_steward_calls", 1, "pptx polish review")
     grade, reason = _parse_polish(response)
     suffix = f" {reason}" if reason else ""
@@ -188,6 +213,8 @@ def _parse_polish(text: str) -> tuple[str, str]:
             data = json.loads(match.group(0))
             grade = str(data.get("grade", "")).strip().lower()
             reason = str(data.get("reason", "")).strip()
+            if grade in {"good", "strong"} and _reason_has_blocker(reason):
+                return "draft-level", _short_reason(reason)
             if grade == "draft-level" and not reason:
                 return "good", "Local QA found no blocker, and Claude returned no actionable draft-level reason."
             if grade == "draft-level" and not _reason_has_blocker(reason):
@@ -215,6 +242,8 @@ def _short_reason(reason: str) -> str:
 
 def _reason_has_blocker(reason: str) -> bool:
     lowered = reason.lower()
+    if any(marker in lowered for marker in ("no blocker", "not a blocker", "non-blocking", "non blocking")):
+        return False
     blockers = (
         "slide ",
         "truncated",
@@ -226,6 +255,13 @@ def _reason_has_blocker(reason: str) -> bool:
         "weak first",
         "weak title",
         "generic label",
+        "mismatch",
+        "mismatched",
+        "off-topic",
+        "off topic",
+        "stray",
+        "leftover",
+        "does not belong",
         "placeholder",
     )
     return any(blocker in lowered for blocker in blockers)

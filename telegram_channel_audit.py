@@ -43,6 +43,7 @@ async def record_turn_event(
     status: str,
     started: float,
     response_chars: int,
+    response_preview: str = "",
     error: str = "",
 ) -> None:
     if not update.effective_chat:
@@ -56,6 +57,7 @@ async def record_turn_event(
             status=status,
             duration_ms=int((time.monotonic() - started) * 1000),
             response_chars=response_chars,
+            response_preview=response_preview,
             error=error,
         )
     except Exception:

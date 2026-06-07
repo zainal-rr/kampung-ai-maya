@@ -4,7 +4,7 @@ import re
 
 
 def strip_wake_prefix(text: str) -> str:
-    return re.sub(r"^\s*maya\s*[,:\-]?\s*", "", text.strip(), flags=re.IGNORECASE)
+    return re.sub(r"^\s*(?:hey|hi|hello)?\s*maya\s*[,:\-]?\s*", "", text.strip(), flags=re.IGNORECASE)
 
 
 def extract_user_text(content: str) -> str:

@@ -3,8 +3,33 @@ from __future__ import annotations
 import re
 
 
-def _slide_kicker(title: str) -> str:
+def _slide_kicker(title: str, deck_topic: str = "") -> str:
     lowered = str(title).lower()
+    context = f"{deck_topic} {title}".lower()
+    if _quality_topic(context):
+        if any(word in lowered for word in ("visible", "standard", "contract", "artifact quality")):
+            return "QUALITY CONTRACT"
+        if any(word in lowered for word in ("review", "qa", "gate", "validate", "validation")):
+            return "REVIEW BEFORE SEND"
+        if any(word in lowered for word in ("unify", "channel", "telegram", "imac", "same pipeline")):
+            return "ONE DOCUMENT PIPELINE"
+        if any(word in lowered for word in ("channel", "telegram", "imac", "delivery", "ship", "attach")):
+            return "FINAL DELIVERY GATE"
+        if any(word in lowered for word in ("route", "cost", "trace", "evidence", "proof")):
+            return "ROUTE + REVIEW EVIDENCE"
+        if any(word in lowered for word in ("skill", "standard", "quality", "artifact", "document")):
+            return "ARTIFACT STANDARD"
+        if any(word in lowered for word in ("repair", "retry", "loop", "pass")):
+            return "REPAIR UNTIL PASS"
+        return "DOCUMENT QUALITY"
+    if _agent_topic(context):
+        if any(word in lowered for word in ("memory", "context", "thread")):
+            return "AGENT MEMORY"
+        if any(word in lowered for word in ("tool", "approval", "permission", "safety")):
+            return "TOOL GATE"
+        if any(word in lowered for word in ("workflow", "route", "handoff", "worker")):
+            return "WORKFLOW TRACE"
+        return "AGENT SYSTEM"
     if any(word in lowered for word in ("old", "new", "culture", "heritage", "modern")):
         return "FOOD CULTURE"
     if any(word in lowered for word in ("day", "anchor", "food", "restaurant", "meal", "market", "cafe")):
@@ -22,6 +47,31 @@ def _slide_kicker(title: str) -> str:
     if any(word in lowered for word in ("recommend", "next", "decision")):
         return "DECISION"
     return "FOOD ROUTE"
+
+
+def _quality_topic(context: str) -> bool:
+    markers = (
+        "document quality",
+        "artifact quality",
+        "quality gate",
+        "review standard",
+        "qa",
+        "validation",
+    )
+    return any(marker in context for marker in markers)
+
+
+def _agent_topic(context: str) -> bool:
+    markers = (
+        "kampung ai",
+        "maya",
+        "agent",
+        "workflow",
+        "thread manager",
+        "tool registry",
+        "event store",
+    )
+    return any(marker in context for marker in markers)
 
 
 def _short(text: str, limit: int = 90, complete: bool = True) -> str:

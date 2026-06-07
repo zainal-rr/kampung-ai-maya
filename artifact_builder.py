@@ -4,6 +4,8 @@ import asyncio
 from dataclasses import dataclass
 from pathlib import Path
 
+from artifact_retry_policy import artifact_qa_max_attempts, qa_retry_exhausted_message
+from artifact_sessions import record_artifact_session
 from artifact_quality import (
     ArtifactQualityResult,
     extract_docx_text,
@@ -20,6 +22,7 @@ from utils import OSBridge
 
 
 LAST_DOC_KEY = "maya_last_document_path"
+LAST_DRAFT_DOC_KEY = "maya_last_draft_document_path"
 
 
 @dataclass(frozen=True)
@@ -47,16 +50,16 @@ class ArtifactBuilder:
         success_message: str | None = None,
         draft_message: str | None = None,
         open_file: bool | None = None,
+        rebuild=None,
     ) -> BuiltArtifact:
-        local_qa = await asyncio.to_thread(validate_docx_path, path, topic)
-        review_qa = await review_artifact_quality(
-            self.db_path,
-            "docx",
-            topic,
-            await asyncio.to_thread(extract_docx_text, path),
-        )
-        quality = local_qa.merge(review_qa)
-        return await self._finish(path, quality, channel, run_id, source_tool, app_name, success_message, draft_message, open_file)
+        quality = await self._docx_quality(path, topic)
+        attempts = 1
+        while not quality.passed and rebuild and attempts < artifact_qa_max_attempts("docx"):
+            attempts += 1
+            await _run_rebuild(rebuild, attempts, quality)
+            quality = await self._docx_quality(path, topic)
+            quality.repair_attempted = True
+        return await self._finish(path, topic, quality, channel, run_id, source_tool, app_name, success_message, draft_message, open_file)
 
     async def finish_xlsx(
         self,
@@ -69,7 +72,30 @@ class ArtifactBuilder:
         label: str,
         app_name: str | None = "Microsoft Excel",
         open_file: bool | None = None,
+        rebuild=None,
     ) -> BuiltArtifact:
+        quality = await self._xlsx_quality(path, topic)
+        attempts = 1
+        while not quality.passed and rebuild and attempts < artifact_qa_max_attempts("xlsx"):
+            attempts += 1
+            await _run_rebuild(rebuild, attempts, quality)
+            quality = await self._xlsx_quality(path, topic)
+            quality.repair_attempted = True
+        success = f"Done. I created {label}."
+        draft = f"I created {label}, but QA found: {quality.short_issue_text()}. I’m keeping it as a draft."
+        return await self._finish(path, topic, quality, channel, run_id, source_tool, app_name, success, draft, open_file)
+
+    async def _docx_quality(self, path: Path, topic: str) -> ArtifactQualityResult:
+        local_qa = await asyncio.to_thread(validate_docx_path, path, topic)
+        review_qa = await review_artifact_quality(
+            self.db_path,
+            "docx",
+            topic,
+            await asyncio.to_thread(extract_docx_text, path),
+        )
+        return local_qa.merge(review_qa)
+
+    async def _xlsx_quality(self, path: Path, topic: str) -> ArtifactQualityResult:
         local_qa = await asyncio.to_thread(validate_xlsx_path, path, topic)
         review_qa = await review_artifact_quality(
             self.db_path,
@@ -77,14 +103,12 @@ class ArtifactBuilder:
             topic,
             await asyncio.to_thread(extract_xlsx_text, path),
         )
-        quality = local_qa.merge(review_qa)
-        success = f"Done. I created {label}."
-        draft = f"I created {label}, but QA found: {quality.short_issue_text()}. I’m keeping it as a draft."
-        return await self._finish(path, quality, channel, run_id, source_tool, app_name, success, draft, open_file)
+        return local_qa.merge(review_qa)
 
     async def _finish(
         self,
         path: Path,
+        topic: str,
         quality: ArtifactQualityResult,
         channel: str,
         run_id: str,
@@ -94,17 +118,27 @@ class ArtifactBuilder:
         draft_message: str | None,
         open_file: bool | None,
     ) -> BuiltArtifact:
-        await self.record(path, f"Created artifact: {quality.summary}", run_id, source_tool)
         message = success_message or f"Done. I created {path.name}."
         if not quality.passed:
-            message = draft_message or f"I created {path.name}, but QA found: {quality.short_issue_text()}. I’m keeping it as a draft."
-            if draft_message and "qa found" in draft_message.lower() and "issues" in draft_message.lower():
-                message = message.replace("issues", quality.short_issue_text(), 1)
+            await self.record_draft(path, f"Draft artifact rejected: {quality.summary}", run_id, source_tool)
+            message = qa_retry_exhausted_message(path.name, artifact_qa_max_attempts(_artifact_type(path)))
+            return BuiltArtifact(path, quality, _draft_only_reply(message))
+        await self.record(path, topic, channel, f"Created artifact: {quality.summary}", run_id, source_tool)
         reply = await self.deliver(message, path, channel, app_name, open_file=open_file)
         return BuiltArtifact(path, quality, reply)
 
-    async def record(self, path: Path, summary: str, run_id: str, source_tool: str) -> None:
+    async def record(self, path: Path, topic: str, channel: str, summary: str, run_id: str, source_tool: str) -> None:
         await upsert_preference(self.db_path, self.last_doc_key, str(path), source="document")
+        await upsert_preference(self.db_path, LAST_DRAFT_DOC_KEY, "", source="document")
+        await record_artifact_session(self.db_path, channel, _artifact_type(path), path, topic)
+        await record_structured_artifact(
+            self.db_path,
+            run_id,
+            local_artifact(_artifact_kind(path), str(path), summary, source_tool),
+        )
+
+    async def record_draft(self, path: Path, summary: str, run_id: str, source_tool: str) -> None:
+        await upsert_preference(self.db_path, LAST_DRAFT_DOC_KEY, str(path), source="document")
         await record_structured_artifact(
             self.db_path,
             run_id,
@@ -127,6 +161,12 @@ def _attach(message: str, path: Path, channel: str) -> str:
     return f"{message}\n[file:{path}]" if channel == "telegram" else message
 
 
+def _draft_only_reply(message: str) -> str:
+    if "ask me for the draft" in message.lower():
+        return message
+    return f"{message} I did not attach it as a finished file. Ask me for the draft if you want to inspect it."
+
+
 def _artifact_kind(path: Path) -> str:
     suffix = path.suffix.lower()
     if suffix == ".xlsx":
@@ -140,3 +180,13 @@ def _artifact_kind(path: Path) -> str:
     if suffix == ".html":
         return "html"
     return "file"
+
+
+def _artifact_type(path: Path) -> str:
+    return path.suffix.lower().lstrip(".") or "artifact"
+
+
+async def _run_rebuild(rebuild, attempt: int, quality: ArtifactQualityResult) -> None:
+    result = rebuild(attempt, quality)
+    if asyncio.iscoroutine(result):
+        await result
