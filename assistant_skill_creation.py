@@ -1,3 +1,15 @@
+"""Approval-gated skill scaffold helpers.
+
+Maya can notice missing abilities and offer to scaffold a skill, but scaffolding
+is still an approval-gated lifecycle step. Plain "create a skill for X" queues a
+confirmation; explicit approval phrasing such as "approve and scaffold the X
+skill" creates the proposed skill file and test file through `SkillFactory`.
+
+The proposed skill is stored but not activated. Activation remains separate and
+requires review/test evidence so an unfinished skill cannot leak into normal
+prompt context.
+"""
+
 from __future__ import annotations
 
 import re

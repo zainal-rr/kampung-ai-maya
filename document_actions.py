@@ -1,3 +1,15 @@
+"""Canonical document/action router shared by Telegram and iMac.
+
+This router is the main entry point for user requests that may create, edit, or
+send artifacts. It coordinates local parsing, pending clarification state,
+semantic intent resolution, discourse-topic carryover, and the type-specific
+mixins for Word, Excel, PowerPoint, Markdown, HTML, and local file delivery.
+
+The key design rule is channel-neutral creation and channel-specific delivery:
+Telegram and iMac should hit the same builders and QA gates, then diverge only
+when attaching a Telegram file versus opening/focusing a native iMac app.
+"""
+
 from __future__ import annotations
 
 from document_actions_context import *

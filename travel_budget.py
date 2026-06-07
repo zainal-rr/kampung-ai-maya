@@ -1,3 +1,16 @@
+"""Excel travel-budget builder used by document requests and follow-up edits.
+
+This module is intentionally more specific than a generic spreadsheet creator.
+For travel and food-trip budget workbooks it loads saved trip context, merges
+active artifact-session context, asks Gemini for budget notes when needed, builds
+the workbook locally, then sends the file through `ArtifactBuilder` for Excel
+QA, Claude review when available, retry, latest-document tracking, and delivery.
+
+The recent continuity fix is here: if the latest Word itinerary says "Tokyo,
+2 days, 2 people" and the next turn asks for an Excel budget "for the itinerary",
+the workbook inherits those parameters instead of defaulting back to one person.
+"""
+
 from __future__ import annotations
 
 import json

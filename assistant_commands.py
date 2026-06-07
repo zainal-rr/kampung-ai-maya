@@ -1,3 +1,16 @@
+"""Top-level command router for non-model Maya actions.
+
+`KampungAssistant` asks this router before falling back to normal model chat.
+Each handler either returns a finished command response or `None`, allowing the
+next handler/model lane to continue. This is where durable local actions such as
+documents, memory lookup, skill lifecycle, safety gates, project mode, routines,
+and workflow confirmations are sequenced.
+
+Ordering matters. Approval/confirmation handlers run before broad workflow or
+document handlers so stale approvals do not hijack unrelated turns, and private
+exposure checks run first so secrets never reach downstream model/tool lanes.
+"""
+
 from __future__ import annotations
 
 import re

@@ -1,3 +1,15 @@
+"""Telegram transport adapter for Maya's shared assistant runtime.
+
+This module should stay thin. It receives Telegram text, voice notes, and photos;
+normalizes them into Maya channel envelopes; calls `KampungAssistant`; records
+turn/route/delivery audit events; and sends text, voice, photos, or document
+attachments back to Telegram.
+
+Do not put document semantics here. Voice notes become text through xAI STT, then
+the same artifact routers handle them as ordinary Telegram turns. That is what
+keeps phone voice, Telegram text, and iMac voice aligned after transcription.
+"""
+
 import os
 import asyncio
 import logging

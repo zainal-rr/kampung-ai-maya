@@ -1,3 +1,17 @@
+"""Semantic artifact intent resolver for messy human requests.
+
+This is the layer that prevents Maya from becoming a pile of regex aliases. It
+runs after cheap local command checks but before document builders. The resolver
+uses semantic/provider judgment when available to decide whether a message is
+normal chat, a request for a concrete artifact, a follow-up edit, or a
+clarification case such as "make a document" without saying Word/Excel/PPTX.
+
+Downstream users are `DocumentActionRouter` and the Telegram/iMac channels. The
+resolver must not create files itself; it only returns a structured intent so
+the artifact router can choose the correct builder, QA loop, delivery channel,
+and route/cost record.
+"""
+
 from __future__ import annotations
 
 import json

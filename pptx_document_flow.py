@@ -1,3 +1,16 @@
+"""PowerPoint creation QA loop.
+
+The caller gives this module a title and slide outline. This flow builds the
+editable PPTX locally, runs visual/text QA, optionally rebuilds the deck through
+topic-safe repair, inserts Gemini visual assets when the topic benefits from
+images, checks image count/fit through the rendered deck inspector, and records
+the artifact review for `/review`.
+
+Keep generation and proof separate: Gemini/Claude can influence content and
+polish, but the file is only deliverable when local PPTX inspection and the
+review gate agree that the deck is usable.
+"""
+
 from __future__ import annotations
 
 import asyncio

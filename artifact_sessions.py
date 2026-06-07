@@ -1,3 +1,15 @@
+"""Continuity store for the latest artifact being discussed or edited.
+
+Artifact sessions are the bridge between separate Telegram/iMac turns. When
+Maya creates a Word itinerary, this module records the path, artifact type,
+short title, extracted parameters such as destination/days/people, and an expiry
+time. Later requests like "make an Excel budget for that itinerary" or "change
+it to 5 days" resolve through this store instead of relying on brittle wording.
+
+This is not long-term memory. It is a short-lived working context that supports
+same-day document collaboration without polluting canonical memory.
+"""
+
 from __future__ import annotations
 
 import json

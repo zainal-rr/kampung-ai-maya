@@ -1,3 +1,16 @@
+"""Office artifact mixin for Excel and PowerPoint creation/editing.
+
+`DocumentActionRouter` owns intent resolution, while this mixin owns the
+Office-specific work: editing the latest workbook/deck, preserving backups,
+calling the local workbook/deck builders, and routing results through artifact
+QA/delivery. Word has its own mixin because Word editing and visual QA have
+different rules.
+
+The important continuity behavior lives here with `artifact_sessions`: follow-up
+edits should modify the current artifact in place unless the user explicitly
+asks for a copy or new version.
+"""
+
 from __future__ import annotations
 
 from document_actions_context import *

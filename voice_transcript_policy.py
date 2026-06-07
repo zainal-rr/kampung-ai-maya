@@ -1,3 +1,16 @@
+"""Policy layer for post-STT voice transcript behavior.
+
+This module handles text after xAI STT has already produced a transcript. It is
+not the paid Grok voice session itself. The policy decides whether a transcript
+is short chat, long work that should be parked, a document/browser/coding task
+that must move to Maya's worker lanes, or a case that should continue as normal
+conversation.
+
+The hard boundary is cost and ownership: Grok voice may acknowledge and hand off
+long work, but documents, browser work, coding, and memory-heavy tasks must be
+handled by Maya's normal routers after transcription.
+"""
+
 from __future__ import annotations
 
 import re

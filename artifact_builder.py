@@ -1,3 +1,16 @@
+"""Shared finalization path for user-facing Office artifacts.
+
+This module sits after the type-specific builders (`document_actions_word`,
+`travel_budget`, and PowerPoint flows) and before channel delivery. Its job is
+to turn an already-created local file into a durable Maya artifact: validate it,
+run model review when available, retry through the caller-supplied rebuild hook,
+record latest-document/session metadata, and deliver through iMac or Telegram.
+
+Keep this module type-agnostic. Word, Excel, and PowerPoint decide how to build
+or repair their files before calling this layer; this layer decides whether the
+finished file is safe to call final and whether it should be attached/opened.
+"""
+
 from __future__ import annotations
 
 import asyncio

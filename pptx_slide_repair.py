@@ -1,3 +1,14 @@
+"""PowerPoint slide repair presets used by the QA loop.
+
+`pptx_document_flow` calls this module when a generated deck fails or looks too
+generic. The functions here deliberately return short, presentation-safe titles
+and bullets for common domains so the rebuild path can remove dangling text,
+weak titles, and sentence-heavy slides before visual QA runs again.
+
+This is a local repair library, not a model call. It keeps retry behavior
+predictable and cheap when the model-generated outline is not presentation-ready.
+"""
+
 from __future__ import annotations
 
 import os

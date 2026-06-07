@@ -1,5 +1,20 @@
+"""Runtime code-size gate for Maya modules.
+
+The 300-line rule is meant to catch oversized runtime modules before they become
+hard to reason about. It now counts logical executable lines rather than physical
+lines, so detailed comments, blank lines, and docstrings do not punish readable
+code. Large live-test/replay scripts are excluded because they are evidence
+fixtures, not runtime architecture.
+
+`local_ci.py` treats hard violations as blocking. Urgent/watchlist ranges remain
+visible so refactors can be planned before files cross the hard limit.
+"""
+
 from __future__ import annotations
 
+import ast
+import io
+import tokenize
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -63,8 +78,49 @@ def format_code_health(health: CodeHealth) -> str:
 
 
 def _count_file(path: Path) -> FileLineCount:
-    with path.open("r", encoding="utf-8", errors="ignore") as file_obj:
-        return FileLineCount(path=path, lines=sum(1 for _ in file_obj))
+    text = path.read_text(encoding="utf-8", errors="ignore")
+    return FileLineCount(path=path, lines=_logical_code_lines(text))
+
+
+def _logical_code_lines(text: str) -> int:
+    code_lines: set[int] = set()
+    for token in tokenize.generate_tokens(io.StringIO(text).readline):
+        if token.type in {
+            tokenize.COMMENT,
+            tokenize.ENCODING,
+            tokenize.ENDMARKER,
+            tokenize.INDENT,
+            tokenize.DEDENT,
+            tokenize.NL,
+            tokenize.NEWLINE,
+        }:
+            continue
+        code_lines.add(token.start[0])
+    code_lines.difference_update(_docstring_lines(text))
+    return len(code_lines)
+
+
+def _docstring_lines(text: str) -> set[int]:
+    try:
+        tree = ast.parse(text)
+    except SyntaxError:
+        return set()
+    lines: set[int] = set()
+    for node in ast.walk(tree):
+        body = getattr(node, "body", None)
+        if not isinstance(body, list) or not body:
+            continue
+        first = body[0]
+        if not (
+            isinstance(first, ast.Expr)
+            and isinstance(getattr(first, "value", None), ast.Constant)
+            and isinstance(first.value.value, str)
+        ):
+            continue
+        start = getattr(first, "lineno", 0)
+        end = getattr(first, "end_lineno", start)
+        lines.update(range(start, end + 1))
+    return lines
 
 
 def _excluded_from_runtime_gate(path: Path) -> bool:
