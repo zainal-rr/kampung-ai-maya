@@ -21,10 +21,10 @@ Reject `<.DOCTYPE html>`, `UTF 8`, `width=device width`, `initial scale`, CSS pr
 Check single-file structure, app markers, interactive controls, common malformed syntax, and code-fence leakage. Browser smoke/render should be used when available.
 
 ## Claude Review
-Claude reviews the generated file after Kimi or Gemini produces it. Claude may repair HTML but must return only the complete file.
+Claude reviews the generated file after Codex or Gemini produces it. Claude may repair HTML but must return only the complete file.
 
 ## Provider And Repair
-Kimi K2.6 is primary coder. Gemini Flash is fallback only after Kimi fails or times out. Claude reviews the file. Local validation decides whether Maya may call it final.
+Artisan Codex owns serious app-building. Gemini Flash may create lightweight single-file HTML artifacts when the request is explicitly a simple file. Claude reviews the file. Local validation decides whether Maya may call it final.
 
 ## Delivery
 iMac opens or saves the HTML under Desktop Maya artifacts. Telegram attaches the `.html` file and does not paste code unless Zainal explicitly asks for code.
@@ -32,7 +32,7 @@ iMac opens or saves the HTML under Desktop Maya artifacts. Telegram attaches the
 ## Activation Tests
 happy path: user asks for a travel planner app.
 success: file exists, opens as an app, has form/control behavior, and no malformed CSS/HTML.
-failure path: Kimi times out or produces broken source.
+failure path: Codex or Gemini times out, produces broken source, or returns a prose/specification document instead of a usable app file.
 rollback: Gemini fallback runs; if QA still fails, deliver as a draft with issues.
 regression: typo such as `ake me a html file` is still recognized as an HTML file request.
 expected: Maya sends the file, not a long code block.

@@ -8,7 +8,7 @@ from permission_policy import contains_sensitive_info, hard_no_private_exposure_
 FINAL_ACTION_RE = re.compile(r"\b(book|reserve|purchase|pay|checkout|submit|confirm booking|complete booking)\b", re.I)
 EXACT_SELECTION_RE = re.compile(r"\b(option|listing|flight|hotel|stay|room|result)\s*(?:number\s*)?(\d+)\b", re.I)
 TRAVEL_PRIVATE_RE = re.compile(
-    r"\b(passport|card|credit card|debit card|cvv|otp|2fa|password|bank|private identifier)\b",
+    r"\b(passport|ic|identity card|id card|national id|card|credit card|debit card|cvv|otp|2fa|password|bank|private identifier)\b",
     re.I,
 )
 

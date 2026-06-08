@@ -50,7 +50,7 @@ This checklist focuses the last physical iMac testing window before Zainal is aw
 
 1) [ ] Normal Telegram text routes to Gemini.
 2) [ ] `/complex ...` routes to GPT plus Claude review.
-3) [ ] Coding questions route to Kimi.
+3) [ ] Coding questions route to Artisan Codex.
 4) [ ] Review questions route to Claude.
 5) [ ] Weather, current, market, or news questions route to Grok.
 6) [ ] `/route` shows the model name.
@@ -156,5 +156,5 @@ Reviewer feedback to carry through the May to June hardening window.
 11) [ ] Confirm research notes do not become durable memory without confirmation or clear teaching cues.
 12) [ ] Keep `/complex` explicit-only and verify normal complexity does not silently trigger GPT.
 13) [ ] Verify Claude review stays review-only unless a future approved skill changes that.
-14) [ ] Verify Kimi remains the coding owner for implementation and repo maintenance.
+14) [ ] Verify Artisan Codex remains the coding owner for implementation and repo maintenance.
 15) [ ] Track cost during live multi-lane testing so provider usage does not drift upward.

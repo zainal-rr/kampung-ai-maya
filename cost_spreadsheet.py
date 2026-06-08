@@ -13,8 +13,7 @@ LABELS = {
     "gemini_flash_vision_calls": "Gemini Flash sight",
     "gemini_premium_text_calls": "Gemini 3.5 Flash text",
     "gemini_premium_vision_calls": "Gemini 3.5 Flash sight",
-    "codex_implementation_jobs": "Artisan Claude Code jobs",
-    "kimi_coding_calls": "Kimi coding",
+    "codex_implementation_jobs": "Artisan Codex jobs",
     "gpt_complex_calls": "GPT complex",
     "claude_steward_calls": "Claude steward",
     "grok_text_calls": "Grok text/news",
@@ -32,7 +31,7 @@ SAVER_NOTES = {
     "xai_stt_seconds": "Use for voice notes and live voice transcription.",
     "gemini_flash_text_calls": "Default low-cost Telegram and document drafting lane.",
     "gemini_premium_text_calls": "Use only for premium research or careful synthesis.",
-    "codex_implementation_jobs": "Local Claude Code execution through Artisan; provider billing is external.",
+    "codex_implementation_jobs": "Local Codex execution through Artisan; provider billing is external.",
     "gpt_complex_calls": "Only through /complex or explicit GPT request.",
     "claude_steward_calls": "Review, critique, safety, and document quality checks.",
 }

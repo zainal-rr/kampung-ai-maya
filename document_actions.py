@@ -35,7 +35,7 @@ _PATCHABLE_SYMBOLS = (
     "artifact_preflight_with_gemini",
     "create_powerpoint_with_qa",
     "draft_html_with_gemini",
-    "draft_html_with_kimi",
+    "draft_html_with_artisan",
     "draft_markdown_with_gemini",
     "review_artifact_quality",
     "review_html_app",

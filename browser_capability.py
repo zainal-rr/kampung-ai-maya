@@ -117,7 +117,7 @@ def _search_result_open_request(lowered: str) -> bool:
 def _youtube_request(lowered: str) -> bool:
     if "youtube" in lowered or "you tube" in lowered:
         return True
-    return bool(re.search(r"\b(open|click|select|choose|search|find)\b", lowered)) and "video" in lowered
+    return bool(re.search(r"\b(open|click|select|choose|search|find|look\s+for|summari[sz]e|recommend|check)\b", lowered)) and "video" in lowered
 
 
 def _reddit_request(lowered: str) -> bool:

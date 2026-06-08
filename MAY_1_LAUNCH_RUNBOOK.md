@@ -26,7 +26,7 @@ Edit `/Users/zainalabidinjamal/projects/kampung-ai/.env`.
 
 1) Add `OPENAI_API_KEY` for Maya's strategic lane.
 2) Add `XAI_API_KEY` for Grok Voice Agent, Ara voice notes, xAI STT, and pulse/news.
-3) Confirm `GOOGLE_API_KEY`, `KIMI_API_KEY`, and `TELEGRAM_BOT_TOKEN` are still present.
+3) Confirm `GOOGLE_API_KEY` and `TELEGRAM_BOT_TOKEN` are still present.
 
 Do not paste keys into Telegram, logs, screenshots, or checklist files.
 
@@ -69,7 +69,7 @@ Expected posture:
 
 1) `doctor.py` shows required keys set and Telegram ready.
 2) `learning_smoke.py` prints `learning_smoke: ok`.
-3) `provider_smoke.py` loads `.env`, reports key status, and checks Gemini, GPT-5.5, Kimi, Grok, Ara TTS, and xAI STT.
+3) `provider_smoke.py` loads `.env`, reports key status, and checks Gemini, GPT-5.5, Claude, Grok, Ara TTS, and xAI STT.
 4) Ara TTS is only counted when the xAI API succeeds. Local macOS voice fallback does not count as Ara.
 5) `screen_answer_probe.py` can bring Chrome forward and describe the visible active tab.
 6) `app_interaction_smoke.py` confirms app switching, shortcuts, typed text routing, and local folder access including Desktop.

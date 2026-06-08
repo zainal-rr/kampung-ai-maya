@@ -10,7 +10,6 @@ from dotenv import load_dotenv
 
 KEYS = (
     ("GOOGLE_API_KEY", "Gemini 3.1 Flash default, Gemini 3.5 Flash premium sight, Omi, memory shaping"),
-    ("KIMI_API_KEY", "legacy Kimi only; retired from active coding"),
     ("OPENAI_API_KEY", "GPT-5.5 complex lane through /complex"),
     ("ANTHROPIC_API_KEY", "Claude Opus steward review lane"),
     ("XAI_API_KEY", "Grok pulse, Ara TTS, xAI STT, voice agent"),

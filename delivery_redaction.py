@@ -11,8 +11,6 @@ PROVIDER_OR_AI_APP_NAMES = (
     "Gemini",
     "Google",
     "Grok",
-    "Kimi",
-    "Moonshot",
     "Mistral",
     "OpenAI",
     "xAI",

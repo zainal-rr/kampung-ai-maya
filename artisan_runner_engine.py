@@ -5,8 +5,6 @@ from artisan_runner_postprocess import _result, _write_transcript
 
 
 async def _run_artisan_engine(run_id: str, request: str, target: ArtisanTarget, brief: str) -> dict:
-    if ARTISAN_ENGINE == "claude":
-        return await _run_claude_code(run_id, request, target, brief)
     return await _run_codex(run_id, request, target, brief)
 
 
@@ -79,46 +77,6 @@ def _codex_chatgpt_auth_state() -> tuple[bool, str]:
     return False, output or "not logged in using ChatGPT"
 
 
-async def _run_claude_code(run_id: str, request: str, target: ArtisanTarget, brief: str) -> dict:
-    prompt = _artisan_prompt(request, target, brief)
-    if os.getenv("ARTISAN_DRY_RUN") == "1" or not shutil.which("claude"):
-        return await _dry_run_result(run_id, target, prompt)
-    cmd = [
-        "claude",
-        "-p",
-        "--output-format",
-        "json",
-        "--permission-mode",
-        target.permission_mode,
-        "--add-dir",
-        str(target.cwd),
-        "--disallowedTools",
-        (
-            "Bash(rm:*),Bash(git push:*),Bash(git commit:*),Bash(git worktree:*),"
-            "Bash(git reset:*),Bash(git clean:*),Bash(git checkout:*),Bash(git merge:*),"
-            "Bash(git rebase:*),Bash(kill:*),Bash(npm publish:*),WebFetch"
-        ),
-        "--name",
-        run_id,
-        prompt,
-    ]
-    timeout = int(os.getenv("ARTISAN_TIMEOUT_SECONDS", "300"))
-    proc = await asyncio.create_subprocess_exec(
-        *cmd,
-        cwd=str(target.cwd),
-        stdin=subprocess.DEVNULL,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-    try:
-        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
-    except asyncio.TimeoutError:
-        proc.kill()
-        stdout, stderr = await proc.communicate()
-        return _result("failed", "Claude Code timed out.", stdout, stderr, run_id)
-    return _result("completed" if proc.returncode == 0 else "failed", "", stdout, stderr, run_id)
-
-
 async def _run_maker_template_source(run_id: str, target: ArtisanTarget, plan) -> dict:
     script = write_maker_template_source(target.cwd, plan)
     transcript = _write_transcript(run_id, {"maker_template": plan.as_dict(), "source_script": str(script)})
@@ -141,7 +99,7 @@ async def _dry_run_result(run_id: str, target: ArtisanTarget, prompt: str) -> di
     return {
         "status": "completed",
         "status_note": "dry run captured",
-        "summary": f"Dry run: Artisan would run {ARTISAN_ENGINE} in {target.cwd}.",
+        "summary": f"Dry run: Artisan would run Codex in {target.cwd}.",
         "session_id": "",
         "tests_run": [],
         "transcript_path": transcript,
@@ -171,7 +129,7 @@ def _artisan_prompt(request: str, target: ArtisanTarget, brief: str) -> str:
         repo_note = _repo_prompt_note(target)
     return (
         f"{ARTISAN_SYSTEM_PROMPT}\n\n"
-        "You are being called by Maya's Artisan Orchestrator. Maya owns routing, memory, safety, and user communication.\n"
+        "You are being called by Maya's Artisan runtime. Maya owns routing, memory, safety, and user communication.\n"
         "Gemini has already created the required build brief below. Follow it unless it conflicts with safety or repo rules.\n\n"
         f"Working directory: {target.cwd}\n"
         f"Permission mode: {target.permission_mode}\n"

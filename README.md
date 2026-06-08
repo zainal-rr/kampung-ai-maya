@@ -4,6 +4,17 @@ Kampung AI is a personal agent harness. Maya is the user-facing identity; undern
 
 This is not just a Telegram bot, a model router, or a LangGraph demo. The product direction is a local-first personal agent runtime.
 
+## Architecture Documents
+
+| Document | Purpose |
+| --- | --- |
+| `KAMPUNG_AI.md` | Concise canonical architecture and system boundaries |
+| `KAMPUNG_AI_FULL.md` | Long-form architecture, doctrine, preferences, historical decisions, and detailed operating rules |
+| `KAMPUNG_AI_CHECKLIST.md` | Single execution roadmap and checklist source of truth |
+| `docs/public_architecture.md` | Public/investor-safe architecture narrative |
+| `docs/proof_and_readiness.md` | Deterministic proof, live-proof boundaries, current scores, and remaining validation |
+| `docs/maya_operating_doctrine.md` | Private doctrine copy kept under `docs/` for separation |
+
 ## Why Kampung AI Is Different
 
 Kampung AI treats Maya as a personal agent harness, not a single chatbot surface. The core value is the combination of persistent threads, event traces, permission gates, canonical memory, local artifacts, replayable demos, and local computer actions across channels. Telegram and iMac are clients of the same runtime rather than separate assistants.

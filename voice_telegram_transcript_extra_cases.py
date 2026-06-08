@@ -126,7 +126,7 @@ def build_chat_cases(case_cls: Any, variants: tuple[str, ...]) -> list[Any]:
         "is it safe to restart",
         "what did the repair report say",
         "explain the route in simple language",
-        "what happens if Kimi times out",
+        "what happens if Artisan times out",
         "what should I test on June 8",
         "how do I compare hotels safely",
         "what happens before payment",

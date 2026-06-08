@@ -127,7 +127,7 @@ async def _failure_smoke(db_path: str) -> None:
     import document_actions as da
 
     old_draft = da.draft_markdown_with_gemini
-    old_html = da.draft_html_with_kimi
+    old_html = da.draft_html_with_artisan
     old_fallback = da.draft_html_with_gemini
     old_review = da.review_html_app
 
@@ -155,7 +155,7 @@ async def _failure_smoke(db_path: str) -> None:
         after = set(Path(os.environ["MAYA_WORKSPACE_ROOT"]).joinpath("notes").glob("quota-test*.md"))
         _require("No file was created" in (reply or ""), "quota failure should not create fake file")
         _require(before == after, "quota failure created a file")
-        da.draft_html_with_kimi = timeout_html
+        da.draft_html_with_artisan = timeout_html
         da.draft_html_with_gemini = _fake_html_fallback
         fallback_reply = await router.handle("make me a html file for a travel planner app", "telegram")
         _require("[file:" in (fallback_reply or ""), "Gemini should take over when Codex times out")
@@ -167,7 +167,7 @@ async def _failure_smoke(db_path: str) -> None:
         html_reply = await router.handle("make me a html file for a travel planner app", "telegram")
         _require("Codex app lane and Gemini" in (html_reply or ""), "double HTML failure should be reported")
         _require("No file was created" in (html_reply or ""), "Codex timeout should not claim a file")
-        da.draft_html_with_kimi = _fake_html_draft
+        da.draft_html_with_artisan = _fake_html_draft
         da.draft_html_with_gemini = _fake_html_fallback
         da.review_html_app = broken_review
         broken_reply = await router.handle("make me a html file for a broken review check app", "telegram")
@@ -189,7 +189,7 @@ async def _failure_smoke(db_path: str) -> None:
         )
     finally:
         da.draft_markdown_with_gemini = old_draft
-        da.draft_html_with_kimi = old_html
+        da.draft_html_with_artisan = old_html
         da.draft_html_with_gemini = old_fallback
         da.review_html_app = old_review
 

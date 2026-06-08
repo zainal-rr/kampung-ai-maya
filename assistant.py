@@ -14,7 +14,6 @@ from curated_memory import add_curated_memory
 from harness_router import HarnessRouter
 from memory_service import MemoryService
 from models import TheSenses
-from orchestrator import Orchestrator
 from response_policy import ResponsePolicy
 from response_style import apply_reply_preferences
 from route_tracker import record_route
@@ -38,7 +37,6 @@ SIGHT_ROUTE_PREFIX = "[sight]"
 class KampungAssistant:
     def __init__(self, db_path: str = "session_history.db"):
         self.db_path = db_path
-        self.orchestrator = Orchestrator(db_path=db_path)
         self.memory = MemoryService(db_path)
         self.skills = SkillRegistry(db_path)
         self.commands = AssistantCommandRouter(db_path, self.memory, self.skills)
@@ -55,7 +53,6 @@ class KampungAssistant:
             learning=self.learning,
             policy=self.policy,
             model_lanes=self.model_lanes,
-            orchestrator=self.orchestrator,
             telegram_fast_responder=self.telegram_fast_responder,
             imac_fast_responder=self.imac_fast_responder,
         )
@@ -82,7 +79,6 @@ class KampungAssistant:
         self.router.learning = self.learning
         self.router.policy = self.policy
         self.router.model_lanes = self.model_lanes
-        self.router.orchestrator = self.orchestrator
         self.router.telegram_fast_responder = self.telegram_fast_responder
         self.router.imac_fast_responder = self.imac_fast_responder
         self.harness.runner.tools.documents = self.commands.documents

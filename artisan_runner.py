@@ -77,7 +77,7 @@ async def create_artisan_implementation_request(
         await upsert_run(db_path, state, status=status)
         await record_event(db_path, run_id, "artisan_finished", result["summary"][:1000])
         if not maker_template_plan:
-            await record_usage(db_path, "codex_implementation_jobs", 1, f"Artisan {ARTISAN_ENGINE} job")
+            await record_usage(db_path, "codex_implementation_jobs", 1, "Artisan Codex job")
         await _record_artifacts(db_path, run_id, target, changed_files, result)
         if target.approval_state == "repo_approval_required":
             await create_approval(

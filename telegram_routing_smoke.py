@@ -58,6 +58,10 @@ class FakeModelLanes:
     def should_use_steward_path(text: str) -> bool:
         return "check this plan carefully" in text.lower()
 
+    @staticmethod
+    def should_use_source_research_path(text: str) -> bool:
+        return False
+
     async def artisan_response(self, text: str, memory_context: str, skill_context: str, channel: str = "telegram") -> str:
         self.artisan_calls += 1
         return "artisan lane"
@@ -79,18 +83,12 @@ class FakeModelLanes:
         return "steward lane"
 
 
-class ForbiddenOrchestrator:
-    async def run(self, user_input: str, history=None):
-        raise AssertionError("Telegram should not auto-route through orchestrator")
-
-
 async def main() -> None:
     os.environ["GOOGLE_API_KEY"] = "test-google-key"
     with tempfile.TemporaryDirectory(prefix="maya-routing-") as tmp:
         db_path = str(Path(tmp) / "smoke.db")
         await _init(db_path)
         assistant = KampungAssistant(db_path)
-        assistant.orchestrator = ForbiddenOrchestrator()
         assistant.telegram_fast_responder = FakeResponder("fast telegram lane")
         assistant.model_lanes = FakeModelLanes()
 
@@ -116,7 +114,7 @@ async def main() -> None:
         _require(memory_recall == "I don't have that saved yet.", "unknown direct memory recall should not guess")
         route = await last_route_text(db_path)
         _require("lane: command" in route and "reason: memory lookup" in route, "direct memory recall should use command lane")
-        _require("lane: Moonshot coding" not in route and "lane: Kimi coding" not in route, "memory recall with word test should not use coding lane")
+        _require("coding" not in route.lower(), "memory recall with word test should not use coding lane")
         await upsert_preference(db_path, "lesson_global_my_test_city", "my Telegram test city is Kuala Lumpur", source="telegram")
         await upsert_preference(db_path, "lesson_global_my_test_drink", "my Telegram test drink is teh ais", source="telegram")
         known_memory = await assistant.handle_text("what is my Telegram test city?", "telegram")

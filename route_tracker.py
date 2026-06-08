@@ -77,9 +77,8 @@ def _model_for_lane(lane: str) -> str:
         prefix = f"{os.getenv('XAI_VOICE_TRANSCRIPTION_MODEL', 'grok-2-audio')} + "
     if "artisan" in lowered or "codex" in lowered:
         gemini = os.getenv("GEMINI_FLASH_MODEL", "gemini-3-flash-preview")
-        engine = os.getenv("ARTISAN_ENGINE", "codex")
-        model = os.getenv("ARTISAN_CODEX_MODEL", "").strip() if engine == "codex" else "claude-code"
-        return f"{prefix}{gemini} + {model or engine}".rstrip(" +")
+        model = os.getenv("ARTISAN_CODEX_MODEL", "").strip()
+        return f"{prefix}{gemini} + {model or 'codex'}".rstrip(" +")
     if "gemini" in lowered:
         if "claude" in lowered:
             gemini = os.getenv("GEMINI_FLASH_MODEL", "gemini-3-flash-preview")
@@ -92,19 +91,6 @@ def _model_for_lane(lane: str) -> str:
         return f"{prefix}gpt-5.5 ({effort})"
     if "codex" in lowered:
         return f"{prefix}{os.getenv('ARTISAN_CODEX_MODEL', '').strip() or 'codex'}".rstrip(" +")
-    if "moonshot" in lowered:
-        env_name = "KIMI_HTML_MODEL" if "html" in lowered else "KIMI_CODING_MODEL"
-        default = "moonshot-v1-8k"
-        if "claude" in lowered:
-            moonshot = os.getenv(env_name, default)
-            return f"{prefix}{moonshot} + {claude_review}"
-        return f"{prefix}{os.getenv(env_name, default)}"
-    if "kimi" in lowered:
-        env_name = "KIMI_HTML_MODEL" if "html" in lowered else "KIMI_CODING_MODEL"
-        kimi = os.getenv(env_name) or os.getenv("KIMI_MODEL", "kimi-k2.6")
-        if "claude" in lowered:
-            return f"{prefix}{kimi} + {claude_review}"
-        return f"{prefix}{kimi}"
     if "claude" in lowered or "steward" in lowered:
         return f"{prefix}{claude_review}"
     if "grok" in lowered or "pulse" in lowered:

@@ -42,7 +42,7 @@ async def main() -> None:
             gemini_build_brief="Gemini brief: create a Vite habit tracker in a real project folder.",
         )
         _require("Artisan" in reply, "reply should name Artisan")
-        _require("Codex" not in reply and "Kimi" not in reply, "reply should not expose retired lane")
+        _require("Codex" not in reply, "reply should not expose the internal engine")
         run = await get_run(db_path, run_id)
         _require(run is not None, "run missing")
         _require(run["workflow_type"] == "artisan_app", "wrong workflow type")

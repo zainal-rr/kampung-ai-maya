@@ -29,7 +29,7 @@ async def main() -> None:
         state = run["state"]
         _require(run["status"] == "completed", "template maker run did not complete")
         _require(state.get("maker_template", {}).get("template_id") == "cable_clip", "maker template not selected")
-        _require("Claude Code timed out" not in state.get("summary", ""), "template path should not wait for Claude Code")
+        _require("timed out" not in state.get("summary", ""), "template path should not wait for a coding engine")
         qa = state.get("maker_qa") or {}
         _require(qa.get("passed") is True, "maker QA did not pass")
         _require(qa.get("blend_files"), "missing blend output")

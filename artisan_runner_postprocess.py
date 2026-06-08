@@ -31,9 +31,9 @@ async def _post_process_artisan_output(
             recovery = ""
             if "timed out" in result.get("summary", "").lower():
                 if any("fallback" in item.lower() for item in maker.warnings):
-                    recovery = f" {ARTISAN_ENGINE} timed out before producing usable maker output, so Maya used a constrained local fallback and completed Blender export/validation."
+                    recovery = " Codex timed out before producing usable maker output, so Maya used a constrained local fallback and completed Blender export/validation."
                 else:
-                    recovery = f" {ARTISAN_ENGINE} timed out after producing maker source, then Maya completed local Blender export and validation."
+                    recovery = " Codex timed out after producing maker source, then Maya completed local Blender export and validation."
             result["summary"] = _append_summary(result["summary"], maker.summary + recovery + " " + "; ".join(maker.checks[:8]))
         else:
             result["status"] = "failed"
@@ -96,7 +96,7 @@ def _summary_from_output(parsed: dict, stdout: str, stderr: str, fallback: str) 
         if isinstance(value, str) and value.strip():
             return value.strip()
     combined = "\n".join(part for part in (stdout.strip(), stderr.strip(), fallback) if part)
-    return combined[:2000] or f"{ARTISAN_ENGINE} returned no summary."
+    return combined[:2000] or "Codex returned no summary."
 
 
 def _read_text(path: Path | None) -> str:

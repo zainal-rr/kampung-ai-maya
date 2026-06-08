@@ -99,11 +99,11 @@ async def _generated_html_path(root: Path) -> Path:
 
     db_path = str(root / "smoke.db")
     await _init(db_path)
-    old_html = da.draft_html_with_kimi
+    old_html = da.draft_html_with_artisan
     old_fallback = da.draft_html_with_gemini
     old_review = da.review_html_app
     try:
-        da.draft_html_with_kimi = _fake_html_draft
+        da.draft_html_with_artisan = _fake_html_draft
         da.draft_html_with_gemini = _unused_fallback
         da.review_html_app = _same_review
         router = da.DocumentActionRouter(db_path, workspace=root / "Maya")
@@ -111,12 +111,12 @@ async def _generated_html_path(root: Path) -> Path:
         _, files = split_file_markers(reply or "")
         _require(files and files[0].suffix == ".html" and files[0].exists(), "generated HTML file missing")
         _require(
-            router.last_model_lane == "Kimi HTML app builder + Claude HTML review + local HTML QA",
+            router.last_model_lane == "Codex HTML app builder + Claude HTML review + local HTML QA",
             "HTML route did not use the expected QA lane",
         )
         return files[0]
     finally:
-        da.draft_html_with_kimi = old_html
+        da.draft_html_with_artisan = old_html
         da.draft_html_with_gemini = old_fallback
         da.review_html_app = old_review
 
@@ -167,7 +167,7 @@ async def _fake_html_draft(db_path: str, topic: str) -> MarkdownDraft:
 
 
 async def _unused_fallback(db_path: str, topic: str) -> MarkdownDraft:
-    raise AssertionError("Gemini fallback should not be used when Kimi generated valid HTML")
+    raise AssertionError("Gemini fallback should not be used when Artisan generated valid HTML")
 
 
 async def _same_review(db_path: str, topic: str, html: str) -> tuple[str, str]:

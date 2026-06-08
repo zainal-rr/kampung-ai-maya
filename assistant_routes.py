@@ -5,7 +5,6 @@ import os
 from dataclasses import dataclass
 from typing import Any
 
-from assistant_prompts import IMAC_SLOW_MARKERS
 from assistant_reply_paths import fast_imac_response, fast_telegram_response
 from assistant_text import clean_model_text, strip_wake_prefix
 from language_policy import uses_malay_or_manglish, wants_malay_or_manglish
@@ -28,7 +27,6 @@ class AssistantRouter:
         learning: Any,
         policy: Any,
         model_lanes: Any,
-        orchestrator: Any,
         telegram_fast_responder: Any,
         imac_fast_responder: Any,
     ):
@@ -36,7 +34,6 @@ class AssistantRouter:
         self.learning = learning
         self.policy = policy
         self.model_lanes = model_lanes
-        self.orchestrator = orchestrator
         self.telegram_fast_responder = telegram_fast_responder
         self.imac_fast_responder = imac_fast_responder
 
@@ -125,11 +122,18 @@ class AssistantRouter:
             return RouteResult(response, "Gemini source-aware research", "source-aware research", bool(os.getenv("GOOGLE_API_KEY")))
         if channel == "telegram":
             return await self._route_telegram(text, memory_context, skill_context, topic_context, voice_note)
-        if channel == "imac" and self._should_use_fast_imac_path(text):
+        if channel == "imac":
             response = await fast_imac_response(self.imac_fast_responder, text, memory_context, skill_context)
             return RouteResult(response, "Grok voice/text", "normal iMac voice", bool(os.getenv("XAI_API_KEY")))
-        response = await self.orchestrator.run(request_text, history)
-        return RouteResult(response, "orchestrator", "non-Telegram deep routing")
+        response = await fast_telegram_response(
+            self.telegram_fast_responder,
+            text,
+            memory_context,
+            skill_context,
+            topic_context,
+            voice_note=voice_note,
+        )
+        return RouteResult(response, "Gemini Flash text", "default assistant text", bool(os.getenv("GOOGLE_API_KEY")))
 
     async def _route_telegram(
         self,
@@ -209,8 +213,3 @@ class AssistantRouter:
         if not answers:
             return None
         return answers[0] if len(answers) == 1 else format_grouped_answers(answers)
-
-    @staticmethod
-    def _should_use_fast_imac_path(text: str) -> bool:
-        lowered = text.lower()
-        return not any(marker in lowered for marker in IMAC_SLOW_MARKERS)

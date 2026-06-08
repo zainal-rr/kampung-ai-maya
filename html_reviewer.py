@@ -47,7 +47,7 @@ async def review_html_app(db_path: str, topic: str, html: str) -> tuple[str, str
 
 def _system_prompt() -> str:
     return (
-        "You are Maya's Claude HTML app reviewer. Kimi or Gemini already wrote the app. "
+        "You are Maya's Claude HTML app reviewer. Codex or Gemini already wrote the app. "
         "Review and improve the single-file HTML without changing the user's requested purpose. "
         "Fix broken JavaScript, missing accessibility labels, weak mobile layout, unusable controls, "
         "and obvious UX gaps. Do not add external dependencies. Return only the complete HTML file.\n\n"

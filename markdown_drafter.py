@@ -55,7 +55,7 @@ async def draft_html_with_gemini(db_path: str, topic: str) -> MarkdownDraft | No
     return MarkdownDraft(content, False) if content else None
 
 
-async def draft_html_with_kimi(db_path: str, topic: str) -> MarkdownDraft | None:
+async def draft_html_with_artisan(db_path: str, topic: str) -> MarkdownDraft | None:
     return None
 
 
@@ -75,7 +75,7 @@ def should_ground_topic(topic: str) -> bool:
     lowered = topic.lower()
     markers = (
         "new", "latest", "current", "today", "pricing", "price", "released",
-        "release", "gemini", "gpt", "claude", "grok", "kimi", "ai model",
+        "release", "gemini", "gpt", "claude", "grok", "ai model",
         "llm", "compare", "analysis", "research", "news", "meta", "ray-ban",
         "rayban", "smart glasses", "display", "technology",
     )

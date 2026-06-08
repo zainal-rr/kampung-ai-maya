@@ -63,7 +63,7 @@ class DocumentHtmlMixin:
         primary_failure = ""
         primary_lane = html_builder_lane()
         try:
-            draft = await draft_html_with_kimi(self.db_path, topic)
+            draft = await draft_html_with_artisan(self.db_path, topic)
         except TimeoutError as exc:
             logger.warning("%s failed for %r: %s: %s", primary_lane, topic, type(exc).__name__, exc)
             draft = None

@@ -10,7 +10,7 @@ TELEGRAM_SLOW_MARKERS = [
     "bug", "stack trace", "architecture", "strategy", "design", "implement",
     "build", "refactor", "latest news", "breaking news", "x feed", "twitter",
     "current events", "weather", "stock", "browse the web", "search the web",
-    "deep research", "complex", "gpt-5.5", "gpt5.5", "kimi",
+    "deep research", "complex", "gpt-5.5", "gpt5.5",
 ]
 
 IMAC_FAST_SYSTEM_PROMPT = (

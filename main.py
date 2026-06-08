@@ -52,7 +52,7 @@ async def _supervise(name: str, factory, delay_seconds: float = 5.0):
 async def main():
     configure_logging()
     logger = logging.getLogger("maya.main")
-    require_env(["GOOGLE_API_KEY", "KIMI_API_KEY"])
+    require_env(["GOOGLE_API_KEY"])
     db_path = os.getenv("KAMPUNG_DB_PATH", "session_history.db")
     await init_db(db_path)
     await init_lesson_db(db_path)

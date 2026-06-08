@@ -8,7 +8,7 @@ from complex_agentic_bridge import (
 )
 from complex_workflow import run_complex_plan_workflow
 from cost_tracker import record_usage
-from orchestrator_prompts import MIND_ESCALATION_PROMPT
+from lane_prompts import MIND_ESCALATION_PROMPT
 
 
 async def complex_plan_response(lanes, text: str, memory_context: str, skill_context: str, channel: str = "telegram") -> str:

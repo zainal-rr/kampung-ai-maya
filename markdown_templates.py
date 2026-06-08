@@ -106,5 +106,5 @@ def _general_sections(topic: str) -> dict[str, list[str] | str]:
 
 
 def _looks_like_ai_model(lowered: str) -> bool:
-    markers = ("gemini", "gpt", "claude", "grok", "kimi", "model", "llm", "ai")
+    markers = ("gemini", "gpt", "claude", "grok", "model", "llm", "ai")
     return any(marker in lowered for marker in markers)

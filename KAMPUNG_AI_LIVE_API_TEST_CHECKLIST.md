@@ -8,7 +8,7 @@ This checklist tracks the live API tests after provider keys are active. It is t
 2) [x] Confirm Gemini text lane responds.
 3) [x] Confirm GPT complex lane responds.
 4) [x] Confirm Claude Steward lane responds.
-5) [x] Confirm Kimi coding lane responds.
+5) [x] Confirm Artisan Codex lane queues/captures coding work.
 6) [x] Confirm Grok pulse lane responds.
 7) [x] Confirm Gemini vision lane responds.
 8) [x] Confirm Ara TTS responds.
@@ -58,12 +58,12 @@ This checklist tracks the live API tests after provider keys are active. It is t
 5) [x] Expected behavior: Claude review included after GPT plan.
 6) [x] Expected behavior: used only because `/complex` was explicit.
 
-## 7) Kimi Coding Lane
+## 7) Artisan Codex Lane
 
 1) [x] Prompt: `how would you structure a Python module for saving Maya preferences?`
-2) [x] Expected lane: `Kimi coding`.
-3) [x] Expected model: `kimi-k2.6`.
-4) [x] Expected behavior: coding or technical answer.
+2) [x] Expected lane: `Gemini build brief + Artisan Codex`.
+3) [x] Expected engine: Codex through Artisan.
+4) [x] Expected behavior: coding or technical work is queued/captured through Artisan.
 5) [x] Expected behavior: no GPT route.
 
 ## 8) Grok Pulse Lane
@@ -134,7 +134,7 @@ This checklist tracks the live API tests after provider keys are active. It is t
 3) [ ] Typed Telegram replies stay text-only.
 4) [ ] `/complex` is the only Telegram route to GPT.
 5) [ ] Review prompts route to Claude Steward.
-6) [ ] Coding prompts route to Kimi.
+6) [ ] Coding prompts route to Artisan Codex.
 7) [ ] Normal Telegram text routes to Gemini Flash.
 8) [ ] Current-world prompts route to Grok.
 9) [ ] Safety gates stop risky actions.

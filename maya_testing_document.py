@@ -23,7 +23,7 @@ def pre_travel_sections() -> list[tuple[str, list[str]]]:
         ]),
         ("Conversation And Routing", [
             "Test normal Telegram chat, Malay or Manglish mirroring, memory recall, and concise replies.",
-            "Use /route after representative prompts to confirm Gemini, Claude, Kimi, Grok, and /complex routing.",
+            "Use /route after representative prompts to confirm Gemini, Claude, Artisan Codex, Grok, and /complex routing.",
             "Typed Telegram messages should stay text-only unless the input was voice or voice is requested.",
         ]),
         ("Voice Before Travel", [

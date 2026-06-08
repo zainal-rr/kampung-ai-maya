@@ -110,7 +110,7 @@ def _patched_models():
     old = {
         "preflight": da.artifact_preflight_with_gemini,
         "draft": da.draft_markdown_with_gemini,
-        "html": da.draft_html_with_kimi,
+        "html": da.draft_html_with_artisan,
         "html_gemini": da.draft_html_with_gemini,
         "review": da.review_artifact_quality,
         "builder_review": artifact_builder.review_artifact_quality,
@@ -121,7 +121,7 @@ def _patched_models():
     }
     da.artifact_preflight_with_gemini = _fake_preflight
     da.draft_markdown_with_gemini = _fake_draft
-    da.draft_html_with_kimi = _fake_html_draft
+    da.draft_html_with_artisan = _fake_html_draft
     da.draft_html_with_gemini = _fake_html_draft
     da.review_artifact_quality = _fake_artifact_quality_review
     artifact_builder.review_artifact_quality = _fake_artifact_quality_review
@@ -134,7 +134,7 @@ def _patched_models():
     finally:
         da.artifact_preflight_with_gemini = old["preflight"]
         da.draft_markdown_with_gemini = old["draft"]
-        da.draft_html_with_kimi = old["html"]
+        da.draft_html_with_artisan = old["html"]
         da.draft_html_with_gemini = old["html_gemini"]
         da.review_artifact_quality = old["review"]
         artifact_builder.review_artifact_quality = old["builder_review"]

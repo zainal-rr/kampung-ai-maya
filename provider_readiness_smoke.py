@@ -8,7 +8,7 @@ from telegram_commands import command_help, parse_command
 def main() -> None:
     text = provider_readiness_text()
     _require(text.startswith("Provider readiness:"), "readiness title missing")
-    for key in ("GOOGLE_API_KEY", "KIMI_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "XAI_API_KEY", "TELEGRAM_BOT_TOKEN"):
+    for key in ("GOOGLE_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "XAI_API_KEY", "TELEGRAM_BOT_TOKEN"):
         _require(key in text, f"{key} missing from readiness")
     _require("CLAUDE_STEWARD_MODEL" in text, "Claude model setting missing")
     _require("provider_smoke.py --stage text --strict" in text, "text gate missing")

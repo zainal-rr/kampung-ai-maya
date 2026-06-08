@@ -51,7 +51,7 @@ from harness_models import local_artifact
 from markdown_drafter import (
     MarkdownDraft,
     draft_html_with_gemini,
-    draft_html_with_kimi,
+    draft_html_with_artisan,
     draft_markdown_with_gemini,
     html_builder_lane,
     should_use_model_draft,

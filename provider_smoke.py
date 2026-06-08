@@ -32,7 +32,6 @@ async def _run_stage(stage: str) -> dict[str, str]:
         "gemini": check_gemini,
         "gpt_5_5": check_openai,
         "claude_steward": check_claude,
-        "kimi": check_kimi,
         "grok": check_grok,
     }
     vision_checks = {"gemini_vision": check_gemini_vision}
@@ -71,18 +70,6 @@ async def check_openai() -> str:
         from models import TheMind
         reply = await TheMind(api_key).chat([{"role": "user", "content": "Reply with exactly: mind ok"}])
         return _ok(reply, "mind ok")
-    except Exception as exc:
-        return f"error ({exc})"
-
-
-async def check_kimi() -> str:
-    api_key = os.getenv("KIMI_API_KEY")
-    if not api_key:
-        return "skipped (missing KIMI_API_KEY)"
-    try:
-        from models import TheHands
-        reply = await TheHands(api_key).chat([{"role": "user", "content": "Reply with exactly: hands ok"}])
-        return _ok(reply, "hands ok")
     except Exception as exc:
         return f"error ({exc})"
 
@@ -226,7 +213,7 @@ def _load_environment() -> str:
 
 
 def _key_status() -> str:
-    names = ("GOOGLE_API_KEY", "KIMI_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "XAI_API_KEY")
+    names = ("GOOGLE_API_KEY", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "XAI_API_KEY")
     parts = [f"{name}={'set' if os.getenv(name) else 'missing'}" for name in names]
     return "keys: " + ", ".join(parts)
 

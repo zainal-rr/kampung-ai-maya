@@ -51,7 +51,7 @@ Use `KAMPUNG_AI_PRE_TRAVEL_TEST_CHECKLIST.md` for the focused Office, conversati
 4) [ ] Ask `what did you learn from me today`.
 5) [ ] Ask a normal text question and confirm it routes to Gemini.
 6) [ ] Ask `/complex help me think through a decision` and confirm GPT plus Claude review.
-7) [ ] Ask a coding question and confirm Kimi.
+7) [ ] Ask a coding question and confirm Artisan Codex.
 8) [ ] Ask a review question and confirm Claude.
 9) [ ] Ask a current/weather/news question and confirm Grok.
 10) [ ] Ask `remember that I prefer short Telegram replies`.

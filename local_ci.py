@@ -50,6 +50,8 @@ def run_local_ci(*, live_providers: bool = False) -> list[CheckResult]:
         _command_check("telegram text alias", ("telegram_text_alias_smoke.py",)),
         _command_check("telegram voice input", ("telegram_voice_input_smoke.py",)),
         _command_check("telegram photo input", ("telegram_photo_input_smoke.py",)),
+        _command_check("browser semantic scrape 500", ("browser_semantic_scrape_500.py",)),
+        _command_check("legacy architecture removed", ("legacy_architecture_removed_smoke.py",)),
         _command_check("memory perspective", ("memory_perspective_smoke.py",)),
         _command_check("hardening audit", ("hardening_audit_smoke.py",)),
         _command_check("latest demo evidence", ("demo_evidence.py", "--check")),

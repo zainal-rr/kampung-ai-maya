@@ -14,7 +14,6 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] **OpenAI:** Maya strategic lane (GPT-5.5).
     - [x] **Anthropic:** The Steward review lane (Claude Opus 4.8).
     - [x] **Google:** The Sight default and premium lanes (Gemini 3.1 Flash and Gemini 3.5 Flash).
-    - [x] **Moonshot:** Legacy Kimi credentials were secured, but Kimi/Moonshot is retired from the active coding roadmap.
     - [x] **Codex:** Codex CLI is installed for The Artisan coding lane; service-auth/live smoke remains tracked in 2.5.
     - [x] **xAI:** The Pulse (Grok 3).
     - [x] **xAI:** Ara voice notes, STT, and pulse/news lane.
@@ -88,9 +87,9 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Route natural review, critique, audit, hidden-risk, and check-this-plan prompts without adding a new command.
     - [x] Add provider readiness and smoke coverage for the Anthropic key.
     - [x] Live-test the Claude Steward lane after API keys arrive.
-- [x] **2.5. The Artisan (Codex replacing Kimi and Claude Code)**
+- [x] **2.5. The Artisan (Codex implementation lane)**
     - [x] Keep the lane name as `Artisan`; Maya should not rename it to Codex in normal user-facing flow.
-    - [x] Document that Codex replaces Kimi/Moonshot and Claude Code as the Artisan implementation engine.
+    - [x] Document that Codex is the only Artisan implementation engine.
     - [x] Document that Word, Excel, PowerPoint, memory, normal chat, voice, and document review do not move to Artisan.
     - [x] Add CLI lane safety language: safe read/test/diff work is allowed, while patching, restart, deploy, delete, upload, credential, purchase, and booking actions require approval when Maya acts autonomously.
     - [x] Document the approval boundary: repo changes require Zainal approval; `~/Desktop/Maya/Projects/...` project work can be edited directly unless the action is destructive or external.
@@ -101,12 +100,12 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add an Artisan runner wrapper that calls Codex programmatically and captures structured output.
     - [x] Require Gemini to create the build brief before Artisan runs.
     - [x] Store `artisan_run_id`, Codex transcript/final-message path when available, working directory, status, summary, changed files, tests run, transcript path, artifacts, usage/cost metadata, and approval state.
-    - [x] Route coding questions and code-generation requests to Artisan instead of Kimi.
+    - [x] Route coding questions and code-generation requests to Artisan.
     - [x] Enforce worktree isolation for repo repairs and self-healing jobs.
     - [x] Add approval gate before applying Artisan patches to `~/projects/kampung-ai` or any other repo.
     - [x] Add direct-write support for non-destructive work inside `~/Desktop/Maya/Projects/...`.
     - [x] Add `/route`, `/cost`, workflow desk, and transcript/report support for Artisan runs.
-    - [x] Add smoke tests proving Kimi is not called and Artisan jobs are queued/captured correctly.
+    - [x] Add smoke tests proving Artisan jobs are queued/captured correctly.
     - [x] Add smoke tests proving repo jobs use isolated worktrees and approval does not auto-apply patches.
     - [x] Install project design skills from `emilkowalski/skill` and `Leonxlnx/taste-skill`.
     - [x] Mirror the approved app-design skill subset into local project skill folders for Artisan project use.
@@ -372,7 +371,7 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add `/context` as a direct Telegram compacted-context inspection command.
     - [x] Add `/selfheal` as a direct safe repair-proposal command.
     - [x] Add `/weekly` and natural weekly-reflection phrasing that reads the prepared weekly summary.
-    - [x] Block normal Telegram text from falling through to any auto GPT-5.5 orchestrator path.
+    - [x] Block normal Telegram text from falling through to any auto GPT-5.5 deep-routing path.
     - [x] Route incoming Telegram voice notes through transcription and then the normal Telegram routing path.
     - [x] Do not force English for xAI STT on Telegram voice notes.
     - [x] Route incoming Telegram photos through a dedicated photo handler instead of ignoring photo-only messages.
@@ -383,7 +382,7 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Keep Telegram voice as Ara voice notes instead of Grok Voice Agent sessions.
     - [x] Make Telegram Ara voice replies the locked default, with text-only fallback until the xAI key exists.
     - [ ] Live-test Telegram Ara voice-note replies against the xAI API.
-- [ ] **9.2. Shared Orchestrator Across Channels**
+- [ ] **9.2. Shared Runtime Across Channels**
     - [x] Reuse the same routing and memory context path for iMac and Telegram.
     - [ ] Keep channel adapters thin so the brain stays centralized.
     - [ ] Preserve one Maya identity across Grok, Gemini, GPT-5.5, The Steward, and The Artisan.
@@ -539,7 +538,7 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Support chat commands to create, list, and disable routines.
     - [x] Clarify that briefings should be natural chat triggers, not command-first workflows.
 - [x] **12.13. Go-Live Smoke Test**
-    - [x] Add a one-command provider smoke test for Gemini, GPT-5.5, Claude, legacy Kimi, Grok, Ara TTS, and xAI STT.
+    - [x] Add a one-command provider smoke test for Gemini, GPT-5.5, Claude, Grok, Ara TTS, and xAI STT.
     - [x] Add Codex/Artisan readiness smoke once Codex is installed.
     - [x] Make the smoke test fail gracefully when keys or the correct interpreter are missing.
     - [x] Load `.env` directly so launch key checks do not depend on shell sourcing.
@@ -995,8 +994,8 @@ This document tracks the technical and operational roadmap for building the stan
         - [x] Add local Word visual QA before Maya calls Word output polished.
 
 - [x] **19.7a. HTML App Quality Gate**
-    - [x] Retire Kimi K2.6 as the future primary HTML/code builder.
-    - [x] Record that future serious HTML/app-building belongs to The Artisan with Codex, not Kimi or Claude Code.
+    - [x] Route future serious HTML/app-building to The Artisan with Codex.
+    - [x] Record that standalone HTML document creation is a lightweight artifact workflow, while app-building belongs to Artisan projects.
     - [x] Keep the current standalone HTML document path gated as a lightweight document workflow only until the Artisan app lane is implemented.
     - [x] Feed `html_app_artifact_quality` into Claude HTML review.
     - [x] Run local HTML QA after review.
@@ -1411,5 +1410,18 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Verify GitHub reports `zainal-rr/kampung-ai-maya` as `PRIVATE` before pushing.
     - [x] Push the verified Phase 22 closeout commit to the private GitHub remote.
 
+- [x] **22.12. Architecture Hygiene And Documentation Separation**
+    - [x] Remove the retired alternate coding-provider architecture and legacy deep-routing path from active code.
+    - [x] Delete obsolete implementation/test entry points that represented the retired architecture.
+    - [x] Rename shared lane prompt helpers to `lane_prompts.py`.
+    - [x] Add `legacy_architecture_removed_smoke.py` and wire it into `local_ci.py`.
+    - [x] Verify active files do not contain retired architecture markers except inside the guard test itself.
+    - [x] Preserve the previous full `KAMPUNG_AI.md` content as `docs/maya_operating_doctrine.md`.
+    - [x] Replace `KAMPUNG_AI.md` with a concise architecture source.
+    - [x] Add root-level `KAMPUNG_AI_FULL.md` as the long-form architecture and operating doctrine.
+    - [x] Add `docs/public_architecture.md` for public/investor-safe explanation.
+    - [x] Add `docs/proof_and_readiness.md` for scores, proof boundaries, and remaining validation.
+    - [x] Update `README.md` with the architecture document map.
+
 ---
-*Updated June 4, 2026*
+*Updated June 8, 2026*

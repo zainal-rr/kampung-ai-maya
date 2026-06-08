@@ -9,7 +9,7 @@ from complex_lane import complex_plan_response as run_complex_plan_response
 from cost_tracker import record_usage
 from language_policy import language_instruction
 from models import TheMind, TheNews, TheSenses, TheSteward
-from orchestrator_prompts import MIND_ESCALATION_PROMPT
+from lane_prompts import MIND_ESCALATION_PROMPT
 from provider_capabilities import CAPABILITIES, review_triggers
 from source_aware_research import format_source_research, should_use_source_research, source_aware_research
 from weather_lookup import current_weather_summary, is_weather_question

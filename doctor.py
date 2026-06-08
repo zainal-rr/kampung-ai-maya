@@ -14,7 +14,7 @@ from weekly_memory_store import latest_weekly_summary
 
 load_dotenv()
 
-REQUIRED_VARS = ["GOOGLE_API_KEY", "KIMI_API_KEY"]
+REQUIRED_VARS = ["GOOGLE_API_KEY"]
 OPTIONAL_VARS = ["TELEGRAM_BOT_TOKEN", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "XAI_API_KEY"]
 
 

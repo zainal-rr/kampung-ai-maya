@@ -59,7 +59,7 @@ async def main() -> None:
         await upsert_preference(db_path, "pref_no_dash", "no dash symbols in answers", source="smoke")
         import document_actions as da
         old_draft = da.draft_markdown_with_gemini
-        old_html = da.draft_html_with_kimi
+        old_html = da.draft_html_with_artisan
         old_html_fallback = da.draft_html_with_gemini
         old_html_review = da.review_html_app
         old_should = da.should_use_model_draft
@@ -73,7 +73,7 @@ async def main() -> None:
             return ArtifactPreflight(artifact_type, topic, "gemini", f"{artifact_type} runtime preflight blueprint", True)
 
         da.draft_markdown_with_gemini = _fake_draft
-        da.draft_html_with_kimi = _fake_html_draft
+        da.draft_html_with_artisan = _fake_html_draft
         da.draft_html_with_gemini = _fake_html_fallback
         da.review_html_app = _fake_html_review
         da.should_use_model_draft = lambda topic: True
@@ -253,7 +253,7 @@ async def main() -> None:
             print("document_actions_smoke: ok")
         finally:
             da.draft_markdown_with_gemini = old_draft
-            da.draft_html_with_kimi = old_html
+            da.draft_html_with_artisan = old_html
             da.draft_html_with_gemini = old_html_fallback
             da.review_html_app = old_html_review
             da.should_use_model_draft = old_should
