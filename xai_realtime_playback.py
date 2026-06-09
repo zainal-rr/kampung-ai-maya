@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import json
 import os
 import time
 
@@ -167,6 +168,11 @@ class XaiRealtimePlaybackMixin:
 
     async def _interrupt_playback(self) -> None:
         was_active = self.response_active
+        had_output = self.current_output is not None
+        had_queued_audio = not self.playback_queue.empty()
+        should_interrupt = was_active or had_output or had_queued_audio
+        if not should_interrupt:
+            return
         self.drop_audio_until_next_response = True
         await self._record_pending_assistant_transcript(interrupted=True)
         await record_voice_turn(
@@ -177,6 +183,11 @@ class XaiRealtimePlaybackMixin:
             event_type="input_audio_buffer.speech_started",
             response_id=self.current_response_id,
             interrupted=True,
+            diagnostics={
+                "response_active": was_active,
+                "output_open": had_output,
+                "queued_audio": had_queued_audio,
+            },
         )
         await self._clear_playback_queue()
         await put_playback(self.playback_queue, PlaybackCommand("interrupt"))

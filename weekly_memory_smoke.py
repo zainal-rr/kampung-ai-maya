@@ -67,6 +67,21 @@ async def main() -> None:
         rejected = await inspect_canonical_memory(db_path, "weekly test fruit")
         _require("No canonical memory found" in rejected, "live weekly memory saved a rejected test fact")
 
+        fallback = await WeeklyMemoryDistiller(db_path).run(
+            save=True,
+            live=True,
+            trigger_source="smoke-reviewer-fallback",
+            distiller_agent=_fake_distiller,
+            reviewer_agent=_failing_reviewer,
+        )
+        fallback_runs = await latest_weekly_memory_runs(db_path, limit=1)
+        _require(fallback.provider_calls == 2, "reviewer fallback should count distiller plus reviewer attempt")
+        _require(fallback.canonical_saved == 0, "reviewer fallback must not save unreviewed canonical facts")
+        _require(fallback.canonical_rejected >= 1, "reviewer fallback should reject proposed unreviewed facts")
+        _require("Reviewer unavailable" in fallback.summary, "reviewer fallback warning missing from summary")
+        _require(fallback_runs and fallback_runs[0]["status"] == "completed", "reviewer fallback should complete audit row")
+        _require("RuntimeError: reviewer unavailable" in str(fallback_runs[0]["error"]), "reviewer fallback error was not audited")
+
         reflection = await BriefingBuilder(db_path).build("weekly_reflection", "telegram")
         _require("Weekly reflection." in reflection, "weekly reflection missed title")
         _require("What I kept:" in reflection, "weekly reflection missed clean memory takeaway")
@@ -146,6 +161,10 @@ async def _fake_reviewer(_prompt: str) -> str:
       ]
     }
     """
+
+
+async def _failing_reviewer(_prompt: str) -> str:
+    raise RuntimeError("reviewer unavailable")
 
 
 def _require(condition: bool, message: str) -> None:

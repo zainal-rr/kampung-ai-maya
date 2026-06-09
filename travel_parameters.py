@@ -23,6 +23,11 @@ KNOWN_DESTINATIONS = (
     "istanbul",
     "dubai",
     "bali",
+    "almaty",
+    "astana",
+    "kazakhstan",
+    "tashkent",
+    "uzbekistan",
 )
 
 

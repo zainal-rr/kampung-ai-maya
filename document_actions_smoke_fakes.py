@@ -89,6 +89,81 @@ async def _fake_draft(db_path: str, topic: str, preflight_context: str = "") -> 
         )
     if "router" in lowered:
         return MarkdownDraft("# Router Setup\n\n## Real Draft\n\n1) Connect the WAN or internet port.\n2) Keep dash - style clean.\n")
+    if "desk setup" in lowered:
+        return MarkdownDraft(
+            "# Desk Setup Guide\n\n"
+            "## Purpose\n\n"
+            "1) Create a comfortable desk setup for daily work, calls, document review, and light creative tasks.\n"
+            "2) Keep the setup easy to maintain so the desk does not become cluttered after a few days.\n\n"
+            "## Prerequisites\n\n"
+            "1) Confirm desk size, chair height, monitor position, power outlets, cable length, lighting direction, and where frequently used devices will sit.\n"
+            "2) Prepare cable ties, a power strip, monitor stand if needed, cleaning cloth, notebook space, and a small tray for loose items.\n\n"
+            "## Configuration Steps\n\n"
+            "1) Place the monitor at eye level and about an arm length away, then center the keyboard and mouse with your shoulders.\n"
+            "2) Put the laptop or secondary screen to the side without blocking the main writing area.\n"
+            "3) Route power and charging cables behind the desk, leaving only the connectors you use daily accessible.\n"
+            "4) Position lighting so it does not reflect directly on the screen or shine into the camera during calls.\n"
+            "5) Keep headphones, notebook, water, and one writing tool within easy reach.\n\n"
+            "## Verification\n\n"
+            "1) Sit for ten minutes and check wrist angle, neck angle, cable reach, screen glare, and camera framing.\n"
+            "2) Start a test call and confirm microphone, headphones, lighting, and screen sharing all behave normally.\n\n"
+            "## Troubleshooting\n\n"
+            "1) If the desk feels cramped, remove duplicate chargers, move rarely used items to a drawer, and keep only one active notebook.\n"
+            "2) If the screen causes strain, reduce brightness, adjust height, and remove reflected light from behind you.\n\n"
+            "## Safety Notes\n\n"
+            "1) Do not overload a single power strip, pinch cables under heavy furniture, or run charging cables where feet can pull them.\n"
+            "2) Keep drinks away from power adapters and give devices enough airflow.\n\n"
+            "## Next Steps\n\n"
+            "1) Use the setup for one full work session, then adjust only the parts that bothered you.\n"
+            "2) Review the desk weekly and remove items that are not used in normal work.\n"
+        )
+    if "q23" in lowered and "work plan" in lowered:
+        return MarkdownDraft(
+            "# Q23 Two-Day Work Plan\n\n"
+            "## Goal\n\n"
+            "1) Complete a focused two-day work plan for Q23 that turns the rough request into a clear operating sequence.\n"
+            "2) Keep the plan practical enough for a person to follow without needing another planning pass.\n\n"
+            "## Context\n\n"
+            "1) The work window is short, so the plan prioritizes setup, execution, review, and handover rather than broad strategy.\n"
+            "2) Q23 is treated as the working label until the user provides a fuller project name or owner.\n\n"
+            "## Workstreams\n\n"
+            "1) Day 1 covers scope confirmation, source collection, task ordering, and the first execution block.\n"
+            "2) Day 2 covers remaining execution, quality review, stakeholder notes, and a concise next-action handover.\n\n"
+            "## Timeline\n\n"
+            "1) Morning Day 1: confirm goal, inputs, constraints, and success criteria.\n"
+            "2) Afternoon Day 1: execute the highest-impact tasks and record blockers.\n"
+            "3) Morning Day 2: finish remaining work, review quality, and tighten the output.\n"
+            "4) Afternoon Day 2: send summary, owners, risks, and next steps.\n\n"
+            "## Risks\n\n"
+            "1) Missing inputs, unclear owner, or too many parallel priorities can make the two-day window unrealistic.\n"
+            "2) Keep a visible blocker list so the plan does not quietly drift.\n\n"
+            "## Next Steps\n\n"
+            "1) Confirm the exact Q23 owner, deadline, and output format.\n"
+            "2) Replace assumptions with real names, dates, and deliverables once available.\n"
+        )
+    if "maya" in lowered and "testing" in lowered and "checklist" in lowered:
+        return MarkdownDraft(
+            "# Pre-Travel Maya Testing Checklist\n\n"
+            "## Checklist Overview\n\n"
+            "1) Use this checklist to confirm Maya is ready before travel, with focus on iMac voice, browser skills, document creation, and recovery steps.\n"
+            "2) The goal is to find obvious failures while there is still time to fix them locally.\n\n"
+            "## Must Do\n\n"
+            "1) Test the iMac voice hotkey, confirm the mic opens, ask a short question, and close the session cleanly.\n"
+            "2) Test browser search, Google Images, Google Flights, YouTube, and Reddit using simple voice commands.\n"
+            "3) Create one Markdown, Word, Excel, and PowerPoint file, then confirm each opens in the right app.\n\n"
+            "## Should Do\n\n"
+            "1) Review voice session logs after one test conversation and confirm both user and Maya transcript lines are saved.\n"
+            "2) Ask Maya to summarize an opened file by content, not by filename or window title.\n\n"
+            "## Optional\n\n"
+            "1) Test longer background work while keeping the voice session open, then ask Maya for status.\n"
+            "2) Try one travel planning flow that searches flight and accommodation options but stops before booking or payment.\n\n"
+            "## Risks Or Watchouts\n\n"
+            "1) Audio output can still be affected by device changes, so check that Maya uses the expected headphone route.\n"
+            "2) Browser automation may stop on login, payment, booking, OTP, or card fields and should say exactly where it stopped.\n\n"
+            "## Done Criteria\n\n"
+            "1) Maya can start, answer, interrupt, create a file, open it, summarize it, and close without crashing.\n"
+            "2) Any failure has a log entry and a clear next troubleshooting step.\n"
+        )
     if "gemini" in lowered or "latest" in lowered:
         return MarkdownDraft("# New Gemini 3.5\n\n## What To Verify\n\n1) Check official sources.\n\n## Sources\n\n1) Google: https://ai.google.dev\n", grounded=True)
     if "html" in lowered or "wonderlog" in lowered:

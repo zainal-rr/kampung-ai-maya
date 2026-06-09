@@ -3,13 +3,17 @@ from __future__ import annotations
 import re
 
 from office_text_utils import _complete, _plain
-from office_drafter_deck_scenarios import _proposal_deck, _technical_deck, _travel_food_deck
+from office_drafter_deck_scenarios import _browser_deck, _proposal_deck, _technical_deck, _travel_deck, _travel_food_deck
 
 
 def _scenario_powerpoint_slides(title: str, sections: list[tuple[str, list[str]]]) -> list[tuple[str, list[str]]]:
     lowered = title.lower()
-    if any(word in lowered for word in ("food", "restaurant", "cafe", "trip", "travel", "itinerary")):
+    if any(word in lowered for word in ("browser", "google search", "google images", "youtube", "reddit", "google flights", "booking.com", "airbnb")):
+        return _browser_deck(title, sections)
+    if any(word in lowered for word in ("food", "restaurant", "cafe")):
         return _travel_food_deck(title, sections)
+    if any(word in lowered for word in ("trip", "travel", "itinerary", "flight", "hotel", "airbnb", "hiking")):
+        return _travel_deck(title, sections)
     if any(word in lowered for word in ("router", "wifi", "wi-fi", "network", "setup", "technical", "config", "configuration", "security", "architecture")):
         return _technical_deck(title, sections)
     if any(word in lowered for word in ("proposal", "business case", "roadmap", "strategy", "quality", "plan")):

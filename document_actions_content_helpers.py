@@ -21,10 +21,36 @@ def _strip_quality_words(topic: str) -> str:
 
 def _kampung_ai_cost_topic(topic: str) -> bool:
     low = topic.lower()
-    return "kampung ai" in low and any(word in low for word in ("cost", "budget", "spend", "usage", "tracker"))
+    if _saas_tracker_topic(topic):
+        return False
+    internal_markers = (
+        "usage",
+        "token",
+        "tokens",
+        "provider calls",
+        "voice seconds",
+        "grok",
+        "xai",
+        "gemini",
+        "claude",
+        "api cost",
+        "model cost",
+    )
+    return "kampung ai" in low and any(word in low for word in ("cost", "budget", "spend", "usage", "tracker")) and any(
+        marker in low for marker in internal_markers
+    )
+
+
+def _saas_tracker_topic(topic: str) -> bool:
+    low = topic.lower()
+    return any(marker in low for marker in ("saas", "subscription", "renewal", "plan")) and any(
+        marker in low for marker in ("cost", "budget", "tracker", "spend")
+    )
 
 
 def _excel_lane(topic: str) -> str:
+    if _saas_tracker_topic(topic):
+        return "Local SaaS cost tracker workbook"
     if _kampung_ai_cost_topic(topic):
         return "Local Kampung AI cost tracker"
     if is_kampung_ai_testing_comparison(topic):
@@ -33,7 +59,7 @@ def _excel_lane(topic: str) -> str:
 
 
 def _internal_excel_topic(topic: str) -> bool:
-    return _kampung_ai_cost_topic(topic) or is_kampung_ai_testing_comparison(topic)
+    return _kampung_ai_cost_topic(topic) or _saas_tracker_topic(topic) or is_kampung_ai_testing_comparison(topic)
 
 
 def _prefixed_lane(lane: str, preflight: ArtifactPreflight | None) -> str:
@@ -68,19 +94,90 @@ def _task_tracker_topic(topic: str) -> bool:
 
 def _task_tracker_rows(topic: str) -> tuple[list[str], list[list[str]]]:
     lowered = topic.lower()
-    title_prefix = "Office" if "office" in lowered or "work" in lowered else "Project"
-    rows = [
-        ["Prepare weekly operations update", "Owner TBD", "Date TBD", "Not Started", "High", "Collect input before Friday."],
-        ["Confirm budget review inputs", "Owner TBD", "Date TBD", "Not Started", "High", "Ask owner to add source numbers."],
-        ["Follow up pending approvals", "Owner TBD", "Date TBD", "In Progress", "Medium", "Track blockers and decision owner."],
-        ["Review supplier delivery status", "Owner TBD", "Date TBD", "Not Started", "Medium", "Update once delivery date is confirmed."],
-        ["Send Friday priority summary", "Owner TBD", "Date TBD", "Not Started", "Low", "Keep summary concise for the team."],
+    coding = any(word in lowered for word in ("coding", "browser skill", "sprint", "developer", "repo"))
+    tasks = [
+        ("Define skill contract", "High", "Not Started", "Confirm route, input fields, and safety boundary."),
+        ("Implement tool call", "High", "Not Started", "Wire the local capability without blocking voice playback."),
+        ("Add regression tests", "High", "Not Started", "Cover success, failure, and sensitive-stop behavior."),
+        ("Run live smoke", "Medium", "Not Started", "Open the real app or browser and verify visible state."),
+        ("Document result", "Medium", "Not Started", "Record what passed, what failed, and next action."),
+    ] if coding else [
+        ("Prepare weekly operations update", "High", "Not Started", "Collect input before Friday."),
+        ("Confirm review inputs", "High", "Not Started", "Ask owner to add source numbers."),
+        ("Follow up pending approvals", "Medium", "In Progress", "Track blockers and decision owner."),
+        ("Review delivery status", "Medium", "Not Started", "Update once delivery date is confirmed."),
+        ("Send priority summary", "Low", "Not Started", "Keep summary concise for the team."),
     ]
-    headers = ["Task", "Owner", "Due Date", "Status", "Priority", "Notes"]
-    if "department" in lowered or "team" in lowered:
-        headers.insert(1, "Team")
-        rows = [[row[0], title_prefix, *row[1:]] for row in rows]
-    return headers, rows
+    first_row = 4
+    rows = []
+    for index, (task, priority, status, note) in enumerate(tasks):
+        row_num = first_row + index
+        rows.append([
+            task,
+            "Owner TBD",
+            priority,
+            status,
+            "",
+            "",
+            f'=IF(OR(F{row_num}="",E{row_num}=""),"",F{row_num}-E{row_num})',
+            "",
+            note,
+        ])
+    total_row = first_row + len(rows)
+    rows.append([
+        "Total",
+        "",
+        "",
+        "",
+        f"=SUM(E{first_row}:E{total_row - 1})",
+        f"=SUM(F{first_row}:F{total_row - 1})",
+        f"=SUM(G{first_row}:G{total_row - 1})",
+        "",
+        "Formula row for estimated, actual, and variance hours.",
+    ])
+    return ["Task", "Owner", "Priority", "Status", "Estimate Hours", "Actual Hours", "Variance Hours", "Blocker", "Next Action"], rows
+
+
+def _saas_tracker_rows(topic: str) -> tuple[list[str], list[list[str]]]:
+    first_row = 4
+    tools = [
+        ("AI Providers", "Voice or text model", "Owner TBD", "Usage based", "Track monthly usage and alerts."),
+        ("Browser Automation", "Research and browser tool", "Owner TBD", "Monthly", "Review whether the tool is still used."),
+        ("Document Creation", "Word, Excel, PPTX workflow", "Owner TBD", "Monthly", "Compare output value against subscription cost."),
+        ("Design Tools", "Presentation or visual helper", "Owner TBD", "Monthly", "Keep only if it improves delivery quality."),
+        ("Cloud Hosting", "Server, storage, logs", "Owner TBD", "Usage based", "Use budgets and alerts per project."),
+        ("Productivity", "General SaaS tool", "Owner TBD", "Monthly", "Cancel duplicate or unused seats."),
+        ("Security", "Password, monitoring, backup", "Owner TBD", "Annual", "Prioritize renewals that protect core work."),
+    ]
+    rows = []
+    for index, (provider, tool, owner, plan, note) in enumerate(tools):
+        row_num = first_row + index
+        rows.append([
+            provider,
+            tool,
+            owner,
+            plan,
+            "",
+            "",
+            f'=IF(OR(F{row_num}="",E{row_num}=""),"",F{row_num}-E{row_num})',
+            "",
+            "",
+            note,
+        ])
+    total_row = first_row + len(rows)
+    rows.append([
+        "Total",
+        "All SaaS tools",
+        "",
+        "",
+        f"=SUM(E{first_row}:E{total_row - 1})",
+        f"=SUM(F{first_row}:F{total_row - 1})",
+        f"=SUM(G{first_row}:G{total_row - 1})",
+        "",
+        "",
+        "Formula row for estimated, actual, and variance.",
+    ])
+    return ["Provider", "Tool", "Owner", "Plan", "Estimated USD", "Actual USD", "Variance USD", "Usage", "Renewal Date", "Savings Notes"], rows
 
 
 def _budget_rows(topic: str) -> tuple[list[str], list[list[str]]]:

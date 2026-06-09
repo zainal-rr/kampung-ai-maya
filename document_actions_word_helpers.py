@@ -241,6 +241,13 @@ def _word_edit_request(topic: str, instruction: str, current: str) -> str:
 
 def _word_document_title(topic: str) -> str:
     title = topic.strip().title()
+    title = re.sub(
+        r"^(?:Excel\s+)?(?:Budget\s+Tracker|Spreadsheet|Workbook)\s+For\s+",
+        "",
+        title,
+        flags=re.I,
+    )
+    title = re.sub(r"^Create\s+A\s+For\s+(?:A\s+)?", "", title, flags=re.I)
     replacements = {
         "Ai": "AI",
         "Api": "API",

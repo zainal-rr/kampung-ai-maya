@@ -14,6 +14,7 @@ from local_actions import LocalActionRouter
 from project_actions import ProjectActionRouter
 from screen_service import MacScreenService
 from screen_responder import ScreenResponder
+from self_heal_execution import execute_checkpointed_self_heal
 from self_healing import self_heal_from_complex_plan, self_heal_text
 from skill_factory import SkillFactory
 from utils import OSBridge
@@ -145,11 +146,21 @@ class HarnessTools:
     async def _self_heal(self, text: str, channel: str, state: dict | None = None) -> HarnessToolResult:
         state = state or {}
         if state.get("source_complex_run_id") and state.get("complex_plan"):
-            reply = await self_heal_from_complex_plan(
-                self.db_path,
-                request=str(state.get("complex_request") or text),
-                plan=str(state.get("complex_plan") or ""),
-                review=str(state.get("complex_review") or ""),
+            if not state.get("self_heal_checkpoint"):
+                await self_heal_from_complex_plan(
+                    self.db_path,
+                    request=str(state.get("complex_request") or text),
+                    plan=str(state.get("complex_plan") or ""),
+                    review=str(state.get("complex_review") or ""),
+                )
+            execution = await execute_checkpointed_self_heal(self.db_path, state)
+            return HarnessToolResult(
+                execution["status"],
+                execution["message"],
+                list(execution.get("artifacts") or []),
+                requires_approval=bool(execution.get("requires_approval")),
+                next_step="self_heal",
+                keep_open=bool(execution.get("requires_approval")),
             )
         else:
             reply = await self_heal_text(self.db_path, create_review_task=False)

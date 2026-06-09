@@ -35,6 +35,7 @@ from weekly_memory_store import init_weekly_memory_db
 from weekly_skill_review import init_skill_review_db
 from user_model_store import init_user_model_db
 from workflow_store import init_workflow_db
+from xai_voice_work import init_voice_work_db
 
 
 async def _supervise(name: str, factory, delay_seconds: float = 5.0):
@@ -70,6 +71,7 @@ async def main():
     await init_curated_memory_db(db_path)
     await init_context_layers_db(db_path)
     await init_workflow_db(db_path)
+    await init_voice_work_db(db_path)
     await init_self_heal_db(db_path)
     await init_harness_db(db_path)
     await init_action_ledger(db_path)

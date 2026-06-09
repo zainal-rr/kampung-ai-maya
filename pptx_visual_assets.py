@@ -26,14 +26,14 @@ def topic_benefits_from_visuals(topic: str) -> bool:
     return any(marker in lowered for marker in markers)
 
 
-async def add_gemini_visual_asset(path: Path, topic: str) -> tuple[bool, str]:
+async def add_gemini_visual_asset(path: Path, topic: str, max_images: int | None = None) -> tuple[bool, str]:
     if os.getenv("ENABLE_PPTX_GEMINI_IMAGES", "1") == "0":
         return False, "Gemini PPTX images disabled."
     if not topic_benefits_from_visuals(topic):
         return False, "Topic does not need generated visuals."
     if not os.getenv("GOOGLE_API_KEY"):
         return False, "Gemini image generation unavailable: GOOGLE_API_KEY not configured."
-    prompts = _image_prompts(path, topic)
+    prompts = _image_prompts(path, topic, max_images=max_images)
     image_paths: list[Path] = []
     fallback_used = False
     timeout_s = _image_timeout_seconds()
@@ -59,7 +59,7 @@ async def add_gemini_visual_asset(path: Path, topic: str) -> tuple[bool, str]:
 
 def _image_timeout_seconds() -> float:
     try:
-        return max(5.0, min(90.0, float(os.getenv("PPTX_GEMINI_IMAGE_TIMEOUT", "25"))))
+        return max(5.0, min(90.0, float(os.getenv("PPTX_GEMINI_IMAGE_TIMEOUT", "12"))))
     except ValueError:
         return 25.0
 
@@ -91,10 +91,10 @@ def _fallback_visual(path: Path, topic: str, index: int) -> Path:
     return path
 
 
-def _image_prompts(path: Path, topic: str) -> list[str]:
+def _image_prompts(path: Path, topic: str, max_images: int | None = None) -> list[str]:
     deck = Presentation(path)
     slides = list(deck.slides)
-    max_images = visual_image_target(len(slides))
+    max_images = max_images or visual_image_target(len(slides))
     prompts = []
     for index in range(max_images):
         slide = slides[index % len(slides)]

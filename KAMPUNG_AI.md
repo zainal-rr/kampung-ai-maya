@@ -84,10 +84,11 @@ The lane name is still Artisan. Codex is the implementation engine behind it. Wo
 | Channel | Role |
 | --- | --- |
 | Telegram | Remote text, photo, voice-note, file delivery, route/cost audit, document follow-up, memory commands, `/complex` |
-| iMac voice | Primary local conversational body, short answers, live status, handoff to workers for long work |
+| iMac voice | Primary local conversational body, short answers, live status, and in-session starts for longer Maya work |
+| Mudra Link | Pass-through local input only: Mudra Link Mouse Mode may send existing iMac hotkeys, with Twist mapped to `Option + Space` and Double Twist mapped to `Option + Escape`. Maya has no active Mudra adapter, SDK listener, or gesture runtime. |
 | Screen sight | One-shot active-screen context when explicitly active or when local iMac voice asks for visible context |
 | Browser | Local Chrome inspection, safe clicking/filling, travel comparison, YouTube/research workflows, and verification after actions |
-| Background runtime | Scheduled weekly memory, reminders, self-heal proposals, parked voice handoffs, and workflow continuation |
+| Background runtime | Scheduled weekly memory, reminders, self-heal proposals, in-session voice work results, and workflow continuation |
 
 Telegram and iMac share the same memory, artifact, workflow desk, and document quality architecture. Delivery differs by channel only.
 
@@ -116,10 +117,15 @@ Core rules:
 4. Forgotten facts must not leak back from raw session history.
 5. Temporary test memories must not become long-term profile memory.
 6. Weekly memory reads canonical memory and selected summaries, excludes temporary test facts, and never recreates forgotten facts.
+7. Weekly provider failures degrade safely: if Claude review is unavailable, Maya may save the conservative weekly summary but must save zero unreviewed canonical facts and audit the reviewer error.
+8. Memory time audit is append-only evidence, not a second truth store. Canonical writes, updates, forgets, recalls, activations, weekly candidates, weekly saves/rejects, and leak checks write redacted audit rows with content hashes.
+9. Memory canaries are long-term trust probes for active, forgotten, temporary, project, and pinned memory. Canary checks must prove forgotten values do not leak through canonical active rows, preferences, lessons, raw history, session search, summaries, weekly summaries, or curated memory.
 
-## Voice Handoff
+Maya Desk and `/memory inspect` surface recent audit events and canary status so memory drift is visible instead of silently accumulating.
 
-Grok voice is the live presence, not the long-work worker. Long spoken requests create a parked handoff so the paid voice session can close while the normal worker lane creates documents, runs browser workflows, writes memory, or prepares implementation work.
+## In-Session Voice Work
+
+xAI voice is Maya's live spoken presence. Longer spoken requests start Maya's local work during the same voice session instead of waiting for the microphone to close. Maya acknowledges quickly, starts the work in the background, keeps the voice session available for interruption and status checks, then speaks the result if the mic is still open. Browser work routes through `browser_capability`; document, memory, coding, and project work route through Maya's local workflow layer. If the mic closes first, the result remains recorded for later recall.
 
 Voice transcript cleanup removes filler words, repeated starts, self-corrections, and cut-off artifacts without rewriting the user's intent. The cleanup layer is an adapter; it must not bypass semantic routing, safety, memory, approval, or artifact QA.
 
@@ -135,13 +141,14 @@ Browser actions require verification: visible text, URL, title, target presence,
 
 1. Plan.
 2. Claude review.
-3. Approval when action is needed.
-4. Checkpointed execution.
-5. Verification.
-6. Repair or rollback when needed.
-7. Final report.
+3. Durable harness run.
+4. Approval when action is needed.
+5. Checkpointed execution.
+6. Verification.
+7. Repair or rollback when needed.
+8. Final report.
 
-Self-healing is the first priority target because it directly improves reliability. Repo changes, deployment, restart, broad refactors, destructive operations, and apply-back from isolated worktrees still require explicit approval.
+Self-healing is the first priority target because it directly improves reliability. `/complex self heal Maya after approval` creates a checkpointed run with `diagnose`, `snapshot`, `plan_patch`, `await_approval`, `apply_patch_isolated`, `verify`, `repair_once`, `final_report`, and `failed` states. Snapshot is mandatory before mutation. Memory-only self-heal writes rollback snapshots; isolated repair work pauses for a second approval before mutation. Repo changes, deployment, restart, broad refactors, destructive operations, and apply-back from isolated worktrees still require explicit approval.
 
 ## Safety Boundary
 
@@ -158,7 +165,7 @@ Self-healing is the first priority target because it directly improves reliabili
 
 ## Proof Boundary
 
-Local CI and deterministic replays are strong software proof. They do not replace physical iMac voice, real paid-session behavior, real elapsed 30-day reliability, Omi/Mudra hardware, or physical printer proof.
+Local CI and deterministic replays are strong software proof. They do not replace physical iMac voice, real live billing/session behavior, real elapsed 30-day reliability, Omi/Mudra hardware, or physical printer proof.
 
 Current conservative operational estimate:
 
@@ -166,10 +173,10 @@ Current conservative operational estimate:
 | --- | ---: |
 | Telegram | 92% |
 | Document creation | 90% |
-| Memory architecture | 85% |
+| Memory architecture | 87% |
 | Weekly memory automation | 85% |
 | Browser/agent workflow | 78-80% |
-| Agentic workflow | 78% |
+| Agentic workflow | 82% |
 | Hardware/Blender/Maker | 65-70% |
 | Overall Kampung AI | 82-84% |
 

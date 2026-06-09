@@ -1,28 +1,65 @@
 from __future__ import annotations
 
+import os
+import tempfile
+from pathlib import Path
+
 import service_install
 
 
 def main() -> None:
     calls = []
+    restart_calls = []
     old_run = service_install.subprocess.run
+    old_app_path = os.environ.get("KAMPUNG_AI_APP_PATH")
+    old_plist_path = service_install.PLIST_PATH
 
     def fake_run(args, **kwargs):
         calls.append(tuple(args))
         class Result:
-            returncode = 0
+            returncode = 0 if fake_run.loaded else 1
             stderr = ""
         return Result()
 
+    fake_run.loaded = False
+
     try:
-        service_install.subprocess.run = fake_run
-        service_install.restart()
-        service_install.restart_weekly_memory()
+        with tempfile.TemporaryDirectory(prefix="maya-service-install-") as tmp:
+            service_install.PLIST_PATH = Path(tmp) / "com.kampungai.maya.plist"
+            app_exe = Path(tmp) / "Kampung AI.app" / "Contents" / "MacOS" / "Kampung AI"
+            app_exe.parent.mkdir(parents=True)
+            app_exe.write_text("#!/bin/sh\n", encoding="utf-8")
+            app_exe.chmod(0o755)
+            os.environ["KAMPUNG_AI_APP_PATH"] = str(app_exe.parents[2])
+            plist = service_install.build_plist()
+            assert plist["ProgramArguments"] == [str(app_exe), "--engine"]
+            service_install.subprocess.run = fake_run
+            service_install.restart()
+            service_install.restart_weekly_memory()
+            restart_calls = list(calls)
+
+            calls.clear()
+            service_install.ensure_running()
+            assert service_install.PLIST_PATH.exists()
+            assert any(call[:2] == ("launchctl", "bootstrap") for call in calls)
+            assert any(call[:2] == ("launchctl", "enable") for call in calls)
+            assert not any(call[:2] == ("launchctl", "bootout") for call in calls)
+
+            calls.clear()
+            fake_run.loaded = True
+            service_install.ensure_running()
+            assert not any(call[:2] == ("launchctl", "bootstrap") for call in calls)
+            assert not any(call[:2] == ("launchctl", "bootout") for call in calls)
     finally:
         service_install.subprocess.run = old_run
-    assert any(call[:2] == ("launchctl", "bootout") for call in calls)
-    assert any(call[:2] == ("launchctl", "bootstrap") for call in calls)
-    assert any(call[:2] == ("launchctl", "enable") for call in calls)
+        service_install.PLIST_PATH = old_plist_path
+        if old_app_path is None:
+            os.environ.pop("KAMPUNG_AI_APP_PATH", None)
+        else:
+            os.environ["KAMPUNG_AI_APP_PATH"] = old_app_path
+    assert any(call[:2] == ("launchctl", "bootout") for call in restart_calls)
+    assert any(call[:2] == ("launchctl", "bootstrap") for call in restart_calls)
+    assert any(call[:2] == ("launchctl", "enable") for call in restart_calls)
     weekly = service_install.build_weekly_memory_plist()
     assert weekly["StartCalendarInterval"] == {"Weekday": 0, "Hour": 20, "Minute": 0}
     assert any(str(item).endswith("weekly_memory.py") for item in weekly["ProgramArguments"])

@@ -17,7 +17,7 @@ from weekly_memory_helpers import (
     _topic_highlights,
     _week_key,
 )
-from canonical_memory import backfill_canonical_memory
+from canonical_memory_backfill import backfill_canonical_memory
 from lesson_store import init_lesson_db
 from retention_policy import run_retention_cleanup
 from storage import init_db
@@ -66,6 +66,7 @@ class WeeklyMemoryDistiller:
             summary = self._summarize(run_key, data, live=live and bool(distiller_agent))
             canonical_memory_ids = _canonical_memory_ids(data)
             confirmation_needed: tuple[str, ...] = ()
+            provider_warning = ""
             canonical_saved = canonical_rejected = provider_calls = 0
             if live and distiller_agent:
                 live_result = await live_weekly_canonical_distillation(
@@ -79,6 +80,7 @@ class WeeklyMemoryDistiller:
                 canonical_rejected = live_result.rejected
                 provider_calls = live_result.provider_calls
                 confirmation_needed = live_result.confirmation_needed
+                provider_warning = live_result.reviewer_error
                 canonical_memory_ids = tuple(dict.fromkeys((*canonical_memory_ids, *live_result.memory_ids)))
                 summary = "\n".join((
                     summary,
@@ -87,6 +89,11 @@ class WeeklyMemoryDistiller:
                     f"Live canonical memories rejected: {canonical_rejected}.",
                     f"Claude confirmation needed: {len(confirmation_needed)}.",
                 ))
+                if provider_warning:
+                    summary = "\n".join((
+                        summary,
+                        "Reviewer unavailable: no unreviewed canonical memories were saved.",
+                    ))
             summary = "\n".join((
                 summary,
                 f"Canonical memory IDs used: {', '.join(canonical_memory_ids) if canonical_memory_ids else 'none'}.",
@@ -109,6 +116,7 @@ class WeeklyMemoryDistiller:
                 canonical_saved=canonical_saved,
                 canonical_rejected=canonical_rejected,
                 canonical_memory_ids=canonical_memory_ids,
+                error=provider_warning,
             )
             return WeeklyMemoryReport(
                 run_key,

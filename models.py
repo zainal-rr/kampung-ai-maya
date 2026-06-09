@@ -1,5 +1,7 @@
 import abc
+import asyncio
 import os
+import re
 from typing import List, Dict
 import httpx
 from openai import AsyncOpenAI
@@ -47,19 +49,27 @@ class TheSenses(BaseAgent):
             for item in messages
             if item.get("content")
         )
-        response = await self.client.aio.models.generate_content(
-            model=self.model,
-            contents=prompt,
+        timeout = float(os.getenv("GEMINI_TEXT_TIMEOUT_SECONDS", "45"))
+        response = await asyncio.wait_for(
+            self.client.aio.models.generate_content(
+                model=self.model,
+                contents=prompt,
+            ),
+            timeout=timeout,
         )
         return self._prepare_output(getattr(response, "text", "") or "")
 
     async def describe_image(self, image_bytes: bytes, prompt: str) -> str:
-        response = await self.client.aio.models.generate_content(
-            model=self.model,
-            contents=[
-                prompt,
-                types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg"),
-            ],
+        timeout = float(os.getenv("GEMINI_VISION_TIMEOUT_SECONDS", "45"))
+        response = await asyncio.wait_for(
+            self.client.aio.models.generate_content(
+                model=self.model,
+                contents=[
+                    prompt,
+                    types.Part.from_bytes(data=image_bytes, mime_type="image/jpeg"),
+                ],
+            ),
+            timeout=timeout,
         )
         return self._prepare_output(getattr(response, "text", "") or "")
 
@@ -89,10 +99,24 @@ class TheSteward(BaseAgent):
                 },
                 json=payload,
             )
-            response.raise_for_status()
+            if response.is_error:
+                request_id = response.headers.get("request-id") or response.headers.get("x-request-id") or ""
+                detail = _safe_provider_error(response.text)
+                raise httpx.HTTPStatusError(
+                    f"Anthropic error {response.status_code}"
+                    f"{f' request_id={request_id}' if request_id else ''}: {detail}",
+                    request=response.request,
+                    response=response,
+                )
         data = response.json()
         text = "".join(block.get("text", "") for block in data.get("content", []) if block.get("type") == "text")
         return self._prepare_output(text)
+
+
+def _safe_provider_error(text: str) -> str:
+    cleaned = re.sub(r"sk-[A-Za-z0-9_\\-]+", "<redacted-key>", text or "")
+    cleaned = re.sub(r"Bearer\\s+[A-Za-z0-9_.\\-]+", "Bearer <redacted>", cleaned)
+    return " ".join(cleaned.split())[:600] or "no response body"
 
 class TheNews(BaseAgent):
     """Grok/XAI - The Real-time Pulse"""

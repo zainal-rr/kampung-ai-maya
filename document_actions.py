@@ -22,6 +22,7 @@ from document_actions_content_helpers import (
     _should_defer_html_app_to_artisan,
 )
 from document_actions_word_helpers import _document_edit_request
+from created_file_summary import created_file_content_summary
 from artifact_clarification_state import consume_pending_artifact_request, save_pending_artifact_request
 from artifact_discourse_context import resolve_referenced_artifact_topic
 from artifact_semantic_enrichment import enrich_artifact_topic
@@ -127,12 +128,19 @@ class DocumentActionRouter(DocumentHtmlMixin, DocumentWordMixin, DocumentOfficeM
             self._pending_semantic_lane = None
             kind, topic, project_scoped = request
             topic = await resolve_referenced_artifact_topic(self.db_path, channel, topic, text)
-            reply = await self._handle_document_request(kind, topic, project_scoped, channel)
+            reply = await self._handle_document_request(kind, topic, project_scoped, channel, original_text=text)
             self._prepend_semantic_lane(pending_semantic)
             return reply
-        return await self._handle_document_request(*request, channel)
+        return await self._handle_document_request(*request, channel, original_text=text)
 
-    async def _handle_document_request(self, kind: str, topic: str, project_scoped: bool, channel: str) -> str:
+    async def _handle_document_request(
+        self,
+        kind: str,
+        topic: str,
+        project_scoped: bool,
+        channel: str,
+        original_text: str = "",
+    ) -> str:
         if kind == "clarify":
             return topic
         if project_scoped and not await active_project(self.db_path):
@@ -155,7 +163,8 @@ class DocumentActionRouter(DocumentHtmlMixin, DocumentWordMixin, DocumentOfficeM
         if kind == "md":
             return await self._create_markdown(topic, project_scoped, channel)
         if kind == "html":
-            if _should_defer_html_app_to_artisan(topic):
+            explicit_html = bool(re.search(r"\b(?:html|single html|html file|html page|html app)\b", original_text, re.I))
+            if not explicit_html and _should_defer_html_app_to_artisan(topic):
                 return None
             return await self._create_html(topic, project_scoped, channel)
         if kind == "docx":
@@ -239,21 +248,31 @@ class DocumentActionRouter(DocumentHtmlMixin, DocumentWordMixin, DocumentOfficeM
             return await draft_markdown_with_gemini(self.db_path, topic, context)
         return await draft_markdown_with_gemini(self.db_path, topic)
 
-    async def _draft_with_issues(self, label: str, path: Path, channel: str, app_name: str | None, issues: str) -> str:
+    async def _draft_with_issues(self, label: str, path: Path, channel: str, app_name: str | None, issues: str, attempts: int | None = None) -> str:
         await upsert_preference(self.db_path, LAST_DRAFT_DOC_KEY, str(path), source="document")
         suffix = path.suffix.lower().lstrip(".") or label
-        return qa_retry_exhausted_message(label, artifact_qa_max_attempts(suffix))
+        message = qa_retry_exhausted_message(label, attempts or artifact_qa_max_attempts(suffix))
+        if channel == "telegram":
+            return _attach(f"{message} I saved the draft at {path}.", path, channel)
+        summary = await asyncio.to_thread(created_file_content_summary, path)
+        try:
+            opened_app = await asyncio.to_thread(open_created_file, path, self.bridge, app_name)
+        except Exception as exc:
+            return f"{message} I saved the draft at {path}. I could not open it: {exc}. {summary}"
+        suffix_text = f" in {opened_app}" if opened_app else ""
+        return f"{message} I saved the draft at {path}. I opened it on the iMac{suffix_text}. {summary}"
 
     async def _done(self, label: str, path: Path, channel: str, app_name: str | None) -> str:
         article = "an" if label.lower().startswith("excel") else "a"
         message = f"Done. I created {article} {label} at {path}."
         if channel == "imac":
+            summary = await asyncio.to_thread(created_file_content_summary, path)
             try:
                 opened_app = await asyncio.to_thread(open_created_file, path, self.bridge, app_name)
                 suffix = f" in {opened_app}" if opened_app else ""
-                return f"{message} I opened it on the iMac{suffix}."
+                return f"{message} I opened it on the iMac{suffix}. {summary}"
             except Exception as exc:
-                return f"{message} I could not open it: {exc}"
+                return f"{message} I saved it here: {path}. I could not open it: {exc}. {summary}"
         return _attach(f"Done. I created {article} {label}.", path, channel)
 
     async def _markdown_target(self) -> Path | None:

@@ -1,16 +1,14 @@
 from __future__ import annotations
 
 import hashlib
-import re
 from datetime import datetime, timedelta, timezone
 
 import aiosqlite
 
 from canonical_memory_scoring import activation_score
+from canonical_memory_text import is_temporary_memory, memory_tokens, subject_key_from_text, value_from_text
 from canonical_memory_usage import mark_canonical_used
-STOPWORDS = {"a", "an", "are", "is", "my", "the", "that", "this", "to", "for", "of", "me", "i"}
-TOKEN_ALIASES = {"snacks": "snack"}
-TEST_MARKERS = ("test", "regression", "telegram test", "smoke", "temporary")
+from memory_audit import record_memory_audit_event
 
 
 async def init_canonical_memory_db(db_path: str) -> None:
@@ -70,7 +68,20 @@ async def upsert_canonical_memory(
     temporary = is_temporary_memory(content, subject_key)
     expires_at = _expiry() if temporary else None
     memory_id = _memory_id(kind, subject_key, scope)
+    existing_status = ""
     async with aiosqlite.connect(db_path) as db:
+        db.row_factory = aiosqlite.Row
+        existing = await (
+            await db.execute(
+                """
+                SELECT status
+                FROM canonical_memory_items
+                WHERE kind = ? AND subject_key = ? AND scope = ?
+                """,
+                (kind, subject_key, scope),
+            )
+        ).fetchone()
+        existing_status = str(existing["status"]) if existing else ""
         await db.execute(
             """
             INSERT INTO canonical_memory_items (
@@ -109,6 +120,17 @@ async def upsert_canonical_memory(
             ),
         )
         await db.commit()
+    await record_memory_audit_event(
+        db_path,
+        event_type="canonical_update" if existing_status else "canonical_write",
+        memory_id=memory_id,
+        subject_key=subject_key,
+        status_before=existing_status,
+        status_after="active",
+        source_channel=source_channel,
+        source_ref=source_ref or raw_text[:180],
+        content=content,
+    )
     return memory_id
 
 
@@ -142,7 +164,12 @@ async def search_canonical_direct_fact(db_path: str, query: str, limit: int = 3)
             )
             if any(_direct_fact_match(query_tokens, subject_key, row["subject_key"], row["content"]) for row in await forgotten.fetchall()):
                 return None
-    await mark_canonical_used(db_path, [str(row["memory_id"]) for row in rows])
+    await mark_canonical_used(
+        db_path,
+        [str(row["memory_id"]) for row in rows],
+        event_type="canonical_recall",
+        source_ref=query,
+    )
     return [str(row["content"]) for row in rows]
 
 def _direct_fact_match(query_tokens: set[str], subject_key: str, row_subject: str, row_content: str) -> bool:
@@ -183,7 +210,12 @@ async def search_relevant_canonical_memories(db_path: str, query: str, limit: in
             scored.append((score, str(row["memory_id"]), str(row["content"])))
     scored.sort(key=lambda item: item[0], reverse=True)
     selected = scored[:limit]
-    await mark_canonical_used(db_path, [memory_id for _, memory_id, _content in selected])
+    await mark_canonical_used(
+        db_path,
+        [memory_id for _, memory_id, _content in selected],
+        event_type="activation",
+        source_ref=query,
+    )
     return [content for _, _memory_id, content in selected]
 
 async def forget_canonical_memory(db_path: str, query: str) -> int:
@@ -204,88 +236,36 @@ async def forget_canonical_memory(db_path: str, query: str) -> int:
         for row in rows:
             content = str(row["content"])
             if subject_key and row["subject_key"] == subject_key:
-                matches.append(str(row["memory_id"]))
+                matches.append(dict(row))
             elif tokens and tokens.issubset(memory_tokens(f"{row['subject_key']} {content}")):
-                matches.append(str(row["memory_id"]))
-        for memory_id in matches:
+                matches.append(dict(row))
+        for row in matches:
             await db.execute(
                 """
                 UPDATE canonical_memory_items
                 SET status = 'forgotten', updated_at = CURRENT_TIMESTAMP
                 WHERE memory_id = ?
                 """,
-                (memory_id,),
+                (str(row["memory_id"]),),
             )
         await db.commit()
+    for row in matches:
+        await record_memory_audit_event(
+            db_path,
+            event_type="canonical_forget",
+            memory_id=str(row["memory_id"]),
+            subject_key=str(row["subject_key"]),
+            status_before="active",
+            status_after="forgotten",
+            source_channel="memory_control",
+            source_ref=query,
+            content=str(row["content"]),
+        )
     return len(matches)
 
-
-async def backfill_canonical_memory(db_path: str) -> int:
-    await init_canonical_memory_db(db_path)
-    created = 0
-    async with aiosqlite.connect(db_path) as db:
-        db.row_factory = aiosqlite.Row
-        pref_rows = await (await db.execute("SELECT key, value, source FROM preferences")).fetchall()
-        lesson_rows = await (
-            await db.execute("SELECT normalized_rule, lesson_type, scope, channel, confidence FROM lessons WHERE status = 'active'")
-        ).fetchall()
-    for row in pref_rows:
-        if _internal_memory(str(row["key"]), str(row["value"])):
-            continue
-        await upsert_canonical_memory(
-            db_path,
-            raw_text=str(row["key"]),
-            content=str(row["value"]),
-            kind="preference",
-            scope="global",
-            source_channel=str(row["source"]),
-            confidence="high",
-        )
-        created += 1
-    for row in lesson_rows:
-        await upsert_canonical_memory(
-            db_path,
-            raw_text=str(row["normalized_rule"]),
-            content=str(row["normalized_rule"]),
-            kind=str(row["lesson_type"] or "lesson"),
-            scope=str(row["scope"] or "global"),
-            source_channel=str(row["channel"]),
-            confidence=str(row["confidence"] or "medium"),
-        )
-        created += 1
-    return created
-
-def subject_key_from_text(text: str) -> str:
-    cleaned = " ".join(str(text).strip().rstrip(".?!").split()).lower()
-    cleaned = re.sub(r"^(?:remember that|remember|save this memory[: ]*)\s+", "", cleaned)
-    direct = re.match(r"^(?:what(?:'s| is)|do you know)\s+my\s+(.+)$", cleaned)
-    if direct: cleaned = "my " + direct.group(1)
-    prefer = re.match(r"^what\s+(?:do|did)\s+i\s+prefer(?:\s+(.+))?$", cleaned)
-    if prefer: cleaned = "i prefer " + (prefer.group(1) or "")
-    match = re.match(r"^(.+?)\s+(?:is|are|=)\s+.+$", cleaned)
-    if match: cleaned = match.group(1)
-    return "_".join(token for token in _ordered_memory_tokens(cleaned) if token)
-
-def value_from_text(text: str) -> str:
-    cleaned = " ".join(str(text).strip().rstrip(".?!").split())
-    match = re.match(r"^.+?\s+(?:is|are|=)\s+(.+)$", cleaned, re.I)
-    return match.group(1).strip() if match else cleaned
-
-def memory_tokens(text: str) -> set[str]:
-    return {TOKEN_ALIASES.get(token, token) for token in re.findall(r"[a-z0-9]+", str(text).lower()) if len(token) > 1 and token not in STOPWORDS}
-
-def _ordered_memory_tokens(text: str) -> list[str]:
-    return [TOKEN_ALIASES.get(token, token) for token in re.findall(r"[a-z0-9]+", str(text).lower()) if len(token) > 1 and token not in STOPWORDS]
-
-def is_temporary_memory(content: str, subject_key: str) -> bool:
-    return any(marker in f"{subject_key} {content}".lower() for marker in TEST_MARKERS)
 
 def _memory_id(kind: str, subject_key: str, scope: str) -> str:
     return f"mem_{hashlib.sha1(f'{kind}:{subject_key}:{scope}'.encode('utf-8')).hexdigest()[:16]}"
 
 def _expiry() -> str:
     return (datetime.now(timezone.utc) + timedelta(days=14)).strftime("%Y-%m-%d %H:%M:%S")
-
-def _internal_memory(key: str, value: str) -> bool:
-    lowered = f"{key} {value}".lower()
-    return "chat_id" in lowered or "/desktop/maya/" in lowered or lowered.startswith("maya_")

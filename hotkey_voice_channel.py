@@ -7,18 +7,19 @@ from pathlib import Path
 import time
 
 from assistant import KampungAssistant
-from browser_workflows import PENDING_CLICK_KEY, STATE_KEY
-from storage import delete_preference
 from voice_agent_audio import VoiceAgentAudioCapture
 from voice_agent_session import build_voice_agent_session
 from voice_context import build_imac_voice_context
 from xai_realtime_stream import XaiRealtimeStreamingSession
 from xai_voice_handoff import (
-    VOICE_HANDOFF_KEY,
-    clear_voice_handoffs,
     complete_voice_handoff_request,
     pop_voice_handoff_request,
 )
+
+
+class _NoopHotkeyListener:
+    def stop(self) -> None:
+        return
 
 
 class HotkeyVoiceChannel:
@@ -46,8 +47,10 @@ class HotkeyVoiceChannel:
         self.session_task: asyncio.Task | None = None
         self.trigger_path = Path(os.getenv("MAYA_VOICE_TRIGGER_FILE", ".maya_voice_trigger"))
         self.stop_trigger_path = Path(os.getenv("MAYA_VOICE_STOP_TRIGGER_FILE", ".maya_voice_stop"))
+        self.toggle_trigger_path = Path(os.getenv("MAYA_VOICE_TOGGLE_TRIGGER_FILE", ".maya_voice_toggle"))
         self._trigger_mtime = self._mtime(self.trigger_path)
         self._stop_trigger_mtime = self._mtime(self.stop_trigger_path)
+        self._toggle_trigger_mtime = self._mtime(self.toggle_trigger_path)
 
     async def run(self) -> None:
         self.running = True
@@ -62,6 +65,9 @@ class HotkeyVoiceChannel:
                 action = await self.queue.get()
                 if action == "stop":
                     await self.stop_voice_session()
+                    continue
+                if action == "toggle":
+                    await self.toggle_voice_session()
                     continue
                 if self.session_task and self.session_task.done():
                     self.session_task = None
@@ -78,7 +84,11 @@ class HotkeyVoiceChannel:
                 await file_trigger_task
 
     def _start_hotkey_listener(self):
-        if os.getenv("MAYA_HOTKEY_BACKEND", "pynput").lower() == "carbon":
+        backend = os.getenv("MAYA_HOTKEY_BACKEND", "carbon").lower()
+        if backend in {"file", "files", "none", "disabled", "off"}:
+            print("maya-hotkey> hotkey backend: file triggers only", flush=True)
+            return _NoopHotkeyListener()
+        if backend == "carbon":
             try:
                 from mac_hotkey import CarbonHotKeyListener
 
@@ -134,6 +144,10 @@ class HotkeyVoiceChannel:
             if stop_mtime and stop_mtime != self._stop_trigger_mtime:
                 self._stop_trigger_mtime = stop_mtime
                 await self.queue.put("stop")
+            toggle_mtime = self._mtime(self.toggle_trigger_path)
+            if toggle_mtime and toggle_mtime != self._toggle_trigger_mtime:
+                self._toggle_trigger_mtime = toggle_mtime
+                await self.queue.put("toggle")
             await asyncio.sleep(0.2)
 
     @staticmethod
@@ -148,29 +162,33 @@ class HotkeyVoiceChannel:
         print("maya-hotkey> hard stop requested", flush=True)
         if self.streaming_session:
             await self.streaming_session.stop()
-        await self._clear_active_voice_workflows()
         current_task = asyncio.current_task()
         if self.session_task and not self.session_task.done() and self.session_task is not current_task:
-            self.session_task.cancel()
-            with contextlib.suppress(asyncio.CancelledError):
-                await self.session_task
+            finalize_timeout = float(os.getenv("MAYA_VOICE_STOP_FINALIZE_TIMEOUT_SECONDS", "5"))
+            try:
+                await asyncio.wait_for(asyncio.shield(self.session_task), timeout=finalize_timeout)
+            except asyncio.TimeoutError:
+                print("maya-hotkey> voice session finalize timed out; cancelling task", flush=True)
+                self.session_task.cancel()
+                with contextlib.suppress(asyncio.CancelledError):
+                    await self.session_task
         self.session_task = None
         await self.voice_agent.close("manual hotkey stop")
         self.session_active = False
         print("maya-hotkey> voice session manually stopped", flush=True)
 
-    async def _clear_active_voice_workflows(self) -> None:
-        keys = (
-            "maya_active_workflow",
-            STATE_KEY,
-            PENDING_CLICK_KEY,
-            VOICE_HANDOFF_KEY,
-        )
-        for key in keys:
-            with contextlib.suppress(Exception):
-                await delete_preference(self.assistant.db_path, key)
-        with contextlib.suppress(Exception):
-            await clear_voice_handoffs(self.assistant.db_path, reason="manual hotkey stop")
+    async def toggle_voice_session(self) -> None:
+        if self.session_active or (self.session_task and not self.session_task.done()):
+            await self.stop_voice_session()
+            return
+        if self.session_task and self.session_task.done():
+            self.session_task = None
+            self.session_active = False
+        if self._hotkey_debounced():
+            print("maya-hotkey> voice session toggle ignored by debounce", flush=True)
+            return
+        self.session_active = True
+        self.session_task = asyncio.create_task(self._run_voice_session())
 
     async def _run_voice_session(self) -> None:
         self.stop_requested = False
@@ -187,7 +205,12 @@ class HotkeyVoiceChannel:
                 return
             context = await build_imac_voice_context(self.assistant)
             stop_event = asyncio.Event()
-            self.streaming_session = XaiRealtimeStreamingSession(self.assistant.db_path, context, stop_event)
+            self.streaming_session = XaiRealtimeStreamingSession(
+                self.assistant.db_path,
+                context,
+                stop_event,
+                assistant=self.assistant,
+            )
             await self.streaming_session.run()
         except Exception as exc:
             print(f"maya-hotkey-error> {exc}", flush=True)

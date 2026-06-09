@@ -16,6 +16,7 @@ class SessionCloseReason(str, Enum):
     MANUAL_STOP = "manual_stop"
     IDLE = "idle"
     WEBSOCKET_TIMEOUT = "websocket_timeout"
+    INPUT_ERROR = "input_error"
     AUDIO_ERROR = "audio_error"
     TOOL_ERROR = "tool_error"
     ERROR = "error"

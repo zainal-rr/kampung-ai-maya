@@ -27,6 +27,17 @@ async def init_voice_session_log_db(db_path: str) -> None:
                 voice TEXT DEFAULT '',
                 audio_error_count INTEGER DEFAULT 0,
                 output_reset_count INTEGER DEFAULT 0,
+                input_chunks_captured INTEGER DEFAULT 0,
+                input_chunks_sent INTEGER DEFAULT 0,
+                input_bytes_sent INTEGER DEFAULT 0,
+                last_input_audio_at REAL DEFAULT 0,
+                last_local_mic_rms REAL DEFAULT 0,
+                peak_local_mic_rms REAL DEFAULT 0,
+                peak_local_mic_rms_since_response REAL DEFAULT 0,
+                peak_local_mic_rms_since_response_at REAL DEFAULT 0,
+                last_xai_speech_started_at REAL DEFAULT 0,
+                last_user_transcript_at REAL DEFAULT 0,
+                last_response_done_at REAL DEFAULT 0,
                 transcript_count INTEGER DEFAULT 0,
                 export_path TEXT DEFAULT '',
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -34,6 +45,7 @@ async def init_voice_session_log_db(db_path: str) -> None:
             )
             """
         )
+        await _ensure_voice_session_columns(db)
         await db.execute(
             """
             CREATE TABLE IF NOT EXISTS voice_session_turns (
@@ -218,3 +230,24 @@ def _clean_content(content: str) -> str:
     if contains_sensitive_info(text):
         return "[sensitive transcript content blocked]"
     return text[:MAX_TURN_CHARS]
+
+
+async def _ensure_voice_session_columns(db: aiosqlite.Connection) -> None:
+    cursor = await db.execute("PRAGMA table_info(voice_sessions)")
+    existing = {str(row[1]) for row in await cursor.fetchall()}
+    columns = {
+        "input_chunks_captured": "INTEGER DEFAULT 0",
+        "input_chunks_sent": "INTEGER DEFAULT 0",
+        "input_bytes_sent": "INTEGER DEFAULT 0",
+        "last_input_audio_at": "REAL DEFAULT 0",
+        "last_local_mic_rms": "REAL DEFAULT 0",
+        "peak_local_mic_rms": "REAL DEFAULT 0",
+        "peak_local_mic_rms_since_response": "REAL DEFAULT 0",
+        "peak_local_mic_rms_since_response_at": "REAL DEFAULT 0",
+        "last_xai_speech_started_at": "REAL DEFAULT 0",
+        "last_user_transcript_at": "REAL DEFAULT 0",
+        "last_response_done_at": "REAL DEFAULT 0",
+    }
+    for name, definition in columns.items():
+        if name not in existing:
+            await db.execute(f"ALTER TABLE voice_sessions ADD COLUMN {name} {definition}")

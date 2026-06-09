@@ -5,6 +5,8 @@ import re
 
 from canonical_memory import forget_canonical_memory, search_relevant_canonical_memories
 from curated_memory import curated_memory_status, forget_curated_memory
+from memory_audit import format_recent_memory_audit
+from memory_canaries import format_memory_leak_report
 from memory_display import canonical_lines, lesson_lines, preference_lines, summary_lines
 from retention_policy import run_retention_cleanup
 from session_memory_store import list_session_summaries
@@ -208,6 +210,8 @@ async def memory_sources_text(db_path: str, query: str = "") -> str:
     lines.extend(preference_lines(preferences, query))
     lines.extend(lesson_lines(lessons))
     lines.extend(summary_lines(summaries))
+    lines.append(await format_recent_memory_audit(db_path, query, limit=4))
+    lines.append(await format_memory_leak_report(db_path))
     return "\n".join(lines) if len(lines) > 1 else "Memory sources:\n1) No visible memory found yet."
 
 

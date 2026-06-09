@@ -41,7 +41,7 @@ class DocumentWordMixin:
         await self._build_word_doc(path, topic, draft.content)
         quality = await self._word_quality(path, topic)
         attempts = 1
-        max_attempts = artifact_qa_max_attempts("docx")
+        max_attempts = min(2, artifact_qa_max_attempts("docx")) if channel == "imac" else artifact_qa_max_attempts("docx")
         while not quality.passed and attempts < max_attempts:
             attempts += 1
             repaired = await self._repair_word_doc(path, topic, quality, attempts)
@@ -49,7 +49,7 @@ class DocumentWordMixin:
                 break
             quality = await self._word_quality(path, topic)
         if not quality.passed:
-            return await self._draft_with_issues("Word draft", path, channel, "Microsoft Word", quality.short_issue_text())
+            return await self._draft_with_issues("Word draft", path, channel, "Microsoft Word", quality.short_issue_text(), attempts=attempts)
         await self._remember(path, f"Created Word draft: {quality.summary}", project_scoped, channel, "docx", topic)
         return await self._done("Word draft", path, channel, "Microsoft Word")
 
@@ -200,4 +200,17 @@ class DocumentWordMixin:
 
 def _session_edit_topic(session, artifact_type: str, instruction: str) -> str:
     state = apply_artifact_edit_delta(session.state, instruction)
-    return topic_from_state(artifact_type, state, fallback=session.topic)
+    topic = topic_from_state(artifact_type, state, fallback=session.topic)
+    if artifact_type == "docx" and re.search(r"\b(?:putty|ssh|serial|console|cli|command|config)\b", instruction, re.I):
+        if re.search(r"\brouter\b", f"{topic} {session.topic} {instruction}", re.I):
+            return "Router Setup Guide With PuTTY Config"
+        return f"{topic} With PuTTY Config"
+    day_match = re.search(r"\b(\d{1,2})\s*[- ]?\s*(?:day|days)\b", instruction, re.I)
+    if artifact_type == "docx" and day_match:
+        days = int(day_match.group(1))
+        base_source = session.topic or topic
+        base = re.sub(r"\b\d{1,2}\s+days?\b", " ", base_source, flags=re.I)
+        base = re.sub(r"^\d{1,2}\s*[- ]?\s*day\s+", " ", base, flags=re.I)
+        base = " ".join(base.split()) or session.topic
+        return f"{days}-day {base}"
+    return topic

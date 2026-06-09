@@ -30,6 +30,62 @@ def _slide_kicker(title: str, deck_topic: str = "") -> str:
         if any(word in lowered for word in ("workflow", "route", "handoff", "worker")):
             return "WORKFLOW TRACE"
         return "AGENT SYSTEM"
+    if _browser_topic(context):
+        if any(word in lowered for word in ("youtube", "video")):
+            return "YOUTUBE SKILL"
+        if any(word in lowered for word in ("reddit", "thread")):
+            return "REDDIT SKILL"
+        if any(word in lowered for word in ("flight", "hotel", "airbnb", "booking")):
+            return "TRAVEL SKILL"
+        if any(word in lowered for word in ("safety", "login", "payment")):
+            return "SAFETY STOP"
+        return "BROWSER SKILL"
+    if _travel_topic(context):
+        if any(word in lowered for word in ("flight", "booking", "hotel", "airbnb", "accommodation")):
+            return "BOOKING DECISION"
+        if any(word in lowered for word in ("budget", "cost", "actual", "estimate")):
+            return "TRIP BUDGET"
+        if any(word in lowered for word in ("risk", "safety", "weather", "hiking", "trail")):
+            return "TRIP SAFETY"
+        if any(word in lowered for word in ("day", "route", "itinerary", "plan")):
+            return "TRIP ROUTE"
+        return "TRAVEL PLAN"
+    if _drone_topic(context):
+        if any(word in lowered for word in ("equipment", "aircraft", "payload")):
+            return "DRONE KIT"
+        if any(word in lowered for word in ("compliance", "risk", "safety", "permission")):
+            return "FLIGHT SAFETY"
+        if any(word in lowered for word in ("service", "pricing", "market")):
+            return "SERVICE MODEL"
+        return "DRONE OPS"
+    if _agriculture_topic(context):
+        if any(word in lowered for word in ("water", "soil", "climate")):
+            return "FARM RESILIENCE"
+        if any(word in lowered for word in ("cost", "fertilizer", "economics")):
+            return "FARM COST"
+        if any(word in lowered for word in ("policy", "support", "adoption")):
+            return "POLICY OPTION"
+        return "AGRICULTURE"
+    if _cloud_topic(context):
+        if any(word in lowered for word in ("cost", "budget", "spend")):
+            return "CLOUD COST"
+        if any(word in lowered for word in ("security", "logging", "monitoring")):
+            return "CLOUD CONTROL"
+        return "CLOUD GOVERNANCE"
+    if _house_topic(context):
+        if any(word in lowered for word in ("material", "layout", "climate")):
+            return "DESIGN CHOICE"
+        if any(word in lowered for word in ("cost", "tradeoff")):
+            return "BUILD TRADEOFF"
+        return "KAMPUNG DESIGN"
+    if _robotics_topic(context):
+        if any(word in lowered for word in ("agenda", "schedule")):
+            return "WORKSHOP FLOW"
+        if any(word in lowered for word in ("kit", "team", "role")):
+            return "TEAM SETUP"
+        if any(word in lowered for word in ("judging", "assessment")):
+            return "LEARNING CHECK"
+        return "ROBOTICS WORKSHOP"
     if any(word in lowered for word in ("old", "new", "culture", "heritage", "modern")):
         return "FOOD CULTURE"
     if any(word in lowered for word in ("day", "anchor", "food", "restaurant", "meal", "market", "cafe")):
@@ -46,7 +102,7 @@ def _slide_kicker(title: str, deck_topic: str = "") -> str:
         return "LOCAL READ"
     if any(word in lowered for word in ("recommend", "next", "decision")):
         return "DECISION"
-    return "FOOD ROUTE"
+    return "KEY POINT"
 
 
 def _quality_topic(context: str) -> bool:
@@ -66,11 +122,45 @@ def _agent_topic(context: str) -> bool:
         "kampung ai",
         "maya",
         "agent",
-        "workflow",
         "thread manager",
         "tool registry",
         "event store",
     )
+    return any(marker in context for marker in markers)
+
+
+def _browser_topic(context: str) -> bool:
+    markers = ("browser", "google search", "google images", "youtube", "reddit", "google flights", "booking.com", "airbnb")
+    return any(marker in context for marker in markers)
+
+
+def _travel_topic(context: str) -> bool:
+    markers = ("trip", "travel", "itinerary", "flight", "hotel", "airbnb", "hiking", "almaty", "kazakhstan", "japan", "osaka", "kyoto")
+    return any(marker in context for marker in markers)
+
+
+def _drone_topic(context: str) -> bool:
+    markers = ("drone", "uav", "inspection", "aerial", "pilot")
+    return any(marker in context for marker in markers)
+
+
+def _agriculture_topic(context: str) -> bool:
+    markers = ("agriculture", "crop", "fertilizer", "farm", "water management", "climate risk")
+    return any(marker in context for marker in markers)
+
+
+def _cloud_topic(context: str) -> bool:
+    markers = ("google cloud", "cloud cost", "budget alert", "logging", "security", "startup")
+    return any(marker in context for marker in markers)
+
+
+def _house_topic(context: str) -> bool:
+    markers = ("modern kampung", "house design", "materials", "layout", "climate response")
+    return any(marker in context for marker in markers)
+
+
+def _robotics_topic(context: str) -> bool:
+    markers = ("robotics", "workshop", "school", "kits", "judging")
     return any(marker in context for marker in markers)
 
 
@@ -127,7 +217,9 @@ def _visual_title(title: str, index: int) -> str:
     mappings = (
         (("anchor", "standout meal"), "Anchor Each Day Around One Meal"),
         (("backup", "famous"), "Pair Famous Stops With Backups"),
-        (("budget", "splurge", "cost"), "Save The Splurge For Dinner"),
+        (("compare the big costs", "big costs", "cost first"), "Compare The Big Costs"),
+        (("editable", "estimate", "actual"), "Keep Budget Editable"),
+        (("budget", "splurge", "cost"), "Budget The Tradeoffs"),
         (("logistics", "transit", "map"), "Cluster Meals To Cut Transit"),
         (("decision", "itinerary"), "Turn The Plan Into Decisions"),
         (("ready plan", "ready", "leave with"), "Leave With A Ready Plan"),

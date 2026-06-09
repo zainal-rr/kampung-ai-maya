@@ -1,7 +1,10 @@
 from __future__ import annotations
 
 import asyncio
+from array import array
 import contextlib
+import json
+import math
 import os
 import time
 
@@ -20,16 +23,17 @@ from sounddevice_audio import (
 )
 from voice_session_log import finish_voice_session, start_voice_session
 from xai_realtime_stream_helpers import append_audio_message, put_latest, put_playback
-from xai_realtime_tools import voice_tools
 from xai_voice_agent import realtime_url
 from xai_realtime_events import XaiRealtimeEventMixin
 from xai_realtime_models import PlaybackCommand, SessionCloseReason
 from xai_realtime_playback import XaiRealtimePlaybackMixin
+from xai_realtime_session_update import session_update_payload
 
 
 class XaiRealtimeStreamingSession(XaiRealtimeEventMixin, XaiRealtimePlaybackMixin):
-    def __init__(self, db_path: str, instructions: str, stop_event: asyncio.Event | None = None):
+    def __init__(self, db_path: str, instructions: str, stop_event: asyncio.Event | None = None, *, assistant=None):
         self.db_path = db_path
+        self.assistant = assistant
         self.instructions = instructions
         self.stop_event = stop_event or asyncio.Event()
         self.sample_rate = int(os.getenv("XAI_VOICE_AGENT_SAMPLE_RATE", "24000"))
@@ -44,7 +48,7 @@ class XaiRealtimeStreamingSession(XaiRealtimeEventMixin, XaiRealtimePlaybackMixi
         self.max_pending_chunks = int(os.getenv("XAI_VOICE_PENDING_AUDIO_CHUNKS", "100"))
         self.playback_queue: asyncio.Queue[PlaybackCommand] = asyncio.Queue(maxsize=32)
         self.response_active = False
-        self.playback_prebuffer_ms = int(os.getenv("XAI_VOICE_PLAYBACK_PREBUFFER_MS", "260"))
+        self.playback_prebuffer_ms = int(os.getenv("XAI_VOICE_PLAYBACK_PREBUFFER_MS", "800"))
         self.transcripts: list[str] = []
         self.last_underrun_log = 0.0
         self.current_output = None
@@ -57,13 +61,43 @@ class XaiRealtimeStreamingSession(XaiRealtimeEventMixin, XaiRealtimePlaybackMixi
         self.close_reason = SessionCloseReason.RUNNING
         self.audio_error_count = 0
         self.output_reset_count = 0
+        self.input_chunks_captured = 0
+        self.input_chunks_sent = 0
+        self.input_bytes_sent = 0
+        self.last_input_audio_at = 0.0
+        self.last_local_mic_rms = 0.0
+        self.peak_local_mic_rms = 0.0
+        self.peak_local_mic_rms_since_response = 0.0
+        self.peak_local_mic_rms_since_response_at = 0.0
+        self.last_xai_speech_started_at = 0.0
+        self.last_user_transcript_at = 0.0
+        self.last_response_done_at = 0.0
+        self.last_vad_silent_log_at = 0.0
+        self.vad_silent_logged_for_response = False
+        self.vad_silent_rms_threshold = float(os.getenv("XAI_VOICE_VAD_SILENT_RMS_THRESHOLD", "900"))
+        self.vad_silent_delay_seconds = float(os.getenv("XAI_VOICE_VAD_SILENT_DELAY_SECONDS", "2.5"))
+        self.fragment_response_suppression_until = 0.0
+        self.fragment_response_text = ""
+        self.fragment_response_suppression_seconds = float(os.getenv("XAI_VOICE_FRAGMENT_SUPPRESSION_SECONDS", "3.0"))
         self.voice_log_session_id: int | None = None
         self.current_response_id = ""
         self.assistant_transcript_parts: list[str] = []
         self.assistant_transcript_recorded = False
+        self.function_call_tasks: set[asyncio.Task] = set()
+        self.supervised_voice_work_request = ""
+        self.supervised_voice_work_tool_name = ""
+        self.supervised_voice_work_kind = ""
+        self.supervised_voice_work_ack = ""
+        self.supervised_voice_work_suppress_until = 0.0
+        self.supervised_voice_work_ack_pending = False
+        self.supervised_voice_work_task: asyncio.Task | None = None
+        self.supervised_browser_request = ""
+        self.supervised_browser_suppress_until = 0.0
+        self.supervised_browser_task: asyncio.Task | None = None
 
     async def run(self) -> None:
         self.started_at = time.monotonic()
+        self._require_configured_input_available()
         await record_route(self.db_path, "voice", "Grok Voice Agent streaming", "manual hotkey", True)
         try:
             self.voice_log_session_id = await start_voice_session(
@@ -119,6 +153,17 @@ class XaiRealtimeStreamingSession(XaiRealtimeEventMixin, XaiRealtimePlaybackMixi
                     output_device=self.output_device_name,
                     audio_error_count=self.audio_error_count,
                     output_reset_count=self.output_reset_count,
+                    input_chunks_captured=self.input_chunks_captured,
+                    input_chunks_sent=self.input_chunks_sent,
+                    input_bytes_sent=self.input_bytes_sent,
+                    last_input_audio_at=self._elapsed(self.last_input_audio_at),
+                    last_local_mic_rms=self.last_local_mic_rms,
+                    peak_local_mic_rms=self.peak_local_mic_rms,
+                    peak_local_mic_rms_since_response=self.peak_local_mic_rms_since_response,
+                    peak_local_mic_rms_since_response_at=self._elapsed(self.peak_local_mic_rms_since_response_at),
+                    last_xai_speech_started_at=self._elapsed(self.last_xai_speech_started_at),
+                    last_user_transcript_at=self._elapsed(self.last_user_transcript_at),
+                    last_response_done_at=self._elapsed(self.last_response_done_at),
                     transcript_count=len(self.transcripts),
                 )
             except Exception as exc:
@@ -127,6 +172,7 @@ class XaiRealtimeStreamingSession(XaiRealtimeEventMixin, XaiRealtimePlaybackMixi
             print(
                 f"maya-hotkey-session-closed> reason={self.close_reason.value} "
                 f"audio_errors={self.audio_error_count} output_resets={self.output_reset_count} "
+                f"input_chunks={self.input_chunks_captured}/{self.input_chunks_sent} "
                 f"transcripts={len(self.transcripts)} duration={duration:.1f}s "
                 f"export={export_path}",
                 flush=True,
@@ -151,6 +197,16 @@ class XaiRealtimeStreamingSession(XaiRealtimeEventMixin, XaiRealtimePlaybackMixi
                 await asyncio.sleep(1)
         raise last_exc or RuntimeError("Could not open xAI realtime websocket.")
 
+    def _require_configured_input_available(self) -> None:
+        if self.input_device is not None:
+            return
+        if os.getenv("IMAC_AUDIO_REQUIRE_CONFIGURED_INPUT", "0") != "1":
+            return
+        configured = os.getenv("IMAC_AUDIO_INPUT_NAMES") or os.getenv("IMAC_AUDIO_INPUT") or "configured input"
+        self.close_reason = SessionCloseReason.INPUT_ERROR
+        print(f"maya-hotkey-input-unavailable> configured microphone is unavailable: {configured}", flush=True)
+        raise RuntimeError(f"Configured microphone is unavailable: {configured}")
+
     async def stop(self) -> None:
         if self.close_reason == SessionCloseReason.RUNNING:
             self.close_reason = SessionCloseReason.MANUAL_STOP
@@ -167,25 +223,7 @@ class XaiRealtimeStreamingSession(XaiRealtimeEventMixin, XaiRealtimePlaybackMixi
                 await self.websocket.close()
 
     def _session_update(self) -> dict:
-        silence_ms = int(os.getenv("XAI_VOICE_TURN_SILENCE_MS", "700"))
-        return {
-            "type": "session.update",
-            "session": {
-                "voice": os.getenv("XAI_VOICE_AGENT_VOICE", "ara"),
-                "instructions": self.instructions,
-                "input_audio_transcription": {"model": os.getenv("XAI_VOICE_TRANSCRIPTION_MODEL", "grok-2-audio")},
-                "turn_detection": {
-                    "type": "server_vad",
-                    "silence_duration_ms": silence_ms,
-                    "prefix_padding_ms": 500,
-                },
-                "tools": voice_tools(),
-                "audio": {
-                    "input": {"format": {"type": "audio/pcm", "rate": self.sample_rate}},
-                    "output": {"format": {"type": "audio/pcm", "rate": self.sample_rate}},
-                },
-            },
-        }
+        return session_update_payload(self.instructions, self.sample_rate)
 
     async def _stream_input(self) -> None:
         loop = asyncio.get_running_loop()
@@ -194,6 +232,14 @@ class XaiRealtimeStreamingSession(XaiRealtimeEventMixin, XaiRealtimePlaybackMixi
             if self.stop_event.is_set():
                 return
             data = bytes(indata)
+            self.input_chunks_captured += 1
+            self.last_input_audio_at = time.monotonic()
+            self.last_local_mic_rms = self._pcm_rms(data)
+            self.peak_local_mic_rms = max(self.peak_local_mic_rms, self.last_local_mic_rms)
+            if self.last_response_done_at and self.last_input_audio_at >= self.last_response_done_at:
+                if self.last_local_mic_rms > self.peak_local_mic_rms_since_response:
+                    self.peak_local_mic_rms_since_response = self.last_local_mic_rms
+                    self.peak_local_mic_rms_since_response_at = self.last_input_audio_at
             loop.call_soon_threadsafe(put_latest, self.audio_queue, data)
 
         with self._open_input_stream(callback):
@@ -204,10 +250,14 @@ class XaiRealtimeStreamingSession(XaiRealtimeEventMixin, XaiRealtimePlaybackMixi
                 if not self.session_ready.is_set():
                     self._buffer_audio(audio)
                     continue
+                self._mark_input_sent(audio)
                 await self.websocket.send(json.dumps(append_audio_message(audio)))
 
     def _open_input_stream(self, callback):
         refresh_sounddevice_hostapi()
+        if self.input_device is None and os.getenv("IMAC_AUDIO_REQUIRE_CONFIGURED_INPUT", "0") == "1":
+            configured = os.getenv("IMAC_AUDIO_INPUT_NAMES") or os.getenv("IMAC_AUDIO_INPUT") or "configured input"
+            raise RuntimeError(f"Configured microphone is unavailable: {configured}")
         try:
             stream = sd.RawInputStream(
                 samplerate=self.sample_rate,
@@ -233,3 +283,25 @@ class XaiRealtimeStreamingSession(XaiRealtimeEventMixin, XaiRealtimePlaybackMixi
             )
             print(f"maya-hotkey> input opened after retry: {self.input_device}", flush=True)
             return stream
+
+    def _mark_input_sent(self, audio: bytes) -> None:
+        self.input_chunks_sent += 1
+        self.input_bytes_sent += len(audio)
+
+    def _elapsed(self, timestamp: float) -> float:
+        if not timestamp or not self.started_at:
+            return 0.0
+        return round(max(0.0, timestamp - self.started_at), 3)
+
+    @staticmethod
+    def _pcm_rms(audio: bytes) -> float:
+        if len(audio) < 2:
+            return 0.0
+        try:
+            samples = array("h")
+            samples.frombytes(audio[: len(audio) - (len(audio) % 2)])
+            if not samples:
+                return 0.0
+            return round(math.sqrt(sum(sample * sample for sample in samples) / len(samples)), 2)
+        except Exception:
+            return 0.0

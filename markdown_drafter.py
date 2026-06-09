@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 import re
+import asyncio
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
@@ -26,7 +27,15 @@ async def draft_markdown_with_gemini(db_path: str, topic: str, preflight_context
     prompt = _prompt(topic, preflight_context)
     grounded = should_ground_topic(topic)
     if grounded:
-        reply = await _grounded_reply(api_key, model, prompt)
+        try:
+            reply = await _grounded_reply(api_key, model, prompt)
+        except (asyncio.TimeoutError, TimeoutError):
+            senses = TheSenses(api_key, model)
+            reply = await senses.chat([
+                {"role": "system", "content": "You are Maya's document drafting lane. Grounded search timed out, so draft from general knowledge and clearly mark assumptions."},
+                {"role": "user", "content": prompt},
+            ])
+            grounded = False
     else:
         senses = TheSenses(api_key, model)
         reply = await senses.chat([
@@ -111,10 +120,14 @@ async def _grounded_reply(api_key: str, model: str, prompt: str) -> str:
     client = genai.Client(api_key=api_key)
     grounding_tool = types.Tool(google_search=types.GoogleSearch())
     config = types.GenerateContentConfig(tools=[grounding_tool])
-    response = await client.aio.models.generate_content(
-        model=model,
-        contents=prompt,
-        config=config,
+    timeout = float(os.getenv("GEMINI_GROUNDED_TIMEOUT_SECONDS", "45"))
+    response = await asyncio.wait_for(
+        client.aio.models.generate_content(
+            model=model,
+            contents=prompt,
+            config=config,
+        ),
+        timeout=timeout,
     )
     text = getattr(response, "text", "") or ""
     sources = _sources_from_response(response)

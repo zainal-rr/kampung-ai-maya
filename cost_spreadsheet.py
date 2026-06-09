@@ -39,20 +39,34 @@ SAVER_NOTES = {
 
 async def kampung_ai_cost_rows(db_path: str) -> tuple[list[str], list[list[str]]]:
     usage = await _usage_totals(db_path)
-    headers = ["Lane", "Unit", "Last 30 Days", "Rate USD", "Estimate USD", "Saver Rule"]
+    headers = ["Lane", "Unit", "Last 30 Days", "Rate USD", "Estimated USD", "Actual USD", "Variance USD", "Saver Rule"]
     rows = []
-    for lane in DISPLAY_ORDER:
+    first_data_row = 4
+    for index, lane in enumerate(DISPLAY_ORDER):
         units = usage.get(lane, 0.0)
         rate = DEFAULT_RATES.get(lane, 0.0)
+        row_num = first_data_row + index
         rows.append([
             LABELS.get(lane, lane),
             UNITS.get(lane, "calls"),
             round(units, 2),
             rate,
-            round(units * rate, 4),
+            f"=C{row_num}*D{row_num}",
+            "",
+            f'=IF(OR(F{row_num}="",E{row_num}=""),"",F{row_num}-E{row_num})',
             SAVER_NOTES.get(lane, "Use only when the route needs this lane."),
         ])
-    rows.append(["Total", "", "", "", round(sum(float(row[4]) for row in rows), 4), "Estimate only. Check provider billing for exact cost."])
+    total_row = first_data_row + len(rows)
+    rows.append([
+        "Total",
+        "",
+        "",
+        "",
+        f"=SUM(E{first_data_row}:E{total_row - 1})",
+        f"=SUM(F{first_data_row}:F{total_row - 1})",
+        f"=SUM(G{first_data_row}:G{total_row - 1})",
+        "Estimate only. Enter actuals from provider billing when available.",
+    ])
     return headers, rows
 
 

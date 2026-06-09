@@ -17,7 +17,20 @@ def explicit_day_count(topic: str) -> int:
     match = re.search(r"\b(\d+)\s*[- ]?\s*(?:day|days)\b", lowered)
     if match:
         return int(match.group(1))
-    words = {"one": 1, "two": 2, "three": 3, "four": 4}
+    words = {
+        "one": 1,
+        "two": 2,
+        "three": 3,
+        "four": 4,
+        "five": 5,
+        "six": 6,
+        "seven": 7,
+        "eight": 8,
+        "nine": 9,
+        "ten": 10,
+        "eleven": 11,
+        "twelve": 12,
+    }
     for word, count in words.items():
         if re.search(rf"\b{word}\s+(?:day|days)\b", lowered):
             return count

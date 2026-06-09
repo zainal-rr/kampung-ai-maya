@@ -132,7 +132,7 @@ async def update_artifact_session_after_edit(
     instruction: str,
 ) -> ArtifactSession:
     state = apply_artifact_edit_delta(session.state, instruction)
-    topic = topic_from_state(session.artifact_type, state, fallback=session.topic)
+    topic = _topic_after_edit(session, state, instruction)
     short_name = session.short_name or short_artifact_stem(topic, session.artifact_type)
     title = _title_from_stem(short_name)
     now = _now()
@@ -199,6 +199,17 @@ def topic_from_state(artifact_type: str, state: dict, fallback: str = "") -> str
         parts.append(f"{int(state['people'])} people")
     topic = " ".join(parts).strip()
     return topic or fallback or artifact_type
+
+
+def _topic_after_edit(session: ArtifactSession, state: dict, instruction: str) -> str:
+    days = _day_count(instruction)
+    if days and session.topic:
+        base = re.sub(r"\b\d{1,2}\s+days?\b", " ", session.topic, flags=re.I)
+        base = re.sub(r"^\d{1,2}\s*[- ]?\s*day\s+", " ", base, flags=re.I)
+        base = " ".join(base.split())
+        if base:
+            return f"{days}-day {base}"
+    return topic_from_state(session.artifact_type, state, fallback=session.topic)
 
 
 def _row_to_session(row) -> ArtifactSession:

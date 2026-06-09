@@ -108,7 +108,8 @@ Current proof:
 2. Temporary test memory is separated from durable memory.
 3. Forget no-leak behavior is covered.
 4. Weekly dry/live status path exists.
-5. Memory self-heal dry run is prepared.
+5. Weekly reviewer fallback is covered: Claude review failure now saves a conservative summary, saves no unreviewed canonical facts, and audits the warning.
+6. Memory self-heal dry run is prepared.
 
 Remaining proof:
 

@@ -3,6 +3,8 @@ from __future__ import annotations
 import aiosqlite
 
 from canonical_memory import init_canonical_memory_db, memory_tokens, subject_key_from_text
+from memory_audit import format_recent_memory_audit
+from memory_canaries import format_memory_leak_report
 
 
 async def inspect_canonical_memory(db_path: str, query: str = "", limit: int = 8) -> str:
@@ -10,7 +12,11 @@ async def inspect_canonical_memory(db_path: str, query: str = "", limit: int = 8
     rows = await _inspection_rows(db_path, cleaned, limit)
     if not rows:
         suffix = f" matching: {cleaned}" if cleaned else ""
-        return f"Canonical memory inspector:\n1) No canonical memory found{suffix}."
+        return "\n".join((
+            f"Canonical memory inspector:\n1) No canonical memory found{suffix}.",
+            await format_recent_memory_audit(db_path, cleaned, limit=4),
+            await format_memory_leak_report(db_path),
+        ))
     lines = ["Canonical memory inspector:"]
     for idx, row in enumerate(rows, start=1):
         lines.append(
@@ -25,6 +31,8 @@ async def inspect_canonical_memory(db_path: str, query: str = "", limit: int = 8
                 f"   content: {_preview(row['content'])}",
             ))
         )
+    lines.append(await format_recent_memory_audit(db_path, cleaned, limit=4))
+    lines.append(await format_memory_leak_report(db_path))
     return "\n".join(lines)
 
 

@@ -79,12 +79,13 @@ async def main() -> None:
 
             router = HarnessRouter(db_path)
             approved = await router.handle("yes", "telegram")
-            _require(approved and "Self heal check:" in approved, "approval did not start self-heal workflow")
+            _require(approved and "Self-heal workflow checkpointed" in approved, "approval did not start checkpointed self-heal workflow")
             resumed = await get_run(db_path, run_id)
-            _require(resumed is not None and resumed["status"] in {"running", "completed"}, "approved run did not resume")
+            _require(resumed is not None and resumed["status"] == "paused", "approved run should pause before isolated mutation")
+            _require(resumed["state"].get("self_heal_checkpoint"), "self-heal checkpoint state missing")
             events = await latest_events(db_path, run_id, limit=30)
             event_names = " ".join(item["event"] for item in events)
-            _require("checkpoint_migration" in event_names or "execute" in event_names, "checkpointed execution not recorded")
+            _require("snapshot" in event_names and "await_approval" in event_names, "checkpointed execution not recorded")
     finally:
         _restore("OPENAI_API_KEY", old_openai)
         _restore("ANTHROPIC_API_KEY", old_anthropic)

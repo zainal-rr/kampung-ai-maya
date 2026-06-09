@@ -37,6 +37,7 @@ class HarnessState(TypedDict, total=False):
     complex_review: str
     executable_steps: list[str]
     approval_required: bool
+    self_heal_checkpoint: dict
 
 
 def initial_harness_state(

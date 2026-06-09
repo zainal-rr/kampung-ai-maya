@@ -5,8 +5,11 @@ import re
 from dataclasses import dataclass
 from typing import Awaitable, Callable
 
+import aiosqlite
+
 from canonical_memory import is_temporary_memory, subject_key_from_text, upsert_canonical_memory
 from cost_tracker import record_usage
+from memory_audit import record_memory_audit_event
 from permission_policy import contains_sensitive_info
 
 ProviderCall = Callable[[str], Awaitable[str]]
@@ -19,6 +22,7 @@ class LiveWeeklyMemoryResult:
     provider_calls: int = 0
     memory_ids: tuple[str, ...] = ()
     confirmation_needed: tuple[str, ...] = ()
+    reviewer_error: str = ""
 
 
 async def live_weekly_canonical_distillation(
@@ -33,15 +37,31 @@ async def live_weekly_canonical_distillation(
     raw = await distiller_agent(prompt)
     provider_calls = 1
     facts = _parse_facts(raw)
+    proposed_facts = list(facts)
+    for fact in proposed_facts:
+        await _audit_weekly_fact(db_path, "weekly_candidate", run_key, fact)
     confirmation_needed: tuple[str, ...] = ()
     review_rejected = 0
+    reviewer_error = ""
     if reviewer_agent:
-        reviewed = await reviewer_agent(_review_prompt(run_key, facts))
         provider_calls += 1
-        review = _parse_review(reviewed, proposed_count=len(facts))
-        facts = review["facts"]
-        review_rejected = int(review["rejected"])
-        confirmation_needed = tuple(review["confirmation_needed"])
+        try:
+            reviewed = await reviewer_agent(_review_prompt(run_key, facts))
+        except Exception as exc:
+            reviewer_error = f"{type(exc).__name__}: {exc}"
+            review_rejected = len(facts)
+            for fact in facts:
+                await _audit_weekly_fact(db_path, "weekly_reject", run_key, fact, source_ref=reviewer_error)
+            facts = []
+        else:
+            review = _parse_review(reviewed, proposed_count=len(facts))
+            facts = review["facts"]
+            review_rejected = int(review["rejected"])
+            confirmation_needed = tuple(review["confirmation_needed"])
+            approved_content = {_clean(fact.get("content", "")) for fact in facts}
+            for fact in proposed_facts:
+                if _clean(fact.get("content", "")) not in approved_content:
+                    await _audit_weekly_fact(db_path, "weekly_reject", run_key, fact, source_ref="review_rejected")
     saved = 0
     rejected = review_rejected
     memory_ids = []
@@ -49,8 +69,9 @@ async def live_weekly_canonical_distillation(
         content = _clean(fact.get("content", ""))
         kind = _clean(fact.get("kind", "")) or "weekly_fact"
         scope = _clean(fact.get("scope", "")) or "global"
-        if not _stable_fact(content, kind=kind, scope=scope):
+        if not _stable_fact(content, kind=kind, scope=scope) or await _forgotten_subject_exists(db_path, content):
             rejected += 1
+            await _audit_weekly_fact(db_path, "weekly_reject", run_key, fact, source_ref="stability_filter")
             continue
         memory_id = await upsert_canonical_memory(
             db_path,
@@ -62,6 +83,7 @@ async def live_weekly_canonical_distillation(
             confidence=_clean(fact.get("confidence", "")) or "medium",
             source_ref=f"weekly:{run_key}",
         )
+        await _audit_weekly_fact(db_path, "weekly_save", run_key, fact, memory_id=memory_id)
         memory_ids.append(memory_id)
         saved += 1
     if provider_calls:
@@ -75,6 +97,7 @@ async def live_weekly_canonical_distillation(
         provider_calls=provider_calls,
         memory_ids=tuple(memory_ids),
         confirmation_needed=confirmation_needed,
+        reviewer_error=reviewer_error,
     )
 
 
@@ -176,3 +199,44 @@ def _stable_fact(content: str, *, kind: str = "", scope: str = "") -> bool:
 
 def _clean(value: str) -> str:
     return " ".join(str(value).strip().split())[:1000]
+
+
+async def _forgotten_subject_exists(db_path: str, content: str) -> bool:
+    subject_key = subject_key_from_text(content)
+    if not subject_key:
+        return False
+    async with aiosqlite.connect(db_path) as db:
+        cursor = await db.execute(
+            """
+            SELECT 1 FROM canonical_memory_items
+            WHERE subject_key = ? AND status IN ('forgotten', 'expired', 'superseded')
+            LIMIT 1
+            """,
+            (subject_key,),
+        )
+        return bool(await cursor.fetchone())
+
+
+async def _audit_weekly_fact(
+    db_path: str,
+    event_type: str,
+    run_key: str,
+    fact: dict[str, str],
+    *,
+    memory_id: str = "",
+    source_ref: str = "",
+) -> None:
+    content = _clean(fact.get("content", ""))
+    if not content:
+        return
+    await record_memory_audit_event(
+        db_path,
+        event_type=event_type,
+        memory_id=memory_id,
+        subject_key=subject_key_from_text(content),
+        status_after="saved" if event_type == "weekly_save" else "candidate",
+        source_channel="weekly_memory",
+        source_ref=source_ref or f"weekly:{run_key}",
+        run_id=run_key,
+        content=content,
+    )

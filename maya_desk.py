@@ -17,6 +17,8 @@ from live_reliability_soak import format_soak_status
 from live_test_evidence import load_live_evidence
 from maya_desk_metrics import browser_benchmark_text, failure_metric_items, reliability_metric_text, trace_metric_items
 from maya_event_store import MayaEventStore
+from memory_audit import format_recent_memory_audit
+from memory_canaries import format_memory_leak_report
 from mcp_registry import recent_mcp_usage
 from route_tracker import last_route_text
 from self_heal_store import latest_self_heal_report
@@ -78,6 +80,8 @@ async def _html(db_path: str) -> str:
 <section><h2>Last Route</h2><pre>{escape(await last_route_text(db_path))}</pre></section>
 <section><h2>Memory Health</h2><pre>{escape(await curated_memory_status(db_path))}</pre></section>
 <section><h2>Weekly Memory</h2><pre>{escape(await weekly_memory_status_text(db_path))}</pre></section>
+<section><h2>Memory Time Audit</h2><pre>{escape(await format_recent_memory_audit(db_path, limit=8))}</pre></section>
+<section><h2>Memory Leak Canaries</h2><pre>{escape(await format_memory_leak_report(db_path))}</pre></section>
 {_section("Dependency Readiness", [f"{d.id}: {d.status} ({d.requirement})" for d in deps])}
 {_section("Provider Readiness", _provider_items(deps))}
 {_section("Latest Passing Demos", _latest_demo_items(demo_payload))}

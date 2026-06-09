@@ -52,9 +52,28 @@ def _normalize_request(request: str) -> str:
     if _document_edit_request(cleaned):
         return cleaned
     lowered = cleaned.lower()
+    explicit_non_excel = any(
+        word in lowered
+        for word in (
+            "word",
+            "word document",
+            "word doc",
+            "docx",
+            "document",
+            "brief",
+            "proposal",
+            "checklist",
+            "meeting notes",
+            "powerpoint",
+            "presentation",
+            "pptx",
+            "slides",
+            "deck",
+        )
+    )
     if any(word in lowered for word in ("budget", "budgeting", "expenses", "cost")) and not any(
         word in lowered for word in ("excel", "xlsx", "spreadsheet", "sheet")
-    ):
+    ) and not explicit_non_excel:
         return f"make an Excel budget tracker for {cleaned}"
     if lowered.startswith(("do ", "build ", "prepare ", "generate ")):
         if "excel" in lowered or "spreadsheet" in lowered or "sheet" in lowered:

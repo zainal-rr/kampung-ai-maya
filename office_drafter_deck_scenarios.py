@@ -79,6 +79,132 @@ def _travel_food_deck(title: str, sections: list[tuple[str, list[str]]]) -> list
     ]
 
 
+def _travel_deck(title: str, sections: list[tuple[str, list[str]]]) -> list[tuple[str, list[str]]]:
+    display = _display_title(title)
+    itinerary_lines = _matching_lines(sections, ("day", "itinerary", "route", "plan", "schedule"))
+    nature_lines = _matching_lines(sections, ("hiking", "nature", "mountain", "trail", "weather", "safety"))
+    booking_lines = _matching_lines(sections, ("flight", "hotel", "airbnb", "booking", "accommodation", "transport"))
+    budget_lines = _matching_lines(sections, ("budget", "cost", "money", "estimate", "actual"))
+    decision_lines = _matching_lines(sections, ("recommendation", "decision", "next", "risk", "tradeoff"))
+    return [
+        (
+            display,
+            [
+                f"{display} should help decide the route, budget, and practical next steps.",
+                _first(itinerary_lines, "Start with the travel dates, destination sequence, and realistic daily pacing."),
+                _first(booking_lines, "Separate flight, accommodation, and local transport decisions so costs stay clear."),
+            ],
+        ),
+        (
+            "The route should match the real purpose of the trip.",
+            _take(
+                itinerary_lines + nature_lines,
+                [
+                    "Anchor the plan around the main reason for going, then protect enough rest and buffer time.",
+                    "Avoid packing every day with long transfers unless the route truly needs it.",
+                    "Keep at least one weather or energy backup for nature-heavy trips.",
+                ],
+            ),
+        ),
+        (
+            "Booking decisions should be compared before committing.",
+            _take(
+                booking_lines,
+                [
+                    "Compare flights by price, schedule, layover risk, and arrival time.",
+                    "Compare stays by location, quality, cancellation rules, and total cost.",
+                    "Stop before payment or booking confirmation until the traveler approves.",
+                ],
+            ),
+        ),
+        (
+            "Budget needs estimates, actuals, and assumptions.",
+            _take(
+                budget_lines,
+                [
+                    "Track flights, accommodation, food, transport, activities, shopping, and contingency.",
+                    "Keep estimated and actual costs side by side so the sheet can be updated during the trip.",
+                    "State assumptions such as number of travelers, exchange rate, and one-way versus return travel.",
+                ],
+            ),
+        ),
+        (
+            "Risks should change the plan, not sit in a footnote.",
+            _take(
+                decision_lines + nature_lines,
+                [
+                    "Weather, distance, safety, visa or entry rules, and health needs should affect the schedule.",
+                    "Use fallback options for days where a hike, transfer, or booking may fail.",
+                    "Make the next decision explicit before moving to payment or final booking.",
+                ],
+            ),
+        ),
+    ]
+
+
+def _browser_deck(title: str, sections: list[tuple[str, list[str]]]) -> list[tuple[str, list[str]]]:
+    display = _display_title(title)
+    search_lines = _matching_lines(sections, ("google search", "search", "result", "web page"))
+    media_lines = _matching_lines(sections, ("google images", "youtube", "video", "channel"))
+    community_lines = _matching_lines(sections, ("reddit", "thread", "comment", "community"))
+    travel_lines = _matching_lines(sections, ("google flights", "flight", "booking.com", "airbnb", "hotel"))
+    safety_lines = _matching_lines(sections, ("safety", "login", "payment", "booking", "passport", "card", "otp"))
+    return [
+        (
+            display,
+            [
+                f"{display} should be handled as deterministic site skills, not improvised browsing.",
+                _first(search_lines, "Start by routing the request to the correct site-specific browser skill."),
+                _first(safety_lines, "Keep sensitive actions blocked before login, payment, booking submit, cards, OTP, or passport fields."),
+            ],
+        ),
+        (
+            "Search skills need clean queries and source inspection.",
+            _take(
+                search_lines,
+                [
+                    "Google Search should clean the spoken request before typing it into the page.",
+                    "Open a useful result when asked and summarize the page from page text or vision fallback.",
+                    "Report uncertainty when the page cannot be inspected safely.",
+                ],
+            ),
+        ),
+        (
+            "Media skills should rank before opening.",
+            _take(
+                media_lines,
+                [
+                    "Google Images should show relevant visual options without adding command words into the query.",
+                    "YouTube should compare title fit, channel trust, views, recency, and duration.",
+                    "Subscribed or known high-trust channels should get a priority boost when they match.",
+                ],
+            ),
+        ),
+        (
+            "Community and travel sites need structured evidence.",
+            _take(
+                community_lines + travel_lines,
+                [
+                    "Reddit summaries should separate common praise, complaints, and caveats.",
+                    "Google Flights, Booking.com, and Airbnb should extract price, location, timing, rating, and important conditions.",
+                    "Open a selected option for review, but stop before booking or payment.",
+                ],
+            ),
+        ),
+        (
+            "Safety boundaries make automation trustworthy.",
+            _take(
+                safety_lines,
+                [
+                    "Never submit login, payment, booking, passport, card, OTP, or private financial fields.",
+                    "If automation is blocked, say exactly where it stopped and leave the page open for manual help.",
+                    "Keep Maya's answer natural while route logs carry the technical detail.",
+                ],
+            ),
+        ),
+    ]
+
+
 def _technical_deck(title: str, sections: list[tuple[str, list[str]]]) -> list[tuple[str, list[str]]]:
     display = _display_title(title)
     setup_lines = _matching_lines(sections, ("setup", "step", "configuration", "configure", "install"))

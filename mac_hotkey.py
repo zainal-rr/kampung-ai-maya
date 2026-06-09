@@ -123,8 +123,11 @@ class CarbonHotKeyListener:
         for ref in self.hotkey_refs:
             if ref:
                 CARBON.UnregisterEventHotKey(ref)
-        if self.run_loop:
-            CORE_FOUNDATION.CFRunLoopStop(self.run_loop)
+        self.hotkey_refs.clear()
+        # Do not call CFRunLoopStop from another Python/AppKit callback thread.
+        # In the packaged app this can trip macOS pointer-authentication checks
+        # during NSApplication termination. The listener thread is daemonized, so
+        # unregistering hotkeys is enough for shutdown.
 
     def _run(self) -> None:
         try:

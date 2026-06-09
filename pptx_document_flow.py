@@ -39,13 +39,14 @@ async def create_powerpoint_with_qa(
     run_id: str,
     last_doc_key: str,
     auto_improve: bool = True,
+    visual_image_max: int | None = None,
 ) -> PptxQualityResult:
     slides = _normalize_slides(title, slides)
     attempts = max_pptx_attempts(auto_improve)
     qa = PptxQualityResult(False, ["PowerPoint QA did not run"], [], 0, "")
     visual_note = ""
     for attempt in range(attempts):
-        qa, visual_note = await _run_powerpoint_attempt(db_path, path, title, attempt_slides(slides, attempt, title), run_id, auto_improve)
+        qa, visual_note = await _run_powerpoint_attempt(db_path, path, title, attempt_slides(slides, attempt, title), run_id, auto_improve, visual_image_max)
         qa.revisions = attempt
         if qa.passed:
             break
@@ -76,6 +77,7 @@ async def _run_powerpoint_attempt(
     slides: list[tuple[str, list[str]]],
     run_id: str,
     auto_improve: bool,
+    visual_image_max: int | None,
 ) -> tuple[PptxQualityResult, str]:
     await asyncio.to_thread(create_pptx, path, title, slides)
     visual_added = False
@@ -94,11 +96,13 @@ async def _run_powerpoint_attempt(
         qa = await asyncio.to_thread(rebuild_topic_safe, path, slides)
         qa.revisions = 1
     if qa.passed:
-        visual_added, visual_note = await add_gemini_visual_asset(path, title)
+        visual_added, visual_note = await add_gemini_visual_asset(path, title, max_images=visual_image_max)
         if visual_added:
             qa = await asyncio.to_thread(inspect_pptx_quality, path)
             picture_count = await asyncio.to_thread(_picture_count, path)
             required = required_visual_image_count(len(slides))
+            if visual_image_max is not None:
+                required = min(required, max(0, visual_image_max))
             if topic_benefits_from_visuals(title) and picture_count < required:
                 qa.passed = False
                 qa.issues.append(f"visual topic needs at least {required} relevant images, but only {picture_count} were inserted")
@@ -143,14 +147,25 @@ def _reviewer_model() -> str:
 
 def _topic_fit_issues(title: str, path: Path) -> list[str]:
     lowered_title = str(title).lower()
-    if not any(word in lowered_title for word in ("office", "priority", "priorities", "weekly", "team")):
-        return []
     deck = Presentation(path)
     text = " ".join(
         " ".join(getattr(shape, "text", "").split()).lower()
         for slide in deck.slides
         for shape in slide.shapes
     )
+    required_groups = _topic_required_groups(lowered_title)
+    if required_groups:
+        hits = [
+            marker
+            for group in required_groups
+            for marker in group
+            if marker in text
+        ]
+        if len(set(hits)) < min(2, len(required_groups) + 1):
+            return [f"deck content does not match requested topic: {title}"]
+        return []
+    if not any(word in lowered_title for word in ("office", "priority", "priorities", "weekly", "team")):
+        return []
     office_markers = ("office", "weekly", "week", "priority", "priorities", "team", "owner", "deep work", "scorecard")
     technical_markers = ("router", "wifi", "wan", "lan", "dhcp", "dns", "admin password", "running config")
     if any(marker in text for marker in office_markers):
@@ -158,6 +173,25 @@ def _topic_fit_issues(title: str, path: Path) -> list[str]:
     if any(marker in text for marker in technical_markers):
         return ["deck content does not match weekly office priorities topic"]
     return ["deck content is too generic for weekly office priorities topic"]
+
+
+def _topic_required_groups(lowered_title: str) -> list[tuple[str, ...]]:
+    rules = (
+        (("kampung ai",), [("kampung", "maya", "ai"), ("voice", "browser", "document", "memory"), ("safety", "provider", "routing", "tools")]),
+        (("youtube learning", "youtube strategy", "video scoring"), [("youtube", "video", "channel"), ("views", "scoring", "subscribed", "creator"), ("notes", "practice", "summary")]),
+        (("drone", "uav", "aerial"), [("drone", "uav", "aerial"), ("inspection", "flight", "pilot", "payload"), ("compliance", "safety", "equipment", "pricing")]),
+        (("agriculture", "crop", "fertilizer"), [("agriculture", "crop", "farm"), ("climate", "water", "fertilizer", "labor"), ("policy", "mitigation", "recommendation")]),
+        (("almaty", "kazakhstan", "hiking"), [("almaty", "kazakhstan"), ("hiking", "mountain", "trail"), ("budget", "packing", "safety", "itinerary")]),
+        (("japan", "osaka", "kyoto"), [("japan", "osaka", "kyoto"), ("flight", "hotel", "airbnb"), ("budget", "decision", "workflow")]),
+        (("browser", "google search", "youtube", "reddit"), [("browser", "search", "google"), ("youtube", "reddit", "images", "flights"), ("safety", "automation", "route")]),
+        (("google cloud", "cloud cost"), [("cloud", "google"), ("budget", "cost", "alert"), ("security", "logging", "monitoring")]),
+        (("robotics", "workshop"), [("robotics", "workshop"), ("kits", "team", "judging"), ("learning", "agenda", "assessment")]),
+        (("modern kampung", "house design"), [("kampung", "house"), ("materials", "layout", "climate"), ("cost", "design", "build")]),
+    )
+    for markers, groups in rules:
+        if any(marker in lowered_title for marker in markers):
+            return groups
+    return []
 
 
 def _artifact_review_text(qa: PptxQualityResult, visual_note: str) -> str:

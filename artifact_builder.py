@@ -19,6 +19,7 @@ from pathlib import Path
 
 from artifact_retry_policy import artifact_qa_max_attempts, qa_retry_exhausted_message
 from artifact_sessions import record_artifact_session
+from created_file_summary import created_file_content_summary
 from artifact_quality import (
     ArtifactQualityResult,
     extract_docx_text,
@@ -162,12 +163,14 @@ class ArtifactBuilder:
         should_open = channel == "imac" if open_file is None else open_file
         if not should_open:
             return _attach(message, path, channel)
+        summary = await asyncio.to_thread(created_file_content_summary, path)
         try:
             opened_app = await asyncio.to_thread(open_created_file, path, self.bridge, app_name)
         except Exception as exc:
-            return _attach(f"{message} I could not open it: {exc}", path, channel)
+            return _attach(f"{message} I saved it here: {path}. I could not open it: {exc}. {summary}", path, channel)
         suffix = f" in {opened_app}" if opened_app else ""
-        return _attach(f"{message} I opened it on the iMac{suffix}.", path, channel)
+        save_note = f" I saved it here: {path}." if channel == "imac" else ""
+        return _attach(f"{message}{save_note} I opened it on the iMac{suffix}. {summary}", path, channel)
 
 
 def _attach(message: str, path: Path, channel: str) -> str:

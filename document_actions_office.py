@@ -15,6 +15,7 @@ from __future__ import annotations
 
 from document_actions_context import *
 from artifact_retry_policy import artifact_qa_max_attempts
+from created_file_summary import created_file_content_summary
 from document_actions_content_helpers import (
     _attach,
     _budget_filename_topic,
@@ -26,6 +27,8 @@ from document_actions_content_helpers import (
     _kampung_ai_cost_topic,
     _prefixed_lane,
     _quick_request,
+    _saas_tracker_rows,
+    _saas_tracker_topic,
     _strip_quality_words,
     _task_tracker_rows,
     _task_tracker_topic,
@@ -177,6 +180,7 @@ class DocumentOfficeMixin:
             DIRECT_DOC_RUN_ID,
             LAST_DOC_KEY,
             auto_improve=not quick,
+            visual_image_max=2 if channel == "imac" else None,
         )
         if qa.revisions:
             self.last_model_lane += " + topic-safe polish pass"
@@ -185,7 +189,7 @@ class DocumentOfficeMixin:
                 f"I created a PowerPoint draft, but {qa.summary()} I’m not calling it final.",
                 path,
                 channel,
-                include_deck=False,
+                include_deck=True,
             )
         label = "starter PowerPoint draft" if quick else "PowerPoint draft"
         return await self._done_powerpoint(f"{label}. {qa.summary()}", path, channel, topic)
@@ -194,12 +198,25 @@ class DocumentOfficeMixin:
         await self._remember(path, f"Created {label}", False, channel, "pptx", topic)
         if channel == "telegram":
             return await self._attach_powerpoint(f"Done. I created a {label}.", path, channel)
-        await asyncio.to_thread(open_created_file, path, self.bridge, "Microsoft PowerPoint")
-        return f"Done. I created a {label} and opened it on the iMac."
+        summary = await asyncio.to_thread(created_file_content_summary, path)
+        try:
+            opened_app = await asyncio.to_thread(open_created_file, path, self.bridge, "Microsoft PowerPoint")
+        except Exception as exc:
+            return f"Done. I created a {label} at {path}. I saved it here: {path}. I could not open it: {exc}. {summary}"
+        suffix = f" in {opened_app}" if opened_app else ""
+        return f"Done. I created a {label} at {path}. I opened it on the iMac{suffix}. {summary}"
 
     async def _attach_powerpoint(self, message: str, path: Path, channel: str, *, include_deck: bool = True) -> str:
         if channel != "telegram":
-            return message
+            if not include_deck:
+                return f"{message} Draft saved at {path}."
+            summary = await asyncio.to_thread(created_file_content_summary, path)
+            try:
+                opened_app = await asyncio.to_thread(open_created_file, path, self.bridge, "Microsoft PowerPoint")
+            except Exception as exc:
+                return f"{message} Draft saved at {path}. I could not open it: {exc}. {summary}"
+            suffix = f" in {opened_app}" if opened_app else ""
+            return f"{message} Draft saved at {path}. I opened it on the iMac{suffix}. {summary}"
         markers = []
         if include_deck:
             markers.append(f"[file:{path}]")
@@ -217,6 +234,11 @@ class DocumentOfficeMixin:
             headers, rows = await style_table(self.db_path, headers, rows)
             await asyncio.to_thread(create_xlsx, path, "Kampung AI Cost Tracker", headers, rows)
             return await self._finish_excel(path, "Kampung AI cost tracker", topic, project_scoped, channel)
+        if _saas_tracker_topic(topic):
+            headers, rows = _saas_tracker_rows(topic)
+            headers, rows = await style_table(self.db_path, headers, rows)
+            await asyncio.to_thread(create_xlsx, path, "SaaS Cost Tracker", headers, rows)
+            return await self._finish_excel(path, "Excel SaaS cost tracker", topic, project_scoped, channel)
         if is_kampung_ai_testing_comparison(topic):
             headers, rows = kampung_ai_testing_rows()
             headers, rows = await style_table(self.db_path, headers, rows)

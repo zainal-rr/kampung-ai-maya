@@ -5,7 +5,6 @@ from dataclasses import dataclass
 import aiosqlite
 
 from canonical_memory import (
-    _internal_memory,
     _memory_id,
     init_canonical_memory_db,
     subject_key_from_text,
@@ -161,3 +160,8 @@ async def _link_source(db_path: str, memory_id: str, source_table: str, source_i
         )
         await db.commit()
         return 1 if cursor.rowcount else 0
+
+
+def _internal_memory(key: str, value: str) -> bool:
+    lowered = f"{key} {value}".lower()
+    return "chat_id" in lowered or "/desktop/maya/" in lowered or lowered.startswith("maya_")

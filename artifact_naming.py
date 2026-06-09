@@ -64,6 +64,8 @@ def _remove_parameters(text: str) -> str:
 
 def _subject_word(text: str) -> list[str]:
     lowered = text.lower()
+    if re.search(r"\bmeraki\b", lowered):
+        return ["router", "meraki"] if re.search(r"\brouter\b", lowered) else ["meraki"]
     known_subjects = (
         ("kampung ai", ["kampung", "ai"]),
         ("kuala lumpur", ["kuala", "lumpur"]),
@@ -72,6 +74,9 @@ def _subject_word(text: str) -> list[str]:
         ("router", ["router"]),
         ("tokyo", ["tokyo"]),
         ("seoul", ["seoul"]),
+        ("almaty", ["almaty"]),
+        ("kazakhstan", ["kazakhstan"]),
+        ("japan", ["japan"]),
         ("kyoto", ["kyoto"]),
         ("osaka", ["osaka"]),
         ("bangkok", ["bangkok"]),
@@ -97,6 +102,8 @@ def _purpose_words(text: str, suffix: str) -> list[str]:
         return ["deck"]
     if any(word in lowered for word in ("app", "planner", "dashboard")) or suffix.endswith("html"):
         return ["app"]
+    if suffix.endswith("docx") and any(word in lowered for word in ("itinerary", "food trip", "trip", "travel", "holiday", "vacation", "hiking")):
+        return ["itinerary"]
     if suffix.endswith("xlsx") and any(word in lowered for word in ("budget", "expense", "expenses", "cost", "spend", "spending")):
         return ["budget", "tracker"]
     if any(word in lowered for word in ("config", "configuration")):
@@ -109,7 +116,9 @@ def _purpose_words(text: str, suffix: str) -> list[str]:
         return ["itinerary"]
     if any(word in lowered for word in ("food trip", "trip", "travel", "holiday", "vacation")):
         return ["itinerary"]
-    if "guide" in lowered or "setup" in lowered:
+    if "setup" in lowered:
+        return ["setup"]
+    if "guide" in lowered:
         return ["guide"]
     if suffix.endswith("xlsx"):
         return ["tracker"]

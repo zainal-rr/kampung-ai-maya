@@ -98,6 +98,8 @@ The current internal harness spine is implemented through:
 
 Maya uses canonical memory as the truth layer for saved facts, with preferences, lessons, session search, and curated memory acting as views or indexes. Direct memory questions search canonical memory first. Forgotten memories must not leak back from raw transcript history.
 
+Memory now has a time-audit layer: canonical writes, updates, forgets, recalls, prompt activations, weekly candidates, weekly saves/rejects, and leak checks append redacted audit events with content hashes. Deterministic memory canaries test active, forgotten, temporary, project, and pinned memory so slow drift is visible in `/memory inspect` and Maya Desk.
+
 Omi ambient transcripts pass through the context sieve before storage. Noise, low-signal chatter, and sensitive text are rejected; accepted transcript context is stored as lower-priority ambient memory, not as normal preferences.
 
 Weekly memory distillation reads canonical memory and selected summaries, excludes temporary test memory by default, and must never recreate forgotten memories. Gemini Flash is the default weekly distiller, Gemini Premium is reserved for dense or ambiguous weeks, and Claude reviews memory candidates before safe canonical writes.
@@ -114,9 +116,9 @@ Word, Excel, PowerPoint, and HTML/app workflows use local file builders and qual
 - Filenames: generated artifacts use short subject-purpose names such as `tokyo-itinerary-v1.docx`, `router-config-v1.docx`, and `tokyo-budget-tracker-v1.xlsx`; parameters stay in content and metadata.
 - App building: project-folder workflow through Artisan/Codex, not loose one-file apps unless explicitly requested.
 
-## Voice Handoff
+## In-Session Voice Work
 
-The natural iMac voice path is realtime Grok Voice Agent streaming with Ara. The older ffmpeg capture mode is diagnostic-only and requires explicit diagnostic environment flags. Long spoken work is parked into a durable SQLite handoff queue so Grok voice can close while Maya's normal worker lane completes the task.
+The natural iMac voice path is realtime Grok Voice Agent streaming with Ara. The older ffmpeg capture mode is diagnostic-only and requires explicit diagnostic environment flags. Longer spoken work now starts during the same live voice session through Maya's local browser and work tools, while xAI remains only the spoken presence. If the mic closes before the work finishes, the result is stored for later status or recall.
 
 Voice transcripts are lightly cleaned before intent routing so filler words, self-corrections, background-noise markers, repeated starts, and cut-off endings do not break normal commands. Spoken aliases such as `show route`, `show status`, `weekly status`, `self heal dry run`, `this is complex...`, `remember...`, `forget...`, and `create skill...` route to the same command paths as slash commands.
 
@@ -143,7 +145,7 @@ Replayable demos are available through `run_demo.py`:
 | --- | --- | --- |
 | Telegram document creation | `./venv/bin/python run_demo.py telegram_document` | Word/Excel/PPTX quality and Telegram delivery smokes pass |
 | Memory weekly | `./venv/bin/python run_demo.py memory_weekly` | Canonical memory and weekly dry-run smokes pass |
-| Self-heal | `./venv/bin/python run_demo.py self_heal` | Approval-gated self-heal and rollback guardrails pass |
+| Self-heal | `./venv/bin/python run_demo.py self_heal` | Approval-gated checkpointed self-heal, snapshot, rollback guardrails, and repair report path pass |
 | Artisan project | `./venv/bin/python run_demo.py artisan_project` | Codex handoff, app QA, and delivery package smokes pass |
 | Blender/Maker | `./venv/bin/python run_demo.py blender_maker` | Maker/export workflow passes and stops before physical print |
 
@@ -185,7 +187,7 @@ Run the deterministic Grok transcript replay without live provider spend:
 ./venv/bin/python grok_voice_transcript_replay_500.py
 ```
 
-The June 4, 2026 replay passed 500/500 cases across voice-to-worker handoff, routing, memory, documents, `/complex`, safety, parked voice behavior, skill creation/approval, healing commands, slashless spoken commands, travel price capture, and noisy/cut-off transcripts. This proves transcript handling and worker routing logic, not the physical microphone, websocket, or speaker path.
+The June 4, 2026 replay passed 500/500 cases across the then-current voice-to-worker routing, memory, documents, `/complex`, safety, skill creation/approval, healing commands, slashless spoken commands, travel price capture, and noisy/cut-off transcripts. This proves transcript handling and worker routing logic, not the physical microphone, websocket, speaker path, or the newer in-session voice work path.
 
 Run the broader Phase 22 software-readiness benchmark:
 
@@ -201,7 +203,7 @@ Run the Maya assistant-pipeline voice transcript replay:
 ./venv/bin/python maya_voice_transcript_replay_700.py
 ```
 
-The June 4, 2026 Maya replay passed 700/700 voice-style transcripts by sending them through `KampungAssistant.handle_text(..., input_type="voice")`. Long work parked through the Grok handoff tool before Maya's worker lane handled it. This proves the voice-transcript-to-worker path more directly than component tests, but still does not prove physical microphone, xAI websocket, Ara speaker output, live billing, Telegram upload, Bambu printing, Omi, or Mudra.
+The June 4, 2026 Maya replay passed 700/700 voice-style transcripts by sending them through `KampungAssistant.handle_text(..., input_type="voice")`. That replay proved the then-current transcript-to-work routing path. The live iMac path now uses in-session voice work, so the replay remains useful for transcript cleanup and routing evidence but does not prove physical microphone, xAI websocket, Ara speaker output, live billing, in-session browser work, Telegram upload, Bambu printing, Omi, or Mudra.
 
 Run the broad Telegram post-STT voice transcript replay:
 

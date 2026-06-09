@@ -35,6 +35,15 @@ def document_request(text: str) -> tuple[str, str, bool] | None:
     if excel_with_details:
         topic = f"{excel_with_details.group(1).strip()} with {excel_with_details.group(2).strip()}"
         return "xlsx", clean_topic(topic), "this project" in cleaned.lower()
+    work_duration = re.match(
+        r"^(?:create|make|write|give|draft|prepare|generate)\s+(?:me\s+)?(?:an?\s+)?"
+        r"((?:\d{1,2}|one|two|three|four|five|six|seven|eight|nine|ten)\s*[- ]?\s*days?)\s+"
+        r"work\s+document\s+(?:about|on|for)\s+(.+)$",
+        cleaned,
+        re.IGNORECASE,
+    )
+    if work_duration:
+        return "docx", clean_topic(f"{work_duration.group(1)} work plan for {work_duration.group(2).strip()}"), "this project" in cleaned.lower()
     leading_document = _leading_document_request(cleaned)
     if leading_document:
         return leading_document

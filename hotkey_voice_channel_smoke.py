@@ -77,7 +77,7 @@ class FakeAssistant:
 
     async def handle_text(self, text, channel, speak_reply=False):
         self.handled.append((text, channel, speak_reply))
-        return "handled handoff"
+        return "handled work"
 
 
 async def main():
@@ -94,15 +94,30 @@ async def main():
     assert channel.voice_agent.audio_turns == 1
     assert channel.voice_agent.closed == ["idle timeout"]
     assert channel.session_active is False
+    toggle_channel = HotkeyVoiceChannel(assistant, audio_capture=FakeAudioCapture([b"5678"]))
+    toggle_channel.voice_agent = FakeVoiceAgent()
+    await toggle_channel.toggle_voice_session()
+    assert toggle_channel.session_task is not None
+    await toggle_channel.session_task
+    assert toggle_channel.voice_agent.audio_turns == 1
+    active_toggle_channel = HotkeyVoiceChannel(assistant, audio_capture=FakeAudioCapture([]))
+    active_toggle_channel.voice_agent = FakeVoiceAgent()
+    active_toggle_channel.session_active = True
+    active_toggle_channel.session_task = asyncio.create_task(asyncio.sleep(30))
+    await active_toggle_channel.toggle_voice_session()
+    assert active_toggle_channel.session_active is False
+    assert "manual hotkey stop" in active_toggle_channel.voice_agent.closed
     stop_channel = HotkeyVoiceChannel(assistant, audio_capture=FakeAudioCapture([]))
     stop_channel.voice_agent = FakeVoiceAgent()
     await upsert_preference(db_path, "maya_active_workflow", "browser:search:test", source="test")
-    await save_voice_handoff_request(db_path, "make an Excel file that should be cancelled")
+    await save_voice_handoff_request(db_path, "make an Excel file that should survive voice stop")
     await stop_channel.stop_voice_session()
     assert stop_channel.voice_agent.closed == ["manual hotkey stop"]
-    assert await get_preference(db_path, "maya_active_workflow") is None
-    assert await get_preference(db_path, VOICE_HANDOFF_KEY) is None
+    assert await get_preference(db_path, "maya_active_workflow") == "browser:search:test"
+    assert await get_preference(db_path, VOICE_HANDOFF_KEY) == "make an Excel file that should survive voice stop"
     assert not assistant.handled
+    await stop_channel._run_pending_voice_handoff()
+    assert assistant.handled[-1] == ("make an Excel file that should survive voice stop", "imac", True)
     await save_voice_handoff_request(db_path, "make a Word document about routers")
     await stop_channel._run_pending_voice_handoff()
     assert assistant.handled[-1] == ("make a Word document about routers", "imac", True)
