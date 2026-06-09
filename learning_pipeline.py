@@ -12,6 +12,12 @@ from lesson_store import (
 )
 from assistant_command_helpers import is_user_visible_memory
 from canonical_memory import upsert_canonical_memory
+from memory_extraction import (
+    ProviderCall,
+    default_extraction_agent,
+    extract_for_save,
+    live_extraction_enabled,
+)
 from memory_perspective import normalize_user_perspective_memory
 from permission_policy import contains_sensitive_info, hard_no_private_exposure_text
 from self_improvement_policy import verified_learning_message
@@ -20,8 +26,24 @@ from storage import list_preferences
 
 
 class LearningPipeline:
-    def __init__(self, db_path: str):
+    def __init__(
+        self,
+        db_path: str,
+        extraction_agent: ProviderCall | None = None,
+        extraction_live: bool | None = None,
+    ):
         self.db_path = db_path
+        # Env-gated structured extraction; None keeps today's regex behavior.
+        # Shadow mode: agent present + extraction_live False -> provider runs
+        # and divergence is audited, but the deterministic parse is saved.
+        if extraction_agent is not None:
+            self.extraction_agent = extraction_agent
+            self.extraction_live = True if extraction_live is None else extraction_live
+        else:
+            self.extraction_agent = default_extraction_agent()
+            self.extraction_live = (
+                extraction_live if extraction_live is not None else live_extraction_enabled()
+            )
 
     async def handle(self, text: str, channel: str) -> str | None:
         clean = text.strip()
@@ -48,6 +70,19 @@ class LearningPipeline:
         lesson_type: str,
         scope: str,
     ) -> str:
+        extraction = await extract_for_save(
+            self.db_path, rule, self.extraction_agent, live=self.extraction_live
+        )
+        echo = ""
+        if extraction.source == "provider":
+            if extraction.sensitive:
+                return hard_no_private_exposure_text()
+            lesson_type = extraction.kind
+            scope = extraction.scope
+            # Visibility contract: when extraction shaped the save, the reply
+            # must echo the parsed subject and value so a wrong parse is
+            # noticed immediately.
+            echo = f" (saved as {extraction.subject} -> {extraction.value})"
         preference_key = self._preference_key(scope, rule)
         await upsert_preference(self.db_path, preference_key, rule, source=channel)
         lesson_id = await add_lesson(
@@ -72,7 +107,7 @@ class LearningPipeline:
         )
         if not await self._verified(lesson_id, preference_key, rule):
             return "I tried to save that, but I could not verify it yet."
-        return f"{verified_learning_message('preference', True)} {rule}"
+        return f"{verified_learning_message('preference', True)} {rule}{echo}"
 
     async def _ask_to_save(
         self,

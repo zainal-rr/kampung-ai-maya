@@ -139,15 +139,21 @@ async def consolidate_scope(db_path: str, scope: str) -> None:
 
 async def forget_curated_memory(db_path: str, query: str) -> int:
     await init_curated_memory_db(db_path)
-    pattern = f"%{query.strip()}%"
+    cleaned = query.strip()
     async with aiosqlite.connect(db_path) as db:
-        result = await db.execute(
-            """
-            DELETE FROM curated_memory_items
-            WHERE content LIKE ? OR scope LIKE ?
-            """,
-            (pattern, pattern),
-        )
+        if cleaned in (CORE_SCOPE, PROFILE_SCOPE):
+            # Full-scope wipe only when the exact scope name is given.
+            # A fuzzy `scope LIKE` here used to wipe a whole scope for any
+            # query containing e.g. "maya" or "zainal".
+            result = await db.execute(
+                "DELETE FROM curated_memory_items WHERE scope = ?",
+                (cleaned,),
+            )
+        else:
+            result = await db.execute(
+                "DELETE FROM curated_memory_items WHERE content LIKE ?",
+                (f"%{cleaned}%",),
+            )
         await db.commit()
     return result.rowcount
 

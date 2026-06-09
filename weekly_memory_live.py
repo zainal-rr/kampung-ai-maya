@@ -82,6 +82,7 @@ async def live_weekly_canonical_distillation(
             source_channel="weekly_memory",
             confidence=_clean(fact.get("confidence", "")) or "medium",
             source_ref=f"weekly:{run_key}",
+            allow_resurrect=False,
         )
         await _audit_weekly_fact(db_path, "weekly_save", run_key, fact, memory_id=memory_id)
         memory_ids.append(memory_id)
@@ -209,7 +210,7 @@ async def _forgotten_subject_exists(db_path: str, content: str) -> bool:
         cursor = await db.execute(
             """
             SELECT 1 FROM canonical_memory_items
-            WHERE subject_key = ? AND status IN ('forgotten', 'expired', 'superseded')
+            WHERE subject_key = ? AND status IN ('forgotten', 'expired', 'superseded', 'archived')
             LIMIT 1
             """,
             (subject_key,),

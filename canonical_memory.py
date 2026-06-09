@@ -5,13 +5,28 @@ from datetime import datetime, timedelta, timezone
 
 import aiosqlite
 
+from canonical_memory_embeddings import (
+    COSINE_WEIGHT,
+    EmbedCall,
+    RERANK_CONFIDENCE,
+    ZERO_EVIDENCE_MIN_COSINE,
+    default_embedding_agent,
+    default_embedding_model_name,
+    rerank_with_embeddings,
+)
+from canonical_memory_fts import ensure_canonical_memory_fts, fts_rank_bonuses
 from canonical_memory_scoring import activation_score
 from canonical_memory_text import is_temporary_memory, memory_tokens, subject_key_from_text, value_from_text
 from canonical_memory_usage import mark_canonical_used
 from memory_audit import record_memory_audit_event
 
 
+_INITIALIZED: set[str] = set()
+
+
 async def init_canonical_memory_db(db_path: str) -> None:
+    if db_path in _INITIALIZED:
+        return
     async with aiosqlite.connect(db_path) as db:
         await db.execute(
             """
@@ -43,11 +58,19 @@ async def init_canonical_memory_db(db_path: str) -> None:
             ON canonical_memory_items(kind, subject_key, scope)
             """
         )
+        await db.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_canonical_memory_status
+            ON canonical_memory_items(status, updated_at DESC)
+            """
+        )
         try:
             await db.execute("ALTER TABLE canonical_memory_items ADD COLUMN reinforcement_count INTEGER DEFAULT 0")
         except aiosqlite.OperationalError:
             pass
+        await ensure_canonical_memory_fts(db)
         await db.commit()
+    _INITIALIZED.add(db_path)
 
 
 async def upsert_canonical_memory(
@@ -61,6 +84,7 @@ async def upsert_canonical_memory(
     confidence: str,
     source_ref: str = "",
     pinned: bool = False,
+    allow_resurrect: bool = True,
 ) -> str:
     await init_canonical_memory_db(db_path)
     subject_key = subject_key_from_text(content)
@@ -82,6 +106,21 @@ async def upsert_canonical_memory(
             )
         ).fetchone()
         existing_status = str(existing["status"]) if existing else ""
+        if existing_status == "forgotten" and not allow_resurrect:
+            # Derived writers (weekly distillation, ambient Omi context) must
+            # never recreate a fact the user explicitly forgot.
+            await record_memory_audit_event(
+                db_path,
+                event_type="canonical_write_blocked_forgotten",
+                memory_id=memory_id,
+                subject_key=subject_key,
+                status_before="forgotten",
+                status_after="forgotten",
+                source_channel=source_channel,
+                source_ref=source_ref or raw_text[:180],
+                content=content,
+            )
+            return memory_id
         await db.execute(
             """
             INSERT INTO canonical_memory_items (
@@ -98,7 +137,7 @@ async def upsert_canonical_memory(
                 confidence = excluded.confidence,
                 status = 'active',
                 expires_at = excluded.expires_at,
-                pinned = excluded.pinned,
+                pinned = MAX(pinned, excluded.pinned),
                 temporary = excluded.temporary,
                 test_marker = excluded.test_marker,
                 updated_at = CURRENT_TIMESTAMP
@@ -149,7 +188,6 @@ async def search_canonical_direct_fact(db_path: str, query: str, limit: int = 3)
             WHERE status = 'active'
               AND (expires_at IS NULL OR expires_at > datetime('now'))
             ORDER BY updated_at DESC
-            LIMIT 80
             """
         )
         rows = [row for row in await active.fetchall() if _direct_fact_match(query_tokens, subject_key, row["subject_key"], row["content"])][:limit]
@@ -159,7 +197,6 @@ async def search_canonical_direct_fact(db_path: str, query: str, limit: int = 3)
                 SELECT subject_key, content FROM canonical_memory_items
                 WHERE status IN ('forgotten', 'expired', 'superseded')
                 ORDER BY updated_at DESC
-                LIMIT 80
                 """
             )
             if any(_direct_fact_match(query_tokens, subject_key, row["subject_key"], row["content"]) for row in await forgotten.fetchall()):
@@ -177,11 +214,18 @@ def _direct_fact_match(query_tokens: set[str], subject_key: str, row_subject: st
         len(query_tokens) >= 2 and query_tokens.issubset(memory_tokens(f"{row_subject} {row_content}"))
     )
 
-async def search_relevant_canonical_memories(db_path: str, query: str, limit: int = 5) -> list[str]:
+async def search_relevant_canonical_memories(
+    db_path: str,
+    query: str,
+    limit: int = 5,
+    *,
+    embedding_agent: EmbedCall | None = None,
+) -> list[str]:
     await init_canonical_memory_db(db_path)
     tokens = memory_tokens(query)
     async with aiosqlite.connect(db_path) as db:
         db.row_factory = aiosqlite.Row
+        fts_bonuses = await fts_rank_bonuses(db, query)
         cursor = await db.execute(
             """
             SELECT memory_id, content, subject_key, pinned, temporary, updated_at,
@@ -190,25 +234,47 @@ async def search_relevant_canonical_memories(db_path: str, query: str, limit: in
             WHERE status = 'active'
               AND (expires_at IS NULL OR expires_at > datetime('now'))
             ORDER BY pinned DESC, updated_at DESC
-            LIMIT 80
             """
         )
         rows = await cursor.fetchall()
     scored = []
+    zero_evidence: list[tuple[int, str, str]] = []
     for row in rows:
+        memory_id = str(row["memory_id"])
         haystack = f"{row['subject_key']} {row['content']}"
         overlap = len(tokens & memory_tokens(haystack))
+        fts_bonus = fts_bonuses.get(memory_id, 0)
         score = activation_score(
             overlap=overlap,
             pinned=bool(row["pinned"]),
             reinforcement_count=int(row["reinforcement_count"]),
             updated_at=str(row["updated_at"] or ""),
-        )
-        if row["temporary"] and overlap == 0:
+        ) + fts_bonus
+        if row["temporary"] and overlap == 0 and not fts_bonus:
             continue
-        if overlap > 0 or row["pinned"]:
-            scored.append((score, str(row["memory_id"]), str(row["content"])))
+        if overlap > 0 or row["pinned"] or fts_bonus:
+            scored.append((score, memory_id, str(row["content"])))
+        elif not row["temporary"]:
+            zero_evidence.append((0, memory_id, str(row["content"])))
     scored.sort(key=lambda item: item[0], reverse=True)
+    # Semantic layer, env-gated and fail-open. Two roles, both limited to
+    # relevance context (direct-fact recall is never touched):
+    # 1) rerank weak lexical candidates;
+    # 2) admit zero-evidence rows (pure paraphrase / cross-language queries
+    #    produce no lexical candidates at all) only when cosine clears
+    #    ZERO_EVIDENCE_MIN_COSINE. Embedder failure restores lexical order.
+    agent = embedding_agent if embedding_agent is not None else default_embedding_agent()
+    if agent is not None and (not scored or scored[0][0] < RERANK_CONFIDENCE):
+        pool = scored + zero_evidence[:48]
+        zero_ids = {memory_id for _score, memory_id, _content in zero_evidence}
+        floor = int(ZERO_EVIDENCE_MIN_COSINE * COSINE_WEIGHT)
+        reranked = await rerank_with_embeddings(
+            db_path, query, pool, agent, model=default_embedding_model_name()
+        )
+        scored = [
+            item for item in reranked
+            if item[1] not in zero_ids or item[0] >= floor
+        ]
     selected = scored[:limit]
     await mark_canonical_used(
         db_path,

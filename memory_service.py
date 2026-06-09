@@ -6,6 +6,7 @@ import re
 import aiosqlite
 
 from canonical_memory import search_canonical_direct_fact, search_relevant_canonical_memories
+from canonical_memory_text import subject_key_from_text
 from lesson_store import search_lessons
 from language_policy import is_language_topic, uses_malay_or_manglish, wants_malay_or_manglish
 from routine_store import list_routines
@@ -237,12 +238,11 @@ class MemoryService:
 
     @staticmethod
     def _normalize_fact_subject(text: str) -> str:
-        cleaned = " ".join(str(text).strip().rstrip(".?!").split()).lower()
-        cleaned = re.sub(r"^(?:remember that|remember|save this memory[: ]*)\s+", "", cleaned)
-        match = re.match(r"^(.+?)\s+(?:is|are|=)\s+.+$", cleaned)
-        if match:
-            cleaned = match.group(1)
-        return re.sub(r"[^a-z0-9]+", " ", cleaned).strip()
+        # Delegate to the canonical normalizer so the preference/lesson/curated
+        # fallback agrees with canonical memory. The old local version turned
+        # "what is my favourite snack" into subject "what", so question-form
+        # queries could never match stored rows in the fallback path.
+        return subject_key_from_text(text)
 
     @staticmethod
     def _overlap_score(tokens: set[str], haystack: str) -> int:

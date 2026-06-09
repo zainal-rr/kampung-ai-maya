@@ -12,11 +12,13 @@ AUDIT_EVENT_TYPES = {
     "canonical_update",
     "canonical_forget",
     "canonical_recall",
+    "canonical_write_blocked_forgotten",
     "weekly_candidate",
     "weekly_save",
     "weekly_reject",
     "activation",
     "leak_check",
+    "extraction_divergence",
 }
 
 

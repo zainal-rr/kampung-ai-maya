@@ -4,7 +4,10 @@ import re
 
 STOPWORDS = {"a", "an", "are", "is", "my", "the", "that", "this", "to", "for", "of", "me", "i"}
 TOKEN_ALIASES = {"snacks": "snack"}
-TEST_MARKERS = ("test", "regression", "telegram test", "smoke", "temporary")
+TEST_MARKERS = ("test", "tests", "regression", "smoke", "temporary")
+# Whole-word match only: substring matching wrongly flagged durable memories
+# containing words like "latest" (test) or "contemporary" (temporary).
+_TEST_MARKER_RE = re.compile(r"\b(?:" + "|".join(TEST_MARKERS) + r")\b")
 
 
 def subject_key_from_text(text: str) -> str:
@@ -37,7 +40,10 @@ def memory_tokens(text: str) -> set[str]:
 
 
 def is_temporary_memory(content: str, subject_key: str) -> bool:
-    return any(marker in f"{subject_key} {content}".lower() for marker in TEST_MARKERS)
+    # Subject keys join tokens with underscores (a word character in regex),
+    # so normalize separators to spaces before whole-word matching.
+    haystack = re.sub(r"[^a-z0-9]+", " ", f"{subject_key} {content}".lower())
+    return bool(_TEST_MARKER_RE.search(haystack))
 
 
 def _ordered_memory_tokens(text: str) -> list[str]:
