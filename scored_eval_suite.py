@@ -33,6 +33,7 @@ class EvalResult:
 EVAL_CASES = (
     EvalCase("routing", "route tracker", ("route_tracker_smoke.py",)),
     EvalCase("memory", "canonical memory", ("canonical_memory_smoke.py",)),
+    EvalCase("memory", "nightly consolidation", ("nightly_consolidation_smoke.py",)),
     EvalCase("memory", "self-heal memory", ("self_heal_memory_smoke.py",)),
     EvalCase("weekly_memory", "weekly memory dry run", ("weekly_memory_smoke.py",)),
     EvalCase("weekly_memory", "weekly provider path", ("weekly_memory_provider_path_smoke.py",)),

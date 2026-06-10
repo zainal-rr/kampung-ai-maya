@@ -46,6 +46,7 @@ def run_local_ci(*, live_providers: bool = False) -> list[CheckResult]:
         _command_check("artifact parameters", ("artifact_parameters_smoke.py",)),
         _command_check("word travel destination", ("word_travel_destination_smoke.py",)),
         _command_check("canonical memory", ("canonical_memory_smoke.py",)),
+        _command_check("nightly consolidation", ("nightly_consolidation_smoke.py",)),
         _command_check("memory time audit", ("memory_time_audit_smoke.py",)),
         _command_check("self-heal execution", ("self_heal_execution_smoke.py",)),
         _command_check("voice command aliases", ("voice_command_aliases_smoke.py",)),

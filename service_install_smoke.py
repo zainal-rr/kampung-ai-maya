@@ -13,6 +13,7 @@ def main() -> None:
     old_run = service_install.subprocess.run
     old_app_path = os.environ.get("KAMPUNG_AI_APP_PATH")
     old_plist_path = service_install.PLIST_PATH
+    old_nightly_plist_path = service_install.NIGHTLY_MEMORY_PLIST_PATH
 
     def fake_run(args, **kwargs):
         calls.append(tuple(args))
@@ -36,6 +37,7 @@ def main() -> None:
             service_install.subprocess.run = fake_run
             service_install.restart()
             service_install.restart_weekly_memory()
+            service_install.restart_nightly_memory()
             restart_calls = list(calls)
 
             calls.clear()
@@ -53,6 +55,7 @@ def main() -> None:
     finally:
         service_install.subprocess.run = old_run
         service_install.PLIST_PATH = old_plist_path
+        service_install.NIGHTLY_MEMORY_PLIST_PATH = old_nightly_plist_path
         if old_app_path is None:
             os.environ.pop("KAMPUNG_AI_APP_PATH", None)
         else:
@@ -63,6 +66,10 @@ def main() -> None:
     weekly = service_install.build_weekly_memory_plist()
     assert weekly["StartCalendarInterval"] == {"Weekday": 0, "Hour": 20, "Minute": 0}
     assert any(str(item).endswith("weekly_memory.py") for item in weekly["ProgramArguments"])
+    nightly = service_install.build_nightly_memory_plist()
+    assert nightly["StartCalendarInterval"] == {"Hour": 2, "Minute": 30}
+    assert any(str(item).endswith("nightly_consolidation.py") for item in nightly["ProgramArguments"])
+    assert "--live" in nightly["ProgramArguments"]
     print("service_install_smoke: ok")
 
 

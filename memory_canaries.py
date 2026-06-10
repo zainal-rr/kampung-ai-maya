@@ -143,20 +143,24 @@ async def _check_one(db_path: str, spec: CanarySpec) -> tuple[str, str]:
 async def _derived_leak(db_path: str, value: str) -> str:
     needle = value.lower()
     checks = {
-        "preferences": ("key || ' ' || value",),
-        "lessons": ("raw_text || ' ' || normalized_rule",),
-        "history": ("content",),
-        "session_search": ("content",),
-        "session_summaries": ("summary",),
-        "weekly_summaries": ("summary",),
-        "curated_memory_items": ("content",),
+        "preferences": ("key || ' ' || value", ""),
+        "lessons": ("raw_text || ' ' || normalized_rule", ""),
+        "history": ("content", ""),
+        "session_search": ("content", ""),
+        "session_summaries": ("summary", ""),
+        "weekly_summaries": ("summary", ""),
+        "curated_memory_items": ("content", "status = 'active'"),
     }
     async with aiosqlite.connect(db_path) as db:
-        for table, (expr,) in checks.items():
+        for table, (expr, extra_where) in checks.items():
             if not await _table_exists(db, table):
                 continue
+            where = f"{extra_where} AND " if extra_where else ""
             try:
-                cursor = await db.execute(f"SELECT 1 FROM {table} WHERE lower({expr}) LIKE ? LIMIT 1", (f"%{needle}%",))
+                cursor = await db.execute(
+                    f"SELECT 1 FROM {table} WHERE {where}lower({expr}) LIKE ? LIMIT 1",
+                    (f"%{needle}%",),
+                )
             except aiosqlite.OperationalError:
                 continue
             if await cursor.fetchone():

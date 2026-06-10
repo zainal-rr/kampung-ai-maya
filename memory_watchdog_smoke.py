@@ -40,6 +40,30 @@ async def main() -> None:
         _require(report["stats"]["recall_recent"], "recall_recent not detected")
         _require(report["stats"]["audit_recent"], "audit_recent not detected")
 
+        # Stale curated rows are not prompt-visible; they should not count as
+        # production leaks. Active curated rows are still checked by canaries.
+        async with aiosqlite.connect(db_path) as db:
+            await db.execute(
+                """
+                CREATE TABLE IF NOT EXISTS curated_memory_items (
+                    id INTEGER PRIMARY KEY AUTOINCREMENT,
+                    scope TEXT NOT NULL,
+                    content TEXT NOT NULL,
+                    source TEXT DEFAULT 'explicit',
+                    confidence REAL DEFAULT 0.86,
+                    status TEXT DEFAULT 'active',
+                    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+                )
+                """
+            )
+            await db.execute(
+                "INSERT INTO curated_memory_items (scope, content, status) VALUES ('zainal_profile_summary', 'my test fruit is rambutan.', 'stale')"
+            )
+            await db.commit()
+        report = await run_memory_watchdog(db_path)
+        _require(report["passed"], f"stale curated canary value should not alert: {report['issues']}")
+
         # Simulate the production failure: recalls happen, audit stays silent.
         async with aiosqlite.connect(db_path) as db:
             await db.execute("DELETE FROM memory_audit_events")

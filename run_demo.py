@@ -46,8 +46,9 @@ DEMOS = {
             "Canonical memory save/recall/forget works.",
             "Memory command cleanup prevents forgotten-value leaks.",
             "Weekly memory dry run completes without live provider calls.",
+            "Nightly consolidation proves no-resurrect, association links, decay report, and zero-delta skip.",
         ),
-        (("canonical_memory_smoke.py",), ("memory_control_smoke.py",), ("weekly_memory_smoke.py",)),
+        (("canonical_memory_smoke.py",), ("memory_control_smoke.py",), ("weekly_memory_smoke.py",), ("nightly_consolidation_smoke.py",)),
     ),
     "self_heal": Demo(
         "self_heal",

@@ -12,6 +12,7 @@ from canonical_memory_pin import set_canonical_memory_pin
 from learning_pipeline import LearningPipeline
 from lesson_store import init_lesson_db
 from memory_control import forget_memory
+from memory_links import add_memory_link
 from memory_service import MemoryService
 from storage import init_db
 from voice_transcript_policy import clean_voice_transcript_for_intent
@@ -79,6 +80,9 @@ async def main() -> None:
         _require("Unpinned 1 canonical memory" in unpinned, "unpin command did not unpin canonical memory")
         unpinned_relevant = await search_relevant_canonical_memories(db_path, "unrelated query", limit=1)
         _require(unpinned_relevant == [], "unpinned irrelevant memory should not activate")
+        await _seed_association_rows(db_path)
+        association_relevant = await search_relevant_canonical_memories(db_path, "sink repair", limit=2)
+        _require(any("017-555" in item for item in association_relevant), "association neighbor did not join relevance recall")
         inspected = await inspect_canonical_memory(db_path, "active project color")
         _require("Canonical memory inspector:" in inspected, "canonical inspector header missing")
         _require("id: mem_" in inspected, "canonical inspector did not show memory ID")
@@ -137,6 +141,37 @@ async def _seed_activation_rows(db_path: str) -> None:
             "UPDATE canonical_memory_items SET reinforcement_count = 5 WHERE subject_key = 'active_project_color'"
         )
         await db.commit()
+
+
+async def _seed_association_rows(db_path: str) -> None:
+    await upsert_canonical_memory(
+        db_path,
+        raw_text="Ahmad fixed my sink",
+        content="Ahmad fixed my sink",
+        kind="profile_fact",
+        scope="global",
+        source_channel="smoke",
+        confidence="high",
+    )
+    await upsert_canonical_memory(
+        db_path,
+        raw_text="Ahmad phone number is 017-555",
+        content="Ahmad phone number is 017-555",
+        kind="profile_fact",
+        scope="global",
+        source_channel="smoke",
+        confidence="high",
+    )
+    async with aiosqlite.connect(db_path) as db:
+        fixed = await (
+            await db.execute("SELECT memory_id FROM canonical_memory_items WHERE content = 'Ahmad fixed my sink'")
+        ).fetchone()
+        phone = await (
+            await db.execute("SELECT memory_id FROM canonical_memory_items WHERE content = 'Ahmad phone number is 017-555'")
+        ).fetchone()
+    _require(bool(fixed and phone), "association seed rows missing")
+    ok = await add_memory_link(db_path, str(fixed[0]), str(phone[0]), relation="shared_entity", source_channel="smoke")
+    _require(ok, "association link was not recorded")
 
 
 if __name__ == "__main__":

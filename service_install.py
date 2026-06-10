@@ -9,10 +9,12 @@ from pathlib import Path
 
 LABEL = "com.kampungai.maya"
 WEEKLY_MEMORY_LABEL = "com.kampungai.maya.weeklymemory"
+NIGHTLY_MEMORY_LABEL = "com.kampungai.maya.nightlymemory"
 ROOT = Path(os.getenv("KAMPUNG_AI_REPO_ROOT", Path(__file__).resolve().parent)).expanduser().resolve()
 APP_NAME = "Kampung AI"
 PLIST_PATH = Path.home() / "Library" / "LaunchAgents" / f"{LABEL}.plist"
 WEEKLY_MEMORY_PLIST_PATH = Path.home() / "Library" / "LaunchAgents" / f"{WEEKLY_MEMORY_LABEL}.plist"
+NIGHTLY_MEMORY_PLIST_PATH = Path.home() / "Library" / "LaunchAgents" / f"{NIGHTLY_MEMORY_LABEL}.plist"
 
 
 def build_plist() -> dict:
@@ -71,6 +73,26 @@ def build_weekly_memory_plist() -> dict:
     }
 
 
+def build_nightly_memory_plist() -> dict:
+    logs = ROOT / "logs"
+    logs.mkdir(parents=True, exist_ok=True)
+    return {
+        "Label": NIGHTLY_MEMORY_LABEL,
+        "ProgramArguments": [
+            str(ROOT / "venv/bin/python"),
+            str(ROOT / "nightly_consolidation.py"),
+            "--db",
+            "session_history.db",
+            "--live",
+        ],
+        "WorkingDirectory": str(ROOT),
+        "StartCalendarInterval": {"Hour": 2, "Minute": 30},
+        "StandardOutPath": str(logs / "nightly-memory.stdout.log"),
+        "StandardErrorPath": str(logs / "nightly-memory.stderr.log"),
+        "ProcessType": "Background",
+    }
+
+
 def install() -> None:
     PLIST_PATH.parent.mkdir(parents=True, exist_ok=True)
     with PLIST_PATH.open("wb") as file_obj:
@@ -106,6 +128,14 @@ def install_weekly_memory() -> None:
     print(f"Installed weekly memory launch agent at {WEEKLY_MEMORY_PLIST_PATH}")
 
 
+def install_nightly_memory() -> None:
+    NIGHTLY_MEMORY_PLIST_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with NIGHTLY_MEMORY_PLIST_PATH.open("wb") as file_obj:
+        plistlib.dump(build_nightly_memory_plist(), file_obj)
+    restart_nightly_memory()
+    print(f"Installed nightly memory launch agent at {NIGHTLY_MEMORY_PLIST_PATH}")
+
+
 def uninstall() -> None:
     bootout()
     if PLIST_PATH.exists():
@@ -118,6 +148,13 @@ def uninstall_weekly_memory() -> None:
     if WEEKLY_MEMORY_PLIST_PATH.exists():
         WEEKLY_MEMORY_PLIST_PATH.unlink()
     print(f"Removed {WEEKLY_MEMORY_PLIST_PATH}")
+
+
+def uninstall_nightly_memory() -> None:
+    bootout_nightly_memory()
+    if NIGHTLY_MEMORY_PLIST_PATH.exists():
+        NIGHTLY_MEMORY_PLIST_PATH.unlink()
+    print(f"Removed {NIGHTLY_MEMORY_PLIST_PATH}")
 
 
 def status() -> None:
@@ -154,6 +191,14 @@ def status_weekly_memory() -> None:
         print(result.stderr.strip())
 
 
+def status_nightly_memory() -> None:
+    print(f"plist: {'present' if NIGHTLY_MEMORY_PLIST_PATH.exists() else 'missing'} -> {NIGHTLY_MEMORY_PLIST_PATH}")
+    result = subprocess.run(["launchctl", "print", f"{domain()}/{NIGHTLY_MEMORY_LABEL}"], capture_output=True, text=True, check=False)
+    print("loaded:", "yes" if result.returncode == 0 else "no")
+    if result.returncode != 0 and result.stderr.strip():
+        print(result.stderr.strip())
+
+
 def restart() -> None:
     bootout()
     subprocess.run(["launchctl", "bootstrap", domain(), str(PLIST_PATH)], check=False)
@@ -168,12 +213,23 @@ def restart_weekly_memory() -> None:
     print(f"Restarted {WEEKLY_MEMORY_LABEL}")
 
 
+def restart_nightly_memory() -> None:
+    bootout_nightly_memory()
+    subprocess.run(["launchctl", "bootstrap", domain(), str(NIGHTLY_MEMORY_PLIST_PATH)], check=False)
+    subprocess.run(["launchctl", "enable", f"{domain()}/{NIGHTLY_MEMORY_LABEL}"], check=False)
+    print(f"Restarted {NIGHTLY_MEMORY_LABEL}")
+
+
 def bootout() -> None:
     subprocess.run(["launchctl", "bootout", domain(), str(PLIST_PATH)], check=False)
 
 
 def bootout_weekly_memory() -> None:
     subprocess.run(["launchctl", "bootout", domain(), str(WEEKLY_MEMORY_PLIST_PATH)], check=False)
+
+
+def bootout_nightly_memory() -> None:
+    subprocess.run(["launchctl", "bootout", domain(), str(NIGHTLY_MEMORY_PLIST_PATH)], check=False)
 
 
 def domain() -> str:
@@ -188,15 +244,23 @@ if __name__ == "__main__":
         ensure_running()
     elif action == "install-weekly-memory":
         install_weekly_memory()
+    elif action == "install-nightly-memory":
+        install_nightly_memory()
     elif action == "restart":
         restart()
     elif action == "restart-weekly-memory":
         restart_weekly_memory()
+    elif action == "restart-nightly-memory":
+        restart_nightly_memory()
     elif action == "uninstall":
         uninstall()
     elif action == "uninstall-weekly-memory":
         uninstall_weekly_memory()
+    elif action == "uninstall-nightly-memory":
+        uninstall_nightly_memory()
     elif action == "status-weekly-memory":
         status_weekly_memory()
+    elif action == "status-nightly-memory":
+        status_nightly_memory()
     else:
         status()

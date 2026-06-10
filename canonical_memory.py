@@ -19,9 +19,11 @@ from canonical_memory_scoring import activation_score
 from canonical_memory_text import is_temporary_memory, memory_tokens, subject_key_from_text, value_from_text
 from canonical_memory_usage import mark_canonical_used
 from memory_audit import record_memory_audit_event
+from memory_links import expand_with_neighbors
 
 
 _INITIALIZED: set[str] = set()
+ASSOCIATION_NEIGHBOR_PENALTY = 2
 
 
 async def init_canonical_memory_db(db_path: str) -> None:
@@ -239,6 +241,7 @@ async def search_relevant_canonical_memories(
         rows = await cursor.fetchall()
     scored = []
     zero_evidence: list[tuple[int, str, str]] = []
+    spread_seed_ids: list[str] = []
     for row in rows:
         memory_id = str(row["memory_id"])
         haystack = f"{row['subject_key']} {row['content']}"
@@ -254,6 +257,8 @@ async def search_relevant_canonical_memories(
             continue
         if overlap > 0 or row["pinned"] or fts_bonus:
             scored.append((score, memory_id, str(row["content"])))
+            if overlap > 0 or fts_bonus:
+                spread_seed_ids.append(memory_id)
         elif not row["temporary"]:
             zero_evidence.append((0, memory_id, str(row["content"])))
     scored.sort(key=lambda item: item[0], reverse=True)
@@ -275,6 +280,7 @@ async def search_relevant_canonical_memories(
             item for item in reranked
             if item[1] not in zero_ids or item[0] >= floor
         ]
+    scored = await _with_association_neighbors(db_path, scored, spread_seed_ids, limit)
     selected = scored[:limit]
     await mark_canonical_used(
         db_path,
@@ -283,6 +289,41 @@ async def search_relevant_canonical_memories(
         source_ref=query,
     )
     return [content for _, _memory_id, content in selected]
+
+
+async def _with_association_neighbors(
+    db_path: str,
+    scored: list[tuple[int, str, str]],
+    spread_seed_ids: list[str],
+    limit: int,
+) -> list[tuple[int, str, str]]:
+    """Add one-hop associated memories to relevance context, fail-open.
+
+    Only lexical/FTS evidence can seed spreading activation. Direct-fact recall
+    does not use this path, and memory_links itself joins active rows only.
+    """
+    if not scored or not spread_seed_ids or limit <= 0:
+        return scored
+    seed_id_set = set(spread_seed_ids)
+    ordered_seeds = [memory_id for _score, memory_id, _content in scored if memory_id in seed_id_set][:limit]
+    if not ordered_seeds:
+        return scored
+    try:
+        neighbors = await expand_with_neighbors(db_path, ordered_seeds, limit=limit)
+    except Exception:
+        return scored
+    if not neighbors:
+        return scored
+    seen = {memory_id for _score, memory_id, _content in scored}
+    neighbor_score = max(1, scored[0][0] - ASSOCIATION_NEIGHBOR_PENALTY)
+    expanded = list(scored)
+    for memory_id, content in neighbors:
+        if memory_id in seen:
+            continue
+        seen.add(memory_id)
+        expanded.append((neighbor_score, memory_id, content))
+    expanded.sort(key=lambda item: item[0], reverse=True)
+    return expanded
 
 async def forget_canonical_memory(db_path: str, query: str) -> int:
     await init_canonical_memory_db(db_path)

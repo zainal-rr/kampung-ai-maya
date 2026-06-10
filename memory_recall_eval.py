@@ -8,6 +8,7 @@ seeded temp DB. Run: ./venv/bin/python memory_recall_eval.py
 Hard-fail conditions (exit 1):
   - forgotten facts leak into recall (must be 0)
   - absent facts produce direct-fact answers (false recall, must be 0)
+  - association links fail to enrich relevance context or leak into direct recall
   - exact-query recall@3 below 0.8
   - forget over-deletion or under-deletion scenario failures
 
@@ -35,6 +36,7 @@ from canonical_memory import (
 from learning_pipeline import LearningPipeline
 from lesson_store import init_lesson_db
 from memory_control import forget_memory
+from memory_recall_eval_associations import association_failures, association_metrics, seed_association_memories
 from memory_service import MemoryService
 from storage import init_db
 
@@ -101,6 +103,9 @@ CASES = (
     {"category": "temporal_old", "query": "when is my driving licence renewal", "expect": "March"},
     {"category": "temporal_old", "query": "my driving licence renewal", "expect": "March"},
     {"category": "temporal_old", "query": "how must you reply on telegram", "expect": "concisely"},
+    # association: linked neighbors enrich relevance context, never direct facts.
+    {"category": "association", "query": "who fixed my sink", "expect": "017-555", "direct_forbid": "017-555"},
+    {"category": "association", "query": "laptop repair", "forbid": "violet"},
     # forgotten: explicitly forgotten facts must never surface.
     {"category": "forgotten", "query": "what is my favourite colour", "forbid": "purple"},
     {"category": "forgotten", "query": "my favourite colour", "forbid": "purple"},
@@ -122,6 +127,7 @@ async def run_eval() -> dict[str, object]:
         await init_db(db_path)
         await init_lesson_db(db_path)
         await _seed(db_path)
+        await seed_association_memories(db_path)
         results = [await _run_case(db_path, case) for case in CASES]
         scenarios = await _forget_scenarios(db_path)
     metrics = _metrics(results)
@@ -178,6 +184,8 @@ async def _run_case(db_path: str, case: dict[str, str]) -> dict[str, object]:
         record["expect"] = case["expect"]
         record["hit_at_1"] = any(needle in item.casefold() for item in top1)
         record["hit_at_3"] = any(needle in item.casefold() for item in pool)
+        direct_needle = str(case.get("direct_forbid", "")).casefold()
+        record["direct_leaked"] = bool(direct_needle) and any(direct_needle in item.casefold() for item in direct)
     elif "forbid" in case:
         needle = case["forbid"].casefold()
         record["forbid"] = case["forbid"]
@@ -230,6 +238,7 @@ def _metrics(results: list[dict[str, object]]) -> dict[str, dict[str, float | in
             "recall_at_1": round(sum(bool(item["hit_at_1"]) for item in rows) / len(rows), 3),
             "recall_at_3": round(sum(bool(item["hit_at_3"]) for item in rows) / len(rows), 3),
         }
+    metrics["association"] = association_metrics(results)
     forgotten = [item for item in results if item["category"] == "forgotten"]
     absent = [item for item in results if item["category"] == "absent"]
     metrics["forgotten"] = {"cases": len(forgotten), "leaks": sum(bool(item["leaked"]) for item in forgotten)}
@@ -252,6 +261,7 @@ def _hard_failures(
     exact = metrics.get("exact", {})
     if float(exact.get("recall_at_3", 0)) < EXACT_RECALL3_FLOOR:
         failures.append(f"exact recall@3 {exact.get('recall_at_3')} below floor {EXACT_RECALL3_FLOOR}")
+    failures.extend(association_failures(metrics))
     for scenario in scenarios:
         if not scenario["under_deletion_ok"]:
             failures.append(f"{scenario['name']}: forgotten fact still recallable (under-deletion)")
