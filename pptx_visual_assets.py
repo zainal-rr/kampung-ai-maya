@@ -14,16 +14,29 @@ from office_files import safe_slug
 from workspace_paths import workspace_dir
 
 
+VISUAL_TOPIC_MARKERS = (
+    "food", "trip", "travel", "restaurant", "itinerary", "product", "pitch",
+    "venue", "place", "city", "architecture", "concept", "diagram", "visual",
+    "brand", "marketing", "tourism", "hotel", "cafe", "ai", "agent",
+    "workflow", "system", "quality", "document", "artifact", "process",
+    "technical", "strategy", "roadmap",
+)
+PLAIN_TOPIC_MARKERS = (
+    "plain", "internal notes", "text only", "text-only", "notes only",
+    "no images", "no visuals", "without images", "minimal deck",
+)
+
+
 def topic_benefits_from_visuals(topic: str) -> bool:
-    lowered = str(topic).lower()
-    markers = (
-        "food", "trip", "travel", "restaurant", "itinerary", "product", "pitch",
-        "venue", "place", "city", "architecture", "concept", "diagram", "visual",
-        "brand", "marketing", "tourism", "hotel", "cafe", "ai", "agent",
-        "workflow", "system", "quality", "document", "artifact", "process",
-        "technical", "strategy", "roadmap",
-    )
-    return any(marker in lowered for marker in markers)
+    import re as _re
+
+    lowered = " ".join(str(topic).lower().split())
+    # Explicitly plain/internal decks never auto-request generated images.
+    if any(marker in lowered for marker in PLAIN_TOPIC_MARKERS):
+        return False
+    # Word-boundary matching: bare substrings were too loose ("ai" matched
+    # "plain", "trip" matched "stripped").
+    return any(_re.search(rf"\b{_re.escape(marker)}\b", lowered) for marker in VISUAL_TOPIC_MARKERS)
 
 
 async def add_gemini_visual_asset(path: Path, topic: str, max_images: int | None = None) -> tuple[bool, str]:

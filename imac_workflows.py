@@ -6,7 +6,8 @@ from pathlib import Path
 
 from assistant_command_helpers import confirmation_decision
 from artifact_builder import ArtifactBuilder
-from browser_control import BrowserController, page_summary
+from browser_control import page_summary
+from browser_driver import make_browser_controller
 from browser_workflows import HumanBrowserWorkflowRouter
 from document_actions import DocumentActionRouter
 from network_tools import network_doc_sections, run_network_diagnostics, summarize_network
@@ -24,7 +25,7 @@ class ImacWorkflowRouter:
     def __init__(self, db_path: str, bridge: OSBridge | None = None, workspace: Path | None = None):
         self.db_path = db_path
         self.bridge = bridge or OSBridge()
-        self.browser = BrowserController(self.bridge)
+        self.browser = make_browser_controller(bridge)
         self.human_browser = HumanBrowserWorkflowRouter(db_path, self.bridge)
         self.workspace = workspace or workspace_dir("")
         self.documents = DocumentActionRouter(db_path, workspace=self.workspace, bridge=self.bridge)

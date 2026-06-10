@@ -28,7 +28,6 @@ from artifact_quality import (
     validate_html_content,
     validate_xlsx_path,
 )
-from cost_spreadsheet import kampung_ai_cost_rows
 from created_file_opener import open_created_file
 from document_failures import document_generation_failed
 from document_natural_artifact_parser import artifact_intent_clarification

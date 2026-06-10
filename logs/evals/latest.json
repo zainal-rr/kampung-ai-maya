@@ -1,9 +1,9 @@
 {
-  "created_at": "2026-06-09T19:08:03Z",
-  "passed": 15,
-  "failed": 20,
+  "created_at": "2026-06-10T12:26:25Z",
+  "passed": 34,
+  "failed": 1,
   "total": 35,
-  "score": 42.9,
+  "score": 97.1,
   "results": [
     {
       "category": "routing",
@@ -22,93 +22,93 @@
     {
       "category": "memory",
       "name": "self-heal memory",
-      "passed": false,
-      "returncode": 1,
-      "output": "Traceback (most recent call last):\n  File \"<PROJECT_ROOT>/self_heal_memory_smoke.py\", line 12, in <module>\n    from telegram_commands import command_to_text, parse_command\n  File \"<PROJECT_ROOT>/telegram_commands.py\", line 5, in <module>\n    from telegram import BotCommand\nModuleNotFoundError: No module named 'telegram'"
+      "passed": true,
+      "returncode": 0,
+      "output": "self_heal_memory_smoke: ok"
     },
     {
       "category": "weekly_memory",
       "name": "weekly memory dry run",
-      "passed": false,
-      "returncode": 1,
-      "output": "Traceback (most recent call last):\n  File \"<PROJECT_ROOT>/weekly_memory_smoke.py\", line 8, in <module>\n    from assistant import KampungAssistant\n  File \"<PROJECT_ROOT>/assistant.py\", line 5, in <module>\n    from assistant_commands import AssistantCommandRouter\n  File \"<PROJECT_ROOT>/assistant_commands.py\", line 27, in <module>\n    from artisan_runner import latest_artisan_summary_text, latest_artisan_transcript_text\n  File \"<PROJECT_ROOT>/artisan_runner.py\", line 3, in <module>\n    from artisan_runner_context import *\n  File \"<PROJECT_ROOT>/artisan_runner_context.py\", line 13, in <module>\n    from dotenv import load_dotenv\nModuleNotFoundError: No module named 'dotenv'"
+      "passed": true,
+      "returncode": 0,
+      "output": "weekly_memory_smoke: ok"
     },
     {
       "category": "weekly_memory",
       "name": "weekly provider path",
-      "passed": false,
-      "returncode": 1,
-      "output": "Traceback (most recent call last):\n  File \"<PROJECT_ROOT>/weekly_memory_provider_path_smoke.py\", line 5, in <module>\n    from weekly_memory_providers import WeeklyClaudeReviewer, WeeklyGeminiDistiller, _weekly_gemini_model\n  File \"<PROJECT_ROOT>/weekly_memory_providers.py\", line 3, in <module>\n    from config import get_env\n  File \"<PROJECT_ROOT>/config.py\", line 4, in <module>\n    from dotenv import load_dotenv\nModuleNotFoundError: No module named 'dotenv'"
+      "passed": true,
+      "returncode": 0,
+      "output": "weekly_memory_provider_path_smoke: ok"
     },
     {
       "category": "research",
       "name": "source-aware Gemini research",
-      "passed": false,
-      "returncode": 1,
-      "output": "Traceback (most recent call last):\n  File \"<PROJECT_ROOT>/source_aware_research_smoke.py\", line 8, in <module>\n    from assistant import KampungAssistant\n  File \"<PROJECT_ROOT>/assistant.py\", line 5, in <module>\n    from assistant_commands import AssistantCommandRouter\n  File \"<PROJECT_ROOT>/assistant_commands.py\", line 27, in <module>\n    from artisan_runner import latest_artisan_summary_text, latest_artisan_transcript_text\n  File \"<PROJECT_ROOT>/artisan_runner.py\", line 3, in <module>\n    from artisan_runner_context import *\n  File \"<PROJECT_ROOT>/artisan_runner_context.py\", line 13, in <module>\n    from dotenv import load_dotenv\nModuleNotFoundError: No module named 'dotenv'"
+      "passed": true,
+      "returncode": 0,
+      "output": "source_aware_research_smoke: ok"
     },
     {
       "category": "browser",
       "name": "browser field tests",
-      "passed": false,
-      "returncode": 1,
-      "output": "Traceback (most recent call last):\n  File \"<PROJECT_ROOT>/browser_field_tests_smoke.py\", line 3, in <module>\n    from browser_field_tests import browser_field_scenarios, format_browser_field_tests\n  File \"<PROJECT_ROOT>/browser_field_tests.py\", line 5, in <module>\n    from browser_capability import route_browser_capability\n  File \"<PROJECT_ROOT>/browser_capability.py\", line 7, in <module>\n    from browser_site_skills import (\n    ...<4 lines>...\n    )\n  File \"<PROJECT_ROOT>/browser_site_skills.py\", line 23, in <module>\n    from browser_understanding import extract_browser_options_with_gemini\n  File \"<PROJECT_ROOT>/browser_understanding.py\", line 6, in <module>\n    from models import TheSenses\n  File \"<PROJECT_ROOT>/models.py\", line 6, in <module>\n    import httpx\nModuleNotFoundError: No module named 'httpx'"
+      "passed": true,
+      "returncode": 0,
+      "output": "browser_field_tests_smoke: ok"
     },
     {
       "category": "browser",
       "name": "browser benchmark",
-      "passed": false,
-      "returncode": 1,
-      "output": "Traceback (most recent call last):\n  File \"<PROJECT_ROOT>/browser_benchmark_smoke.py\", line 6, in <module>\n    from browser_benchmark import (\n    ...<4 lines>...\n    )\n  File \"<PROJECT_ROOT>/browser_benchmark.py\", line 9, in <module>\n    from browser_field_tests import BrowserFieldScenario, browser_field_scenarios\n  File \"<PROJECT_ROOT>/browser_field_tests.py\", line 5, in <module>\n    from browser_capability import route_browser_capability\n  File \"<PROJECT_ROOT>/browser_capability.py\", line 7, in <module>\n    from browser_site_skills import (\n    ...<4 lines>...\n    )\n  File \"<PROJECT_ROOT>/browser_site_skills.py\", line 23, in <module>\n    from browser_understanding import extract_browser_options_with_gemini\n  File \"<PROJECT_ROOT>/browser_understanding.py\", line 6, in <module>\n    from models import TheSenses\n  File \"<PROJECT_ROOT>/models.py\", line 6, in <module>\n    import httpx\nModuleNotFoundError: No module named 'httpx'"
+      "passed": true,
+      "returncode": 0,
+      "output": "browser_benchmark_smoke: ok"
     },
     {
       "category": "memory",
       "name": "Omi context sieve",
-      "passed": false,
-      "returncode": 1,
-      "output": "Traceback (most recent call last):\n  File \"<PROJECT_ROOT>/omi_context_sieve_smoke.py\", line 10, in <module>\n    from sieve import SieveNode\n  File \"<PROJECT_ROOT>/sieve.py\", line 5, in <module>\n    from models import TheSenses\n  File \"<PROJECT_ROOT>/models.py\", line 6, in <module>\n    import httpx\nModuleNotFoundError: No module named 'httpx'"
+      "passed": true,
+      "returncode": 0,
+      "output": "omi_context_sieve_smoke: ok"
     },
     {
       "category": "word",
       "name": "word quality",
-      "passed": false,
-      "returncode": 1,
-      "output": "Traceback (most recent call last):\n  File \"<PROJECT_ROOT>/word_quality_smoke.py\", line 6, in <module>\n    from artifact_quality import validate_docx_path\n  File \"<PROJECT_ROOT>/artifact_quality.py\", line 11, in <module>\n    from models import TheSteward\n  File \"<PROJECT_ROOT>/models.py\", line 6, in <module>\n    import httpx\nModuleNotFoundError: No module named 'httpx'"
+      "passed": true,
+      "returncode": 0,
+      "output": "word_quality_smoke: ok"
     },
     {
       "category": "word",
       "name": "word visual QA",
-      "passed": false,
-      "returncode": 1,
-      "output": "Traceback (most recent call last):\n  File \"<PROJECT_ROOT>/word_visual_qa_smoke.py\", line 6, in <module>\n    from office_modern_files import create_docx\n  File \"<PROJECT_ROOT>/office_modern_files.py\", line 6, in <module>\n    from docx import Document\nModuleNotFoundError: No module named 'docx'"
+      "passed": true,
+      "returncode": 0,
+      "output": "word_visual_qa_smoke: ok"
     },
     {
       "category": "excel",
       "name": "excel golden artifact",
-      "passed": false,
-      "returncode": 1,
-      "output": "Traceback (most recent call last):\n  File \"<PROJECT_ROOT>/excel_golden_artifact_smoke.py\", line 6, in <module>\n    from openpyxl import load_workbook\nModuleNotFoundError: No module named 'openpyxl'"
+      "passed": true,
+      "returncode": 0,
+      "output": "excel_golden_artifact_smoke: ok"
     },
     {
       "category": "powerpoint",
       "name": "pptx quality gate",
-      "passed": false,
-      "returncode": 1,
-      "output": "Traceback (most recent call last):\n  File \"<PROJECT_ROOT>/pptx_quality_gate_smoke.py\", line 8, in <module>\n    from pptx import Presentation\nModuleNotFoundError: No module named 'pptx'"
+      "passed": true,
+      "returncode": 0,
+      "output": "pptx_quality_gate_smoke: ok"
     },
     {
       "category": "documents",
       "name": "Office edit workflow",
-      "passed": false,
-      "returncode": 1,
-      "output": "Traceback (most recent call last):\n  File \"<PROJECT_ROOT>/document_edit_office_smoke.py\", line 7, in <module>\n    import document_actions as da\n  File \"<PROJECT_ROOT>/document_actions.py\", line 15, in <module>\n    from document_actions_context import *\n  File \"<PROJECT_ROOT>/document_actions_context.py\", line 21, in <module>\n    from artifact_preflight import ArtifactPreflight, artifact_preflight_with_gemini\n  File \"<PROJECT_ROOT>/artifact_preflight.py\", line 7, in <module>\n    from artifact_quality import artifact_skill_context\n  File \"<PROJECT_ROOT>/artifact_quality.py\", line 11, in <module>\n    from models import TheSteward\n  File \"<PROJECT_ROOT>/models.py\", line 6, in <module>\n    import httpx\nModuleNotFoundError: No module named 'httpx'"
+      "passed": true,
+      "returncode": 0,
+      "output": "document_edit_office_smoke: ok"
     },
     {
       "category": "imac",
       "name": "June 8 iMac regression",
-      "passed": false,
-      "returncode": 1,
-      "output": "Traceback (most recent call last):\n  File \"<PROJECT_ROOT>/imac_june8_regression_smoke.py\", line 3, in <module>\n    from imac_june8_regression import format_june8_regression, june8_regression_checks\n  File \"<PROJECT_ROOT>/imac_june8_regression.py\", line 6, in <module>\n    from dependency_manifest import dependency_statuses\n  File \"<PROJECT_ROOT>/dependency_manifest.py\", line 12, in <module>\n    from dotenv import load_dotenv\nModuleNotFoundError: No module named 'dotenv'"
+      "passed": true,
+      "returncode": 0,
+      "output": "imac_june8_regression_smoke: ok"
     },
     {
       "category": "self_heal",
@@ -136,21 +136,21 @@
       "name": "artisan runner",
       "passed": false,
       "returncode": 1,
-      "output": "Traceback (most recent call last):\n  File \"<PROJECT_ROOT>/artisan_runner_smoke.py\", line 12, in <module>\n    from artisan_runner import (\n    ...<4 lines>...\n    )\n  File \"<PROJECT_ROOT>/artisan_runner.py\", line 3, in <module>\n    from artisan_runner_context import *\n  File \"<PROJECT_ROOT>/artisan_runner_context.py\", line 13, in <module>\n    from dotenv import load_dotenv\nModuleNotFoundError: No module named 'dotenv'"
+      "output": "Traceback (most recent call last):\n  File \"<PROJECT_ROOT>/artisan_runner_smoke.py\", line 150, in <module>\n    asyncio.run(main())\n    ~~~~~~~~~~~^^^^^^^^\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.4_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/runners.py\", line 204, in run\n    return runner.run(main)\n           ~~~~~~~~~~^^^^^^\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.4_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/runners.py\", line 127, in run\n    return self._loop.run_until_complete(task)\n           ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~^^^^^^\n  File \"/opt/homebrew/Cellar/python@3.14/3.14.4_1/Frameworks/Python.framework/Versions/3.14/lib/python3.14/asyncio/base_events.py\", line 719, in run_until_complete\n    return future.result()\n           ~~~~~~~~~~~~~^^\n  File \"<PROJECT_ROOT>/artisan_runner_smoke.py\", line 36, in main\n    _require(ok, f\"Codex should be logged in using ChatGPT for Artisan runs: {status}\")\n    ~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n  File \"<PROJECT_ROOT>/artisan_runner_smoke.py\", line 146, in _require\n    raise AssertionError(message)\nAssertionError: Codex should be logged in using ChatGPT for Artisan runs: Error loading configuration: <HOME>/.codex/config.toml:9:16: unknown variant `priority`, expected `fast` or `flex`"
     },
     {
       "category": "blender_maker",
       "name": "maker template",
-      "passed": false,
-      "returncode": 1,
-      "output": "Traceback (most recent call last):\n  File \"<PROJECT_ROOT>/artisan_maker_template_smoke.py\", line 8, in <module>\n    from artisan_runner import create_artisan_implementation_request\n  File \"<PROJECT_ROOT>/artisan_runner.py\", line 3, in <module>\n    from artisan_runner_context import *\n  File \"<PROJECT_ROOT>/artisan_runner_context.py\", line 13, in <module>\n    from dotenv import load_dotenv\nModuleNotFoundError: No module named 'dotenv'"
+      "passed": true,
+      "returncode": 0,
+      "output": "artisan_maker_template_smoke: ok"
     },
     {
       "category": "hardware",
       "name": "hardware live proof readiness",
-      "passed": false,
-      "returncode": 1,
-      "output": "Traceback (most recent call last):\n  File \"<PROJECT_ROOT>/hardware_live_proof_smoke.py\", line 3, in <module>\n    from hardware_live_proof import format_hardware_live_proof, hardware_live_proof_items\n  File \"<PROJECT_ROOT>/hardware_live_proof.py\", line 6, in <module>\n    from dependency_manifest import dependency_statuses\n  File \"<PROJECT_ROOT>/dependency_manifest.py\", line 12, in <module>\n    from dotenv import load_dotenv\nModuleNotFoundError: No module named 'dotenv'"
+      "passed": true,
+      "returncode": 0,
+      "output": "hardware_live_proof_smoke: ok"
     },
     {
       "category": "live",
@@ -183,9 +183,9 @@
     {
       "category": "maya_desk",
       "name": "maya desk",
-      "passed": false,
-      "returncode": 1,
-      "output": "Traceback (most recent call last):\n  File \"<PROJECT_ROOT>/maya_desk_smoke.py\", line 8, in <module>\n    from maya_desk import build_maya_desk\n  File \"<PROJECT_ROOT>/maya_desk.py\", line 12, in <module>\n    from dependency_manifest import dependency_statuses, readiness_summary\n  File \"<PROJECT_ROOT>/dependency_manifest.py\", line 12, in <module>\n    from dotenv import load_dotenv\nModuleNotFoundError: No module named 'dotenv'"
+      "passed": true,
+      "returncode": 0,
+      "output": "maya_desk_smoke: ok"
     },
     {
       "category": "harness",
@@ -225,16 +225,16 @@
     {
       "category": "skills",
       "name": "Maya skill creation",
-      "passed": false,
-      "returncode": 1,
-      "output": "Traceback (most recent call last):\n  File \"<PROJECT_ROOT>/youtube_skill_creation_maya_smoke.py\", line 8, in <module>\n    from assistant import KampungAssistant\n  File \"<PROJECT_ROOT>/assistant.py\", line 5, in <module>\n    from assistant_commands import AssistantCommandRouter\n  File \"<PROJECT_ROOT>/assistant_commands.py\", line 27, in <module>\n    from artisan_runner import latest_artisan_summary_text, latest_artisan_transcript_text\n  File \"<PROJECT_ROOT>/artisan_runner.py\", line 3, in <module>\n    from artisan_runner_context import *\n  File \"<PROJECT_ROOT>/artisan_runner_context.py\", line 13, in <module>\n    from dotenv import load_dotenv\nModuleNotFoundError: No module named 'dotenv'"
+      "passed": true,
+      "returncode": 0,
+      "output": "youtube_skill_creation_maya_smoke: ok"
     },
     {
       "category": "dependencies",
       "name": "dependency manifest",
-      "passed": false,
-      "returncode": 1,
-      "output": "Traceback (most recent call last):\n  File \"<PROJECT_ROOT>/dependency_manifest_smoke.py\", line 7, in <module>\n    from dependency_manifest import dependency_readiness_text, dependency_statuses, readiness_summary\n  File \"<PROJECT_ROOT>/dependency_manifest.py\", line 12, in <module>\n    from dotenv import load_dotenv\nModuleNotFoundError: No module named 'dotenv'"
+      "passed": true,
+      "returncode": 0,
+      "output": "dependency_manifest_smoke: ok"
     },
     {
       "category": "demos",
@@ -246,9 +246,9 @@
     {
       "category": "hardening",
       "name": "hardening audit",
-      "passed": false,
-      "returncode": 1,
-      "output": "Traceback (most recent call last):\n  File \"<PROJECT_ROOT>/hardening_audit_smoke.py\", line 3, in <module>\n    from hardening_audit import (\n    ...<7 lines>...\n    )\n  File \"<PROJECT_ROOT>/hardening_audit.py\", line 6, in <module>\n    from dependency_manifest import readiness_summary\n  File \"<PROJECT_ROOT>/dependency_manifest.py\", line 12, in <module>\n    from dotenv import load_dotenv\nModuleNotFoundError: No module named 'dotenv'"
+      "passed": true,
+      "returncode": 0,
+      "output": "hardening_audit_smoke: ok"
     }
   ]
 }

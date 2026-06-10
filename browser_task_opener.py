@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from active_context import ActiveContextInspector
 from active_context_models import ActiveContext
 from browser_capability import route_browser_capability, run_browser_capability
-from browser_control import BrowserController
+from browser_driver import make_browser_controller
 from permission_policy import action_permission
 from storage import upsert_preference
 from utils import OSBridge
@@ -24,7 +24,7 @@ class BrowserTaskOpener:
     def __init__(self, db_path: str, bridge: OSBridge | None = None):
         self.db_path = db_path
         self.bridge = bridge or OSBridge()
-        self.browser = BrowserController(self.bridge)
+        self.browser = make_browser_controller(bridge)
         self.inspector = ActiveContextInspector(db_path, self.bridge)
 
     async def open_for_task(self, question: str) -> str:

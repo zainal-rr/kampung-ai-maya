@@ -328,6 +328,210 @@ def _proposal_deck(title: str, sections: list[tuple[str, list[str]]]) -> list[tu
     ]
 
 
+def _teaching_deck(title: str, sections: list[tuple[str, list[str]]]) -> list[tuple[str, list[str]]]:
+    display = _display_title(title)
+    objective_lines = _matching_lines(sections, ("objective", "goal", "outcome", "learn"))
+    concept_lines = _matching_lines(sections, ("concept", "overview", "context", "what", "material"))
+    practice_lines = _matching_lines(sections, ("schedule", "activity", "practice", "exercise", "session", "step"))
+    assessment_lines = _matching_lines(sections, ("assessment", "judging", "evaluation", "feedback", "quiz"))
+    return [
+        (
+            display,
+            [
+                f"{display} works best as a guided session, not a lecture.",
+                _first(objective_lines, "Participants should leave able to do something they could not do before."),
+                "The session moves from one core concept to hands-on practice to a visible result.",
+            ],
+        ),
+        (
+            "Start with what participants will be able to do.",
+            _take(objective_lines, [
+                "State two or three observable outcomes in plain language.",
+                "Tie every activity back to one of those outcomes.",
+                "Cut anything that does not serve an outcome.",
+            ]),
+        ),
+        (
+            "Teach one core concept before any hands-on work.",
+            _take(concept_lines, [
+                "Explain the single idea the whole session depends on.",
+                "Use one concrete example participants will recognize.",
+                "Keep theory under a quarter of the session time.",
+            ]),
+        ),
+        (
+            "Practice time is where the learning happens.",
+            _take(practice_lines, [
+                "Give teams a task with a visible finish line.",
+                "Walk the room; help the stuck teams first.",
+                "Keep a fallback task ready for fast finishers.",
+            ]),
+        ),
+        (
+            "Close with proof of learning and a next step.",
+            _take(assessment_lines, [
+                "Let each team show what they built or solved.",
+                "Reward learning and effort, not only the winning result.",
+                "Send participants away with one concrete thing to practice next.",
+            ]),
+        ),
+    ]
+
+
+def _review_deck(title: str, sections: list[tuple[str, list[str]]]) -> list[tuple[str, list[str]]]:
+    display = _display_title(title)
+    delivered_lines = _matching_lines(sections, ("delivered", "done", "completed", "shipped", "summary", "overview"))
+    metric_lines = _matching_lines(sections, ("metric", "number", "result", "kpi", "performance", "data"))
+    lesson_lines = _matching_lines(sections, ("worked", "didn't", "did not", "issue", "lesson", "risk", "blocker"))
+    decision_lines = _matching_lines(sections, ("decision", "next", "action", "follow", "recommend"))
+    return [
+        (
+            display,
+            [
+                f"{display} should end in decisions, not nostalgia.",
+                _first(delivered_lines, "Open with what was actually shipped against what was promised."),
+                "The deck separates results, lessons, and the decisions they force.",
+            ],
+        ),
+        (
+            "What was delivered against the plan.",
+            _take(delivered_lines, [
+                "List the committed items and their final status.",
+                "Flag anything delivered late or descoped, without burying it.",
+                "Credit the work that prevented problems, not only visible features.",
+            ]),
+        ),
+        (
+            "The numbers tell the real story.",
+            _take(metric_lines, [
+                "Show the two or three metrics that changed and why.",
+                "Compare against the previous period, not an ideal.",
+                "Mark which numbers are measured and which are estimated.",
+            ]),
+        ),
+        (
+            "What worked, what did not, and why.",
+            _take(lesson_lines, [
+                "Name the practice worth repeating next period.",
+                "Name the failure mode honestly and its trigger.",
+                "Keep blame out; keep the mechanism in.",
+            ]),
+        ),
+        (
+            "Decisions and follow-ups leave the room with owners.",
+            _take(decision_lines, [
+                "Each decision gets an owner and a date.",
+                "Park what cannot be decided today with a revisit trigger.",
+                "Publish the follow-up list where the team will actually see it.",
+            ]),
+        ),
+    ]
+
+
+def _pitch_deck(title: str, sections: list[tuple[str, list[str]]]) -> list[tuple[str, list[str]]]:
+    display = _display_title(title)
+    problem_lines = _matching_lines(sections, ("problem", "pain", "today", "current", "why now"))
+    solution_lines = _matching_lines(sections, ("solution", "product", "approach", "how it works"))
+    market_lines = _matching_lines(sections, ("market", "competition", "customer", "model", "pricing", "revenue"))
+    proof_lines = _matching_lines(sections, ("traction", "proof", "result", "milestone", "pilot"))
+    ask_lines = _matching_lines(sections, ("ask", "funding", "raise", "investment", "use of funds", "next"))
+    return [
+        (
+            display,
+            [
+                f"{display} earns attention by naming a real problem first.",
+                _first(problem_lines, "Lead with the pain and who feels it most."),
+                _first(solution_lines, "Show the solution in one picture before any detail."),
+            ],
+        ),
+        (
+            "The problem is real, expensive, and timed.",
+            _take(problem_lines, [
+                "Quantify the pain in money, hours, or risk.",
+                "Explain why now: what changed that makes this solvable.",
+                "Name who suffers most; that is the first customer.",
+            ]),
+        ),
+        (
+            "The solution in one picture.",
+            _take(solution_lines, [
+                "Show what the user does and what they get back.",
+                "Highlight the one capability competitors cannot copy quickly.",
+                "Keep the demo promise honest: only show what works today.",
+            ]),
+        ),
+        (
+            "The model and the market make it a business.",
+            _take(market_lines, [
+                "State who pays, how much, and how often.",
+                "Size the market from the bottom up, not a slogan.",
+                "Position against the real alternative, including doing nothing.",
+            ]),
+        ),
+        (
+            "The ask is specific and accountable.",
+            _take([*proof_lines, *ask_lines], [
+                "Show the traction or proof that earns the next conversation.",
+                "State the amount or commitment requested and what it buys.",
+                "List the first three milestones the money or support unlocks.",
+            ]),
+        ),
+    ]
+
+
+def _issue_deck(title: str, sections: list[tuple[str, list[str]]]) -> list[tuple[str, list[str]]]:
+    """Awareness/policy arc for topic-concern decks: problem -> affected ->
+    drivers -> what works -> direction. No sales pitch, no decision template."""
+    display = _display_title(title)
+    problem_lines = _matching_lines(sections, ("problem", "concern", "issue", "challenge", "pressure", "trend"))
+    affected_lines = _matching_lines(sections, ("affected", "impact", "community", "farmer", "people", "who", "cost"))
+    driver_lines = _matching_lines(sections, ("cause", "driver", "because", "reason", "factor", "climate", "supply"))
+    response_lines = _matching_lines(sections, ("solution", "respond", "mitigation", "policy", "program", "adopt", "works"))
+    direction_lines = _matching_lines(sections, ("next", "future", "recommend", "support", "outlook"))
+    return [
+        (
+            display,
+            [
+                f"{display} deserves attention before it becomes urgent.",
+                _first(problem_lines, "Open with the clearest evidence that the problem is real."),
+                "The deck moves from evidence to causes to what is already working.",
+            ],
+        ),
+        (
+            "The problem is measurable, not hypothetical.",
+            _take(problem_lines, [
+                "Show the trend with the strongest available numbers.",
+                "Anchor the concern in a local, recognizable example.",
+                "Say plainly what happens if nothing changes.",
+            ]),
+        ),
+        (
+            "Real people carry the cost first.",
+            _take(affected_lines, [
+                "Name who feels the impact earliest and hardest.",
+                "Translate the impact into livelihoods, not abstractions.",
+                "Note which effects are already visible today.",
+            ]),
+        ),
+        (
+            "The drivers are knowable and partly fixable.",
+            _take(driver_lines, [
+                "Separate the structural causes from the short-term triggers.",
+                "Mark which drivers local action can actually influence.",
+                "Avoid blaming a single cause for a system problem.",
+            ]),
+        ),
+        (
+            "What already works points the way forward.",
+            _take([*response_lines, *direction_lines], [
+                "Highlight one intervention with evidence behind it.",
+                "State what support would let it scale.",
+                "End with the single change that matters most this year.",
+            ]),
+        ),
+    ]
+
+
 def _display_title(title: str) -> str:
     text = _plain(title)
     text = re.sub(r"\b(powerpoint|pptx|presentation|slide deck|slides|deck)\b", "", text, flags=re.I)

@@ -6,7 +6,8 @@ from urllib.parse import urlsplit
 
 from active_context import ActiveContextInspector
 from browser_capability import run_browser_capability, route_browser_capability
-from browser_control import BrowserController, element_summary, page_summary
+from browser_driver import make_browser_controller
+from browser_control import element_summary, page_summary
 from travel_booking_safety import travel_booking_boundary_reply, travel_booking_safety_footer
 from utils import OSBridge
 
@@ -15,7 +16,7 @@ class BrowserTaskStepper:
     def __init__(self, db_path: str, bridge: OSBridge | None = None):
         self.db_path = db_path
         self.bridge = bridge or OSBridge()
-        self.browser = BrowserController(self.bridge)
+        self.browser = make_browser_controller(bridge)
         self.inspector = ActiveContextInspector(db_path, self.bridge)
 
     async def step(self, question: str) -> str:

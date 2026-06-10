@@ -4,7 +4,8 @@ from typing import Iterable
 from dotenv import load_dotenv
 
 
-load_dotenv(override=True)
+# override=False: real environment variables (launchd, shell, CI) win over .env.
+load_dotenv(override=False)
 
 
 def get_env(name: str, default: str | None = None) -> str | None:

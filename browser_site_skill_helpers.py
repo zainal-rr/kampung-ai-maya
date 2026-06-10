@@ -81,8 +81,16 @@ def _rank_from_text(text: str) -> int:
 
 def _target_from_click_request(text: str) -> str:
     cleaned = re.sub(r"\b(open|click|select|choose|the|first|top|second|third|fourth|fifth|result|video|thread|link|title)\b", " ", text, flags=re.I)
-    cleaned = " ".join(cleaned.strip(" .").split())
+    cleaned = re.sub(r"^(?:about|for|on|of|regarding)\s+", "", " ".join(cleaned.strip(" .").split()), flags=re.I)
     return cleaned if len(cleaned) >= 3 else ""
+
+
+def _options_match_target(options: list[str], target: str) -> bool:
+    tokens = [token for token in re.split(r"\W+", target.lower()) if len(token) >= 4]
+    if not tokens:
+        return True
+    joined = "\n".join(options).lower()
+    return any(token in joined for token in tokens)
 
 
 def _looks_like_posting_or_account_action(text: str) -> bool:
@@ -95,9 +103,20 @@ def _sensitive_browser_action(text: str) -> bool:
     return any(word in lowered for word in ("pay", "payment", "checkout", "login", "password", "otp", "card", "passport", "private key", "api key", "submit"))
 
 
+_SENSITIVE_URL_RE = re.compile(r"/(checkout|payments?|login|signin|sign-in|account/auth)\b|[?&](checkout|login|auth)=", re.I)
+_SENSITIVE_TEXT_RE = re.compile(
+    r"card number|cvv|one[- ]time password|\botp code\b|sign in to continue|log in to continue|"
+    r"enter your password|private key|api key|seed phrase",
+    re.I,
+)
+
+
 def _sensitive_page(text: str, url: str) -> bool:
-    lowered = f"{url}\n{text}".lower()
-    return any(word in lowered for word in ("payment", "checkout", "password", "otp", "card number", "private key", "api key", "sign in to continue"))
+    """Flag real checkout/login flows, not retail pages that merely mention
+    'checkout' or 'payment' in their navigation (the night2 false positive)."""
+    if _SENSITIVE_URL_RE.search(url):
+        return True
+    return bool(_SENSITIVE_TEXT_RE.search(text))
 
 
 def _unsafe_gcp_action(text: str) -> bool:

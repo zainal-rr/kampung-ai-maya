@@ -65,7 +65,7 @@ async def _workflow_grounding() -> None:
         await init_db(db_path)
         bridge = FakeBridge()
         router = HumanBrowserWorkflowRouter(db_path, bridge, FakeScreen())
-        reply = await router.handle("browse flight to Penang", "telegram")
+        reply = await router.handle("browse flight to Penang", "imac")
         _require("opened chrome" in reply.lower(), "workflow did not start")
         inspect = await router.handle("compare visible results", "telegram")
         _require("I inspected Chrome" in inspect, "browser workflow did not inspect DOM")

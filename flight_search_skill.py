@@ -5,8 +5,10 @@ import time
 from pathlib import Path
 
 from active_context import ActiveContextInspector
-from browser_control import BrowserController
-from browser_understanding import extract_browser_options_with_gemini
+from browser_driver import make_browser_controller
+from browser_observe import wait_for_content
+from flight_search_deeplink import is_extension_driver, note_flight_intent, run_flight_deep_link
+from browser_understanding import extract_browser_options_with_gemini, grounded_browser_options
 from permission_policy import action_permission, contains_sensitive_info, hard_no_private_exposure_text
 from skill_store import init_skill_db, record_skill_usage, upsert_skill
 from storage import upsert_preference
@@ -35,10 +37,13 @@ SKILL_NAME = "Travel Research"
 
 
 class FlightSearchSkill:
+    RESULT_WAIT_TIMEOUT = 25.0
+    RESULT_MARKERS = ("Nonstop", "Sorted by", "results returned", "Top departing", "No results")
+
     def __init__(self, db_path: str, bridge: OSBridge | None = None):
         self.db_path = db_path
         self.bridge = bridge or OSBridge()
-        self.browser = BrowserController(self.bridge)
+        self.browser = make_browser_controller(bridge)
         self.inspector = ActiveContextInspector(db_path, self.bridge)
         self.last_price_options: list[str] = []
         self.last_result_page = ""
@@ -52,6 +57,7 @@ class FlightSearchSkill:
         await self._record_skill(question)
         context = await self.inspector.inspect(question, allow_screen_fallback=False)
         details = extract_flight_details(question, context)
+        note_flight_intent(details)
         if details.missing:
             await upsert_preference(self.db_path, "maya_active_workflow", _workflow_value(details), source="skill")
             return _clarification_reply(details)
@@ -63,6 +69,10 @@ class FlightSearchSkill:
             return_date=details.return_date,
             flight_trip_type="one way" if details.one_way else "return",
         )
+        if is_extension_driver(self.browser):
+            # The extension cannot simulate autocomplete keyboards; the
+            # validated deep link lands directly on the results page instead.
+            return await run_flight_deep_link(self, details)
         await asyncio.to_thread(self.browser.open_new_tab_url, GOOGLE_FLIGHTS_URL)
         await asyncio.to_thread(time.sleep, 3.0)
         await asyncio.to_thread(self._close_active_overlay)
@@ -71,7 +81,7 @@ class FlightSearchSkill:
             return _opened_reply(details)
         attempts = await asyncio.to_thread(self._fill_verify_and_search, details)
         if not self.last_price_options and self.last_result_text:
-            self.last_price_options = await extract_browser_options_with_gemini(
+            gemini_options = await extract_browser_options_with_gemini(
                 self.db_path,
                 provider="Google Flights",
                 goal=f"{details.origin} to {details.destination} on {details.depart}",
@@ -79,6 +89,7 @@ class FlightSearchSkill:
                 page_url=self.last_result_url,
                 page_text=self.last_result_text,
             )
+            self.last_price_options = grounded_browser_options(gemini_options, self.last_result_text)
         return _filled_reply(details, attempts, self.last_price_options, self.last_result_page)
 
     def _fill_verify_and_search(self, details: FlightDetails) -> list[FieldAttempt]:
@@ -145,22 +156,23 @@ class FlightSearchSkill:
             missing = _unverified_required_fields(details, attempts)
             return FieldAttempt("results", "Search", "skipped", "required fields not verified: " + ", ".join(missing))
         try:
+            self._close_active_overlay()
             clicked = self.browser.click_exact_text_last("Search")
             if clicked == "NOT_FOUND":
                 clicked = self.browser.click_visible_text("Search")
             if clicked == "NOT_FOUND":
-                page = self.browser.inspect_page(8000)
-                self.last_result_page = f"{page.title} | {page.url}"
-                self.last_result_title = page.title
-                self.last_result_url = page.url
-                self.last_result_text = page.text
+                self._capture_result_page(self.browser.inspect_page(14000))
                 return FieldAttempt("results", "Search", "not verified", "Search button not found; did not click Explore fallback")
-            time.sleep(8.0)
-            page = self.browser.inspect_page(8000)
-            self.last_result_page = f"{page.title} | {page.url}"
-            self.last_result_title = page.title
-            self.last_result_url = page.url
-            self.last_result_text = page.text
+            readiness = wait_for_content(
+                self.browser,
+                min_chars=1200,
+                require_any=self.RESULT_MARKERS,
+                timeout_seconds=self.RESULT_WAIT_TIMEOUT,
+                stable_seconds=1.0,
+                max_chars=14000,
+            )
+            page = readiness.page if readiness.page.url else self.browser.inspect_page(14000)
+            self._capture_result_page(page)
             self.last_price_options = extract_flight_options(page.text, details.destination, details.depart)
             if not self.last_price_options:
                 grid_price = extract_date_grid_price(page.text, details.depart)
@@ -233,6 +245,12 @@ class FlightSearchSkill:
     def _field_labels(self, kinds: set[str] | None = None) -> list[str]:
         allowed = kinds or {"input", "button"}
         return [item.label for item in self.browser.inspect_elements(120) if item.kind in allowed]
+
+    def _capture_result_page(self, page) -> None:
+        self.last_result_page = f"{page.title} | {page.url}"
+        self.last_result_title = page.title
+        self.last_result_url = page.url
+        self.last_result_text = page.text
 
     def _close_active_overlay(self) -> None:
         try:

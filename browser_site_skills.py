@@ -7,23 +7,25 @@ from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import quote_plus
 
-from browser_control import BrowserController, page_summary
+from browser_control import note_browser_intent, page_summary
+from browser_driver import make_browser_controller
 from browser_site_skill_helpers import (
     _clean_site_query,
     _extract_visible_options,
     _gcp_url_for_request,
     _is_result_open_request,
     _looks_like_posting_or_account_action,
+    _options_match_target,
     _rank_from_text,
     _sensitive_browser_action,
     _sensitive_page,
     _target_from_click_request,
     _unsafe_gcp_action,
 )
-from browser_understanding import extract_browser_options_with_gemini
+from browser_understanding import extract_browser_options_with_gemini, grounded_browser_options
 from permission_policy import action_permission
 from skill_store import init_skill_db, record_skill_usage, upsert_skill
-from storage import upsert_preference
+from storage import get_preference, upsert_preference
 from utils import OSBridge
 
 
@@ -46,6 +48,7 @@ class SiteSkillSpec:
     workflow_prefix: str
     description: str
     provider_name: str
+    fallback_search_url_prefix: str = ""
 
 
 GOOGLE_SPEC = SiteSkillSpec(
@@ -74,6 +77,7 @@ REDDIT_SPEC = SiteSkillSpec(
     "reddit",
     "Search Reddit, inspect visible threads and comments, and summarize common community signals.",
     "Reddit",
+    fallback_search_url_prefix="https://old.reddit.com/search?q=",
 )
 
 
@@ -82,7 +86,7 @@ class SearchSiteSkill:
         self.db_path = db_path
         self.spec = spec
         self.bridge = bridge or OSBridge()
-        self.browser = BrowserController(self.bridge)
+        self.browser = make_browser_controller(bridge)
 
     async def run(self, request: str) -> str:
         if action_permission("browse_web") != "allow":
@@ -103,7 +107,32 @@ class SearchSiteSkill:
         return f"{self.spec.name} skill opened {self.spec.base_url}."
 
     async def _search(self, query: str) -> str:
+        note_browser_intent({"query": query})
         url = self.spec.search_url_prefix + quote_plus(query)
+        page, options = await self._search_once(url, query)
+        fallback_note = ""
+        if not options and self.spec.fallback_search_url_prefix:
+            url = self.spec.fallback_search_url_prefix + quote_plus(query)
+            page, options = await self._search_once(url, query)
+            fallback_note = f"note: the main {self.spec.name} page gave no readable results, so I retried on {url.split('/search')[0]}."
+        await upsert_preference(self.db_path, "maya_active_workflow", f"browser:{self.spec.workflow_prefix}:search:{query}", source="skill")
+        reply = _search_reply(self.spec, query, page.url or url, options, page.title)
+        return f"{reply}\n{fallback_note}" if fallback_note else reply
+
+    async def _wait_for_results(self, attempts: int = 6) -> list[str]:
+        for _ in range(attempts):
+            options = await _safe_result_options(self.browser)
+            if options:
+                return options
+            await asyncio.sleep(1.0)
+        return []
+
+    async def _last_search_query(self) -> str:
+        raw = await get_preference(self.db_path, "maya_active_workflow") or ""
+        prefix = f"browser:{self.spec.workflow_prefix}:search:"
+        return raw[len(prefix):] if raw.startswith(prefix) else ""
+
+    async def _search_once(self, url: str, query: str):
         await asyncio.to_thread(self.browser.open_new_tab_url, url)
         await asyncio.to_thread(time.sleep, 1.0)
         page = await _safe_inspect(self.browser, max_chars=10000)
@@ -119,16 +148,39 @@ class SearchSiteSkill:
                 page_url=page.url or url,
                 page_text=page.text,
             )
-        await upsert_preference(self.db_path, "maya_active_workflow", f"browser:{self.spec.workflow_prefix}:search:{query}", source="skill")
-        return _search_reply(self.spec, query, page.url or url, options, page.title)
+            options = grounded_browser_options(options, page.text)
+        return page, options
 
     async def _open_result(self, request: str) -> str:
         rank = _rank_from_text(request)
         target = _target_from_click_request(request)
+        note_browser_intent({"open_rank": rank, "open_target": target})
         if _sensitive_browser_action(request):
             return "This browser action looks sensitive. I will stop before login, payment, private data, posting, or account changes."
+        recovery_note = ""
+        visible = await _safe_result_options(self.browser)
+        recovery_query = ""
+        if target and not _options_match_target(visible, target):
+            recovery_query = target
+        elif not visible:
+            recovery_query = await self._last_search_query()
+            if not recovery_query:
+                return (
+                    f"{self.spec.name} skill has no results page open and no previous "
+                    f"{self.spec.name} search to reopen. Tell me what to search first."
+                )
+        if recovery_query:
+            await self._search_once(self.spec.search_url_prefix + quote_plus(recovery_query), recovery_query)
+            recovery_note = f"note: no matching results were on screen, so I searched '{recovery_query}' again first."
+            await self._wait_for_results()
         try:
             raw = await asyncio.to_thread(self.browser.click_search_result, target, rank)
+            if not raw.startswith("CLICKED_RESULT:") and target:
+                raw = await asyncio.to_thread(self.browser.click_search_result, "", rank)
+            if not raw.startswith("CLICKED_RESULT:"):
+                # Results pages render late on SPA sites; wait once and retry.
+                await self._wait_for_results()
+                raw = await asyncio.to_thread(self.browser.click_search_result, "", rank)
             await asyncio.to_thread(time.sleep, 1.0)
             page = await _safe_inspect(self.browser, max_chars=5000)
         except Exception as exc:
@@ -138,11 +190,14 @@ class SearchSiteSkill:
         await upsert_preference(self.db_path, "maya_active_workflow", f"browser:{self.spec.workflow_prefix}:opened_result:{rank}", source="skill")
         if _sensitive_page(page.text, page.url):
             return f"{self.spec.name} skill opened a result, but I am stopping because the page looks sensitive.\nURL: {page.url}"
-        return (
-            f"{self.spec.name} skill opened a visible result.\n"
-            f"clicked: {raw.split(':', 1)[1].strip()}\n"
-            + page_summary(page, max_lines=6)
-        )
+        lines = [
+            f"{self.spec.name} skill opened a visible result.",
+            f"clicked: {raw.split(':', 1)[1].strip()}",
+        ]
+        if recovery_note:
+            lines.append(recovery_note)
+        lines.append(page_summary(page, max_lines=6))
+        return "\n".join(lines)
 
     async def _record_skill(self, request: str) -> None:
         await _record_site_skill(self.db_path, self.spec.skill_id, self.spec.name, self.spec.description, request, f"iMac {self.spec.workflow_prefix}_skill")
@@ -152,7 +207,7 @@ class GoogleCloudConsoleSkill:
     def __init__(self, db_path: str, bridge: OSBridge | None = None):
         self.db_path = db_path
         self.bridge = bridge or OSBridge()
-        self.browser = BrowserController(self.bridge)
+        self.browser = make_browser_controller(bridge)
 
     async def run(self, request: str) -> str:
         if action_permission("gcp_use") != "allow" and action_permission("browse_web") != "allow":
@@ -205,7 +260,7 @@ async def _record_site_skill(db_path: str, skill_id: str, name: str, description
     await record_skill_usage(db_path, skill_id=skill_id, name=name, query=request, lane=lane, reason="browser capability routed to executable site skill")
 
 
-async def _safe_inspect(browser: BrowserController, *, max_chars: int):
+async def _safe_inspect(browser, *, max_chars: int):
     try:
         return await asyncio.to_thread(browser.inspect_page, max_chars)
     except Exception:
@@ -214,7 +269,7 @@ async def _safe_inspect(browser: BrowserController, *, max_chars: int):
         return BrowserPage("", "", "")
 
 
-async def _safe_result_options(browser: BrowserController) -> list[str]:
+async def _safe_result_options(browser) -> list[str]:
     try:
         return await asyncio.to_thread(browser.inspect_search_results, 8)
     except Exception:
@@ -240,8 +295,6 @@ def _search_reply(spec: SiteSkillSpec, query: str, url: str, options: list[str],
     else:
         lines.append("visible results: none extracted from page text yet.")
     return "\n".join(lines)
-
-
 
 
 

@@ -30,14 +30,9 @@ def extract_flight_details(question: str, context: ActiveContext) -> FlightDetai
     dates = question_dates if question_dates else (_dates(joined) if use_context_dates else [])
     missing = []
     if not destination:
-        destination = "Osaka"
-        assumptions.append("destination Osaka because no destination was explicit")
+        missing.append("destination")
     if not dates:
-        if use_context_dates:
-            dates = ["August 30 2026"]
-            assumptions.append("departure August 30 2026 from current Japan trip context")
-        else:
-            missing.append("departure date")
+        missing.append("departure date")
     depart = dates[0] if dates else ""
     return_date = dates[1] if len(dates) > 1 else ""
     if return_date:

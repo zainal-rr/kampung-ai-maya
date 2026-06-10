@@ -74,7 +74,10 @@ async def _fake_polish(db_path: str, path: Path) -> tuple[str, bool]:
         for slide in deck.slides
         for shape in slide.shapes
     )
-    if "Seoul In 48 Hours" in text and "Save The Splurge For Dinner" in text:
+    # Markers match the current rescue template in pptx_slide_repair
+    # AS RENDERED (visual title rewriting keeps these two stable; the old
+    # "Save The Splurge For Dinner" marker drifted out of the template).
+    if "Seoul In 48 Hours" in text and "Follow The Neighborhood Spine" in text:
         return "Design polish: good. Rescue deck has a clear dark visual system.", False
     return "Design polish: draft-level. Forced first-attempt failure.", False
 

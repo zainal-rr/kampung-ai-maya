@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import os
 import re
 
 from assistant_command_helpers import confirmation_decision
@@ -20,6 +21,14 @@ from harness_workflows import classify_workflow
 from storage import delete_preference, get_preference, upsert_preference
 
 
+# Bare command verbs only count when the message *starts* with them, so chat like
+# "what type of pasta", "is the mall open today", or "press release" stays in the
+# normal conversation lanes instead of hijacking a harness workflow.
+START_COMMAND_RE = re.compile(
+    r"^(?:please\s+|maya[,\s]+)?"
+    r"(?:open|switch\s+to|press|type|draw|browse|google)\b",
+    re.IGNORECASE,
+)
 START_MARKERS = (
     "check flight",
     "find flight",
@@ -27,9 +36,7 @@ START_MARKERS = (
     "search flight",
     "search flights",
     "book flight",
-    "browse ",
     "search online",
-    "google",
     "make presentation",
     "create presentation",
     "write a word",
@@ -43,7 +50,6 @@ START_MARKERS = (
     "create an xlsx",
     "create an md",
     "make a markdown",
-    "draw ",
     "create drawing",
     "open project",
     "switch project",
@@ -51,10 +57,6 @@ START_MARKERS = (
     "repair maya",
     "book me a hotel",
     "look at my screen",
-    "open ",
-    "switch to ",
-    "press ",
-    "type ",
 )
 FOLLOWUP_MARKERS = (
     "continue",
@@ -101,9 +103,9 @@ FILE_OPEN_BYPASS_RE = re.compile(
 
 
 class HarnessRouter:
-    def __init__(self, db_path: str):
+    def __init__(self, db_path: str, planner_llm=None):
         self.db_path = db_path
-        self.runner = HarnessGraphRunner(db_path)
+        self.runner = HarnessGraphRunner(db_path, planner_llm=planner_llm)
         self.last_lane = "LangGraph harness"
         self.last_reason = "persistent workflow"
         self.last_cost_recorded = False
@@ -112,18 +114,20 @@ class HarnessRouter:
         cleaned = " ".join(text.strip().split())
         if not cleaned:
             return None
+        lowered = cleaned.lower()
+        if lowered in STOP_MARKERS:
+            # "stop workflow" must beat confirmation_decision, which would
+            # otherwise read it as a bare decline and drop it unhandled.
+            return await self._stop(channel)
         decision = confirmation_decision(cleaned)
         if decision:
             return await self._confirmation(decision, channel)
-        lowered = cleaned.lower()
         lowered_key = lowered.rstrip("?.! ")
         if lowered_key in COMMAND_BYPASS_MARKERS or FILE_OPEN_BYPASS_RE.match(cleaned):
             return None
         selection = await self._selection(cleaned, channel)
         if selection is not None:
             return selection
-        if lowered in STOP_MARKERS:
-            return await self._stop(channel)
         if lowered in RESUME_MARKERS or lowered == "continue":
             await self._save_resume_choices(channel)
             return await build_resume_summary(self.db_path, channel)
@@ -151,7 +155,7 @@ class HarnessRouter:
     async def _start(self, text: str, channel: str) -> str:
         workflow_type = classify_workflow(text)
         run_id = new_run_id()
-        thread_id = _thread_id(workflow_type, text, run_id)
+        thread_id = _thread_id(run_id)
         state = initial_harness_state(
             run_id=run_id,
             thread_id=thread_id,
@@ -159,6 +163,8 @@ class HarnessRouter:
             user_text=text,
             workflow_type=workflow_type,
         )
+        if self.runner.planner_llm is not None and os.getenv("MAYA_AGENTIC_LOOP", "0") == "1":
+            state["agentic_loop"] = True
         result = await self.runner.run(state)
         self._remember_route(result)
         return str(result.get("final_response") or "I started the workflow.")
@@ -280,7 +286,9 @@ class HarnessRouter:
 
 
 def _is_start(lowered: str) -> bool:
-    return any(marker in lowered for marker in START_MARKERS)
+    return bool(START_COMMAND_RE.match(lowered)) or any(
+        marker in lowered for marker in START_MARKERS
+    )
 
 
 def _is_followup(lowered: str) -> bool:
@@ -289,8 +297,8 @@ def _is_followup(lowered: str) -> bool:
     return any(marker in lowered for marker in FOLLOWUP_MARKERS)
 
 
-def _thread_id(workflow_type: str, text: str, run_id: str) -> str:
-    return f"harness:background:{run_id.removeprefix('task_')}" if run_id.startswith("task_") else f"harness:{run_id}"
+def _thread_id(run_id: str) -> str:
+    return f"harness:{run_id}"
 
 
 def _continuing_prefix(active: dict) -> str:

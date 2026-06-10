@@ -241,10 +241,9 @@ async def main() -> None:
         _require(_office_can_open(sheet_files[0]), "xlsx should open without repair")
         cost_sheet = await assistant.handle_text("make an Excel tracker for Kampung AI cost", "telegram")
         _, cost_files = split_file_markers(cost_sheet)
-        _require(cost_files and _zip_has(cost_files[0], "xl/workbook.xml"), "cost xlsx missing workbook")
-        cost_text = _workbook_text(cost_files[0])
-        _require("Grok Voice Agent" in cost_text, "cost xlsx did not use local cost lanes")
-        _require("Malaysian Ministry" not in cost_text, "cost xlsx used wrong public topic")
+        _require(not cost_files, "retired Kampung AI cost workbook should not attach a file")
+        _require("/cost" in cost_sheet, "retired Kampung AI cost workbook should point to /cost")
+        _require("Grok Voice Agent" not in cost_sheet, "retired cost reply leaked old workbook lane")
         try:
             await _model_draft_smoke(db_path)
             await _failure_smoke(db_path)

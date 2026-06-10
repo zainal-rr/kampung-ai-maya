@@ -37,7 +37,7 @@ async def main() -> None:
         async def fake_review(db_path: str, topic: str, slides):
             return slides
 
-        async def fake_create(db_path: str, path: Path, title: str, slides, run_id: str, last_doc_key: str, auto_improve: bool = True):
+        async def fake_create(db_path: str, path: Path, title: str, slides, run_id: str, last_doc_key: str, auto_improve: bool = True, visual_image_max: int | None = None):
             create_pptx(path, title, slides)
             return PptxQualityResult(False, ["slide 2 has truncated text"], [], 0, "")
 
@@ -49,8 +49,15 @@ async def main() -> None:
         try:
             router = DocumentActionRouter(db_path, workspace=Path(tmp) / "Maya")
             reply = await router.handle("make me a Seoul food trip deck in PowerPoint", "telegram")
-            _, markers = split_file_markers(reply or "")
-            _require(not markers, "rejected PPTX should not attach files in Telegram by default")
+            clean_reply, markers = split_file_markers(reply or "")
+            # Current delivery policy: a QA-rejected deck is still attached,
+            # but only with an explicit honest not-final warning so the user
+            # can inspect it without mistaking it for an accepted artifact.
+            _require(markers, "rejected PPTX should attach the draft for inspection")
+            _require(
+                "not calling it final" in clean_reply.lower(),
+                "rejected PPTX delivery must carry the honest not-final warning",
+            )
         finally:
             da.draft_markdown_with_gemini = old_draft
             da.should_use_model_draft = old_should

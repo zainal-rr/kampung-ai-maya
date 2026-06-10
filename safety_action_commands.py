@@ -41,9 +41,11 @@ def _looks_like_delete_file(text: str) -> bool:
 
 
 def _looks_like_private_exposure(text: str) -> bool:
-    if not contains_sensitive_info(text):
-        return False
     if _looks_like_safe_sensitive_guidance(text):
+        return False
+    if re.search(r"\b(publish|push|share|expose|make public)\b.*\bsecrets?\b", text):
+        return True
+    if not contains_sensitive_info(text):
         return False
     exposure_verbs = (
         "send",

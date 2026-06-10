@@ -2,11 +2,14 @@ from __future__ import annotations
 
 import asyncio
 import re
+import time
 from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import quote_plus
 
-from browser_control import BrowserController, element_summary, page_summary
+from browser_control import BrowserPage, element_summary, note_browser_intent, page_summary
+from browser_driver import make_browser_controller
+from browser_site_skill_helpers import _extract_visible_options
 from permission_policy import action_permission, contains_sensitive_info, hard_no_private_exposure_text
 from skill_store import init_skill_db, record_skill_usage, upsert_skill
 from storage import upsert_preference
@@ -29,7 +32,7 @@ class BrowserSkill:
     def __init__(self, db_path: str, bridge: OSBridge | None = None):
         self.db_path = db_path
         self.bridge = bridge or OSBridge()
-        self.browser = BrowserController(self.bridge)
+        self.browser = make_browser_controller(bridge)
 
     async def run(self, request: str) -> str:
         if action_permission("browse_web") != "allow":
@@ -67,6 +70,7 @@ class BrowserSkill:
     async def _search(self, query: str) -> str:
         if not query:
             return "What should I search for?"
+        note_browser_intent({"query": query})
         await asyncio.to_thread(self.browser.open_search_new_tab, query)
         await upsert_preference(self.db_path, "maya_active_workflow", f"browser:search:{query}", source="skill")
         return f"Browser skill opened a Google search for: {query}"
@@ -74,10 +78,36 @@ class BrowserSkill:
     async def _image_search(self, query: str) -> str:
         if not query:
             return "What image topic should I search for?"
-        url = "https://www.google.com/search?tbm=isch&q=" + quote_plus(query)
+        note_browser_intent({"image_query": query})
+        url = "https://www.google.com/search?udm=2&q=" + quote_plus(query)
         await asyncio.to_thread(self.browser.open_new_tab_url, url)
+        await asyncio.to_thread(time.sleep, 1.5)
+        page, options = await self._inspect_image_results()
         await upsert_preference(self.db_path, "maya_active_workflow", f"browser:image_search:{query}", source="skill")
-        return f"Browser skill opened Google Images for: {query}"
+        lines = [f"Browser skill opened Google Images for: {query}", f"url: {page.url or url}"]
+        if options:
+            lines.append("visible image results:")
+            lines.extend(f"{idx}) {item}" for idx, item in enumerate(options[:5], 1))
+        else:
+            lines.append(
+                "visible image results: none readable from the page text yet. "
+                "The images may be visible on screen, but I could not extract their titles or sources."
+            )
+        return "\n".join(lines)
+
+    async def _inspect_image_results(self) -> tuple[BrowserPage, list[str]]:
+        try:
+            page = await asyncio.to_thread(self.browser.inspect_page, 9000)
+        except Exception:
+            page = BrowserPage("", "", "")
+        try:
+            raw = await asyncio.to_thread(self.browser.inspect_search_results, 8)
+        except Exception:
+            raw = []
+        options = [item for item in raw if len(item) >= 12]
+        if not options:
+            options = _extract_visible_options(page.text)
+        return page, options
 
     async def _inspect(self) -> str:
         try:

@@ -56,7 +56,7 @@ async def main() -> None:
         db_path = str(Path(tmp) / "smoke.db")
         await init_db(db_path)
         router = HumanBrowserWorkflowRouter(db_path, bridge, FakeScreen())
-        started = await router.handle("check flight to Penang tomorrow", "telegram")
+        started = await router.handle("check flight to Penang tomorrow", "imac")
         _require("flight options" in started.lower(), "flight browser state did not start")
         unrelated = await router.handle("how does that relate to the Word document test we did earlier?", "telegram")
         _require(unrelated is None, "unrelated chat follow-up should not become a browser filter")

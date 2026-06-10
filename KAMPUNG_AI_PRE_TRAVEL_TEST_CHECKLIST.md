@@ -17,10 +17,10 @@ This checklist focuses the last physical iMac testing window before Zainal is aw
 11) [ ] Create a Word document: `write a Word document about AI agents in 2026`.
 12) [ ] Confirm Telegram sends the `.docx` file.
 13) [ ] Open the Word file and confirm the content is useful, structured, and not generic filler.
-14) [ ] Create an Excel file: `make an Excel tracker for Kampung AI cost`.
-15) [ ] Confirm Telegram sends the `.xlsx` file.
-16) [ ] Open the Excel file and confirm it does not ask for repair.
-17) [ ] Confirm Excel has useful headers, rows, and basic structure.
+14) [ ] Confirm `make an Excel tracker for Kampung AI cost` redirects to `/cost` instead of creating a separate internal workbook.
+15) [ ] Create an Excel file: `make an Excel tracker for Tokyo dining costs`.
+16) [ ] Confirm Telegram sends the `.xlsx` file and Excel opens it without repair.
+17) [ ] Confirm Excel has useful travel/dining headers, rows, and basic structure.
 
 ## 2) Office Quality Pass Criteria
 

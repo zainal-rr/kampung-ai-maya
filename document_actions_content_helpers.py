@@ -19,26 +19,25 @@ def _strip_quality_words(topic: str) -> str:
     return re.sub(r"\b(quick|rough|starter|simple|just draft)\b", " ", topic, flags=re.I).strip(" .") or topic
 
 
-def _kampung_ai_cost_topic(topic: str) -> bool:
+def _retired_kampung_ai_cost_topic(topic: str) -> bool:
     low = topic.lower()
     if _saas_tracker_topic(topic):
         return False
-    internal_markers = (
+    cost_markers = (
+        "cost",
+        "budget",
+        "spend",
         "usage",
         "token",
         "tokens",
         "provider calls",
         "voice seconds",
-        "grok",
-        "xai",
-        "gemini",
-        "claude",
         "api cost",
         "model cost",
+        "cost tracker",
+        "usage tracker",
     )
-    return "kampung ai" in low and any(word in low for word in ("cost", "budget", "spend", "usage", "tracker")) and any(
-        marker in low for marker in internal_markers
-    )
+    return "kampung ai" in low and any(marker in low for marker in cost_markers)
 
 
 def _saas_tracker_topic(topic: str) -> bool:
@@ -51,15 +50,13 @@ def _saas_tracker_topic(topic: str) -> bool:
 def _excel_lane(topic: str) -> str:
     if _saas_tracker_topic(topic):
         return "Local SaaS cost tracker workbook"
-    if _kampung_ai_cost_topic(topic):
-        return "Local Kampung AI cost tracker"
     if is_kampung_ai_testing_comparison(topic):
         return "Local Kampung AI testing comparison"
     return "Gemini Flash role-based spreadsheet draft"
 
 
 def _internal_excel_topic(topic: str) -> bool:
-    return _kampung_ai_cost_topic(topic) or _saas_tracker_topic(topic) or is_kampung_ai_testing_comparison(topic)
+    return _saas_tracker_topic(topic) or is_kampung_ai_testing_comparison(topic)
 
 
 def _prefixed_lane(lane: str, preflight: ArtifactPreflight | None) -> str:
@@ -67,6 +64,13 @@ def _prefixed_lane(lane: str, preflight: ArtifactPreflight | None) -> str:
 
 
 def _budget_topic(topic: str) -> bool:
+    from excel_species import detect_excel_species
+
+    if detect_excel_species(topic):
+        # A domain species (content calendar, inventory, research log, ...)
+        # should not be flattened into the generic budget skeleton just
+        # because the topic says "tracker".
+        return False
     low = topic.lower()
     budget_markers = ("budget", "budgeting", "expense", "cost", "spend", "spending", "tracker", "trip")
     food_markers = ("food", "restaurant", "restaurants", "meal", "meals", "mill", "mills", "mail", "mails", "dining", "cafe", "cafes")
@@ -84,6 +88,12 @@ def _travel_budget_topic(topic: str) -> bool:
 
 
 def _task_tracker_topic(topic: str) -> bool:
+    from excel_species import detect_excel_species
+
+    if detect_excel_species(topic):
+        # Domain trackers (YouTube, farm, research, ...) get their own schema
+        # instead of the shared office Task/Owner/Priority skeleton.
+        return False
     lowered = topic.lower()
     if any(word in lowered for word in ("budget", "expense", "cost", "variance", "spend")):
         return False

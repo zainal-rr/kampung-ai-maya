@@ -168,7 +168,7 @@ def _secret_issues(path: Path, demo: str, *, block_private_home: bool = False) -
         for pattern in SECRET_PATTERNS
         if pattern.search(text)
     ]
-    if block_private_home and "/Users/zainalabidinjamal/" in text:
+    if block_private_home and f"{Path.home()}/" in text:
         issues.append(EvidenceIssue(demo, f"private local home path found in {_rel(path)}"))
     return issues
 
@@ -183,7 +183,7 @@ def _redacted_results(results: list[dict[str, Any]]) -> list[dict[str, Any]]:
 
 
 def _redact_text(text: str) -> str:
-    return text.replace("/Users/zainalabidinjamal", "<user-home>")
+    return text.replace(str(Path.home()), "<user-home>")
 
 
 def _read_json(path: Path) -> dict[str, Any]:

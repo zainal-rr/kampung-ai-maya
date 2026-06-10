@@ -38,6 +38,10 @@ class HarnessState(TypedDict, total=False):
     executable_steps: list[str]
     approval_required: bool
     self_heal_checkpoint: dict
+    agentic_loop: bool
+    goal_satisfied: bool
+    max_steps: int
+    planned_action: dict
 
 
 def initial_harness_state(

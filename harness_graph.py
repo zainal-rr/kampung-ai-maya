@@ -5,21 +5,48 @@ from typing import Literal
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langgraph.graph import END, START, StateGraph
 
+import asyncio
+
 from browser_agent_state import task_type_for
+from canonical_memory import upsert_canonical_memory
+from domain_knowledge import domain_knowledge_context
 from harness_state import HarnessState
 from harness_artifact_store import record_structured_artifact
 from harness_checkpoint_migration import snapshot_or_migrate
 from harness_execution import execute_with_ledger
+from harness_llm_planner import LlmCall, choose_next_action, plan_with_llm, verify_goal
 from harness_observation_store import record_observation
 from harness_store import create_approval, finish_run, record_artifact, record_event, upsert_run
 from harness_tools import HarnessTools
 from harness_workflows import classify_workflow, next_step_for, plan_for, workflow_for_action
+from maya_permission_kernel import MayaPermissionKernel
+
+# Budget for the opt-in agentic loop: hard ceiling on execute passes per run.
+MAX_STEPS = 8
+
+# Registry tools the loop can route through the existing workflow executors.
+# Tools outside this map (and without an inline handler) fall back to the
+# normal workflow execution for the original instruction.
+_AGENTIC_TOOL_WORKFLOWS = {
+    "browser.inspect": "browser",
+    "browser.click": "browser",
+    "screen.capture": "screen",
+    "docx.create": "document",
+    "xlsx.create": "document",
+    "pptx.create": "document",
+    "file.create": "document",
+}
 
 
 class HarnessGraphRunner:
-    def __init__(self, db_path: str):
+    def __init__(self, db_path: str, planner_llm: LlmCall | None = None):
         self.db_path = db_path
         self.tools = HarnessTools(db_path)
+        # Optional model hook (prompt -> response). When set and a run carries
+        # agentic_loop=True, planning and goal verification become model-driven
+        # and the graph may loop verify -> plan within the MAX_STEPS budget.
+        self.planner_llm = planner_llm
+        self.permission_kernel = MayaPermissionKernel()
 
     async def run(self, state: HarnessState) -> HarnessState:
         state["thread_id"] = state.get("thread_id") or f"harness:{state['run_id']}"
@@ -110,7 +137,11 @@ class HarnessGraphRunner:
         })
         graph.add_edge("approval_gate", "finish")
         graph.add_edge("observe", "verify")
-        graph.add_edge("verify", "memory_update")
+        graph.add_conditional_edges("verify", self._after_verify, {
+            "continue": "plan",
+            "finish": "memory_update",
+            "fail": "fail",
+        })
         graph.add_edge("memory_update", "finish")
         graph.add_edge("finish", END)
         graph.add_edge("fail", END)
@@ -130,7 +161,32 @@ class HarnessGraphRunner:
         return state
 
     async def _plan(self, state: HarnessState) -> HarnessState:
-        if not state.get("plan"):
+        agentic = bool(state.get("agentic_loop")) and self.planner_llm is not None
+        if agentic and int(state.get("current_step") or 0) > 0:
+            await record_event(
+                self.db_path,
+                state["run_id"],
+                "loop_iteration",
+                f"step {int(state.get('current_step') or 0)} of {int(state.get('max_steps') or MAX_STEPS)}",
+            )
+        if agentic:
+            if not state.get("plan"):
+                state["plan"] = await plan_with_llm(dict(state), self.planner_llm)
+            # Per-step domain retrieval: each loop pass re-queries the skill
+            # knowledge bases with the current instruction, so multi-part
+            # goals pull the recipe relevant to *this* step.
+            step_text = state.get("last_user_instruction") or state.get("goal") or state.get("user_text", "")
+            knowledge, domain_skill = await asyncio.to_thread(domain_knowledge_context, step_text)
+            if domain_skill:
+                await record_event(self.db_path, state["run_id"], "domain_knowledge", domain_skill.skill_id)
+            state["planned_action"] = await choose_next_action(dict(state), self.planner_llm, knowledge)
+            await record_event(
+                self.db_path,
+                state["run_id"],
+                "agentic_action",
+                str(state["planned_action"].get("tool") or ("done" if state["planned_action"].get("done") else "unknown")),
+            )
+        elif not state.get("plan"):
             state["plan"] = plan_for(state.get("workflow_type", "general"))
         await record_event(self.db_path, state["run_id"], "plan", ", ".join(state["plan"]))
         return state
@@ -143,6 +199,12 @@ class HarnessGraphRunner:
     async def _execute(self, state: HarnessState) -> HarnessState:
         state["graph_status"] = "executing"
         approved = state.get("approval_result") == "approved"
+        agentic = bool(state.get("agentic_loop")) and self.planner_llm is not None
+        action = dict(state.get("planned_action") or {})
+        if agentic and action:
+            handled = await self._execute_agentic_action(state, action, approved)
+            if handled is not None:
+                return handled
         result = await execute_with_ledger(self.db_path, self.tools, state, approved)
         state["final_response"] = result.message or _resume_message(state)
         state["current_step"] = int(state.get("current_step") or 0) + 1
@@ -173,6 +235,71 @@ class HarnessGraphRunner:
         await record_event(self.db_path, state["run_id"], "execute", result.status)
         return state
 
+    async def _execute_agentic_action(self, state: HarnessState, action: dict, approved: bool) -> HarnessState | None:
+        """Consume the planner's chosen action. Returns the updated state when
+        the action was fully handled here, or None to fall through to the
+        normal workflow executor (with workflow/text possibly remapped)."""
+        run_id = state["run_id"]
+        if action.get("done"):
+            answer = str(action.get("answer") or "").strip()
+            state["final_response"] = answer or state.get("final_response") or "Goal reported complete by planner."
+            state["current_step"] = int(state.get("current_step") or 0) + 1
+            state["last_successful_step"] = "planner_done"
+            state["next_suggested_step"] = "workflow complete"
+            state["keep_open"] = False
+            state["model_lane"] = "agentic planner"
+            await record_event(self.db_path, run_id, "execute", "planner_done")
+            return state
+        tool_name = str(action.get("tool") or "").replace("_", ".", 1) if "." not in str(action.get("tool") or "") else str(action.get("tool"))
+        args = dict(action.get("args") or {})
+        decision = self.permission_kernel.check(tool_name, args=args)
+        if decision.decision == "deny":
+            state["final_response"] = decision.reason
+            state["current_step"] = int(state.get("current_step") or 0) + 1
+            state["last_successful_step"] = "tool_denied"
+            state["keep_open"] = False
+            state["planned_action"] = {"done": True, "answer": decision.reason}
+            await record_event(self.db_path, run_id, "tool_denied", f"{tool_name}: {decision.reason}")
+            return state
+        if decision.decision == "confirm" and not approved:
+            state["pending_approval"] = {"action": tool_name, "details": str(args)[:500]}
+            state["final_response"] = f"Approval required before {tool_name}."
+            state["current_step"] = int(state.get("current_step") or 0) + 1
+            state["graph_status"] = "waiting_approval"
+            await record_event(self.db_path, run_id, "approval_required", tool_name)
+            return state
+        if tool_name == "memory.write":
+            content = str(args.get("content") or "").strip()
+            if content:
+                memory_id = await upsert_canonical_memory(
+                    self.db_path,
+                    raw_text=content,
+                    content=content,
+                    kind=str(args.get("kind") or "lesson"),
+                    scope=str(args.get("scope") or "global"),
+                    source_channel="agentic_loop",
+                    source_ref=run_id,
+                    confidence="medium",
+                )
+                state["final_response"] = f"Recorded memory {memory_id}."
+            else:
+                state["final_response"] = "Planner asked to write memory without content; skipped."
+            state["current_step"] = int(state.get("current_step") or 0) + 1
+            state["last_successful_step"] = tool_name
+            await record_event(self.db_path, run_id, "execute", f"agentic {tool_name}")
+            return state
+        workflow = _AGENTIC_TOOL_WORKFLOWS.get(tool_name)
+        if workflow:
+            # Remap this pass to the matching workflow executor and fall through.
+            state["workflow_type"] = workflow
+            instruction = " ".join(str(v) for v in args.values() if isinstance(v, str)).strip()
+            if instruction:
+                state["user_text"] = instruction
+            await record_event(self.db_path, run_id, "agentic_remap", f"{tool_name} -> {workflow}")
+            return None
+        await record_event(self.db_path, run_id, "tool_unmapped", tool_name)
+        return None
+
     async def _observe(self, state: HarnessState) -> HarnessState:
         state["graph_status"] = "observing"
         note = state.get("final_response", "")[:400]
@@ -184,6 +311,13 @@ class HarnessGraphRunner:
         state["graph_status"] = "verifying"
         ok = bool(state.get("final_response"))
         state["last_error"] = "" if ok else "No final response produced."
+        if bool(state.get("agentic_loop")) and self.planner_llm is not None and ok:
+            # Model-driven goal check: only an explicit NO keeps the loop open.
+            state["goal_satisfied"] = await verify_goal(dict(state), self.planner_llm)
+        else:
+            # Without a planner the loop has no way to know it is unfinished,
+            # so treat the goal as satisfied and keep single-pass behavior.
+            state["goal_satisfied"] = True
         await record_event(self.db_path, state["run_id"], "verify", "passed" if ok else "failed")
         return state
 
@@ -228,6 +362,19 @@ class HarnessGraphRunner:
         if state.get("last_error"):
             return "fail"
         return "observe"
+
+    @staticmethod
+    def _after_verify(state: HarnessState) -> Literal["continue", "finish", "fail"]:
+        if state.get("last_error"):
+            return "fail"
+        if not state.get("agentic_loop"):
+            return "finish"
+        if state.get("keep_open") or state.get("pending_approval"):
+            return "finish"
+        budget = int(state.get("max_steps") or MAX_STEPS)
+        if state.get("goal_satisfied") or int(state.get("current_step") or 0) >= budget:
+            return "finish"
+        return "continue"
 
 
 def _resume_message(state: HarnessState) -> str:

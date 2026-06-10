@@ -83,7 +83,7 @@ The lane name is still Artisan. Codex is the implementation engine behind it. Wo
 
 | Channel | Role |
 | --- | --- |
-| Telegram | Remote text, photo, voice-note, file delivery, route/cost audit, document follow-up, memory commands, `/complex` |
+| Telegram | Remote text, photo, voice-note, file delivery, route/cost audit, document follow-up, memory commands, `/complex`. Closed by default: only chat ids in `TELEGRAM_ALLOWED_CHAT_IDS` are answered; all other senders are rejected and logged. |
 | iMac voice | Primary local conversational body, short answers, live status, and in-session starts for longer Maya work |
 | Mudra Link | Pass-through local input only: Mudra Link Mouse Mode may send existing iMac hotkeys, with Twist mapped to `Option + Space` and Double Twist mapped to `Option + Escape`. Maya has no active Mudra adapter, SDK listener, or gesture runtime. |
 | Screen sight | One-shot active-screen context when explicitly active or when local iMac voice asks for visible context |
@@ -102,6 +102,19 @@ Model text is not the final artifact. Real artifacts are created through local f
 | Excel | Domain-specific rows, formulas, totals, formatting, notes/source columns when useful, pastel headers only, local workbook validation |
 | PowerPoint | Dark/editorial default unless asked otherwise, short visible slide text, speaker notes, images where useful, aspect-ratio checks, render QA, Claude review |
 | HTML/app | Project-folder workflow for serious apps, valid HTML/CSS/JS, browser smoke where possible, local QA, review/repair |
+
+Document species decide the shape before the model writes. Word intents
+(`word_quality.py`) cover proposals, technical guides, itineraries with exact
+Day 1..N coverage, checklists, SOPs, workshop plans, investor briefs, and
+strategy docs. Excel species (`excel_species.py`) give domain trackers,
+content calendars, research logs, inventories, dev trackers, and formula-driven
+financial models their own schemas instead of one shared skeleton. Deck
+species (`deck_species.py`) select both the narrative arc (travel, technical,
+teaching, review, pitch, issue/awareness) and a species visual identity
+(`office_pptx_palette.py`): accent system, layout rhythm, and species-tinted
+backgrounds within the dark and pastel families. All species routing is
+deterministic and replay-safe; `document_species_smoke.py` pins it with real
+prompt shapes.
 
 Natural follow-ups update the latest active artifact in place unless the user asks for a new version. If QA fails, Maya restores the original and reports that the update failed instead of sending a rejected artifact as final.
 
@@ -122,6 +135,24 @@ Core rules:
 9. Memory canaries are long-term trust probes for active, forgotten, temporary, project, and pinned memory. Canary checks must prove forgotten values do not leak through canonical active rows, preferences, lessons, raw history, session search, summaries, weekly summaries, or curated memory.
 
 Maya Desk and `/memory inspect` surface recent audit events and canary status so memory drift is visible instead of silently accumulating.
+
+## Domain Knowledge Packs
+
+Skills can carry knowledge bases. Any skill file in `maya_skills/active/` with
+a `## Knowledge Base` section becomes a domain pack: its trigger phrases are
+the routing configuration, and `domain_knowledge.py` retrieves matching
+content from the pack's docs tree into the prompt (deterministic lexical
+retrieval, word-boundary triggers, phrase vetoes, whole-recipe retrieval for
+anything under `recipes/`, hard token budget, and silence when nothing clears
+the minimum-overlap bar). Retrieval activations are logged to the skill usage
+store as `domain:<skill_id>`.
+
+Current packs: `network_engineering` (`docs/networking/`: architecture,
+protocols, IOS-XE recipes) and `finance_credit_analysis` (`docs/finance/`:
+credit/liquidity/earnings concepts plus worked analysis recipes with explicit
+formulas). Adding a new domain requires no code: one skill file plus a docs
+tree following the pack's recipe contract. Proposed packs stay inert until
+promoted to `maya_skills/active/`.
 
 ## In-Session Voice Work
 
@@ -150,6 +181,17 @@ Browser actions require verification: visible text, URL, title, target presence,
 
 Self-healing is the first priority target because it directly improves reliability. `/complex self heal Maya after approval` creates a checkpointed run with `diagnose`, `snapshot`, `plan_patch`, `await_approval`, `apply_patch_isolated`, `verify`, `repair_once`, `final_report`, and `failed` states. Snapshot is mandatory before mutation. Memory-only self-heal writes rollback snapshots; isolated repair work pauses for a second approval before mutation. Repo changes, deployment, restart, broad refactors, destructive operations, and apply-back from isolated worktrees still require explicit approval.
 
+The harness graph also supports an opt-in agentic loop (`MAYA_AGENTIC_LOOP=1`
+plus the GPT planner from `assistant_model_lanes.build_harness_planner`).
+When active, runs iterate plan → execute → verify within a hard budget of 8
+steps: the planner proposes the next tool call or declares the goal done
+(`harness_llm_planner.py`), the permission kernel gates every proposed tool
+(deny → honest refusal, sensitive → the normal approval pause), domain
+knowledge is re-retrieved per step, and the trace records `loop_iteration`,
+`agentic_action`, and `domain_knowledge` events. With the flag off (default)
+the graph is byte-identical to the single-pass behavior.
+`harness_agentic_deep_smoke.py` pins all three paths deterministically.
+
 ## Safety Boundary
 
 | Action | Default |
@@ -175,10 +217,10 @@ Current conservative operational estimate:
 | Document creation | 90% |
 | Memory architecture | 87% |
 | Weekly memory automation | 85% |
-| Browser/agent workflow | 78-80% |
+| Browser/agent workflow | 90-92% |
 | Agentic workflow | 82% |
 | Hardware/Blender/Maker | 65-70% |
-| Overall Kampung AI | 82-84% |
+| Overall Kampung AI | 84-86% |
 
 Use `docs/proof_and_readiness.md` and Maya Desk for detailed proof status.
 

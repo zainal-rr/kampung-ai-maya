@@ -72,7 +72,7 @@ async def fake_review(db_path: str, topic: str, slides):
     return slides
 
 
-async def fake_powerpoint_qa(db_path, path, title, slides, run_id, last_doc_key, auto_improve=True):
+async def fake_powerpoint_qa(db_path, path, title, slides, run_id, last_doc_key, auto_improve=True, **_kwargs):
     from office_modern_files import create_pptx
     from storage import upsert_preference
 

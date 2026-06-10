@@ -1,7 +1,10 @@
 from __future__ import annotations
 
+import asyncio
+import re
 from dataclasses import dataclass
 
+from domain_knowledge import domain_knowledge_context
 from skill_learning_store import get_skill_learning_metadata, increment_skill_usage
 from skill_outcome_store import record_skill_outcome
 from skill_store import latest_skill_usage, list_custom_skills, record_skill_usage
@@ -41,14 +44,18 @@ BUILT_IN_SKILLS = (
     SkillDefinition("html_app_artifact_quality", "HTML App Artifact Quality", "Quality standards and review gates for Maya-created single-file HTML apps.", "bounded", "policy_guard", ("html", "web app", "single-file app", "mini app")),
     SkillDefinition("travel_research", "Travel Research", "Search flight options, compare prices, dates, baggage, and timing before any booking.", "bounded", "policy_guard", ("flight", "flights", "ticket", "airline", "travel", "booking")),
     SkillDefinition("network_troubleshooting", "Network Troubleshooting", "Run basic local network checks and create Word troubleshooting notes when the explanation is lengthy.", "bounded", "policy_guard", ("network", "wifi", "internet", "router", "dns", "troubleshoot")),
-    SkillDefinition("checkout_guard", "Checkout Guard", "Stop before purchases, payments, bookings, uploads, or private data exposure unless Zainal confirms.", "sensitive", "chat_confirmation", ("buy", "book", "pay", "checkout", "passport", "card", "payment")),
+    SkillDefinition("checkout_guard", "Checkout Guard", "Stop before purchases, payments, bookings, uploads, or private data exposure unless Zainal confirms.", "sensitive", "chat_confirmation", ("buy", "book a", "book me", "book the", "booking", "pay", "checkout", "passport", "card", "payment")),
     SkillDefinition("cloud_accounts", "Cloud Accounts", "Use configured Cloudflare and GCP accounts under the permission policy.", "bounded", "policy_guard", ("cloudflare", "gcp", "google cloud", "wrangler", "gcloud")),
     SkillDefinition("google_cloud_console", "Google Cloud Console", "Open and inspect Google Cloud Console read-only pages. Destructive, billing, IAM, deploy, and credential actions require approval.", "bounded", "policy_guard", ("google cloud console", "gcp console", "cloud run", "logs explorer")),
-    SkillDefinition("telegram_send", "Telegram Send", "Send messages or reports to Telegram after approval.", "sensitive", "chat_confirmation", ("telegram", "send", "share")),
+    SkillDefinition("telegram_send", "Telegram Send", "Send messages or reports to Telegram after approval.", "sensitive", "chat_confirmation", ("telegram", "send", "share this", "share the", "share it", "share with")),
     SkillDefinition("voice_reply", "Voice Reply", "Speak through Ara/xAI or local macOS fallback voice.", "safe", "none", ("voice", "speak", "audio")),
     SkillDefinition("imac_control", "iMac Control", "Run safe local iMac actions like notifications and app switching.", "sensitive", "chat_confirmation", ("imac", "app", "volume", "fullscreen")),
     SkillDefinition("skill_scaffold", "Skill Scaffold", "Draft a new Maya skill spec and scaffold for review.", "sensitive", "chat_confirmation", ("skill", "create skill", "new ability")),
 )
+
+
+def _keyword_match(keyword: str, lowered_text: str) -> bool:
+    return bool(re.search(rf"(?<![a-z0-9]){re.escape(keyword.strip())}(?![a-z0-9])", lowered_text))
 
 
 class SkillRegistry:
@@ -73,7 +80,9 @@ class SkillRegistry:
         lowered = query.lower()
         relevant = []
         for skill in BUILT_IN_SKILLS:
-            score = sum(1 for keyword in skill.keywords if keyword in lowered)
+            # Word-boundary matching: bare substrings caused spurious skill
+            # injection ("pay" matched "repayments", "ai" matched "plain").
+            score = sum(1 for keyword in skill.keywords if _keyword_match(keyword, lowered))
             if score:
                 relevant.append((score, skill))
         relevant.sort(key=lambda item: item[0], reverse=True)
@@ -83,8 +92,19 @@ class SkillRegistry:
         custom_lines = [f"- {row['name']}: {row['description']}" for row in matching_custom[:2]]
         skill_lines = [f"- {item.name}: {item.description}" for _, item in relevant[:limit]]
         lines = skill_lines + custom_lines
-        if not lines:
+        knowledge, domain_skill = await asyncio.to_thread(domain_knowledge_context, query)
+        if domain_skill and knowledge:
+            await record_skill_usage(
+                self.db_path,
+                skill_id=f"domain:{domain_skill.skill_id}",
+                name=domain_skill.name,
+                query=query,
+                reason="domain knowledge retrieval",
+            )
+        if not lines and not knowledge:
             return ""
+        if not lines:
+            return knowledge
         for _, item in relevant[:limit]:
             await record_skill_usage(
                 self.db_path,
@@ -102,7 +122,8 @@ class SkillRegistry:
                 reason="active custom skill",
             )
             await increment_skill_usage(self.db_path, str(row["skill_id"]))
-        return "Relevant skills:\n" + "\n".join(lines)
+        context = "Relevant skills:\n" + "\n".join(lines)
+        return f"{context}\n\n{knowledge}" if knowledge else context
 
     async def record_latest_outcome(self, query: str, channel: str, lane: str, response: str) -> None:
         events = [event for event in await latest_skill_usage(self.db_path, limit=8) if str(event["query"]) == query]

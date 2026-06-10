@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 
+from excel_species import detect_excel_species, species_rows
 from word_quality import canonicalize_word_sections
 from office_drafter_powerpoint import _clean_slides, _general_powerpoint_slides, _scenario_powerpoint_slides
 from office_text_utils import _plain
@@ -40,6 +41,9 @@ def slides_from_markdown(markdown: str, title: str) -> list[tuple[str, list[str]
 def spreadsheet_from_markdown(topic: str, markdown: str) -> tuple[list[str], list[list[str]]]:
     if _looks_like_comparison(topic):
         return _comparison_rows(topic, markdown)
+    species = detect_excel_species(topic)
+    if species:
+        return species_rows(species, topic, sections_from_markdown(markdown, topic))
     if _looks_like_tracker(topic):
         return _tracker_rows(markdown)
     rows: list[list[str]] = []

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from typing import Any, Mapping
 
@@ -20,6 +19,21 @@ class PermissionDecision:
     cost_risk: str = "unknown"
 
 
+def _args_text(args: Mapping[str, Any] | None) -> str:
+    """Extract human-readable text from tool args for the permission policy.
+
+    The policy's markers and exposure starters are written for natural language,
+    not JSON syntax, so feed it the string values rather than a serialized blob.
+    """
+    parts: list[str] = []
+    for value in dict(args or {}).values():
+        if isinstance(value, str):
+            parts.append(value)
+        elif isinstance(value, (list, tuple)):
+            parts.extend(str(item) for item in value if isinstance(item, str))
+    return " ".join(parts)
+
+
 class MayaPermissionKernel:
     def __init__(self, registry: MayaToolRegistry | None = None):
         self.registry = registry or default_maya_tool_registry()
@@ -32,7 +46,7 @@ class MayaPermissionKernel:
         args: Mapping[str, Any] | None = None,
     ) -> PermissionDecision:
         spec = self.registry.get(tool_name)
-        payload = json.dumps(dict(args or {}), sort_keys=True, default=str)
+        payload = _args_text(args)
         if not spec:
             return PermissionDecision(
                 "confirm",

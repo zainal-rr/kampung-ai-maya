@@ -72,7 +72,7 @@ async def main() -> None:
 
         reply = await run_browser_capability(db_path, "google images modern kampung house", bridge=bridge)
         _require("Google Images" in reply, "google images did not run")
-        _require("tbm=isch" in bridge.urls[-1], "google images URL missing image mode")
+        _require("udm=2" in bridge.urls[-1], "google images URL missing image mode")
 
         reply = await run_browser_capability(db_path, "find flight to Penang June 7 2026", bridge=bridge)
         _require("Flight search skill used" in reply, "flight child skill did not run")

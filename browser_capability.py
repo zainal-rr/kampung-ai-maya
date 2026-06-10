@@ -3,7 +3,8 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from browser_control import BrowserController
+from browser_control import note_browser_route
+from browser_driver import make_browser_controller
 from browser_site_skills import (
     run_google_cloud_console_skill,
     run_google_search_skill,
@@ -36,6 +37,9 @@ class BrowserCapabilityRoute:
 
 async def run_browser_capability(db_path: str, request: str, *, bridge: OSBridge | None = None) -> str:
     route = route_browser_capability(request)
+    note_browser_route(route.child_skill, route.reason)
+    if route.child_skill == "google_images":
+        return await run_browser_skill(db_path, request, bridge=bridge)
     if route.child_skill == "flight_search":
         return await run_flight_search_skill(db_path, request, fill=True, bridge=bridge)
     if route.child_skill == "airbnb_stay_search":
@@ -250,7 +254,7 @@ async def _open_frequent_site(db_path: str, route: BrowserCapabilityRoute, *, br
     permission = "travel_search" if route.site_category == "travel" else "browse_web"
     if action_permission(permission) != "allow":
         return "I need your confirmation before opening that site."
-    browser = BrowserController(bridge)
+    browser = make_browser_controller(bridge)
     browser.open_new_tab_url(route.site_url)
     await upsert_preference(db_path, "maya_active_workflow", f"browser:site:{route.site_id}:{route.site_url}", source="skill")
     boundary = f" Boundary: {route.site_policy}" if route.site_policy else ""

@@ -70,6 +70,7 @@ async def main() -> None:
     os.environ["TELEGRAM_SEND_VOICE_NOTE"] = "1"
     os.environ["TELEGRAM_VOICE_INCLUDE_TEXT"] = "0"
     os.environ["XAI_API_KEY"] = "test-key"
+    os.environ["TELEGRAM_ALLOWED_CHAT_IDS"] = "1"
     with tempfile.TemporaryDirectory(prefix="maya-telegram-voice-policy-") as tmp:
         db_path = str(Path(tmp) / "test.db")
         await init_db(db_path)

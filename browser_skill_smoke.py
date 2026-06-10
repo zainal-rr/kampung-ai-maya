@@ -52,7 +52,9 @@ async def main() -> None:
 
         reply = await run_browser_skill(db_path, "find google images of modern kampung house", bridge=bridge)
         _require("Google Images" in reply, "image search reply missing")
-        _require(bridge.urls[-1] == "https://www.google.com/search?tbm=isch&q=modern+kampung+house", "wrong image search URL")
+        _require("udm=2" in bridge.urls[-1], "image search should use the current Google Images URL format")
+        _require("visible image results" in reply, "image search must report extracted results or admit it cannot read them")
+        _require(bridge.urls[-1] == "https://www.google.com/search?udm=2&q=modern+kampung+house", "wrong image search URL")
 
         reply = await run_browser_skill(db_path, "search for best lightweight drone", bridge=bridge)
         _require("Google search" in reply, "web search reply missing")

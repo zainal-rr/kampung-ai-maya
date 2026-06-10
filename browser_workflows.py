@@ -4,7 +4,8 @@ import asyncio
 import re
 
 from browser_agent_state import BrowserAgentState, observation_id, task_type_for
-from browser_control import BrowserController, element_summary, page_summary
+from browser_control import element_summary, page_summary
+from browser_driver import make_browser_controller
 from browser_cost_policy import escalation_decision, local_decision
 from browser_followup_policy import looks_like_general_question, looks_like_writing_or_advice_request
 from permission_policy import action_permission, contains_sensitive_info, hard_no_private_exposure_text, safe_sensitive_guidance
@@ -27,7 +28,7 @@ class HumanBrowserWorkflowRouter:
     def __init__(self, db_path: str, bridge: OSBridge | None = None, screen=None):
         self.db_path = db_path
         self.bridge = bridge or OSBridge()
-        self.browser = BrowserController(self.bridge)
+        self.browser = make_browser_controller(bridge)
         self.screen = screen or MacScreenService()
 
     async def handle(self, text: str, channel: str) -> str | None:

@@ -65,8 +65,12 @@ SENSITIVE_MARKERS = (
     "otp",
     "2fa",
     "api key",
-    "token",
-    "secret",
+    "api token",
+    "access token",
+    "auth token",
+    "bearer token",
+    "client secret",
+    "secret key",
     "private key",
     "seed phrase",
     "recovery phrase",
@@ -79,9 +83,9 @@ SECRET_PATTERNS = (
     re.compile(r"ghp_[A-Za-z0-9_]{20,}"),
     re.compile(r"glpat-[A-Za-z0-9_-]{20,}"),
     re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----"),
-    re.compile(r"\b(?:\d[ -]*?){13,19}\b"),
     re.compile(r"\b\d{6}\b.*\b(?:otp|2fa|code)\b", re.IGNORECASE),
 )
+CARD_CANDIDATE_RE = re.compile(r"\b(?:\d[ -]?){13,19}\b")
 EXPOSURE_STARTERS = (
     "show",
     "tell me",
@@ -111,10 +115,33 @@ def path_needs_confirmation(path: str | Path) -> bool:
     return any(part in text for part in SENSITIVE_PATH_PARTS)
 
 
+def _luhn_ok(digits: str) -> bool:
+    total = 0
+    for index, char in enumerate(reversed(digits)):
+        digit = int(char)
+        if index % 2 == 1:
+            digit *= 2
+            if digit > 9:
+                digit -= 9
+        total += digit
+    return total % 10 == 0
+
+
+def looks_like_card_number(text: str) -> bool:
+    """Luhn-validated card detection: avoids flagging timestamps and phone numbers."""
+    for match in CARD_CANDIDATE_RE.finditer(text):
+        digits = re.sub(r"[ -]", "", match.group())
+        if 13 <= len(digits) <= 19 and _luhn_ok(digits):
+            return True
+    return False
+
+
 def contains_sensitive_info(text: str) -> bool:
     lowered = " ".join(text.lower().split())
-    return any(marker in lowered for marker in SENSITIVE_MARKERS) or any(
-        pattern.search(text) for pattern in SECRET_PATTERNS
+    return (
+        any(marker in lowered for marker in SENSITIVE_MARKERS)
+        or any(pattern.search(text) for pattern in SECRET_PATTERNS)
+        or looks_like_card_number(text)
     )
 
 

@@ -131,7 +131,9 @@ async def _validate_created(kind: str, path_text: str, prompt: str) -> tuple[boo
             local = await asyncio.to_thread(validate_docx_path, path, prompt)
             enough_text = len(text.split()) >= 180
             topic_ok = _topic_fit(prompt, text)
-            return enough_text and topic_ok and (local.passed or len(text.split()) >= 260), (
+            # Local QA must pass outright. A long document with failing QA
+            # (for example missing day headings) is a failure, not a pass.
+            return enough_text and topic_ok and local.passed, (
                 f"word chars={len(text)} words={len(text.split())} topic_fit={topic_ok} qa={local.summary} issues={local.issues[:3]}"
             )
         if kind == "excel":

@@ -2,23 +2,37 @@ from __future__ import annotations
 
 import re
 
+from deck_species import detect_deck_species
 from office_text_utils import _complete, _plain
-from office_drafter_deck_scenarios import _browser_deck, _proposal_deck, _technical_deck, _travel_deck, _travel_food_deck
+from office_drafter_deck_scenarios import (
+    _browser_deck,
+    _issue_deck,
+    _pitch_deck,
+    _proposal_deck,
+    _review_deck,
+    _teaching_deck,
+    _technical_deck,
+    _travel_deck,
+    _travel_food_deck,
+)
+
+
+_SPECIES_ARCS = {
+    "browser": _browser_deck,
+    "food": _travel_food_deck,
+    "travel": _travel_deck,
+    "technical": _technical_deck,
+    "teaching": _teaching_deck,
+    "review": _review_deck,
+    "pitch": _pitch_deck,
+    "issue": _issue_deck,
+    "proposal": _proposal_deck,
+}
 
 
 def _scenario_powerpoint_slides(title: str, sections: list[tuple[str, list[str]]]) -> list[tuple[str, list[str]]]:
-    lowered = title.lower()
-    if any(word in lowered for word in ("browser", "google search", "google images", "youtube", "reddit", "google flights", "booking.com", "airbnb")):
-        return _browser_deck(title, sections)
-    if any(word in lowered for word in ("food", "restaurant", "cafe")):
-        return _travel_food_deck(title, sections)
-    if any(word in lowered for word in ("trip", "travel", "itinerary", "flight", "hotel", "airbnb", "hiking")):
-        return _travel_deck(title, sections)
-    if any(word in lowered for word in ("router", "wifi", "wi-fi", "network", "setup", "technical", "config", "configuration", "security", "architecture")):
-        return _technical_deck(title, sections)
-    if any(word in lowered for word in ("proposal", "business case", "roadmap", "strategy", "quality", "plan")):
-        return _proposal_deck(title, sections)
-    return []
+    arc = _SPECIES_ARCS.get(detect_deck_species(title))
+    return arc(title, sections) if arc else []
 
 
 
@@ -47,15 +61,40 @@ def _general_powerpoint_slides(title: str, sections: list[tuple[str, list[str]]]
             "Use the supporting details as a presenter note, not slide clutter.",
         ])))
     if len(slides) < 5:
-        slides.append((
+        slides.append(_general_closing_slide(title))
+    return slides
+
+
+def _general_closing_slide(title: str) -> tuple[str, list[str]]:
+    """Deterministic, topic-keyed closing so general decks stop sharing one
+    universal ending. No randomness: replay and smokes stay stable."""
+    lowered = title.lower()
+    if any(word in lowered for word in ("decide", "decision", "choose", "compare", "option", "buy")):
+        return (
             "The next step is to choose the decision path.",
             [
                 "Confirm the goal, owner, and success criteria.",
                 "Identify the missing inputs that would change the recommendation.",
                 "Turn the deck into an action plan after review.",
             ],
-        ))
-    return slides
+        )
+    if any(word in lowered for word in ("explain", "overview", "what is", "introduction", "understanding", "history", "concern", "impact")):
+        return (
+            "Three things worth remembering.",
+            [
+                "Restate the single most important fact from the deck.",
+                "Name the misconception this topic usually attracts.",
+                "Point to where to learn more or verify the details.",
+            ],
+        )
+    return (
+        "Where this goes next.",
+        [
+            "State the immediate next action and who takes it.",
+            "List what to watch over the coming weeks.",
+            "Set the trigger that would bring this topic back for review.",
+        ],
+    )
 
 
 def _clean_slides(slides: list[tuple[str, list[str]]], fallback_title: str) -> list[tuple[str, list[str]]]:

@@ -14,7 +14,7 @@ Use `KAMPUNG_AI_PRE_TRAVEL_TEST_CHECKLIST.md` for the focused Office, conversati
 6) [ ] Confirm `/cost` shows the compact cost ledger.
 7) [ ] Confirm `create an md file about router setup` creates and sends a Markdown file.
 8) [ ] Confirm `write a Word document about AI agents in 2026` creates and sends a Word file.
-9) [ ] Confirm `make an Excel tracker for Kampung AI cost` creates and sends an Excel file.
+9) [ ] Confirm `make an Excel tracker for Kampung AI cost` redirects to `/cost`; no separate internal cost workbook is required.
 10) [ ] Confirm `make a presentation about AI agents in 2026` creates and sends a PowerPoint file.
 11) [ ] Confirm `/screen` toggles screen sight on.
 12) [ ] Confirm `what am i doing on screen now` uses a fresh screen observation.

@@ -84,6 +84,7 @@ def _target_from_script(script: str) -> str:
 
 
 async def main() -> None:
+    FlightSearchSkill.RESULT_WAIT_TIMEOUT = 0.6  # fake pages never show live result markers
     with tempfile.TemporaryDirectory(prefix="maya-flight-skill-") as tmp:
         db_path = str(Path(tmp) / "smoke.db")
         await init_db(db_path)

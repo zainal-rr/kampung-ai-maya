@@ -3,7 +3,8 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
-from browser_control import BrowserController, element_summary, page_summary
+from browser_control import element_summary, page_summary
+from browser_driver import make_browser_controller
 from browser_workflows import HumanBrowserWorkflowRouter
 from document_actions import DocumentActionRouter
 from drawing_actions import DrawingActionRouter
@@ -244,7 +245,7 @@ def _kind_for_path(path: str, fallback: str) -> str:
 
 def _browser_observation() -> GroundedObservation | None:
     try:
-        controller = BrowserController()
+        controller = make_browser_controller()
         page = controller.inspect_page(max_chars=1800)
         elements = controller.inspect_elements(max_items=12)
     except Exception as exc:

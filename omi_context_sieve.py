@@ -61,6 +61,7 @@ async def ingest_omi_decision(db_path: str, decision: OmiSieveDecision, *, sourc
         source_channel="omi",
         confidence=decision.confidence,
         source_ref=source_ref,
+        allow_resurrect=False,
     )
 
 

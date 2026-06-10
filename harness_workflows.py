@@ -7,6 +7,10 @@ from harness_state import HarnessState
 
 def classify_workflow(text: str) -> str:
     lowered = " ".join(text.lower().split())
+    if any(marker in lowered for marker in ("self heal", "self-heal", "repair maya", "fix maya")):
+        # Self-heal outranks generic keywords: "self heal the browser smoke"
+        # is a repair request, not a browsing request.
+        return "self_heal"
     if any(marker in lowered for marker in ("visual workflow", "workflow diagram", "architecture diagram", "mermaid visual", "flow diagram", "map this idea visually")):
         return "document"
     if any(word in lowered for word in ("document", "docx", "markdown", "presentation", "pptx", "excel", "xlsx", "spreadsheet", "sheet", "draw", "folder", "file")):

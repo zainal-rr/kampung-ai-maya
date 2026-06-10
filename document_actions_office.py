@@ -24,9 +24,9 @@ from document_actions_content_helpers import (
     _budget_topic,
     _excel_lane,
     _internal_excel_topic,
-    _kampung_ai_cost_topic,
     _prefixed_lane,
     _quick_request,
+    _retired_kampung_ai_cost_topic,
     _saas_tracker_rows,
     _saas_tracker_topic,
     _strip_quality_words,
@@ -223,17 +223,19 @@ class DocumentOfficeMixin:
         return f"{message}\n" + "\n".join(markers) if markers else message
 
     async def _create_excel(self, topic: str, project_scoped: bool, channel: str) -> str:
+        if _retired_kampung_ai_cost_topic(topic):
+            self.last_model_lane = "Telegram /cost usage estimate"
+            self.last_cost_recorded = False
+            return (
+                "I don't create a separate Kampung AI cost workbook anymore. "
+                "Use /cost for the live usage estimate. If you need a file later, ask me to export /cost."
+            )
         preflight = None if _internal_excel_topic(topic) else await self._artifact_preflight("xlsx", topic)
         self.last_model_lane = _prefixed_lane(_excel_lane(topic), preflight)
         self.last_cost_recorded = bool(preflight and preflight.cost_recorded)
         path = await self._path("xlsx", topic, project_scoped)
         if not path_allowed(path):
             return f"I can't write to {path}."
-        if _kampung_ai_cost_topic(topic):
-            headers, rows = await kampung_ai_cost_rows(self.db_path)
-            headers, rows = await style_table(self.db_path, headers, rows)
-            await asyncio.to_thread(create_xlsx, path, "Kampung AI Cost Tracker", headers, rows)
-            return await self._finish_excel(path, "Kampung AI cost tracker", topic, project_scoped, channel)
         if _saas_tracker_topic(topic):
             headers, rows = _saas_tracker_rows(topic)
             headers, rows = await style_table(self.db_path, headers, rows)

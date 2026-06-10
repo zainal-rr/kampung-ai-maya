@@ -22,6 +22,34 @@ from browser_control_js import (
 )
 
 
+_RECORDER = None
+
+
+def set_browser_recorder(recorder) -> None:
+    """Install (or clear with None) a live-run recorder for browser steps."""
+    global _RECORDER
+    _RECORDER = recorder
+
+
+def browser_recorder():
+    return _RECORDER
+
+
+def note_browser_intent(payload: dict) -> None:
+    if _RECORDER is not None:
+        _RECORDER.note_intent(payload)
+
+
+def note_browser_route(skill: str, reason: str) -> None:
+    if _RECORDER is not None:
+        _RECORDER.note_route(skill, reason)
+
+
+def _emit(action: str, *, target: str = "", value: str = "", result: str = "", url: str = "", title: str = "", text_hash: str = "") -> None:
+    if _RECORDER is not None:
+        _RECORDER.record_step(action, target=target, value=value, result=result, url=url, title=title, text_hash=text_hash)
+
+
 @dataclass(frozen=True)
 class BrowserPage:
     title: str
@@ -69,14 +97,19 @@ class BrowserClickResult:
 
 
 class BrowserController:
+    DRIVER = "applescript"
+
     def __init__(self, bridge: OSBridge | None = None, app_name: str = "Google Chrome"):
         self.bridge = bridge or OSBridge()
         self.app_name = app_name
 
     def open_search(self, query: str) -> None:
-        self.bridge.open_url("https://www.google.com/search?q=" + quote_plus(query), self.app_name)
+        url = "https://www.google.com/search?q=" + quote_plus(query)
+        _emit("open_url", target="google_search", value=query, url=url)
+        self.bridge.open_url(url, self.app_name)
 
     def open_new_tab_url(self, url: str) -> None:
+        _emit("open_url", url=url)
         opener = getattr(self.bridge, "open_url_new_tab", None)
         if opener:
             opener(url, self.app_name)
@@ -101,7 +134,9 @@ class BrowserController:
             "end tell"
         )
         raw = self.bridge._run_applescript(script)
-        return _parse_page(raw)
+        page = _parse_page(raw)
+        _emit("inspect", url=page.url, title=page.title, text_hash=page.text_hash, result=f"chars={len(page.text)}")
+        return page
 
     def inspect_elements(self, max_items: int = 25) -> list[BrowserElement]:
         script = (
@@ -117,7 +152,9 @@ class BrowserController:
             items = json.loads(raw)
         except json.JSONDecodeError:
             return []
-        return [BrowserElement(str(item.get("label", "")), str(item.get("kind", ""))) for item in items if item.get("label")]
+        elements = [BrowserElement(str(item.get("label", "")), str(item.get("kind", ""))) for item in items if item.get("label")]
+        _emit("inspect_elements", result=f"count={len(elements)}")
+        return elements
 
     def inspect_search_results(self, max_items: int = 8) -> list[str]:
         script = (
@@ -140,6 +177,7 @@ class BrowserController:
             if not label:
                 continue
             results.append(f"{label} | {href}" if href else label)
+        _emit("inspect_results", result=f"count={len(results)}")
         return results
 
     def click_text(self, target: str) -> str:
@@ -151,7 +189,9 @@ class BrowserController:
             "return clickResult\n"
             "end tell"
         )
-        return self.bridge._run_applescript(script)
+        raw = self.bridge._run_applescript(script)
+        _emit("click", target=target, result=raw)
+        return raw
 
     def click_exact_text_last(self, target: str) -> str:
         script = (
@@ -162,7 +202,9 @@ class BrowserController:
             "return clickResult\n"
             "end tell"
         )
-        return self.bridge._run_applescript(script)
+        raw = self.bridge._run_applescript(script)
+        _emit("click_exact_last", target=target, result=raw)
+        return raw
 
     def click_visible_text(self, target: str) -> str:
         script = (
@@ -173,7 +215,9 @@ class BrowserController:
             "return clickResult\n"
             "end tell"
         )
-        return self.bridge._run_applescript(script)
+        raw = self.bridge._run_applescript(script)
+        _emit("click_visible", target=target, result=raw)
+        return raw
 
     def click_text_verified(self, target: str) -> BrowserClickResult:
         before = self.inspect_page(max_chars=1200)
@@ -186,10 +230,12 @@ class BrowserController:
                 before.text_hash, after.text_hash, before.modal_state, after.modal_state, present_after,
             )
         label = raw.split(":", 1)[1].strip()
-        return BrowserClickResult(
+        result = BrowserClickResult(
             "clicked", target, label, before.title, before.url, after.title, after.url,
             before.text_hash, after.text_hash, before.modal_state, after.modal_state, present_after,
         )
+        _emit("click_verified", target=target, result=f"verified={result.verified} changed={result.changed}", url=after.url)
+        return result
 
     def fill_field(self, target: str, value: str) -> str:
         script = (
@@ -200,7 +246,9 @@ class BrowserController:
             "return fillResult\n"
             "end tell"
         )
-        return self.bridge._run_applescript(script)
+        raw = self.bridge._run_applescript(script)
+        _emit("fill", target=target, value=value, result=raw)
+        return raw
 
     def click_price_result(self, target: str = "") -> str:
         script = (
@@ -211,7 +259,9 @@ class BrowserController:
             "return clickResult\n"
             "end tell"
         )
-        return self.bridge._run_applescript(script)
+        raw = self.bridge._run_applescript(script)
+        _emit("click_price_result", target=target, result=raw)
+        return raw
 
     def click_search_result(self, target: str = "", rank: int = 1) -> str:
         script = (
@@ -222,7 +272,9 @@ class BrowserController:
             "return clickResult\n"
             "end tell"
         )
-        return self.bridge._run_applescript(script)
+        raw = self.bridge._run_applescript(script)
+        _emit("click_search_result", target=f"rank={rank} {target}".strip(), result=raw)
+        return raw
 
     def target_visible(self, target: str) -> bool:
         script = (
@@ -234,6 +286,26 @@ class BrowserController:
             "end tell"
         )
         return self.bridge._run_applescript(script).strip().lower() == "true"
+
+    def close_active_tab_or_blank(self) -> str:
+        """Close the active tab, keeping one blank tab so Chrome does not fan out."""
+        script = (
+            f'tell application "{self.app_name}"\n'
+            "if (count of windows) is 0 then return \"NO_WINDOW\"\n"
+            "tell front window\n"
+            "if (count of tabs) > 1 then\n"
+            "close active tab\n"
+            "return \"CLOSED_TAB\"\n"
+            "else\n"
+            "set URL of active tab to \"about:blank\"\n"
+            "return \"BLANKED_ONLY_TAB\"\n"
+            "end if\n"
+            "end tell\n"
+            "end tell"
+        )
+        raw = self.bridge._run_applescript(script)
+        _emit("close_tab", result=raw)
+        return raw
 
 
 def page_summary(page: BrowserPage, max_lines: int = 8) -> str:

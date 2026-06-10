@@ -1,6 +1,7 @@
 import asyncio
 import os
 import logging
+from pathlib import Path
 
 from models import TheSenses
 from hardware_event_store import record_hardware_event
@@ -88,10 +89,12 @@ class SieveNode:
             await asyncio.sleep(10) # Wait 10 seconds before next poll
 
 if __name__ == "__main__":
-    # Configuration
-    WATCH_DIR = "/Users/zainalabidinjamal/projects/kampung-ai/omi_sync"
-    DB_PATH = "/Users/zainalabidinjamal/projects/kampung-ai/session_history.db"
-    
+    # Configuration: env-driven, defaulting to paths relative to this repo.
+    _ROOT = Path(__file__).resolve().parent
+    WATCH_DIR = os.getenv("OMI_WATCH_DIR", str(_ROOT / "omi_sync"))
+    DB_PATH = os.getenv("KAMPUNG_DB_PATH", str(_ROOT / "session_history.db"))
+
+
     async def main():
         await init_db(DB_PATH)
         sieve = SieveNode(WATCH_DIR, DB_PATH)

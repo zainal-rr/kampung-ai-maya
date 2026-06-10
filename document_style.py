@@ -28,10 +28,11 @@ async def style_table(
     rows: list[list[str]],
 ) -> tuple[list[str], list[list[str]]]:
     styled_headers = [await style_document_text(db_path, item) for item in headers]
-    styled_rows = [
-        [await style_document_text(db_path, str(cell)) for cell in row]
-        for row in rows
-    ]
+    # Plain loop instead of a nested async comprehension: keeps the file
+    # compatible with Python 3.10 (the nested form requires 3.11+).
+    styled_rows: list[list[str]] = []
+    for row in rows:
+        styled_rows.append([await style_document_text(db_path, str(cell)) for cell in row])
     return styled_headers, styled_rows
 
 

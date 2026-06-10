@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import os
 import tempfile
 from pathlib import Path
 from types import SimpleNamespace
@@ -37,6 +38,7 @@ async def main() -> None:
         route_after_assistant = await last_route_text(db_path)
         _require("Gemini Flash text" in route_after_assistant, "assistant /route overwrote previous route")
 
+        os.environ["TELEGRAM_ALLOWED_CHAT_IDS"] = "123"
         channel = TelegramChannel("dummy", assistant)
         bot = FakeBot()
         update = SimpleNamespace(

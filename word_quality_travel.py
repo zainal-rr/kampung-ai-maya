@@ -7,7 +7,10 @@ from travel_parameters import destination_names_in_text, extract_destination
 
 def travel_day_headings(topic: str) -> tuple[str, ...]:
     days = explicit_day_count(topic) or default_travel_days(topic)
-    if 1 < days <= 4:
+    # A stated duration must produce one heading per day so a 9-day itinerary
+    # cannot hide behind a single "Daily Plan" section. 12 matches the largest
+    # word-number explicit_day_count can parse.
+    if 1 < days <= 12:
         return tuple(f"Day {index} Plan" for index in range(1, days + 1))
     return ("Daily Plan",)
 
@@ -57,7 +60,7 @@ def travel_consistency_issues(topic: str, paragraphs: list[str], headings: list[
     expected = explicit_day_count(topic) or default_travel_days(topic)
     issues: list[str] = []
     issues.extend(destination_consistency_issues(topic, paragraphs, headings))
-    if expected <= 1 or expected > 4:
+    if expected <= 1 or expected > 12:
         return issues
     heading_norms = [normalize_heading(heading) for heading in headings]
     missing = [f"Day {day} Plan" for day in range(1, expected + 1) if f"day {day} plan" not in heading_norms]

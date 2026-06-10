@@ -30,15 +30,33 @@ def main() -> None:
         dark_deck = Presentation(dark)
         default_dark_deck = Presentation(default_dark)
         pastel_deck = Presentation(pastel)
-        _require(_background_rgb(dark_deck) == "12161C", "dark PPTX background mismatch")
-        _require(_background_rgb(default_dark_deck) == "12161C", "default PPTX background should be dark")
-        _require(_background_rgb(pastel_deck) == "FAF8F4", "pastel PPTX background mismatch")
+        # Backgrounds are species-tinted within each theme family: technical
+        # keeps the base dark navy, food decks get the warm dark / blush cream
+        # variants. Dark variants must stay dark; pastel variants stay light.
+        _require(_background_rgb(dark_deck) == "12161C", "technical deck should keep the base dark background")
+        _require(_background_rgb(default_dark_deck) == "1C1211", "food deck should use the warm dark background")
+        _require(_background_rgb(pastel_deck) == "FBF3F0", "pastel food deck should use the blush cream background")
+        _require(_max_channel(default_dark_deck) < 80, "species dark background must stay dark")
+        _require(_min_channel(pastel_deck) > 200, "species pastel background must stay light")
     print("office_theme_smoke: ok")
 
 
 def _background_rgb(deck: Presentation) -> str:
     color = deck.slides[0].background.fill.fore_color.rgb
     return str(color)
+
+
+def _channels(deck: Presentation) -> tuple[int, int, int]:
+    rgb = _background_rgb(deck)
+    return int(rgb[0:2], 16), int(rgb[2:4], 16), int(rgb[4:6], 16)
+
+
+def _max_channel(deck: Presentation) -> int:
+    return max(_channels(deck))
+
+
+def _min_channel(deck: Presentation) -> int:
+    return min(_channels(deck))
 
 
 def _require(condition: bool, message: str) -> None:

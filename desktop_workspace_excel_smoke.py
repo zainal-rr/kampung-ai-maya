@@ -38,16 +38,10 @@ async def main() -> None:
         try:
             excel = await assistant.handle_text("make an Excel tracker for Kampung AI cost", "telegram")
             _, excel_files = split_file_markers(excel)
-            _require(
-                excel_files and excel_files[0].parent.resolve() == workspace_dir("spreadsheets").resolve(),
-                "xlsx not in Desktop Maya",
-            )
-            _require(_zip_has(excel_files[0], "xl/workbook.xml"), "xlsx workbook missing")
-            sheet_text = _workbook_text(excel_files[0])
-            _require("Grok Voice Agent" in sheet_text, "cost tracker did not use local Maya cost lanes")
-            _require("Malaysian Ministry" not in sheet_text, "cost tracker used public-topic content")
+            _require(not excel_files, "retired Kampung AI cost workbook should not be created")
+            _require("/cost" in excel, "retired Kampung AI cost workbook should point to /cost")
             artifacts = await latest_artifacts(db_path)
-            _require(any(item["kind"] == "spreadsheet" for item in artifacts), "xlsx artifact not tracked")
+            _require(not any(item["kind"] == "spreadsheet" for item in artifacts), "retired cost workbook should not be tracked")
 
             md = await assistant.handle_text("create an md file about daily notes", "telegram")
             _, md_files = split_file_markers(md)

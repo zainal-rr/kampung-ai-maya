@@ -23,10 +23,11 @@ Kampung AI treats Maya as a personal agent harness, not a single chatbot surface
 
 | Area | Current state |
 | --- | --- |
-| Telegram | Text, photo/image understanding, voice-note STT, file delivery, route/cost audit, memory commands, latest-document follow-up |
-| Office artifacts | Word, Excel, and PowerPoint creation/editing with local validation and Claude review gates |
-| Memory | Canonical save/recall/forget, weekly distillation path, Omi context sieve, self-heal memory dry run |
-| Harness | Thread manager, event store, tool registry, permission kernel, SDK facade, approval-gated workflows |
+| Telegram | Text, photo/image understanding, voice-note STT, file delivery, route/cost audit, memory commands, latest-document follow-up. Sender allowlist (`TELEGRAM_ALLOWED_CHAT_IDS`), closed by default |
+| Office artifacts | Word, Excel, and PowerPoint creation/editing with local validation and Claude review gates. Document species select structure per scenario (Word intents, Excel schema archetypes incl. formula-driven financial models, deck arcs with species visual identity) |
+| Memory | Canonical save/recall/forget, weekly distillation path, Omi context sieve, self-heal memory dry run. Forgotten facts cannot be resurrected by derived writers |
+| Harness | Thread manager, event store, tool registry, permission kernel, SDK facade, approval-gated workflows. Opt-in agentic loop (`MAYA_AGENTIC_LOOP=1`): GPT planner proposes tool steps, permission-gated, budgeted, with per-step knowledge retrieval |
+| Domain knowledge | Skill-driven retrieval packs (`domain_knowledge.py`): network engineering (`docs/networking/`) and finance/credit analysis (`docs/finance/`); new domains need a skill file plus a docs tree, no code |
 | Artisan/Codex | Local implementation handoff, app/project QA, apply-back approval boundary |
 | Blender/Maker | Template/export workflow for editable source, `.blend`, `.stl`, and print-safety status |
 | Proof surface | Local CI, scored evals, demo replay logs, hardening audit, Maya Desk |

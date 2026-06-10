@@ -44,10 +44,16 @@ class KampungAssistant:
         self.learning = LearningPipeline(db_path)
         self.vision_responder = VisionResponder(db_path)
         self.screen_responder = ScreenResponder(db_path)
-        self.harness = HarnessRouter(db_path)
         self.model_lanes = ModelLanes(db_path)
+        self.harness = HarnessRouter(db_path, planner_llm=self.model_lanes.build_harness_planner())
         self.imac_fast_responder = self.model_lanes.build_imac_fast_responder()
-        self.telegram_fast_responder = TheSenses(os.getenv("GOOGLE_API_KEY", "dummy"))
+        google_api_key = os.getenv("GOOGLE_API_KEY")
+        if not google_api_key:
+            logging.warning(
+                "GOOGLE_API_KEY is not set; Telegram fast lane will fail on live calls. "
+                "main.py enforces this at service startup via require_env."
+            )
+        self.telegram_fast_responder = TheSenses(google_api_key or "missing-google-api-key")
         self.router = AssistantRouter(
             commands=self.commands,
             learning=self.learning,
@@ -180,7 +186,7 @@ class KampungAssistant:
                 context_response = await handle_context_command(self.db_path, clean_text)
             except Exception:
                 logging.exception("Context command failed on channel %s", channel)
-            context_response = None
+                context_response = None
         command_response = None
         harness_response = None
         vision_response = None

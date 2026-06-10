@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from flight_search_models import FieldAttempt, FlightDetails, MONTHS
+from flight_search_models import FieldAttempt, FlightDetails, MONTHS, destination_match_tokens
 from travel_booking_safety import travel_booking_safety_footer
 
 
@@ -25,12 +25,12 @@ def _date_verified(labels: list[str], value: str) -> bool:
 
 def _current_trip_type(page_text: str) -> str:
     compact = "\n".join(line.strip() for line in page_text.splitlines() if line.strip())
-    match = re.search(r"\bFlights\s*\n\s*(One way|Round trip)\b", compact, re.I)
+    match = re.search(r"\bFlights?(?:\s+search)?\s*\n\s*(One way|Round trip)\b", compact, re.I)
     if match:
         return match.group(1).lower()
     lines = compact.splitlines()
     for idx, line in enumerate(lines):
-        if line == "Flights" and idx + 1 < len(lines):
+        if line in {"Flights", "Flight search"} and idx + 1 < len(lines):
             candidate = lines[idx + 1].strip().lower()
             if candidate in {"one way", "round trip"}:
                 return candidate
@@ -99,31 +99,49 @@ def _clarification_reply(details: FlightDetails) -> str:
 
 def extract_flight_options(text: str, destination: str, depart: str = "", limit: int = 5) -> list[str]:
     lines = [line.strip() for line in text.splitlines() if line.strip()]
-    options = []
     price_re = re.compile(r"\b(?:MYR|RM)\s*[\d,]+", re.I)
     date_tokens = _date_match_tokens(depart)
+    dest_tokens = destination_match_tokens(destination) if destination else ()
+    windows = []
     for idx, line in enumerate(lines):
         if not price_re.search(line):
             continue
-        window = lines[max(0, idx - 4): min(len(lines), idx + 5)]
-        joined = " | ".join(window)
-        if destination and destination.lower() not in joined.lower():
-            continue
-        if date_tokens and not any(token in joined.lower() for token in date_tokens):
-            continue
-        if joined not in options:
-            options.append(joined)
-        if len(options) >= limit:
-            break
-    if options:
-        return options
-    if date_tokens:
+        windows.append(" | ".join(lines[max(0, idx - 4): min(len(lines), idx + 5)]))
+
+    def dest_ok(joined: str) -> bool:
+        return not dest_tokens or any(re.search(rf"\b{re.escape(token)}\b", joined, re.I) for token in dest_tokens)
+
+    def date_ok(joined: str) -> bool:
+        return not date_tokens or any(token in joined.lower() for token in date_tokens)
+
+    def flight_row(joined: str) -> bool:
+        # Real flight cards show departure times or durations; home-page promo
+        # cards ("Penang Jul 9 - Jul 15 from MYR 256") do not.
+        return bool(re.search(r"\b\d{1,2}:\d{2}\s*[AP]M\b|\b\d+\s*hr\b|\b\d+\s*min\b", joined, re.I))
+
+    # Every accepted window must look like a real flight card (time/duration),
+    # which rejects home-page promo cards. Pass 1 additionally requires the
+    # departure date; pass 2 drops it because results pages show the date in
+    # the form header, not per option row.
+    for predicate in (
+        lambda joined: dest_ok(joined) and flight_row(joined) and date_ok(joined),
+        lambda joined: dest_ok(joined) and flight_row(joined),
+    ):
+        options: list[str] = []
+        for joined in windows:
+            if predicate(joined) and joined not in options:
+                options.append(joined)
+            if len(options) >= limit:
+                break
+        if options:
+            return options
+    if date_tokens or dest_tokens:
         return []
+    options = []
     for idx, line in enumerate(lines):
         if not price_re.search(line):
             continue
-        window = lines[max(0, idx - 3): min(len(lines), idx + 4)]
-        joined = " | ".join(window)
+        joined = " | ".join(lines[max(0, idx - 3): min(len(lines), idx + 4)])
         if joined not in options:
             options.append(joined)
         if len(options) >= limit:

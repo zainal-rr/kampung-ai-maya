@@ -32,7 +32,7 @@ class VoiceNode:
         self.db_path = db_path or os.getenv("KAMPUNG_DB_PATH")
         self.api_key = os.getenv("XAI_API_KEY")
         self.tts_url = "https://api.x.ai/v1/tts"
-        self.log_dir = Path("/Users/zainalabidinjamal/projects/kampung-ai/logs")
+        self.log_dir = Path(__file__).resolve().parent / "logs"
         self.log_dir.mkdir(parents=True, exist_ok=True)
         self.local_voice_en = os.getenv("MACOS_SAY_VOICE_EN", "Flo (English (US))")
         self.local_voice_ms = os.getenv("MACOS_SAY_VOICE_MS", "Amira")

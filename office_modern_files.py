@@ -11,7 +11,7 @@ from pptx.util import Inches
 
 from office_files import safe_slug
 from excel_style import sheet_title_for, style_basic_sheet
-from office_pptx_colors import DARK_BG, PASTEL_BG
+from office_pptx_palette import palette_for
 from office_pptx_layout import (
     _content_slide,
     _content_slide_visual,
@@ -79,20 +79,21 @@ def create_pptx(path: Path, title: str, slides: list[tuple[str, list[str]]], the
     path.parent.mkdir(parents=True, exist_ok=True)
     selected_theme = theme or choose_pptx_theme(title)
     visual_topic = _pptx_visual_topic(title)
+    palette = palette_for(title, selected_theme)
     deck = Presentation()
     deck.slide_width = Inches(13.333)
     deck.slide_height = Inches(7.5)
     for index, (heading, bullets) in enumerate(slides):
         slide = deck.slides.add_slide(deck.slide_layouts[6])
-        _paint_background(slide, DARK_BG if selected_theme == "dark" else PASTEL_BG)
+        _paint_background(slide, palette.background)
         visible_heading = _visual_title(heading, index)
         visible_bullets = _visual_bullets(bullets)
         if index == 0:
-            _title_slide(slide, visible_heading, visible_bullets, selected_theme)
+            _title_slide(slide, visible_heading, visible_bullets, selected_theme, palette)
         elif visual_topic:
-            _content_slide_visual(slide, visible_heading, visible_bullets, index, len(slides), selected_theme, title)
+            _content_slide_visual(slide, visible_heading, visible_bullets, index, len(slides), selected_theme, title, palette)
         else:
-            _content_slide(slide, visible_heading, visible_bullets, index, len(slides), selected_theme)
+            _content_slide(slide, visible_heading, visible_bullets, index, len(slides), selected_theme, palette)
         _speaker_notes(slide, heading, bullets)
     deck.save(path)
     return path

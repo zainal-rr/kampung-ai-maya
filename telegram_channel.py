@@ -42,14 +42,38 @@ class TelegramChannel:
         self.require_ara = os.getenv("TELEGRAM_REQUIRE_ARA", "1") == "1"
         self.include_text = os.getenv("TELEGRAM_VOICE_INCLUDE_TEXT", "0") == "1"
         self.delete_previous_voice = os.getenv("TELEGRAM_DELETE_PREVIOUS_VOICE", "1") == "1"
+        self.allowed_chat_ids = {
+            part.strip()
+            for part in os.getenv("TELEGRAM_ALLOWED_CHAT_IDS", "").split(",")
+            if part.strip()
+        }
+
+    def _authorized(self, update: Update) -> bool:
+        """Closed by default: only chat ids in TELEGRAM_ALLOWED_CHAT_IDS may talk to Maya."""
+        chat = update.effective_chat
+        if chat is None:
+            return False
+        if not self.allowed_chat_ids:
+            logger.warning(
+                "Rejected Telegram chat %s: TELEGRAM_ALLOWED_CHAT_IDS is not set.", chat.id
+            )
+            return False
+        if str(chat.id) in self.allowed_chat_ids:
+            return True
+        logger.warning("Rejected unauthorized Telegram chat %s.", chat.id)
+        return False
 
     async def handle_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        if not self._authorized(update):
+            return
         text = _update_text(update)
         if not text:
             return
         await self._handle_text(update, context, text)
 
     async def handle_voice_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        if not self._authorized(update):
+            return
         try:
             text = await transcribe_telegram_voice(update, context, self.assistant.db_path)
         except Exception as exc:
@@ -74,6 +98,8 @@ class TelegramChannel:
         await self._handle_text(update, context, text, input_type="voice note")
 
     async def handle_photo_message(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        if not self._authorized(update):
+            return
         started = time.monotonic()
         caption = (getattr(update.effective_message, "caption", "") or "").strip()
         prompt = caption or "[Telegram photo]"
@@ -94,6 +120,8 @@ class TelegramChannel:
             await self._record_turn(update, "photo", prompt, "failed", started, 0, exc.__class__.__name__)
 
     async def handle_command(self, update: Update, context: ContextTypes.DEFAULT_TYPE):
+        if not self._authorized(update):
+            return
         text = _update_text(update)
         if not text:
             return
@@ -219,11 +247,9 @@ class TelegramChannel:
             logger.info("Could not delete previous Telegram voice message %s: %s", message_id, exc)
 
     async def _should_send_voice(self, input_type: str) -> bool:
-        if input_type == "voice note":
-            return self.voice_replies or await voice_enabled(self.assistant.db_path)
-        if input_type == "command":
+        if input_type != "voice note":
             return False
-        return False
+        return self.voice_replies or await voice_enabled(self.assistant.db_path)
 
     async def run(self):
         app = (

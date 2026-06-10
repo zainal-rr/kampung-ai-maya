@@ -37,6 +37,23 @@ class ModelLanes:
             return TheNews(xai_api_key)
         return TheSenses(os.getenv("GOOGLE_API_KEY", "dummy"))
 
+    def build_harness_planner(self):
+        """Planner hook for the harness agentic loop (prompt str -> response str).
+
+        Returns None when the GPT lane has no key, which keeps the harness in
+        its single-pass template mode.
+        """
+        if not os.getenv("OPENAI_API_KEY"):
+            return None
+
+        async def planner_llm(prompt: str) -> str:
+            reply = await self.mind.chat([{"role": "user", "content": prompt}])
+            if self.db_path:
+                await record_usage(self.db_path, "gpt_harness_planner_calls", 1, "harness agentic loop")
+            return reply
+
+        return planner_llm
+
     @staticmethod
     def should_use_artisan_path(text: str) -> bool:
         return artisan_route_should_use(text)

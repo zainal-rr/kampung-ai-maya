@@ -45,19 +45,27 @@ def detect_word_intent(topic: str) -> str:
         return "meeting_notes"
     if _has_any(lowered, ("letter", "email", "refund request", "complaint", "resignation", "cover letter")):
         return "letter"
+    if _has_any(lowered, ("standard operating procedure", "operating procedure", "work instruction")) or re.search(r"\bsop\b", lowered):
+        return "sop"
+    if _has_any(lowered, ("investor", "fundraising", "fund raise", "fund-raise", "seed round", "series a")):
+        return "investor_brief"
     if _has_any(lowered, ("proposal", "pitch", "business case", "statement of work", "sow")):
         return "proposal"
     if _has_any(lowered, ("research", "brief", "market scan", "literature", "compare", "comparison", "analysis")):
         return "research_brief"
     if _has_any(lowered, ("checklist", "check list", "preflight", "pre travel", "pre-travel")):
         return "checklist"
+    if _has_any(lowered, ("workshop", "training day", "training session", "bootcamp", "hands-on session", "class plan", "lesson plan")):
+        return "workshop_plan"
     if _has_any(lowered, ("setup", "configure", "configuration", "install", "technical guide", "troubleshoot", "router", "network", "server", "api", "integration", "runbook")):
         return "technical_guide"
     if _has_any(lowered, ("travel", "trip", "itinerary", "holiday", "vacation", "flight", "hotel", "food trip")):
         return "travel_itinerary"
     if _has_any(lowered, ("report", "audit", "assessment", "postmortem", "post mortem", "review")):
         return "report"
-    if _has_any(lowered, ("plan", "roadmap", "strategy", "sprint", "workflow")):
+    if _has_any(lowered, ("strategy", "positioning", "go to market", "go-to-market", "content plan")):
+        return "strategy"
+    if _has_any(lowered, ("plan", "roadmap", "sprint", "workflow")):
         return "plan"
     if _has_any(lowered, ("explain", "explainer", "overview", "what is")):
         return "explainer"
@@ -161,6 +169,54 @@ def word_quality_spec(topic: str) -> WordQualitySpec:
                 "Avoid thin summaries that do not support a decision.",
             ),
             150,
+        )
+    if intent == "sop":
+        return WordQualitySpec(
+            intent,
+            "standard operating procedure",
+            ("Purpose And Scope", "Roles And Responsibilities", "Prerequisites", "Step-By-Step Procedure", "Quality Checks", "Exceptions And Escalation", "Revision Notes"),
+            (
+                "Write numbered, repeatable steps an operator can follow without asking questions.",
+                "Name the role responsible for each phase when the topic implies one.",
+                "State what to check before declaring the procedure complete, and where to escalate when it fails.",
+            ),
+            150,
+        )
+    if intent == "workshop_plan":
+        return WordQualitySpec(
+            intent,
+            "workshop plan",
+            ("Workshop Overview", "Learning Objectives", "Materials And Setup", "Session Schedule", "Team Roles", "Assessment And Judging", "Wrap Up And Follow Up"),
+            (
+                "Write a runnable session plan with timed blocks, not a report about workshops.",
+                "Learning objectives must be observable participant outcomes.",
+                "Include realistic materials, room setup, and a contingency for late or struggling teams.",
+            ),
+            150,
+        )
+    if intent == "investor_brief":
+        return WordQualitySpec(
+            intent,
+            "investor brief",
+            ("The Opportunity", "Problem And Timing", "Solution And Product", "Market And Competition", "Business Model", "Traction And Proof", "The Ask", "Key Risks"),
+            (
+                "Write for an investor deciding whether to take a meeting.",
+                "Lead with the opportunity and end with a concrete ask; keep claims checkable.",
+                "Separate proven traction from projections so credibility survives diligence.",
+            ),
+            170,
+        )
+    if intent == "strategy":
+        return WordQualitySpec(
+            intent,
+            "strategy document",
+            ("Strategic Goal", "Audience Or Market", "Strategic Pillars", "Positioning And Differentiation", "Execution Cadence", "Metrics And Review", "Risks", "Next Steps"),
+            (
+                "Anchor every pillar to the audience or market it serves.",
+                "Execution cadence must say what happens weekly or monthly, not vague ambitions.",
+                "Metrics must be measurable and tied to the strategic goal.",
+            ),
+            160,
         )
     if intent == "plan":
         return WordQualitySpec(
