@@ -14,11 +14,29 @@ from skill_store import find_skill
 from workspace_paths import workspace_dir
 
 
+_CREATION_VERBS = ("make", "create", "build", "draft", "generate", "prepare")
+_EXPLICIT_REVIEW_RE = re.compile(r"\b(review|critique|check)\s+(the|this|that|it|my|our|last|latest|previous)\b")
+
+
 def wants_presentation_review(text: str) -> bool:
-    low = text.lower()
-    return any(word in low for word in ("review", "critique", "check")) and any(
-        word in low for word in ("presentation", "ppt", "pptx", "slides", "deck")
-    )
+    """Review-intent detection with a creation guard.
+
+    Live bug 2026-06-11: "make a sprint review deck" matched the bare
+    ("review" AND "deck") substring test and Maya reviewed the previous deck
+    instead of creating one. Review-as-subject deck types (sprint review,
+    performance review, quarterly review) are creation requests. Rule:
+    creation verbs win unless the text explicitly says review THE/this/my/
+    last deck.
+    """
+    low = " ".join(text.lower().split())
+    has_deck_word = any(word in low for word in ("presentation", "ppt", "pptx", "slides", "deck"))
+    if not has_deck_word:
+        return False
+    padded = f" {low} "
+    has_creation_verb = any(f" {verb} " in padded for verb in _CREATION_VERBS)
+    if has_creation_verb and not _EXPLICIT_REVIEW_RE.search(low):
+        return False
+    return any(word in low for word in ("review", "critique", "check"))
 
 
 async def review_presentation_design(db_path: str, text: str) -> tuple[str, bool]:

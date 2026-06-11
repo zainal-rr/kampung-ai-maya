@@ -54,7 +54,7 @@ def rescue_slides(slides: list[tuple[str, list[str]]], title: str = "") -> list[
             ("Score Videos Before Watching", ["Topic fit", "Creator quality", "Practical examples"]),
             ("Prioritize Subscribed Channels", ["Known style", "Higher trust", "Faster decision"]),
             ("Turn Watching Into Notes", ["Key ideas", "Commands or links", "Practice task"]),
-            ("Recommendation: Watch Then Apply", ["Pick best video", "Summarize transcript", "Do one exercise"]),
+            ("Watch Then Apply", ["Pick best video", "Summarize transcript", "Do one exercise"]),
         ]
     if any(word in primary for word in ("drone", "uav", "inspection", "pilot", "aerial", "equipment")):
         return [
@@ -62,7 +62,7 @@ def rescue_slides(slides: list[tuple[str, list[str]]], title: str = "") -> list[
             ("Services Need Operational Discipline", ["Survey scope", "Flight checklist", "Client report format"]),
             ("Equipment Choices Shape Margin", ["Aircraft and payload", "Batteries and spares", "Insurance and maintenance"]),
             ("Compliance Must Be Built In", ["Flight permissions", "Safety perimeter", "Data handling"]),
-            ("Recommendation: Start Narrow", ["Pick two inspection packages", "Price by risk and output", "Build repeatable QA"]),
+            ("Start Narrow", ["Pick two inspection packages", "Price by risk and output", "Build repeatable QA"]),
         ]
     if any(word in primary for word in ("browser automation", "google search", "google images", "youtube", "reddit", "google flights", "browser skill")):
         return [
@@ -70,7 +70,7 @@ def rescue_slides(slides: list[tuple[str, list[str]]], title: str = "") -> list[
             ("Each Site Needs Its Own Contract", ["Google Search", "Google Images", "YouTube and Reddit"]),
             ("Travel Browser Skills Need Structured Fields", ["Google Flights", "Booking.com", "Airbnb"]),
             ("Automation Must Stop Before Risk", ["Login", "Payment", "Booking submit"]),
-            ("Recommendation: Build Skills, Not Prompts", ["Route first", "Verify page state", "Report limitations"]),
+            ("Build Skills, Not Prompts", ["Route first", "Verify page state", "Report limitations"]),
         ]
     if any(word in primary for word in ("almaty", "kazakhstan", "hiking", "mountain", "trek", "trail")):
         return [
@@ -78,7 +78,7 @@ def rescue_slides(slides: list[tuple[str, list[str]]], title: str = "") -> list[
             ("Pick Routes By Fitness And Safety", ["Trail difficulty", "Transport access", "Guide needs"]),
             ("Nine Days Allows A Balanced Pace", ["City arrival", "Hiking blocks", "Rest and contingency"]),
             ("Budget Around Gear And Transfers", ["Transport", "Accommodation", "Food and park costs"]),
-            ("Recommendation: Plan For Flexibility", ["Keep backup hikes", "Check conditions", "Avoid overpacking days"]),
+            ("Plan For Flexibility", ["Keep backup hikes", "Check conditions", "Avoid overpacking days"]),
         ]
     if any(word in primary for word in ("agriculture", "crop", "fertilizer", "water management", "climate risk", "labor shortage")):
         return [
@@ -86,7 +86,7 @@ def rescue_slides(slides: list[tuple[str, list[str]]], title: str = "") -> list[
             ("Water And Soil Decide Resilience", ["Irrigation discipline", "Soil health", "Flood and drought planning"]),
             ("Farm Economics Need Protection", ["Fertilizer exposure", "Yield uncertainty", "Market access"]),
             ("Policy Should Support Adoption", ["Extension support", "Data-backed incentives", "Smallholder financing"]),
-            ("Recommendation: Prioritize Resilience", ["Water systems first", "Mechanization where practical", "Weekly risk review"]),
+            ("Prioritize Resilience", ["Water systems first", "Mechanization where practical", "Weekly risk review"]),
         ]
     if any(word in text for word in ("google cloud", "cloud cost", "cost governance", "budget alert", "logging", "security")):
         return [
@@ -94,7 +94,7 @@ def rescue_slides(slides: list[tuple[str, list[str]]], title: str = "") -> list[
             ("Visibility Comes Before Optimization", ["Billing export", "Log coverage", "Project labels"]),
             ("Security And Cost Are Linked", ["Least privilege", "Key rotation", "Unused service cleanup"]),
             ("Governance Should Stay Lightweight", ["Thresholds", "Exceptions", "Escalation path"]),
-            ("Recommendation: Start With Guardrails", ["Alert first", "Review weekly", "Tune monthly"]),
+            ("Start With Guardrails", ["Alert first", "Review weekly", "Tune monthly"]),
         ]
     if any(word in primary for word in ("japan", "osaka", "kyoto", "flight", "hotel", "airbnb", "travel planning workflow")):
         return [
@@ -102,7 +102,7 @@ def rescue_slides(slides: list[tuple[str, list[str]]], title: str = "") -> list[
             ("Compare The Big Costs First", ["Flight fare", "Hotel or Airbnb", "Transport buffer"]),
             ("Use Options To Make Decisions", ["Cheapest", "Best schedule", "Comfort tradeoff"]),
             ("Budget Should Stay Editable", ["Estimate versus actual", "Per-person split", "Notes for assumptions"]),
-            ("Recommendation: Decide In Stages", ["Flight first", "Stay second", "Budget final"]),
+            ("Decide In Stages", ["Flight first", "Stay second", "Budget final"]),
         ]
     if any(word in text for word in ("food", "restaurant", "cafe", "seoul")):
         return [
@@ -119,7 +119,7 @@ def rescue_slides(slides: list[tuple[str, list[str]]], title: str = "") -> list[
             ("Materials Should Feel Warm And Durable", ["Timber accents", "Ventilated roof", "Low-maintenance finishes"]),
             ("Layout Should Support Family Life", ["Open social core", "Shaded outdoor edges", "Private bedroom wing"]),
             ("Climate Response Is The Design Spine", ["Cross ventilation", "Rain control", "Deep shade"]),
-            ("Recommendation: Prototype The Feel", ["Mood board", "Cost bands", "Builder feedback"]),
+            ("Prototype The Feel", ["Mood board", "Cost bands", "Builder feedback"]),
         ]
     if any(word in text for word in ("robotics", "workshop", "school", "kits", "judging", "learning goals")):
         return [
@@ -127,7 +127,7 @@ def rescue_slides(slides: list[tuple[str, list[str]]], title: str = "") -> list[
             ("The Agenda Should Reduce Waiting", ["Short intro", "Hands-on blocks", "Checkpoint reviews"]),
             ("Kits And Roles Keep Teams Moving", ["Builder", "Tester", "Presenter"]),
             ("Judging Should Reward Learning", ["Problem solving", "Teamwork", "Working prototype"]),
-            ("Recommendation: Make It Practical", ["Prepare spares", "Use simple rubrics", "Capture follow-ups"]),
+            ("Make It Practical", ["Prepare spares", "Use simple rubrics", "Capture follow-ups"]),
         ]
     if any(word in text for word in ("router", "wifi", "network", "config", "technical", "setup")):
         return [

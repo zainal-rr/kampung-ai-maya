@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import os
 import textwrap
+import time
 from pathlib import Path
 
 from PIL import Image, ImageDraw, ImageFont
@@ -11,7 +13,30 @@ EMU_PER_INCH = 914400
 PX_PER_INCH = 144
 
 
-def render_pptx_slides(path: Path, output_dir: Path, limit: int = 8) -> list[Path]:
+class PptxRenderTimeout(TimeoutError):
+    """Raised when slide rendering exceeds its time budget. The quality gate
+    treats this as a non-blocking note (a slow renderer says nothing about
+    the deck), unlike real render failures which stay blockers.
+    Live incident 2026-06-11: render QA held a correct deck for 453s and then
+    delivered it as not-final."""
+
+
+def _render_deadline_seconds() -> float:
+    try:
+        return float(os.getenv("MAYA_PPTX_RENDER_TIMEOUT_SECONDS", "90"))
+    except ValueError:
+        return 90.0
+
+
+def render_pptx_slides(
+    path: Path,
+    output_dir: Path,
+    limit: int = 8,
+    deadline_seconds: float | None = None,
+) -> list[Path]:
+    if deadline_seconds is None:
+        deadline_seconds = _render_deadline_seconds()
+    started = time.monotonic()
     output_dir.mkdir(parents=True, exist_ok=True)
     deck = Presentation(path)
     width = _emu_to_px(deck.slide_width)
@@ -20,6 +45,10 @@ def render_pptx_slides(path: Path, output_dir: Path, limit: int = 8) -> list[Pat
     for index, slide in enumerate(deck.slides, 1):
         if index > limit:
             break
+        if deadline_seconds > 0 and (time.monotonic() - started) > deadline_seconds:
+            raise PptxRenderTimeout(
+                f"slide rendering exceeded {deadline_seconds:.0f}s at slide {index} of {len(deck.slides)}"
+            )
         image = Image.new("RGB", (width, height), _background_rgb(slide))
         draw = ImageDraw.Draw(image)
         for shape in slide.shapes:

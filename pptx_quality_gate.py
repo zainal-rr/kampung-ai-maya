@@ -8,7 +8,7 @@ from PIL import Image
 from pptx import Presentation
 
 from presentation_visual_builder import build_visual_reviewed_deck
-from pptx_slide_renderer import render_pptx_slides
+from pptx_slide_renderer import PptxRenderTimeout, render_pptx_slides
 from workspace_paths import workspace_dir
 
 
@@ -33,12 +33,14 @@ class PptxQualityResult:
     images: list[Path]
     revisions: int = 0
     polish: str = ""
+    notes: list[str] | None = None
 
     def summary(self) -> str:
+        note_text = f" Note: {'; '.join(self.notes)}." if self.notes else ""
         if self.passed:
-            return f"Visual QA passed. {self.polish}".strip()
+            return f"Visual QA passed.{note_text} {self.polish}".strip()
         shown = "; ".join(self.issues[:4])
-        return f"Visual QA still has issues: {shown}."
+        return f"Visual QA still has issues: {shown}.{note_text}"
 
 
 def ensure_pptx_quality(path: Path, max_revisions: int = 1) -> PptxQualityResult:
@@ -68,13 +70,21 @@ def inspect_pptx_quality(path: Path) -> PptxQualityResult:
         issues.append("deck has no slides")
     for index, slide in enumerate(deck.slides, 1):
         issues.extend(_slide_issues(index, slide))
+    notes: list[str] = []
+    render_timed_out = False
     try:
         images = render_pptx_slides(path, _review_dir(path), limit=80)
+    except PptxRenderTimeout as exc:
+        # Severity-tier rule (live incident 2026-06-11, 453s hold): a render
+        # TIMEOUT is a warning, not a blocker — a slow renderer says nothing
+        # about the deck. Real render failures below remain blockers.
+        render_timed_out = True
+        notes.append(f"render QA skipped ({exc}); deck judged on structure only")
     except Exception as exc:
         issues.append(f"render failed: {exc}")
-    if len(images) != len(deck.slides):
+    if not render_timed_out and len(images) != len(deck.slides):
         issues.append("rendered slide count does not match deck slide count")
-    return PptxQualityResult(not issues, issues, images)
+    return PptxQualityResult(not issues, issues, images, notes=notes or None)
 
 
 def _slide_issues(index: int, slide) -> list[str]:

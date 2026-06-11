@@ -226,7 +226,12 @@ def _visual_title(title: str, index: int) -> str:
         (("risk", "safety"), "Make The Risks Visible"),
         (("verify", "verification"), "Verify Before You Commit"),
         (("config", "configuration", "setup"), "Sequence The Setup Safely"),
-        (("proposal", "recommendation"), "Make The Recommendation Clear"),
+        # NOTE (2026-06-11): the (("proposal", "recommendation"), "Make The
+        # Recommendation Clear") mapping was removed. It rewrote EVERY
+        # recommendation-flavored closing from every path (drafter arcs,
+        # Gemini section headings, rescue templates) into one banned generic
+        # title — the live Phase 4 closing-leak root cause. Deck species arcs
+        # and rescue templates now own their closing titles.
     )
     for keywords, label in mappings:
         if any(keyword in lowered for keyword in keywords):
