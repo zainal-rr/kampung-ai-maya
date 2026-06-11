@@ -168,7 +168,10 @@ def _layout_signature(slide) -> tuple[tuple[int, int, int, int], ...]:
 
 
 def _incomplete_sentence(text: str) -> bool:
-    low = text.lower().rstrip(" .")
+    clean = " ".join(str(text).split()).strip()
+    if _looks_like_short_label(clean):
+        return False
+    low = clean.lower().rstrip(" .")
     if low.endswith("with a ready"):
         return True
     bad_endings = (" in", " to", " from", " for", " of", " with", " by", " than", " as", " when", " where", " because")
@@ -177,6 +180,25 @@ def _incomplete_sentence(text: str) -> bool:
     if len(text) > 70 and not text.rstrip().endswith((".", "?", "!", ")")):
         return True
     return False
+
+
+def _looks_like_short_label(text: str) -> bool:
+    """Short title-case labels are not sentences.
+
+    Live 2026-06-11 false positive: the title "Compliance Must Be Built In"
+    was marked incomplete only because it ends with the preposition "in".
+    That rule is valid for long sentence fragments, not compact slide labels.
+    """
+    words = [word.strip(" ,;:.()[]{}") for word in text.split() if word.strip(" ,;:.()[]{}")]
+    if not words or len(words) > 8:
+        return False
+    if text.rstrip().endswith((".", "?", "!")):
+        return False
+    significant = [word for word in words if len(word) > 2]
+    if not significant:
+        return False
+    titled = sum(1 for word in significant if word[:1].isupper())
+    return titled / len(significant) >= 0.75
 
 
 async def _system_prompt(db_path: str) -> str:

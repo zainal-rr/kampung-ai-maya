@@ -56,6 +56,14 @@ def rescue_slides(slides: list[tuple[str, list[str]]], title: str = "") -> list[
             ("Turn Watching Into Notes", ["Key ideas", "Commands or links", "Practice task"]),
             ("Watch Then Apply", ["Pick best video", "Summarize transcript", "Do one exercise"]),
         ]
+    if any(word in primary for word in ("sprint review", "retrospective", "team review", "sprint", "backlog", "velocity")):
+        return [
+            ("Current Sprint Review Needs A Clear Decision", ["Goal under review", "Work completed", "Open blockers"]),
+            ("Start With What Shipped", ["Completed work", "User impact", "Evidence to verify"]),
+            ("Name The Blockers Without Drama", ["Blocked tickets", "Dependencies", "Owner needed"]),
+            ("Decide What Changes Next Sprint", ["Keep", "Stop", "Improve"]),
+            ("Close With Commitments", ["Owner", "Next action", "Review date"]),
+        ]
     if any(word in primary for word in ("drone", "uav", "inspection", "pilot", "aerial", "equipment")):
         return [
             ("Drone Inspection Has A Clear Use Case", ["Faster site evidence", "Safer roof and asset checks", "Repeatable visual records"]),
@@ -137,7 +145,7 @@ def rescue_slides(slides: list[tuple[str, list[str]]], title: str = "") -> list[
             ("Verify Before Save", ["Check interface state", "Test DNS and internet", "Confirm client join"]),
             ("Keep Rollback Ready", ["Export config", "Document changes", "Know reset path"]),
         ]
-    if any(word in text for word in ("document quality", "artifact quality", "quality gate", "review", "validate", "validation", "repair", "pipeline")):
+    if any(word in text for word in ("document quality", "artifact quality", "quality gate", "review evidence", "validate", "validation", "repair loop", "qa pipeline")):
         return [
             ("Make Artifact Quality Measurable", ["Quality contract", "Local validation", "Review evidence"]),
             ("Build The Real File First", ["Local library build", "Editable artifact", "Openability check"]),

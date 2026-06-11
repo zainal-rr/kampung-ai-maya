@@ -227,6 +227,17 @@ def _fragment_cap_checks() -> None:
     _require(not cut.lower().split()[-1] in {"is", "still", "done", "of", "by", "to", "the"}, f"layout cut ends dangling: {cut!r}")
     manual = _title_words("Eliminate Weeks Of Manual Inspection Backlog Within One Quarter", 5)
     _require(not manual.lower().endswith(" of") and not manual.lower().endswith(" manual"), f"dangling tail kept: {manual!r}")
+    from pptx_polish_review import local_polish_issues
+    with tempfile.TemporaryDirectory(prefix="maya-label-polish-") as tmp:
+        label_path = create_pptx(
+            Path(tmp) / "label.pptx",
+            "drone inspection deck",
+            [("Compliance Must Be Built In", ["Flight permissions", "Safety perimeter", "Data handling"])],
+        )
+        _require(
+            not any("incomplete" in issue for issue in local_polish_issues(label_path)),
+            "short title-case label ending in 'In' should not be incomplete",
+        )
     print("  fragment-free title caps (live fixtures): ok")
 
 
@@ -284,15 +295,20 @@ def _visual_budget_checks(root: Path) -> None:
 def _scratch_and_honesty_checks() -> None:
     from pptx_visual_assets import _image_scratch_dir
     from deck_species import deck_species_prompt_context
+    from pptx_slide_repair import rescue_slides
 
     scratch = str(_image_scratch_dir())
     _require("Desktop" not in scratch, f"image scratch must not default to Desktop: {scratch}")
     review_contract = deck_species_prompt_context("review")
-    _require("Do NOT invent sprint numbers" in review_contract and "Sprint <N>" in review_contract,
+    _require("Do NOT invent sprint numbers" in review_contract and "visible slide titles" in review_contract,
              f"review honesty contract wrong: {review_contract[:80]}")
     _require("fabricate" in deck_species_prompt_context("pitch"), "pitch honesty contract missing")
     _require(deck_species_prompt_context("teaching") == "", "non-data species must have no contract")
-    print("  image scratch dir + deck honesty contracts: ok")
+    sprint_rescue = rescue_slides([], "make a sprint review deck for the team")
+    rescue_titles = " ".join(title for title, _ in sprint_rescue).lower()
+    _require("current sprint review" in rescue_titles, f"sprint rescue did not stay sprint-specific: {sprint_rescue}")
+    _require("artifact quality" not in rescue_titles, f"sprint rescue fell into artifact-quality template: {sprint_rescue}")
+    print("  image scratch dir + deck honesty contracts + sprint rescue: ok")
 
 
 def _image_policy_checks() -> None:

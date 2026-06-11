@@ -57,9 +57,10 @@ def deck_species_prompt_context(species: str) -> str:
         return (
             "DECK HONESTY CONTRACT: this is a review/retrospective deck and the user "
             "provided no actual sprint or period data. Do NOT invent sprint numbers, "
-            "velocity figures, ticket names, or team member names. Use clearly marked "
-            "fill-in slots like 'Sprint <N>' and '<X> story points', keep claims "
-            "structural, and say in the speaker notes which slots the user must fill."
+            "velocity figures, ticket names, or team member names. Use neutral visible "
+            "labels like 'Current Sprint', 'Work Completed', and 'Open Blockers' rather "
+            "than fake specifics. If fill-in slots like 'Sprint <N>' or '<X> story points' "
+            "are useful, put them in speaker notes or instructions, not visible slide titles."
         )
     if species == "pitch":
         return (
