@@ -142,6 +142,35 @@ sqlite3 session_history.db "SELECT count(*) FROM memory_links l
   (`current_desk_setup_mouse`, 2 active rows across kinds) predates this
   change and was not touched.
 
+## Follow-up patch: update-suppression guards (after `9b49046`)
+
+`9b49046` added anchored embedding dedup (>= 2 shared tokens + cosine >= 0.74)
+because live cross-phrasing duplicates scored 0.74-0.80, below the original
+0.86 threshold. Probe-verified gap this opened: a *changed value on a known
+subject* ("lunch budget is 20 dollars" vs stored "15 dollars") was flagged
+duplicate, dropped, and the STALE row reinforced — an update the nightly
+could then never apply.
+
+Fix in `canonical_memory_dedup.py`, biased toward saving:
+- `_numeric_conflict(a, b)`: both texts carry numbers and the number sets
+  differ → treated as an update, candidate skipped in BOTH dedup layers.
+- `_values_disjoint(a, b)`: the `<subject> is <value>` value parts share zero
+  tokens → candidate skipped in the embedding layer only (token containment
+  at 0.8 already implies value overlap).
+
+New invariant I7 in `memory_links_smoke.py` (`dedup_update_not_dropped`),
+tested against a worst-case embedder that returns identical vectors for all
+texts (cosine 1.0): numeric update ("15 -> 20 dollars") and disjoint value
+update ("Tuesday -> Wednesday") must both return None. Also note I7's
+worst-case embedder exposed that the plain 0.86 path has no shared-token
+anchor; the disjoint-value guard now covers that hole too.
+
+Residual risk (documented, accepted): a rephrased duplicate whose value
+tokens are completely disjoint ("no exclamation marks" vs "avoid shouty
+punctuation" with zero shared value tokens) will be saved as a new row
+rather than deduped. Wrong-fact suppression is the worse failure; one
+redundant row is the cheaper error.
+
 ## Pre-existing failure found during regression (NOT from this pass)
 
 `hermes_memory_smoke.py` fails in the current working tree:

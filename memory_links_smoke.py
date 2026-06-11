@@ -12,6 +12,9 @@ I4 dedup_token              - a rephrasing of an existing fact is detected
 I5 dedup_embedding          - anchored embedding catches a cross-phrasing
                               duplicate that token containment misses
 I6 dedup_no_false_positive  - a genuinely new fact is not flagged duplicate
+I7 dedup_update_not_dropped - a changed value on a known subject (numeric or
+                              disjoint value) is an UPDATE, never a duplicate;
+                              suppressing it would reinforce a stale fact
 """
 
 import asyncio
@@ -101,12 +104,32 @@ async def main() -> None:
         fresh = await find_semantic_duplicate(db_path, "my dentist appointment is in August at Klinik Pergigian")
         _require(fresh is None, f"I6: new fact wrongly flagged duplicate: {fresh}")
 
+        # I7: changed values are updates, never duplicates -- even when the
+        # embedder thinks the sentences are identical (same_vec = cosine 1.0).
+        await _seed(db_path, "my lunch budget is 15 dollars")
+        updated_number = await find_semantic_duplicate(
+            db_path, "Zainal lunch budget is 20 dollars", embed_agent=_same_vec
+        )
+        _require(updated_number is None,
+                 f"I7: numeric value update suppressed as duplicate: {updated_number}")
+        await _seed(db_path, "my gym day is Tuesday")
+        updated_value = await find_semantic_duplicate(
+            db_path, "my gym day is Wednesday", embed_agent=_same_vec
+        )
+        _require(updated_value is None,
+                 f"I7: disjoint value update suppressed as duplicate: {updated_value}")
+
     print("memory_links_smoke: ok")
 
 
 def _require(condition: bool, message: str) -> None:
     if not condition:
         raise AssertionError(message)
+
+
+async def _same_vec(texts: list[str]) -> list[list[float]]:
+    # Worst case for update suppression: embedder sees all texts as identical.
+    return [[1.0, 0.0] for _ in texts]
 
 
 async def _fake_embed(texts: list[str]) -> list[list[float]]:
