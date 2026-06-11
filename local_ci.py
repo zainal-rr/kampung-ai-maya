@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import subprocess
 import sys
 from dataclasses import dataclass
@@ -50,6 +51,8 @@ def run_local_ci(*, live_providers: bool = False) -> list[CheckResult]:
         _command_check("memory time audit", ("memory_time_audit_smoke.py",)),
         _command_check("self-heal execution", ("self_heal_execution_smoke.py",)),
         _command_check("voice command aliases", ("voice_command_aliases_smoke.py",)),
+        _command_check("OSBridge test mode", ("osbridge_test_mode_smoke.py",)),
+        _command_check("telegram conversation contract", ("telegram_conversation_contract_smoke.py",)),
         _command_check("telegram text alias", ("telegram_text_alias_smoke.py",)),
         _command_check("telegram voice input", ("telegram_voice_input_smoke.py",)),
         _command_check("telegram photo input", ("telegram_photo_input_smoke.py",)),
@@ -98,7 +101,9 @@ def _eval_check() -> CheckResult:
 
 
 def _command_check(name: str, command: tuple[str, ...], required: bool = True) -> CheckResult:
-    proc = subprocess.run([sys.executable, *command], cwd=ROOT, capture_output=True, text=True, timeout=180)
+    env = os.environ.copy()
+    env["MAYA_TEST_MODE"] = "1"
+    proc = subprocess.run([sys.executable, *command], cwd=ROOT, env=env, capture_output=True, text=True, timeout=180)
     return CheckResult(name, proc.returncode == 0, (proc.stdout + proc.stderr).strip(), required=required)
 
 

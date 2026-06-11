@@ -2,7 +2,13 @@ from __future__ import annotations
 
 import re
 
-from travel_parameters import destination_names_in_text, extract_destination
+from artifact_qa_governance import MECHANICAL, OPEN_WORLD, QAIssue, blocker, warning
+from travel_parameters import (
+    destination_allowed_norms,
+    destination_names_in_text,
+    destination_present_for_expected,
+    extract_destination,
+)
 
 
 def travel_day_headings(topic: str) -> tuple[str, ...]:
@@ -57,37 +63,68 @@ def travel_default_note(topic: str) -> str:
 
 
 def travel_consistency_issues(topic: str, paragraphs: list[str], headings: list[str]) -> list[str]:
+    return [issue.message for issue in travel_consistency_issue_details(topic, paragraphs, headings) if issue.blocks_delivery]
+
+
+def travel_consistency_issue_details(topic: str, paragraphs: list[str], headings: list[str]) -> list[QAIssue]:
     expected = explicit_day_count(topic) or default_travel_days(topic)
-    issues: list[str] = []
-    issues.extend(destination_consistency_issues(topic, paragraphs, headings))
+    issues: list[QAIssue] = []
+    issues.extend(destination_consistency_issue_details(topic, paragraphs, headings))
     if expected <= 1 or expected > 12:
         return issues
     heading_norms = [normalize_heading(heading) for heading in headings]
     missing = [f"Day {day} Plan" for day in range(1, expected + 1) if f"day {day} plan" not in heading_norms]
     if missing:
-        issues.append("missing day-level travel headings: " + ", ".join(missing))
+        issues.append(blocker(
+            "travel.day_headings_missing",
+            MECHANICAL,
+            "missing day-level travel headings: " + ", ".join(missing),
+        ))
     joined = " ".join(paragraphs).lower()
     declared = {int(item) for item in re.findall(r"\b(\d+)\s*[- ]?\s*day\b", joined)}
     wrong = sorted(day for day in declared if day != expected)
     if wrong:
-        issues.append(f"travel document declares {wrong[0]} days but expected {expected}")
+        issues.append(blocker(
+            "travel.day_count_mismatch",
+            MECHANICAL,
+            f"travel document declares {wrong[0]} days but expected {expected}",
+        ))
     return issues
 
 
 def destination_consistency_issues(topic: str, paragraphs: list[str], headings: list[str]) -> list[str]:
+    return [issue.message for issue in destination_consistency_issue_details(topic, paragraphs, headings) if issue.blocks_delivery]
+
+
+def destination_consistency_issue_details(topic: str, paragraphs: list[str], headings: list[str]) -> list[QAIssue]:
     expected = extract_destination(topic)
     if not expected:
         return []
     joined = " ".join([*headings, *paragraphs])
     found = destination_names_in_text(joined)
-    expected_norm = normalize(expected)
-    found_norms = {normalize(item) for item in found}
-    issues: list[str] = []
-    if expected_norm not in found_norms:
-        issues.append(f"travel document missing expected destination: {expected}")
-    wrong = sorted(item for item in found if normalize(item) != expected_norm)
+    allowed_norms = destination_allowed_norms(expected)
+    issues: list[QAIssue] = []
+    expected_present = destination_present_for_expected(expected, found)
+    heading_found = destination_names_in_text(" ".join(headings))
+    heading_wrong = sorted(item for item in heading_found if normalize(item) not in allowed_norms)
+    wrong = sorted(item for item in found if normalize(item) not in allowed_norms)
+    strong_drift = (not expected_present) and bool(heading_wrong)
+    if not expected_present:
+        issue_factory = blocker if strong_drift else warning
+        issues.append(issue_factory(
+            "travel.destination_missing",
+            OPEN_WORLD,
+            f"travel document missing expected destination: {expected}",
+            evidence=f"found={', '.join(found) or 'none'}",
+        ))
     if wrong:
-        issues.append(f"travel document destination mismatch: expected {expected}, found {wrong[0]}")
+        issue_factory = blocker if strong_drift else warning
+        issues.append(issue_factory(
+            "travel.destination_match",
+            OPEN_WORLD,
+            f"travel document destination mismatch: expected {expected}, found {wrong[0]}",
+            evidence=f"all_found={', '.join(found)}; headings_found={', '.join(heading_found)}",
+        ))
     return issues
 
 

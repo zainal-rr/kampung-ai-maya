@@ -94,6 +94,24 @@ def _travel_day_checks() -> None:
     full_headings = ["Trip Overview", *[f"Day {day} Plan" for day in range(1, 10)], "Budget Notes"]
     issues = travel_consistency_issues(topic, ["A 9 day route across Kazakhstan."], full_headings)
     _require(not any("missing day-level" in issue for issue in issues), f"full 9-day doc should not be flagged: {issues}")
+    issues = travel_consistency_issues(
+        topic,
+        ["A nine day route across Kazakhstan covering Almaty, Astana, Charyn Canyon, and Turkistan."],
+        full_headings,
+    )
+    _require(
+        not any("destination mismatch" in issue or "missing expected destination" in issue for issue in issues),
+        f"country itinerary should allow in-country city names: {issues}",
+    )
+    city_issues = travel_consistency_issues(
+        "three day Almaty itinerary",
+        ["A three day Almaty route in Kazakhstan with mountain and city stops."],
+        ["Trip Overview", "Day 1 Plan", "Day 2 Plan", "Day 3 Plan", "Place Highlights", "Budget Notes", "Booking And Transit Notes", "Recommendations"],
+    )
+    _require(
+        not any("destination mismatch" in issue or "missing expected destination" in issue for issue in city_issues),
+        f"city itinerary should allow parent country context: {city_issues}",
+    )
 
 
 def _deck_arc_checks() -> None:

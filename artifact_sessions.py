@@ -124,6 +124,19 @@ async def active_artifact_session(db_path: str, channel: str, fallback_path: str
     return _row_to_session(row) if row else None
 
 
+async def cleanup_expired_artifact_sessions(db_path: str, channel: str | None = None) -> None:
+    await init_artifact_sessions_db(db_path)
+    now = _now()
+    query = "UPDATE artifact_sessions SET status = 'inactive' WHERE status = 'active' AND expires_at <= ?"
+    params: tuple[object, ...] = (now,)
+    if channel:
+        query += " AND channel = ?"
+        params = (now, channel)
+    async with aiosqlite.connect(db_path) as db:
+        await db.execute(query, params)
+        await db.commit()
+
+
 async def update_artifact_session_after_edit(
     db_path: str,
     session: ArtifactSession,

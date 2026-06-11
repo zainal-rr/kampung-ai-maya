@@ -28,6 +28,62 @@ async def init_telegram_turn_log_db(db_path: str) -> None:
         await db.commit()
 
 
+async def record_telegram_turn_received(
+    db_path: str,
+    *,
+    chat_id: int | str,
+    input_type: str,
+    prompt: str,
+) -> int:
+    """Durable intake guard: insert a 'received' turn row BEFORE any
+    processing. Returns the row id so the handler can finalize it later.
+    A crash or task cancellation mid-handling leaves a visible orphaned
+    'received' row instead of a silently vanished message."""
+    await init_telegram_turn_log_db(db_path)
+    async with aiosqlite.connect(db_path) as db:
+        cursor = await db.execute(
+            """
+            INSERT INTO telegram_turn_events (chat_id, input_type, prompt_preview, status)
+            VALUES (?, ?, ?, 'received')
+            """,
+            (str(chat_id), input_type, prompt[:300]),
+        )
+        await db.commit()
+        return int(cursor.lastrowid or 0)
+
+
+async def finalize_telegram_turn(
+    db_path: str,
+    turn_id: int,
+    *,
+    status: str,
+    duration_ms: int = 0,
+    response_chars: int = 0,
+    response_preview: str = "",
+    error: str = "",
+) -> None:
+    await init_telegram_turn_log_db(db_path)
+    async with aiosqlite.connect(db_path) as db:
+        await db.execute(
+            """
+            UPDATE telegram_turn_events
+            SET status = ?, duration_ms = ?, response_chars = ?, response_preview = ?, error = ?
+            WHERE id = ?
+            """,
+            (status, int(duration_ms), int(response_chars), response_preview[:1000], error[:500], int(turn_id)),
+        )
+        await db.commit()
+
+
+async def count_orphaned_received_turns(db_path: str) -> int:
+    """Turns that were received but never finalized: the disappearance signal."""
+    await init_telegram_turn_log_db(db_path)
+    async with aiosqlite.connect(db_path) as db:
+        cursor = await db.execute("SELECT COUNT(*) FROM telegram_turn_events WHERE status = 'received'")
+        row = await cursor.fetchone()
+    return int(row[0]) if row else 0
+
+
 async def record_telegram_turn(
     db_path: str,
     *,

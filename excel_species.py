@@ -136,6 +136,35 @@ def detect_excel_species(topic: str) -> str | None:
     return None
 
 
+def species_rows_structured(
+    species: str,
+    topic: str,
+    rows: list[list[str]],
+) -> tuple[list[str], list[list[str]]]:
+    """Assemble a species workbook from explicit data rows (drafted under the
+    species contract, or deterministic seeds). Defaults fill only EMPTY cells
+    so drafted values like real time buckets are never overwritten. Formula
+    columns are always rebuilt by the species formula pass."""
+    headers = _SCHEMAS[species]
+    width = len(headers)
+    _category_idx, _detail_idx, defaults = _FILL_PLAN[species]
+    clean: list[list[str]] = []
+    for raw in rows[:30]:
+        row = [str(cell).strip() for cell in raw[:width]]
+        row += [""] * (width - len(row))
+        for idx, value in defaults.items():
+            if not row[idx]:
+                row[idx] = value
+        clean.append(row)
+    if not clean:
+        clean = [["Starter entry"] + [""] * (width - 1)]
+    if species == "inventory":
+        clean = _with_inventory_formulas(clean, width)
+    if species == "financial_model":
+        clean = _with_financial_formulas(clean, width)
+    return headers, clean
+
+
 def species_rows(
     species: str,
     topic: str,

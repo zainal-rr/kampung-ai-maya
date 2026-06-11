@@ -25,21 +25,21 @@ Companion document: `SESSION_CHANGE_REPORT.md`.
 ## Phase 2 — Telegram security gate (live)
 
 - [ ] Restart the Maya service; confirm Telegram replies normally from YOUR account.
-- [ ] From a second Telegram account (or a friend's): message the bot — it must stay silent, and the log must show "Rejected unauthorized Telegram chat".
+- [x] From a second Telegram account (or a friend's): message the bot — it must stay silent, and the log must show "Rejected unauthorized Telegram chat". Evidence: second phone sent `/start`, `Hi`, and `Hello` at 2026-06-10 23:15 MYT; Maya stayed silent and `logs/launchd.stderr.log` recorded three `Rejected unauthorized Telegram chat 7090185710` warnings.
 - [ ] Voice note, photo, and /command from your account all still work (allowlist covers all four handlers).
 
 ## Phase 3 — Memory honesty (live chat)
 
-- [ ] "Remember that my favorite airline is AirAsia" → then "what is my favorite airline?" → correct recall.
-- [ ] "Forget my favorite airline" → ask again → no leak.
+- [x] "Remember that my favorite airline is AirAsia" → then "what is my favorite airline?" → correct recall.
+- [x] "Forget my favorite airline" → ask again → no leak. Evidence: final Telegram turn at 2026-06-10 15:52:04 UTC replied "I don't have that saved yet"; `canonical_memory_items.mem_d1614c842c2be171` is `forgotten`. Earlier attempts at 15:35 and 15:46 leaked AirAsia after a claimed forget, so keep this as a regression watch.
 - [ ] Run the weekly memory flow (or wait for schedule) → confirm the forgotten fact does NOT come back (`/memory inspect`; audit shows `canonical_write_blocked_forgotten` if it tried).
 - [ ] If you have >80 saved memories: recall an OLD one (pre-cliff bug would have lost it).
 
 ## Phase 4 — Document species (live generation, judge with your eyes)
 
-- [ ] Word: "make me a workshop plan for a school robotics day" → expect Learning Objectives / Session Schedule / Team Roles, NOT a findings report.
-- [ ] Word: "write a YouTube content strategy doc" → expect Audience / Pillars / Cadence / Metrics, NOT Goal/Workstreams.
-- [ ] Word: "make a nine day Kazakhstan itinerary" → must contain Day 1 through Day 9 headings (this was the false-pass case).
+- [x] Word: "make me a workshop plan for a school robotics day" → expect Learning Objectives / Session Schedule / Team Roles, NOT a findings report. Evidence: Telegram turn 5739 completed and sent `/Users/zainalabidinjamal/Desktop/Maya/documents/workshop-document-v5.docx`.
+- [x] Word: "write a YouTube content strategy doc" → expect Audience / Pillars / Cadence / Metrics, NOT Goal/Workstreams. Evidence: Telegram turn 5740 completed and sent `/Users/zainalabidinjamal/Desktop/Maya/documents/youtube-document-v5.docx`.
+- [x] Word: "make a nine day Kazakhstan itinerary" → must contain Day 1 through Day 9 headings (this was the false-pass case). Evidence: Telegram turn 5743 completed cleanly on 2026-06-10 18:22:05 UTC with `Done. I created a Word draft.` and sent `/Users/zainalabidinjamal/Desktop/Maya/documents/kazakhstan-itinerary-v3.docx`; direct `.docx` inspection confirmed `Day 1 Plan` through `Day 9 Plan`. `/review` turn 5744 showed Claude PASS for the same topic, and `qa_disagreement_events` was empty, so no false validator audit noise was created.
 - [ ] Excel: "make a youtube tracker", "make an agriculture tracker", "make a coding sprint tracker" → three DIFFERENT column schemas.
 - [ ] Excel: "make an Excel liquidity gap analysis for the institution" → Inflow/Outflow/Net/Cumulative columns with working gap + coverage-ratio formulas.
 - [ ] Excel: "monthly budget tracker" and a travel budget → still use the original budget lanes (regression).

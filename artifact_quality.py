@@ -6,11 +6,22 @@ import re
 from dataclasses import dataclass, field
 from pathlib import Path
 
+from artifact_qa_governance import (
+    MECHANICAL,
+    SEMANTIC,
+    QAIssue,
+    blocker,
+    blocker_issues,
+    blocker_messages,
+    legacy_blocker,
+    open_world_or_semantic_blockers,
+    warning_messages,
+)
 from cost_tracker import record_usage
-from artifact_review_store import record_artifact_review
-from models import TheSteward
+from artifact_review_store import record_artifact_review, record_qa_disagreement
+from models import TheSenses, TheSteward
 from provider_capabilities import CAPABILITIES
-from word_quality import validate_word_doc_quality
+from word_quality import validate_word_doc_quality_details
 from word_visual_qa import inspect_word_visual_quality
 from artifact_quality_extractors import (
     clip_text,
@@ -47,6 +58,23 @@ class ArtifactQualityResult:
     validation_steps: list[str] = field(default_factory=list)
     repair_attempted: bool = False
     delivery_ready: bool = True
+    issue_details: list[QAIssue] = field(default_factory=list)
+
+    def __post_init__(self) -> None:
+        if self.issue_details:
+            self.issues = blocker_messages(self.issue_details)
+            for message in warning_messages(self.issue_details):
+                if message not in self.warnings:
+                    self.warnings.append(message)
+        elif self.issues:
+            self.issue_details = [legacy_blocker(message) for message in self.issues]
+        if self.issues:
+            self.passed = False
+            self.delivery_ready = False
+
+    @property
+    def blocker_issue_details(self) -> list[QAIssue]:
+        return blocker_issues(self.issue_details)
 
     def merge(self, other: "ArtifactQualityResult") -> "ArtifactQualityResult":
         return ArtifactQualityResult(
@@ -61,6 +89,7 @@ class ArtifactQualityResult:
             validation_steps=[*self.validation_steps, *other.validation_steps],
             repair_attempted=self.repair_attempted or other.repair_attempted,
             delivery_ready=self.delivery_ready and other.delivery_ready,
+            issue_details=[*self.issue_details, *other.issue_details],
         )
 
     def short_issue_text(self) -> str:
@@ -110,6 +139,7 @@ def validate_html_content(topic: str, html: str) -> ArtifactQualityResult:
         passed=not issues,
         summary=summary,
         issues=issues,
+        issue_details=[legacy_blocker(issue, "html.structure") for issue in issues],
         validation_steps=["html structure", "interactive controls", "common syntax corruption"],
         delivery_ready=not issues,
     )
@@ -119,6 +149,7 @@ def validate_docx_path(path: Path, topic: str = "") -> ArtifactQualityResult:
     from docx import Document
 
     issues: list[str] = []
+    issue_details: list[QAIssue] = []
     paragraphs: list[str] = []
     headings: list[str] = []
     sections: list[tuple[str, list[str]]] = []
@@ -126,7 +157,8 @@ def validate_docx_path(path: Path, topic: str = "") -> ArtifactQualityResult:
     try:
         doc = Document(path)
     except Exception as exc:
-        return ArtifactQualityResult("docx", str(path), False, issues=[f"Word file could not be opened: {exc}"], delivery_ready=False)
+        message = f"Word file could not be opened: {exc}"
+        return ArtifactQualityResult("docx", str(path), False, issues=[message], issue_details=[legacy_blocker(message, "docx.open")], delivery_ready=False)
     for paragraph in doc.paragraphs:
         text = " ".join(paragraph.text.split())
         if not text:
@@ -142,14 +174,15 @@ def validate_docx_path(path: Path, topic: str = "") -> ArtifactQualityResult:
     word_count = sum(len(item.split()) for item in paragraphs)
     joined = "\n".join(paragraphs).lower()
     if word_count < 40:
-        issues.append("document has too little real content")
+        issue_details.append(legacy_blocker("document has too little real content", "docx.content_density"))
     if not headings:
-        issues.append("document has no useful headings")
+        issue_details.append(legacy_blocker("document has no useful headings", "docx.headings_missing"))
     bad = ("lorem ipsum", "todo", "placeholder section", "placeholder text", "draft document about", "add a specific point", "```", "###")
-    issues.extend(f"placeholder or malformed text found: {marker}" for marker in bad if marker in joined)
-    issues.extend(validate_word_doc_quality(topic, paragraphs, headings, sections))
+    issue_details.extend(legacy_blocker(f"placeholder or malformed text found: {marker}", "docx.placeholder_scan") for marker in bad if marker in joined)
+    issue_details.extend(validate_word_doc_quality_details(topic, paragraphs, headings, sections))
     visual = inspect_word_visual_quality(path)
-    issues.extend(visual.issues)
+    issue_details.extend(legacy_blocker(issue, "docx.visual_layout") for issue in visual.issues)
+    issues = blocker_messages(issue_details)
     summary = summary_from_text(paragraphs, "Word document")
     return ArtifactQualityResult(
         "docx",
@@ -160,6 +193,7 @@ def validate_docx_path(path: Path, topic: str = "") -> ArtifactQualityResult:
         visual.warnings,
         validation_steps=["docx open", "headings", "content density", "placeholder scan", "word visual layout"],
         delivery_ready=not issues,
+        issue_details=issue_details,
     )
 
 
@@ -167,23 +201,25 @@ def validate_xlsx_path(path: Path, topic: str = "") -> ArtifactQualityResult:
     from openpyxl import load_workbook
 
     issues: list[str] = []
+    issue_details: list[QAIssue] = []
     try:
         book = load_workbook(path, data_only=False)
     except Exception as exc:
-        return ArtifactQualityResult("xlsx", str(path), False, issues=[f"Excel file could not be opened: {exc}"], delivery_ready=False)
+        message = f"Excel file could not be opened: {exc}"
+        return ArtifactQualityResult("xlsx", str(path), False, issues=[message], issue_details=[legacy_blocker(message, "xlsx.open")], delivery_ready=False)
     if not book.sheetnames:
-        issues.append("workbook has no sheets")
+        issue_details.append(legacy_blocker("workbook has no sheets", "xlsx.sheet_missing"))
     non_empty = 0
     formulas = 0
     headers = 0
     workbook_text: list[str] = []
     for sheet in book.worksheets:
         if sheet.title.lower() in {"sheet", "sheet1", "maya draft"}:
-            issues.append(f"{sheet.title} is not a meaningful sheet name")
+            issue_details.append(legacy_blocker(f"{sheet.title} is not a meaningful sheet name", "xlsx.sheet_name"))
         if sheet.max_row < 3 or sheet.max_column < 2:
-            issues.append(f"{sheet.title} has too little structure")
+            issue_details.append(legacy_blocker(f"{sheet.title} has too little structure", "xlsx.structure"))
         if not sheet.freeze_panes:
-            issues.append(f"{sheet.title} has no frozen header/reference pane")
+            issue_details.append(legacy_blocker(f"{sheet.title} has no frozen header/reference pane", "xlsx.freeze_panes"))
         for row in sheet.iter_rows(values_only=True):
             values = [value for value in row if value not in (None, "")]
             if values:
@@ -193,20 +229,21 @@ def validate_xlsx_path(path: Path, topic: str = "") -> ArtifactQualityResult:
                     headers += 1
             formulas += sum(1 for value in values if isinstance(value, str) and value.startswith("="))
     if non_empty < 8:
-        issues.append("workbook is mostly empty")
+        issue_details.append(legacy_blocker("workbook is mostly empty", "xlsx.content_density"))
     if headers == 0:
-        issues.append("workbook has no table-like rows")
+        issue_details.append(legacy_blocker("workbook has no table-like rows", "xlsx.table_rows"))
     if topic_needs_formula(topic) and formulas == 0:
-        issues.append("budget/tracker workbook has no formulas")
+        issue_details.append(legacy_blocker("budget/tracker workbook has no formulas", "xlsx.formulas_missing"))
     lowered = " ".join(workbook_text).lower()
     if topic_needs_formula(topic):
         for required in ("estimated", "actual", "variance"):
             if required not in lowered:
-                issues.append(f"budget/tracker workbook missing {required} column or field")
+                issue_details.append(legacy_blocker(f"budget/tracker workbook missing {required} column or field", "xlsx.required_budget_field"))
     if food_trip_workbook(topic):
         for required in ("restaurant", "estimated", "actual", "variance", "source", "suggestion"):
             if required not in lowered:
-                issues.append(f"food-trip workbook missing {required} detail")
+                issue_details.append(legacy_blocker(f"food-trip workbook missing {required} detail", "xlsx.required_food_trip_field"))
+    issues = blocker_messages(issue_details)
     summary = f"Excel workbook with {len(book.sheetnames)} sheet(s), {non_empty} populated cells, and {formulas} formula cell(s)."
     return ArtifactQualityResult(
         "xlsx",
@@ -216,6 +253,134 @@ def validate_xlsx_path(path: Path, topic: str = "") -> ArtifactQualityResult:
         issues,
         validation_steps=["xlsx open", "sheet structure", "frozen pane", "formula scan"],
         delivery_ready=not issues,
+        issue_details=issue_details,
+    )
+
+
+async def resolve_quality_disagreement(
+    db_path: str,
+    *,
+    artifact_type: str,
+    topic: str,
+    path: Path,
+    local_qa: ArtifactQualityResult,
+    review_qa: ArtifactQualityResult,
+    extracted: str,
+    attempt_number: int = 1,
+) -> ArtifactQualityResult:
+    """Demote validator false positives only when semantic review and arbiter agree."""
+    disputed = open_world_or_semantic_blockers(local_qa.issue_details)
+    if not disputed or not review_qa.passed:
+        return local_qa
+    adjusted = local_qa
+    for issue in disputed:
+        verdict, evidence = await _arbitrate_validator_claim(db_path, artifact_type, topic, issue, extracted)
+        if verdict == "validator_wrong":
+            adjusted = _demote_issue(adjusted, issue, evidence)
+            await record_qa_disagreement(
+                db_path,
+                artifact_type=artifact_type,
+                topic=topic,
+                artifact_path=str(path),
+                rule_id=issue.rule_id,
+                rule_class=issue.rule_class,
+                severity=issue.severity,
+                validator_verdict="fail",
+                reviewer_verdict="pass",
+                arbiter_verdict="validator_wrong",
+                attempt_number=attempt_number,
+                final_action="delivered_cleanly_with_audit",
+                evidence=evidence,
+            )
+        else:
+            await record_qa_disagreement(
+                db_path,
+                artifact_type=artifact_type,
+                topic=topic,
+                artifact_path=str(path),
+                rule_id=issue.rule_id,
+                rule_class=issue.rule_class,
+                severity=issue.severity,
+                validator_verdict="fail",
+                reviewer_verdict="pass",
+                arbiter_verdict=verdict,
+                attempt_number=attempt_number,
+                final_action="validator_upheld",
+                evidence=evidence,
+            )
+    return adjusted
+
+
+async def _arbitrate_validator_claim(
+    db_path: str,
+    artifact_type: str,
+    topic: str,
+    issue: QAIssue,
+    extracted: str,
+) -> tuple[str, str]:
+    api_key = os.getenv("GOOGLE_API_KEY")
+    if not api_key:
+        return "arbiter_unavailable", "Gemini arbitration skipped: GOOGLE_API_KEY missing."
+    model = os.getenv("GEMINI_FLASH_MODEL", "gemini-3-flash-preview")
+    senses = TheSenses(api_key, model)
+    prompt = (
+        "You are Maya's targeted QA arbiter. Do not judge general quality. "
+        "Judge only this validator claim against the provided artifact text.\n\n"
+        f"Artifact type: {artifact_type}\n"
+        f"User topic: {topic}\n"
+        f"Validator rule: {issue.rule_id}\n"
+        f"Validator class: {issue.rule_class}\n"
+        f"Validator claim: {issue.message}\n"
+        f"Validator evidence: {issue.evidence or '(none)'}\n\n"
+        "Answer exactly one label first:\n"
+        "VALIDATOR_CORRECT — the validator claim is true enough to block or repair.\n"
+        "VALIDATOR_WRONG — the validator claim is false or too ambiguous to block.\n"
+        "Then add one short reason.\n\n"
+        f"Artifact text:\n{extracted[:12000]}"
+    )
+    try:
+        timeout = float(os.getenv("GEMINI_QA_ARBITER_TIMEOUT_SECONDS", "25"))
+    except ValueError:
+        timeout = 25
+    try:
+        reply = await asyncio.wait_for(
+            senses.chat([
+                {"role": "system", "content": "Return VALIDATOR_CORRECT or VALIDATOR_WRONG first."},
+                {"role": "user", "content": prompt},
+            ]),
+            timeout=max(8, timeout),
+        )
+    except Exception as exc:
+        return "arbiter_unavailable", f"Gemini arbitration failed: {type(exc).__name__}"
+    await record_usage(db_path, "gemini_flash_text_calls", 1, f"{artifact_type} QA arbiter")
+    first = reply.strip().splitlines()[0].strip().upper() if reply.strip() else ""
+    if first.startswith("VALIDATOR_WRONG"):
+        return "validator_wrong", clip_text(reply, 400)
+    if first.startswith("VALIDATOR_CORRECT"):
+        return "validator_correct", clip_text(reply, 400)
+    lowered = reply.lower()
+    if "validator_wrong" in lowered or "validator is wrong" in lowered:
+        return "validator_wrong", clip_text(reply, 400)
+    return "validator_correct", clip_text(reply or "Gemini did not return a clear label.", 400)
+
+
+def _demote_issue(result: ArtifactQualityResult, target: QAIssue, evidence: str) -> ArtifactQualityResult:
+    details = [
+        issue.demote_to_warning(evidence) if issue == target else issue
+        for issue in result.issue_details
+    ]
+    return ArtifactQualityResult(
+        artifact_type=result.artifact_type,
+        path=result.path,
+        passed=True,
+        summary=result.summary,
+        warnings=[*result.warnings],
+        draft_model=result.draft_model,
+        review_model=result.review_model,
+        validation_steps=[*result.validation_steps, "gemini targeted QA arbitration"],
+        repair_attempted=result.repair_attempted,
+        delivery_ready=True,
+        issue_details=details,
     )
 
 
@@ -259,6 +424,7 @@ async def review_artifact_quality(
         passed=not rejected,
         summary=clip_text(response, 220),
         issues=[clip_text(response, 300)] if rejected else [],
+        issue_details=[blocker("review.semantic_reject", SEMANTIC, clip_text(response, 300))] if rejected else [],
         review_model=model,
         validation_steps=["claude artifact skill review"],
         delivery_ready=not rejected,

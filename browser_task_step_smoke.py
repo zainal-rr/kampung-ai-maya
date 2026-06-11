@@ -5,8 +5,12 @@ import json
 import tempfile
 from pathlib import Path
 
+from openpyxl import load_workbook
+
 from browser_task_step import BrowserTaskStepper
-from storage import init_db
+from storage import get_preference, init_db
+from travel_budget import TRAVEL_PLAN_KEY, TravelParty
+from travel_budget_workbook import _build_workbook
 
 
 class FakeBridge:
@@ -44,6 +48,55 @@ class FakeBridge:
         self.typed.append(text)
 
 
+class FakeBookingSelectionBridge:
+    def __init__(self):
+        self.clicked_targets: list[str] = []
+        self.after_click = False
+
+    def get_frontmost_app(self) -> str:
+        return "Google Chrome"
+
+    def _run_applescript(self, script: str) -> str:
+        if "clickResult" in script:
+            self.after_click = True
+            self.clicked_targets.append(script)
+            return "CLICKED: Shangri-La Golden Sands, Penang"
+        if self.after_click:
+            return (
+                "Shangri-La Golden Sands, Penang\n"
+                "---URL---\n"
+                "https://www.booking.com/hotel/my/shangri-la-golden-sands.html\n"
+                "---TEXT---\n"
+                "Shangri-La Golden Sands, Penang\n"
+                "Very Good 8.4\n"
+                "Superior Twin Room\n"
+                "2 nights, 2 adults\n"
+                "MYR 840\n"
+            )
+        return (
+            "Booking.com: Hotels in Penang\n"
+            "---URL---\n"
+            "https://www.booking.com/searchresults.html?ss=Penang&selected_currency=MYR\n"
+            "---TEXT---\n"
+            "Penang: 1,902 properties found\n"
+            "Swing & Pillows - Grand Inn George Town Penang\n"
+            "Very Good\n"
+            "8.2\n"
+            "2 nights, 2 adults\n"
+            "MYR 113\n"
+            "Shangri-La Golden Sands, Penang\n"
+            "Very Good\n"
+            "8.4\n"
+            "2 nights, 2 adults\n"
+            "MYR 840\n"
+            "DoubleTree Resort by Hilton Hotel Penang\n"
+            "Very Good\n"
+            "8.3\n"
+            "2 nights, 2 adults\n"
+            "MYR 542\n"
+        )
+
+
 async def main() -> None:
     with tempfile.TemporaryDirectory(prefix="maya-browser-step-") as tmp:
         db_path = str(Path(tmp) / "smoke.db")
@@ -55,6 +108,27 @@ async def main() -> None:
         _require("August 30 2026" in reply, "departure date missing")
         _require("September 4 2026" in reply, "return date missing")
         _require("destination: already set Osaka" in reply or "destination: verified Osaka" in reply, "destination not verified")
+        old_wait = BrowserTaskStepper.DETAIL_WAIT_SECONDS
+        BrowserTaskStepper.DETAIL_WAIT_SECONDS = 0
+        try:
+            selection_bridge = FakeBookingSelectionBridge()
+            reply = await BrowserTaskStepper(db_path, selection_bridge).step("open option 2")
+        finally:
+            BrowserTaskStepper.DETAIL_WAIT_SECONDS = old_wait
+        _require("Saved selected Booking.com stay option 2" in reply, "selected stay was not acknowledged")
+        raw_plan = await get_preference(db_path, TRAVEL_PLAN_KEY)
+        _require(raw_plan is not None, "travel plan was not saved")
+        plan = json.loads(raw_plan)
+        _require(plan.get("selected_stay_provider") == "Booking.com", "selected stay provider missing")
+        _require(plan.get("selected_stay_price_myr") == 840, "selected stay price missing")
+        _require("Shangri-La Golden Sands" in plan.get("selected_stay_option", ""), "selected stay option text missing")
+        workbook_path = Path(tmp) / "selected-stay-budget.xlsx"
+        _build_workbook(workbook_path, plan, TravelParty(2, "smoke test"))
+        sheet = load_workbook(workbook_path, data_only=False)["Travel Budget"]
+        values = [cell.value for row in sheet.iter_rows() for cell in row if cell.value not in (None, "")]
+        joined = "\n".join(str(value) for value in values)
+        _require("Booking.com" in joined, "workbook missing selected stay provider")
+        _require("MYR 840" in reply and "840" in joined, "workbook missing selected stay price")
     print("browser_task_step_smoke: ok")
 
 

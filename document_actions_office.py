@@ -16,6 +16,8 @@ from __future__ import annotations
 from document_actions_context import *
 from artifact_retry_policy import artifact_qa_max_attempts
 from created_file_summary import created_file_content_summary
+from excel_species import detect_excel_species
+from excel_species_draft import excel_species_prompt_context
 from document_actions_content_helpers import (
     _attach,
     _budget_filename_topic,
@@ -274,8 +276,12 @@ class DocumentOfficeMixin:
                 await asyncio.to_thread(create_xlsx, path, _budget_title(topic), fresh_headers, fresh_rows)
 
             return await self._finish_excel(path, "Excel budget tracker", topic, project_scoped, channel, rebuild=rebuild_budget)
+        # Species drafting contract: Gemini must return structured table rows
+        # for species topics, never prose (live finding 2026-06-11).
+        species = detect_excel_species(topic)
+        species_contract = excel_species_prompt_context(species, topic) if species else ""
         try:
-            draft = await self._draft_markdown(topic, preflight)
+            draft = await self._draft_markdown(topic, preflight, extra_context=species_contract)
         except Exception as exc:
             return document_generation_failed("Excel spreadsheet", exc)
         if not draft:
@@ -295,7 +301,7 @@ class DocumentOfficeMixin:
                 f"QA issues to fix: {quality.short_issue_text()}\n"
                 "The workbook must have useful headers, populated rows, and formulas when the request implies totals, budgets, costs, or tracking."
             )
-            repaired = await self._draft_markdown(repair_topic, preflight)
+            repaired = await self._draft_markdown(repair_topic, preflight, extra_context=species_contract)
             if not repaired:
                 return
             fresh_headers, fresh_rows = spreadsheet_from_markdown(topic, repaired.content)

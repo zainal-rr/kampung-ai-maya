@@ -44,6 +44,22 @@ async def consume_pending_artifact_request(db_path: str, channel: str, answer: s
     return (kind, topic) if topic else None
 
 
+async def cleanup_expired_pending_artifact_request(db_path: str, channel: str) -> None:
+    key = _key(channel)
+    raw = await get_preference(db_path, key)
+    if not raw:
+        return
+    try:
+        payload = json.loads(raw)
+    except json.JSONDecodeError:
+        await delete_preference(db_path, key)
+        return
+    created_at = _parse_dt(payload.get("created_at"))
+    if created_at and datetime.now(timezone.utc) - created_at <= TTL:
+        return
+    await delete_preference(db_path, key)
+
+
 def pending_topic_from_request(text: str) -> str:
     cleaned = normalize_artifact_command_text(text)
     without_document = clean_topic_part(cleaned.replace("document", " "))

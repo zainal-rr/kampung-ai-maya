@@ -1,16 +1,18 @@
 import logging, os
 
+from artifact_clarification_state import cleanup_expired_pending_artifact_request
+from artifact_sessions import cleanup_expired_artifact_sessions
 from assistant_context_helpers import handle_context_command
 from assistant_text import clean_model_text, normalize_history, strip_wake_prefix
 from assistant_commands import AssistantCommandRouter
 from learning_pipeline import LearningPipeline
 from assistant_memory_context import build_assistant_memory_context
 from assistant_model_lanes import ModelLanes
+from assistant_post_route import maybe_curate_memory, route_metadata
 from assistant_reply_paths import prepare_input
 from assistant_routes import AssistantRouter, RouteResult
 from channel_gateway import remember_channel_identity
 from cost_tracker import record_usage
-from curated_memory import add_curated_memory
 from harness_router import HarnessRouter
 from memory_service import MemoryService
 from models import TheSenses
@@ -24,6 +26,7 @@ from skill_registry import SkillRegistry
 from self_improvement_policy import enforce_honest_claims
 from storage import get_history, save_history_message
 from telegram_commands import PASSTHROUGH_COMMANDS, command_to_text, parse_command
+from telegram_conversation_contract import enforce_telegram_truth_contract, strong_artifact_request, telegram_document_failure_reply, telegram_greeting_reply, telegram_short_followup_context
 from telegram_rewrite_context import is_rewrite_followup, latest_rewrite_candidate, remember_rewrite_candidate, rewrite_context_prompt
 from topic_context import format_topic_context, recent_topic_history
 from voice import VoiceNode, spoken_preview
@@ -105,10 +108,17 @@ class KampungAssistant:
         input_type: str = "text",
         channel_external_id: str = "",
     ) -> str:
+        original_text = text
         clean_text = strip_wake_prefix(text)
         if "voice" in input_type.lower():
             clean_text = clean_voice_transcript_for_intent(clean_text)
+        if channel == "telegram":
+            await cleanup_expired_pending_artifact_request(self.db_path, channel)
+            await cleanup_expired_artifact_sessions(self.db_path, channel)
         if not clean_text:
+            greeting = telegram_greeting_reply(original_text, clean_text) if channel == "telegram" else None
+            if greeting:
+                return greeting
             return "Send me something real and I'll take it from there."
         if channel_external_id:
             await remember_channel_identity(self.db_path, channel, channel_external_id)
@@ -142,8 +152,8 @@ class KampungAssistant:
                 return "Tell me what you want me to think through."
 
         history = normalize_history(await get_history(self.db_path, user_id))
-        topic_history = recent_topic_history(history)
-        topic_context = format_topic_context(topic_history)
+        short_followup_context = telegram_short_followup_context(clean_text, history) if channel == "telegram" else ""
+        topic_context = short_followup_context or format_topic_context(recent_topic_history(history))
         rewrite_context = await rewrite_context_prompt(self.db_path, channel, clean_text)
         if rewrite_context:
             topic_context = "\n\n".join(block for block in (topic_context, rewrite_context) if block)
@@ -202,7 +212,13 @@ class KampungAssistant:
                 command_response = await self.commands.handle(clean_text, channel)
             except Exception:
                 logging.exception("Command router failed on channel %s", channel)
-                command_response = None
+                if channel == "telegram" and strong_artifact_request(clean_text):
+                    command_response = telegram_document_failure_reply(clean_text)
+                    self.commands.last_lane = "command"
+                    self.commands.last_reason = "document workflow failed before delivery"
+                    self.commands.last_cost_recorded = False
+                else:
+                    command_response = None
         if pre_route_allowed and learning_response is None and context_response is None and harness_response is None and command_response is None:
             try:
                 vision_response = await self.vision_responder.handle(clean_text, channel)
@@ -257,43 +273,25 @@ class KampungAssistant:
                 input_type=input_type,
             )
 
-        response = await apply_reply_preferences(self.db_path, enforce_honest_claims(clean_model_text(result.response)))
+        response = await apply_reply_preferences(
+            self.db_path,
+            enforce_telegram_truth_contract(
+                enforce_honest_claims(clean_model_text(result.response)),
+                result.lane,
+                result.reason,
+                channel,
+            ),
+        )
         if result.lane == "Gemini Flash text" and result.cost_recorded:
             await record_usage(self.db_path, "gemini_flash_text_calls", 1, result.reason)
-        route_lane, route_reason, route_cost = self._route_metadata(input_type, result)
+        route_lane, route_reason, route_cost = route_metadata(input_type, result.lane, result.reason, result.cost_recorded)
         await self.skills.record_latest_outcome(clean_text, channel, result.lane, response)
         await record_route(self.db_path, input_type, route_lane, route_reason, route_cost)
         await save_history_message(self.db_path, user_id, "user", clean_text, channel)
         await save_history_message(self.db_path, user_id, "assistant", response, channel)
         await remember_rewrite_candidate(self.db_path, channel, clean_text, response)
-        await self._maybe_curate_memory(clean_text, channel)
+        await maybe_curate_memory(self.db_path, clean_text, channel)
 
         if speak_reply:
             await self.voice.speak(spoken_preview(response))
         return response
-
-    @staticmethod
-    def _route_metadata(input_type: str, result: RouteResult) -> tuple[str, str, bool]:
-        if input_type != "voice note":
-            return result.lane, result.reason, result.cost_recorded
-        return (
-            f"xAI STT + {result.lane}",
-            f"voice note transcribed, then {result.reason}",
-            True,
-        )
-
-    async def _maybe_curate_memory(self, text: str, channel: str) -> None:
-        lowered = text.lower()
-        explicit_cues = ("remember that", "remember ", "i prefer", "my preference")
-        durable_directives = ("do not ", "don't ", "must ")
-        if not (
-            any(cue in lowered for cue in explicit_cues)
-            or lowered.startswith(durable_directives)
-            or " maya should " in lowered
-            or " kampung ai should " in lowered
-        ):
-            return
-        try:
-            await add_curated_memory(self.db_path, text, source=channel)
-        except Exception:
-            logging.exception("Curated memory write failed on channel %s", channel)

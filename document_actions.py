@@ -232,8 +232,13 @@ class DocumentActionRouter(DocumentHtmlMixin, DocumentWordMixin, DocumentOfficeM
             self.last_cost_recorded = True
         return preflight
 
-    async def _draft_markdown(self, topic: str, preflight: ArtifactPreflight | None = None) -> MarkdownDraft | None:
+    async def _draft_markdown(self, topic: str, preflight: ArtifactPreflight | None = None, extra_context: str = "") -> MarkdownDraft | None:
         context = preflight.content if preflight else ""
+        if extra_context:
+            # Species drafting contracts (e.g. the Excel structured-rows
+            # contract) ride inside the preflight context block so the shared
+            # drafter signature and all smoke fakes stay untouched.
+            context = f"{context}\n\n{extra_context}".strip()
         if not context:
             return await draft_markdown_with_gemini(self.db_path, topic)
         try:

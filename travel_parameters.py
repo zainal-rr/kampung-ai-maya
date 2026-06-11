@@ -30,6 +30,11 @@ KNOWN_DESTINATIONS = (
     "uzbekistan",
 )
 
+COUNTRY_DESTINATION_MEMBERS = {
+    "kazakhstan": {"almaty", "astana"},
+    "uzbekistan": {"tashkent"},
+}
+
 
 GENERIC_DESTINATION_WORDS = {
     "a",
@@ -74,6 +79,34 @@ def destination_names_in_text(text: str) -> list[str]:
         if _known_destination_match(lowered, destination):
             found.append("Kuala Lumpur" if destination == "kl" else destination.title())
     return found
+
+
+def destination_norm(name: str) -> str:
+    raw = normalize(name)
+    return "kuala lumpur" if raw == "kl" else raw
+
+
+def destination_allowed_norms(expected: str) -> set[str]:
+    """Names that are valid supporting context for an expected destination."""
+    expected_norm = destination_norm(expected)
+    allowed = {expected_norm}
+    if expected_norm in COUNTRY_DESTINATION_MEMBERS:
+        allowed.update(COUNTRY_DESTINATION_MEMBERS[expected_norm])
+    for country, cities in COUNTRY_DESTINATION_MEMBERS.items():
+        if expected_norm in cities:
+            allowed.add(country)
+            break
+    return allowed
+
+
+def destination_present_for_expected(expected: str, found: list[str]) -> bool:
+    expected_norm = destination_norm(expected)
+    found_norms = {destination_norm(item) for item in found}
+    if expected_norm in found_norms:
+        return True
+    if expected_norm in COUNTRY_DESTINATION_MEMBERS:
+        return bool(found_norms & COUNTRY_DESTINATION_MEMBERS[expected_norm])
+    return False
 
 
 def normalize(text: str) -> str:

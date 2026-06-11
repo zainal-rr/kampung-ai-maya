@@ -5,7 +5,8 @@ from dataclasses import dataclass
 
 from word_quality_proposal import proposal_consistency_issues, proposal_prompt_notes
 from word_quality_technical import technical_consistency_issues, technical_prompt_notes
-from word_quality_travel import travel_consistency_issues, travel_day_headings, travel_default_note
+from artifact_qa_governance import MECHANICAL, QAIssue, blocker
+from word_quality_travel import travel_consistency_issue_details, travel_consistency_issues, travel_day_headings, travel_default_note
 from word_quality_helpers import (
     _generic_filler_issues,
     _has_any,
@@ -298,31 +299,39 @@ def validate_word_doc_quality(
     headings: list[str],
     sections: list[tuple[str, list[str]]] | None = None,
 ) -> list[str]:
+    return [issue.message for issue in validate_word_doc_quality_details(topic, paragraphs, headings, sections) if issue.blocks_delivery]
+
+
+def validate_word_doc_quality_details(
+    topic: str,
+    paragraphs: list[str],
+    headings: list[str],
+    sections: list[tuple[str, list[str]]] | None = None,
+) -> list[QAIssue]:
     if not topic.strip():
         return []
     spec = word_quality_spec(topic)
-    issues: list[str] = []
+    issues: list[QAIssue] = []
     normalized_headings = {_normalize_heading(heading) for heading in headings}
     banned = {_normalize_heading(heading) for heading in spec.banned_headings}
     for heading in sorted(normalized_headings & banned):
-        issues.append(f"boilerplate heading should not be used: {heading}")
+        issues.append(blocker("word.banned_heading", MECHANICAL, f"boilerplate heading should not be used: {heading}"))
     missing = [required for required in spec.required_headings if not _required_match(required, headings)]
     if missing:
-        issues.append("missing scenario headings: " + ", ".join(missing[:4]))
+        issues.append(blocker("word.scenario_headings_missing", MECHANICAL, "missing scenario headings: " + ", ".join(missing[:4])))
     word_count = sum(len(item.split()) for item in paragraphs)
     if word_count < spec.min_words:
-        issues.append(f"{spec.label} is too thin for first-draft delivery")
-    issues.extend(_generic_filler_issues(paragraphs))
+        issues.append(blocker("word.content_too_thin", MECHANICAL, f"{spec.label} is too thin for first-draft delivery"))
+    issues.extend(blocker("word.generic_filler", MECHANICAL, issue) for issue in _generic_filler_issues(paragraphs))
     if sections is not None:
-        issues.extend(_section_depth_issues(spec, sections))
+        issues.extend(blocker("word.section_depth", MECHANICAL, issue) for issue in _section_depth_issues(spec, sections))
     if spec.intent == "travel_itinerary":
-        issues.extend(travel_consistency_issues(topic, paragraphs, headings))
+        issues.extend(travel_consistency_issue_details(topic, paragraphs, headings))
     if spec.intent == "technical_guide":
-        issues.extend(technical_consistency_issues(topic, paragraphs))
+        issues.extend(blocker("word.technical_consistency", MECHANICAL, issue) for issue in technical_consistency_issues(topic, paragraphs))
     if spec.intent == "proposal":
-        issues.extend(proposal_consistency_issues(paragraphs))
+        issues.extend(blocker("word.proposal_consistency", MECHANICAL, issue) for issue in proposal_consistency_issues(paragraphs))
     return issues
-
 
 
 

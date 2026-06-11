@@ -24,6 +24,7 @@ from artifact_quality import (
     extract_docx_text,
     extract_xlsx_text,
     review_artifact_quality,
+    resolve_quality_disagreement,
     validate_docx_path,
     validate_html_content,
     validate_xlsx_path,

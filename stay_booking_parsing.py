@@ -124,13 +124,16 @@ def extract_stay_options(text: str, limit: int = 5) -> list[str]:
             continue
         before = []
         for prev in reversed(lines[max(0, idx - 8):idx]):
-            if price_re.search(prev) or noise.search(prev):
+            if price_re.search(prev):
+                break
+            if noise.search(prev):
                 continue
             before.append(prev)
-            if len(before) >= 3:
+            if len(before) >= 5:
                 break
-        after = [item for item in lines[idx + 1: idx + 4] if not noise.search(item)]
-        joined = " | ".join(list(reversed(before)) + [line] + after)
+        context = list(reversed(before))[-5:]
+        context = [item for item in context if not re.search(r"\bproperties found\b", item, re.I)]
+        joined = " | ".join(context + [line])
         if joined and joined not in options:
             options.append(joined)
         if len(options) >= limit:

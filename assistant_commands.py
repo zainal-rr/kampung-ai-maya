@@ -20,11 +20,12 @@ from activation import handle_activation_command
 from assistant_command_helpers import direct_key
 from assistant_briefing_helpers import handle_weekly_reflection
 from assistant_confirmation_helpers import resolve_pending_confirmation
-from assistant_memory_commands import handle_memory_lookup
+from assistant_memory_commands import handle_memory_forget, handle_memory_lookup
 from assistant_schedule_commands import handle_reminder_command, handle_summary_task_command
 from assistant_skill_creation import handle_explicit_skill_scaffold_approval, handle_skill_creation_request
 from artisan_apply import apply_latest_artisan_repo_changes
 from artisan_runner import latest_artisan_summary_text, latest_artisan_transcript_text
+from artifact_review_store import resolve_review_activity_text
 from assistant_task_helpers import create_sensitive_send_task, format_open_tasks, parse_task_delete_request
 from document_actions import DocumentActionRouter
 from everyday_commands import EverydayCommandRouter
@@ -97,6 +98,7 @@ class AssistantCommandRouter:
             self._handle_weekly_reflection,
             self._handle_safety_actions,
             self._handle_voice_session_command,
+            self._handle_review_resolution,
             self._handle_everyday_commands,
             self._handle_skill_creation,
             self._handle_document_actions,
@@ -117,6 +119,7 @@ class AssistantCommandRouter:
             self._handle_skill_proposals,
             self._handle_skill_lifecycle,
             self._handle_self_heal_status,
+            self._handle_memory_forget,
             self._handle_memory_lookup,
             self._handle_unsupported_action,
         ):
@@ -258,6 +261,13 @@ class AssistantCommandRouter:
             self.last_reason = "voice session review"
         return reply
 
+    async def _handle_review_resolution(self, text: str, channel: str) -> str | None:
+        reply = await resolve_review_activity_text(self.db_path, text)
+        if reply:
+            self.last_lane = "command"
+            self.last_reason = "artifact review resolution"
+        return reply
+
     async def _handle_session_memory_command(self, text: str, channel: str) -> str | None:
         reply = await handle_session_memory_command(self.db_path, text)
         if reply:
@@ -300,6 +310,13 @@ class AssistantCommandRouter:
         if reply:
             self.last_lane = "command"
             self.last_reason = "memory lookup"
+        return reply
+
+    async def _handle_memory_forget(self, text: str, channel: str) -> str | None:
+        reply = await handle_memory_forget(self.db_path, text)
+        if reply:
+            self.last_lane = "command"
+            self.last_reason = "memory forget"
         return reply
 
     async def _resolve_confirmation(self, text: str, channel: str) -> str | None:

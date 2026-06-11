@@ -1,5 +1,6 @@
 import os
 import subprocess
+import sys
 
 
 BROWSER_APPS = {"Google Chrome", "Safari"}
@@ -206,7 +207,17 @@ class OSBridge:
 
 
 def _test_mode() -> bool:
-    return os.getenv("MAYA_TEST_MODE", "0") == "1"
+    if os.getenv("MAYA_TEST_MODE", "0") == "1":
+        return True
+    if "PYTEST_CURRENT_TEST" in os.environ:
+        return True
+    entrypoint = os.path.basename(sys.argv[0] or "")
+    return entrypoint.endswith("_smoke.py") or entrypoint.startswith("test_") or entrypoint in {
+        "local_ci.py",
+        "pytest",
+        "py.test",
+        "scored_eval_suite.py",
+    }
 
 
 SPECIAL_KEYS = {

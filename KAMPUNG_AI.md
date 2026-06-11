@@ -92,6 +92,8 @@ The lane name is still Artisan. Codex is the implementation engine behind it. Wo
 
 Telegram and iMac share the same memory, artifact, workflow desk, and document quality architecture. Delivery differs by channel only.
 
+Telegram has an explicit conversation contract: greeting-only messages get a warm short acknowledgement; stale pending artifact/session state is cleaned before routing; normal model chat may not claim files, attachments, browser actions, or memory writes unless a verified tool or delivery path actually did the work. Strong artifact requests that hit a tool failure must return an honest failure instead of falling through to normal chat.
+
 ## Artifact Quality
 
 Model text is not the final artifact. Real artifacts are created through local file builders, validated locally, reviewed when useful, repaired when possible, and delivered only with honest status.
@@ -165,6 +167,8 @@ Voice transcript cleanup removes filler words, repeated starts, self-corrections
 Maya may search, compare, summarize, and fill non-sensitive filters. She must stop before booking, payment, checkout, upload, login submission, passport, OTP, card, bank, private identifier, or final submit actions unless an explicit staged approval flow is completed. Secrets and sensitive private data remain hard-blocked.
 
 Browser actions require verification: visible text, URL, title, target presence, modal state, or screenshot/DOM evidence where available. Clicks without verification are not considered complete.
+
+Travel research can feed the budget layer. When Maya opens or selects a visible priced Google Flights, Booking.com, or Airbnb option, she records the chosen provider, option text, and MYR price into `maya_travel_plan`; travel budget workbooks then place those saved values in the selected flight/stay rows and budget snapshot. Spoken or typed prices still work, but browser selection is now a first-class capture path.
 
 ## Agentic Workflow
 

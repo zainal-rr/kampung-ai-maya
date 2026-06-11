@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 from telegram import BotCommand
 
-from artifact_review_store import latest_artifact_review_text
+from artifact_review_store import latest_artifact_review_text, resolve_review_activity_text
 from artisan_apply import apply_latest_artisan_repo_changes
 from artisan_runner import latest_artisan_delivery_text, latest_artisan_summary_text, latest_artisan_transcript_text
 from cost_tracker import usage_summary_text
@@ -124,6 +124,9 @@ async def command_to_text(db_path: str, parsed: ParsedCommand) -> str:
     if name in {"turn", "lastturn"}:
         return await latest_telegram_turn_text(db_path)
     if name in {"review", "artifactreview", "artifactqa"}:
+        resolved = await resolve_review_activity_text(db_path, f"review {parsed.args}".strip())
+        if resolved:
+            return resolved
         return await latest_artifact_review_text(db_path)
     if name == "context":
         return await inspect_session_context(db_path)

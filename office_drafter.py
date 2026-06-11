@@ -2,7 +2,8 @@ from __future__ import annotations
 
 import re
 
-from excel_species import detect_excel_species, species_rows
+from excel_species import detect_excel_species, species_rows_structured
+from excel_species_draft import rows_from_species_draft, seed_rows
 from word_quality import canonicalize_word_sections
 from office_drafter_powerpoint import _clean_slides, _general_powerpoint_slides, _scenario_powerpoint_slides
 from office_text_utils import _plain
@@ -43,7 +44,12 @@ def spreadsheet_from_markdown(topic: str, markdown: str) -> tuple[list[str], lis
         return _comparison_rows(topic, markdown)
     species = detect_excel_species(topic)
     if species:
-        return species_rows(species, topic, sections_from_markdown(markdown, topic))
+        # Structured rows only: parse the species-contract table from the
+        # draft; when the draft is prose (the 2026-06-11 live failure mode),
+        # fall back to deterministic seed rows. Never map narrative sections
+        # into spreadsheet cells for species topics.
+        draft_rows = rows_from_species_draft(species, markdown)
+        return species_rows_structured(species, topic, draft_rows or seed_rows(species))
     if _looks_like_tracker(topic):
         return _tracker_rows(markdown)
     rows: list[list[str]] = []

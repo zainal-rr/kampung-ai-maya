@@ -19,9 +19,9 @@ def max_pptx_attempts(auto_improve: bool) -> int:
     if not auto_improve:
         return 1
     try:
-        configured = int(os.getenv("PPTX_QA_MAX_ATTEMPTS", "4"))
+        configured = int(os.getenv("PPTX_QA_MAX_ATTEMPTS", "3"))
     except ValueError:
-        configured = 10
+        configured = 3
     return max(1, min(configured, 10))
 
 

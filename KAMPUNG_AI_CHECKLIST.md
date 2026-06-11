@@ -891,11 +891,13 @@ This document tracks the technical and operational roadmap for building the stan
 
 - [x] **19.3. Shared Artifact QA Contract**
     - [x] Add `ArtifactQualityResult` with artifact type, path, pass/fail state, summary, issues, warnings, draft model, review model, validation steps, repair flag, and delivery readiness.
+    - [x] Add structured QA issue metadata: rule id, severity (`blocker`, `warning`, `info`), rule class (`mechanical`, `open_world`, `semantic`), message, and evidence.
     - [x] Add local HTML validation for doctype, structure, inline CSS/JS, interactive controls, code-fence leakage, and common corrupted CSS/HTML markers.
     - [x] Add local Word validation for `.docx` openability, headings, content density, placeholder text, malformed markdown leakage, and generated summary.
     - [x] Add local Excel validation for `.xlsx` openability, populated cells, table-like rows, frozen panes, and formulas when formulas are implied.
     - [x] Add Claude artifact review helper that loads the relevant artifact quality skill and records Claude usage when a live key is present.
     - [x] Fail open with a warning when Claude is unavailable, while still enforcing local validation.
+    - [x] Add QA disagreement governance: open-world/semantic validator disagreements can use targeted Gemini arbitration, mechanical blockers remain validator-authoritative, and `/review` shows weekly disagreement activity with resolved items crossed out.
 
 - [x] **19.4. Word Quality Gate**
     - [x] Keep Gemini role-based drafting as the Word content source.
@@ -945,7 +947,7 @@ This document tracks the technical and operational roadmap for building the stan
         - [x] Strengthen router/WiFi technical guides with required admin password, SSID, WiFi password, WPA2/WPA3, firmware, and verification content.
         - [x] Repair proposal drafts before delivery when they contain empty Out of Scope labels, incomplete tiered frameworks, or raw markdown dividers.
         - [x] Replace one-pass Word repair with bounded internal Word QA retries before Maya delivers or reports a hard failure.
-        - [x] Raise default artifact QA retry cap to 10 attempts for Word/Excel and PowerPoint visual QA, while keeping environment overrides available.
+        - [x] Set default artifact QA retry cap to 3 attempts for Word/Excel and PowerPoint visual QA, while keeping environment overrides available and clamped.
         - [x] Add bounded internal Excel rebuild retries for travel-budget and generic spreadsheet creation before Maya delivers or reports a hard failure.
         - [x] Add a Word quality smoke test that builds real `.docx` files and validates multiple everyday scenarios.
         - [x] Add Word golden artifact smoke tests that inspect real `.docx` content for travel, router, and proposal scenarios.
@@ -1372,6 +1374,8 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add voice transcript cleanup for filler words, self-correction, background-noise markers, repeated starts, and dangling cut-off endings before voice intent routing.
     - [x] Preserve the rule that xAI voice does not personally execute long document, browser, skill, coding, memory, or project work; it starts Maya's local tools through a clean voice facade.
     - [x] Add explicit travel price capture for spoken or typed flight, Airbnb, Booking.com, hotel, accommodation, and stay prices so budget workbooks can preserve those values.
+    - [x] Wire visible browser travel selections into budget memory: choosing a Google Flights, Booking.com, or Airbnb priced option saves the selected provider/option/price into `maya_travel_plan`, and the one-sheet travel budget workbook consumes those values. Verified by `browser_task_step_smoke.py`.
+    - [x] Fix country-level travel Word QA so "Kazakhstan itinerary" can include in-country cities such as Almaty and Astana without being rejected as destination mismatches. Verified against the live-generated `kazakhstan-itinerary-v3.docx`, `document_species_smoke.py`, `word_quality_smoke.py`, and live Telegram turn 5743.
     - [x] Add `grok_voice_transcript_replay_500.py` and `grok_voice_replay_fakes.py` for isolated deterministic replay without live provider spend.
     - [x] Run the 500-case replay. Result: 500 PASS, 0 FAIL. Evidence: `logs/live_tests/grok_voice_transcript_replay_500_2026-06-04.md`.
     - [x] Confirm the replay covered the then-current voice-to-worker routing, memory, documents, `/complex`, safety gates, Grok-not-long-work policy, final response shape, live skills, skill creation/suggestion/approval, healing commands, travel budget price capture, slashless spoken commands, and noisy/cut-off transcripts.
@@ -1535,9 +1539,19 @@ Full detail: `SESSION_CHANGE_REPORT.md`. Validation plan: `KAMPUNG_AI_VALIDATION
 - [x] **24.5. Skill Hygiene**
     - [x] Word-boundary matching for built-in skill keywords; checkout-guard and telegram-send collision keywords tuned ("loan book"/"Preference Share" no longer inject guard/send skills).
     - [x] Move `maya_skills/active/fake.md` to `disabled/`; reject the miscaptured "Can you update that to 4 days" skill proposal.
-- [ ] **24.6. iMac Validation (owner)**
+- [x] **24.6. Telegram Conversation Contract**
+    - [x] Greeting-only Telegram turns now answer warmly instead of returning the old empty-input fallback.
+    - [x] Expired pending artifact requests and expired active artifact sessions are cleaned before Telegram routing.
+    - [x] Short meta-followups such as "what do you mean" use only the immediate previous assistant reply instead of stale artifact context.
+    - [x] Normal model chat is blocked from claiming files, attachments, browser work, or memory writes without verified tool/delivery evidence.
+    - [x] Strong document/artifact requests that hit command-router failure return an honest document failure instead of falling through to normal chat.
+    - [x] `telegram_conversation_contract_smoke.py` pins the June 10 regressions.
+- [ ] **24.7. iMac Validation (owner)**
     - [ ] Commit the working tree FIRST (two sessions of uncommitted work; no rollback point exists until this is done).
     - [ ] Run `KAMPUNG_AI_VALIDATION_TEST_CHECKLIST.md` end to end on the iMac with live keys.
+    - [x] Live Telegram allowlist Phase 2 check: a second phone/account sent `/start`, `Hi`, and `Hello` at 2026-06-10 23:15 MYT; Maya stayed silent and `logs/launchd.stderr.log` recorded three `Rejected unauthorized Telegram chat ...` warnings.
+    - [x] Smoke/proof app-control boundary: `local_ci.py` now forces `MAYA_TEST_MODE=1` for child checks, and `OSBridge` treats `_smoke.py`, `test_*.py`, `local_ci.py`, and `scored_eval_suite.py` as no-op app-control entrypoints so Word, Excel, PowerPoint, Cursor, Chrome, and notifications cannot wake during log/security/memory proof runs.
+    - [x] Live Telegram Kazakhstan QA governance check: turn 5743 delivered `kazakhstan-itinerary-v3.docx` cleanly with Day 1 through Day 9 headings, `/review` turn 5744 showed Claude PASS, and `qa_disagreement_events` stayed empty for the known-good case.
     - [ ] Promote `network_engineering` and `finance_credit_analysis` to `maya_skills/active/` after Phase 5 checks.
     - [ ] Decide on the concurrent-session changes (cost-lane refactor, browser extension lane) and commit the working tree.
     - [ ] One week of field use; collect the disappointment list to drive the next phase.

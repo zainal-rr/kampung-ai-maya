@@ -25,6 +25,7 @@ from artifact_quality import (
     extract_docx_text,
     extract_xlsx_text,
     review_artifact_quality,
+    resolve_quality_disagreement,
     validate_docx_path,
     validate_xlsx_path,
 )
@@ -66,12 +67,12 @@ class ArtifactBuilder:
         open_file: bool | None = None,
         rebuild=None,
     ) -> BuiltArtifact:
-        quality = await self._docx_quality(path, topic)
+        quality = await self._docx_quality(path, topic, attempt_number=1)
         attempts = 1
         while not quality.passed and rebuild and attempts < artifact_qa_max_attempts("docx"):
             attempts += 1
             await _run_rebuild(rebuild, attempts, quality)
-            quality = await self._docx_quality(path, topic)
+            quality = await self._docx_quality(path, topic, attempt_number=attempts)
             quality.repair_attempted = True
         return await self._finish(path, topic, quality, channel, run_id, source_tool, app_name, success_message, draft_message, open_file)
 
@@ -88,34 +89,56 @@ class ArtifactBuilder:
         open_file: bool | None = None,
         rebuild=None,
     ) -> BuiltArtifact:
-        quality = await self._xlsx_quality(path, topic)
+        quality = await self._xlsx_quality(path, topic, attempt_number=1)
         attempts = 1
         while not quality.passed and rebuild and attempts < artifact_qa_max_attempts("xlsx"):
             attempts += 1
             await _run_rebuild(rebuild, attempts, quality)
-            quality = await self._xlsx_quality(path, topic)
+            quality = await self._xlsx_quality(path, topic, attempt_number=attempts)
             quality.repair_attempted = True
         success = f"Done. I created {label}."
         draft = f"I created {label}, but QA found: {quality.short_issue_text()}. I’m keeping it as a draft."
         return await self._finish(path, topic, quality, channel, run_id, source_tool, app_name, success, draft, open_file)
 
-    async def _docx_quality(self, path: Path, topic: str) -> ArtifactQualityResult:
+    async def _docx_quality(self, path: Path, topic: str, *, attempt_number: int = 1) -> ArtifactQualityResult:
         local_qa = await asyncio.to_thread(validate_docx_path, path, topic)
+        extracted = await asyncio.to_thread(extract_docx_text, path)
         review_qa = await review_artifact_quality(
             self.db_path,
             "docx",
             topic,
-            await asyncio.to_thread(extract_docx_text, path),
+            extracted,
+        )
+        local_qa = await resolve_quality_disagreement(
+            self.db_path,
+            artifact_type="docx",
+            topic=topic,
+            path=path,
+            local_qa=local_qa,
+            review_qa=review_qa,
+            extracted=extracted,
+            attempt_number=attempt_number,
         )
         return local_qa.merge(review_qa)
 
-    async def _xlsx_quality(self, path: Path, topic: str) -> ArtifactQualityResult:
+    async def _xlsx_quality(self, path: Path, topic: str, *, attempt_number: int = 1) -> ArtifactQualityResult:
         local_qa = await asyncio.to_thread(validate_xlsx_path, path, topic)
+        extracted = await asyncio.to_thread(extract_xlsx_text, path)
         review_qa = await review_artifact_quality(
             self.db_path,
             "xlsx",
             topic,
-            await asyncio.to_thread(extract_xlsx_text, path),
+            extracted,
+        )
+        local_qa = await resolve_quality_disagreement(
+            self.db_path,
+            artifact_type="xlsx",
+            topic=topic,
+            path=path,
+            local_qa=local_qa,
+            review_qa=review_qa,
+            extracted=extracted,
+            attempt_number=attempt_number,
         )
         return local_qa.merge(review_qa)
 
@@ -180,7 +203,7 @@ def _attach(message: str, path: Path, channel: str) -> str:
 def _draft_only_reply(message: str) -> str:
     if "ask me for the draft" in message.lower():
         return message
-    return f"{message} I did not attach it as a finished file. Ask me for the draft if you want to inspect it."
+    return f"{message} I kept it as a draft and I am not calling it final. Ask me for the draft if you want to inspect it."
 
 
 def _artifact_kind(path: Path) -> str:

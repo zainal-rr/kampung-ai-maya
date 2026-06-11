@@ -25,6 +25,8 @@ from telegram_channel_audit import record_delivery_event, record_turn_event
 from telegram_command_direct import is_direct_command_reply
 from telegram_commands import bot_commands, command_to_text, parse_command, voice_enabled
 from telegram_delivery_state import last_voice_message_id, save_last_voice_message_id
+from telegram_poller_lock import acquire_poller_lock
+from telegram_turn_log import finalize_telegram_turn, record_telegram_turn_received
 from telegram_delivery import send_document_file, send_photo_file, send_speech, send_text, split_file_markers
 from telegram_photo_input import describe_telegram_photo
 from telegram_voice_input import transcribe_telegram_voice
@@ -159,19 +161,77 @@ class TelegramChannel:
         started = time.monotonic()
         envelope = channel_envelope("telegram", text)
         prompt = str(envelope.get("text", text))
+        chat_id = str(update.effective_chat.id) if update.effective_chat else ""
+        # Durable intake guard: record the turn BEFORE any processing so a
+        # crash or task cancellation mid-handling leaves a visible orphaned
+        # 'received' row instead of a silently vanished message
+        # (live incident 2026-06-10: skill_usage rows existed, turn rows did not).
+        turn_id: int | None = None
+        try:
+            turn_id = await record_telegram_turn_received(
+                self.assistant.db_path, chat_id=chat_id, input_type=input_type, prompt=prompt
+            )
+        except Exception:
+            logger.exception("Could not record received Telegram turn")
         try:
             response = await self.assistant.handle_text(
                 prompt,
                 channel="telegram",
                 speak_reply=False,
                 input_type=input_type,
-                channel_external_id=str(update.effective_chat.id) if update.effective_chat else "",
+                channel_external_id=chat_id,
             )
             await self._send_response(update, context, response, input_type=input_type)
-            await self._record_turn(update, input_type, prompt, "completed", started, len(response), response=response)
-        except Exception as exc:
-            await self._record_turn(update, input_type, prompt, "failed", started, 0, exc.__class__.__name__)
+            await self._finalize_turn(turn_id, update, input_type, prompt, "completed", started, len(response), response=response)
+        except BaseException as exc:
+            # BaseException on purpose: asyncio.CancelledError does NOT inherit
+            # from Exception, so a poller conflict cancelling this task used to
+            # skip turn recording entirely. The finalize write is shielded so
+            # it completes even while this task is being cancelled.
+            await self._finalize_turn(turn_id, update, input_type, prompt, "failed", started, 0, error=exc.__class__.__name__)
             raise
+
+    async def _finalize_turn(
+        self,
+        turn_id: int | None,
+        update: Update,
+        input_type: str,
+        prompt: str,
+        status: str,
+        started: float,
+        response_chars: int,
+        response: str = "",
+        error: str = "",
+    ) -> None:
+        try:
+            if turn_id is not None:
+                await asyncio.shield(
+                    finalize_telegram_turn(
+                        self.assistant.db_path,
+                        turn_id,
+                        status=status,
+                        duration_ms=int((time.monotonic() - started) * 1000),
+                        response_chars=response_chars,
+                        response_preview=response[:1000],
+                        error=error,
+                    )
+                )
+            else:
+                await asyncio.shield(
+                    record_turn_event(
+                        self.assistant.db_path,
+                        update,
+                        input_type=input_type,
+                        prompt=prompt,
+                        status=status,
+                        started=started,
+                        response_chars=response_chars,
+                        response_preview=response,
+                        error=error,
+                    )
+                )
+        except BaseException:
+            logger.exception("Could not finalize Telegram turn %s", turn_id)
 
     async def _send_response(self, update: Update, context: ContextTypes.DEFAULT_TYPE, response: str, input_type: str = "text"):
         if not update.effective_chat:
@@ -252,6 +312,24 @@ class TelegramChannel:
         return self.voice_replies or await voice_enabled(self.assistant.db_path)
 
     async def run(self):
+        # Single-poller guarantee: a second getUpdates loop on the same token
+        # makes Telegram terminate connections (telegram.error.Conflict) and
+        # silently drops in-flight turns. Refuse to double-poll.
+        lock = acquire_poller_lock("telegram")
+        if lock is None:
+            retry_seconds = _timeout_env("MAYA_TELEGRAM_POLLER_RETRY_SECONDS", 30.0)
+            logger.critical(
+                "Another Telegram poller holds the lock; not starting a second one. Retrying in %.0fs.",
+                retry_seconds,
+            )
+            await asyncio.sleep(retry_seconds)
+            return
+        try:
+            await self._run_polling()
+        finally:
+            lock.release()
+
+    async def _run_polling(self):
         app = (
             ApplicationBuilder()
             .token(self.token)

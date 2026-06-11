@@ -21,10 +21,12 @@ async def main() -> None:
         await init_db(db_path)
         old_google = os.environ.get("GOOGLE_API_KEY")
         old_enabled = os.environ.get("ENABLE_PPTX_GEMINI_IMAGES")
+        old_workspace = os.environ.get("MAYA_WORKSPACE_ROOT")
         old_image = pptx_visual_assets.generate_gemini_image
         old_polish = pptx_document_flow.claude_polish_grade
         os.environ["GOOGLE_API_KEY"] = "fake"
         os.environ["ENABLE_PPTX_GEMINI_IMAGES"] = "1"
+        os.environ["MAYA_WORKSPACE_ROOT"] = str(root / "Maya")
         pptx_visual_assets.generate_gemini_image = _fake_generate
         pptx_document_flow.claude_polish_grade = _fake_polish
         try:
@@ -45,6 +47,7 @@ async def main() -> None:
             pptx_document_flow.claude_polish_grade = old_polish
             _restore_env("GOOGLE_API_KEY", old_google)
             _restore_env("ENABLE_PPTX_GEMINI_IMAGES", old_enabled)
+            _restore_env("MAYA_WORKSPACE_ROOT", old_workspace)
         _require(qa.passed, f"rescue PowerPoint flow should pass: {qa.issues}")
         _require(qa.revisions >= 2, "rescue flow should reach the deterministic rescue attempt")
         deck = Presentation(path)

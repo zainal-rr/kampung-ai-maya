@@ -34,6 +34,8 @@ async def main() -> None:
         try:
             await _word_retries_until_pass(db_path, Path(tmp) / "Maya")
             await _builder_retries_until_pass(db_path, Path(tmp) / "bad.xlsx")
+            os.environ.pop("ARTIFACT_QA_MAX_ATTEMPTS", None)
+            await _word_default_retry_cap_exhausts_at_three(db_path, Path(tmp) / "MayaDefault")
             print("artifact_retry_loop_smoke: ok")
         finally:
             _restore_env("ANTHROPIC_API_KEY", old_anthropic)
@@ -49,7 +51,7 @@ async def _word_retries_until_pass(db_path: str, workspace: Path) -> None:
     quality_calls = 0
     repairs: list[int] = []
 
-    async def fake_quality(path: Path, topic: str) -> ArtifactQualityResult:
+    async def fake_quality(path: Path, topic: str, *, attempt_number: int = 1) -> ArtifactQualityResult:
         nonlocal quality_calls
         quality_calls += 1
         if quality_calls < 3:
@@ -101,6 +103,39 @@ async def _builder_retries_until_pass(db_path: str, path: Path) -> None:
     _require(result.quality.passed, f"builder did not pass after rebuild: {result.quality.issues}")
     _require("[file:" in result.reply, f"passed builder retry did not attach: {result.reply}")
     _require(rebuilds == [2], f"builder did not rebuild once: {rebuilds}")
+
+
+async def _word_default_retry_cap_exhausts_at_three(db_path: str, workspace: Path) -> None:
+    import document_actions as da
+
+    old_draft = da.draft_markdown_with_gemini
+    old_preflight = da.artifact_preflight_with_gemini
+    router = DocumentActionRouter(db_path, workspace=workspace)
+    quality_calls = 0
+    repairs: list[int] = []
+
+    async def fake_quality(path: Path, topic: str, *, attempt_number: int = 1) -> ArtifactQualityResult:
+        nonlocal quality_calls
+        quality_calls += 1
+        return ArtifactQualityResult("docx", str(path), False, issues=[f"forced unresolved failure {quality_calls}"])
+
+    async def fake_repair(path: Path, topic: str, quality: ArtifactQualityResult, attempt: int = 2) -> bool:
+        repairs.append(attempt)
+        return True
+
+    try:
+        da.draft_markdown_with_gemini = _fake_draft
+        da.artifact_preflight_with_gemini = _fake_preflight
+        router._word_quality = fake_quality
+        router._repair_word_doc = fake_repair
+        reply = await router._create_word("Kazakhstan itinerary", False, "telegram")
+    finally:
+        da.draft_markdown_with_gemini = old_draft
+        da.artifact_preflight_with_gemini = old_preflight
+
+    _require(quality_calls == 3, f"default Word QA should make exactly 3 quality calls, got {quality_calls}")
+    _require(repairs == [2, 3], f"default Word repair loop should repair attempts 2 and 3, got {repairs}")
+    _require("after 3 internal attempts" in reply, f"exhaustion message did not say 3 attempts: {reply}")
 
 
 async def _fake_draft(db_path: str, topic: str, preflight_context: str = "") -> MarkdownDraft:

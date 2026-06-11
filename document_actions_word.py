@@ -39,15 +39,15 @@ class DocumentWordMixin:
         )
         self.last_cost_recorded = True
         await self._build_word_doc(path, topic, draft.content)
-        quality = await self._word_quality(path, topic)
+        quality = await self._word_quality(path, topic, attempt_number=1)
         attempts = 1
-        max_attempts = min(2, artifact_qa_max_attempts("docx")) if channel == "imac" else artifact_qa_max_attempts("docx")
+        max_attempts = artifact_qa_max_attempts("docx")
         while not quality.passed and attempts < max_attempts:
             attempts += 1
             repaired = await self._repair_word_doc(path, topic, quality, attempts)
             if not repaired:
                 break
-            quality = await self._word_quality(path, topic)
+            quality = await self._word_quality(path, topic, attempt_number=attempts)
         if not quality.passed:
             return await self._draft_with_issues("Word draft", path, channel, "Microsoft Word", quality.short_issue_text(), attempts=attempts)
         await self._remember(path, f"Created Word draft: {quality.summary}", project_scoped, channel, "docx", topic)
@@ -58,17 +58,28 @@ class DocumentWordMixin:
         sections = await style_sections(self.db_path, sections)
         await asyncio.to_thread(create_docx, path, _word_document_title(topic), sections)
 
-    async def _word_quality(self, path: Path, topic: str) -> ArtifactQualityResult:
+    async def _word_quality(self, path: Path, topic: str, *, attempt_number: int = 1) -> ArtifactQualityResult:
         local_qa = await asyncio.to_thread(validate_docx_path, path, topic)
         if "local Word QA" not in self.last_model_lane:
             self.last_model_lane += " + local Word QA"
         if "word visual layout" in local_qa.validation_steps and "local Word visual QA" not in self.last_model_lane:
             self.last_model_lane += " + local Word visual QA"
-        review_qa = await review_artifact_quality(self.db_path, "docx", topic, await asyncio.to_thread(extract_docx_text, path))
+        extracted = await asyncio.to_thread(extract_docx_text, path)
+        review_qa = await review_artifact_quality(self.db_path, "docx", topic, extracted)
         if review_qa.review_model and "Claude Word review" not in self.last_model_lane:
             self.last_model_lane += " + Claude Word review"
         elif review_qa.warnings and "Claude Word review" not in self.last_model_lane:
             self.last_model_lane += " + Claude Word review skipped"
+        local_qa = await resolve_quality_disagreement(
+            self.db_path,
+            artifact_type="docx",
+            topic=topic,
+            path=path,
+            local_qa=local_qa,
+            review_qa=review_qa,
+            extracted=extracted,
+            attempt_number=attempt_number,
+        )
         return local_qa.merge(review_qa)
 
     async def _repair_word_doc(self, path: Path, topic: str, quality: ArtifactQualityResult, attempt: int = 2) -> bool:
@@ -137,7 +148,7 @@ class DocumentWordMixin:
         target = versioned_path(path) if save_copy else path
         backup = await asyncio.to_thread(_backup_word_file, path)
         await self._build_word_doc(target, topic, draft.content)
-        quality = await self._word_quality(target, topic)
+        quality = await self._word_quality(target, topic, attempt_number=1)
         attempts = 1
         max_attempts = artifact_qa_max_attempts("docx")
         while not quality.passed and attempts < max_attempts:
@@ -145,7 +156,7 @@ class DocumentWordMixin:
             repaired = await self._repair_word_doc(target, topic, quality, attempts)
             if not repaired:
                 break
-            quality = await self._word_quality(target, topic)
+            quality = await self._word_quality(target, topic, attempt_number=attempts)
         if not quality.passed:
             if save_copy and target.exists():
                 await asyncio.to_thread(target.unlink)
@@ -180,7 +191,7 @@ class DocumentWordMixin:
         if save_copy:
             await asyncio.to_thread(shutil.copy2, path, target)
         await asyncio.to_thread(apply_simple_docx_edit, target, instruction)
-        quality = await self._word_quality(target, topic)
+        quality = await self._word_quality(target, topic, attempt_number=1)
         if not quality.passed:
             if save_copy and target.exists():
                 await asyncio.to_thread(target.unlink)

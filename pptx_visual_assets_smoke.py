@@ -27,8 +27,10 @@ async def main() -> None:
         )
         old_enabled = os.environ.get("ENABLE_PPTX_GEMINI_IMAGES")
         old_google = os.environ.get("GOOGLE_API_KEY")
+        old_workspace = os.environ.get("MAYA_WORKSPACE_ROOT")
         os.environ["ENABLE_PPTX_GEMINI_IMAGES"] = "1"
         os.environ["GOOGLE_API_KEY"] = "fake"
+        os.environ["MAYA_WORKSPACE_ROOT"] = str(root / "Maya")
         old_generate = pptx_visual_assets.generate_gemini_image
         pptx_visual_assets.generate_gemini_image = _fake_generate
         try:
@@ -43,6 +45,10 @@ async def main() -> None:
                 os.environ.pop("GOOGLE_API_KEY", None)
             else:
                 os.environ["GOOGLE_API_KEY"] = old_google
+            if old_workspace is None:
+                os.environ.pop("MAYA_WORKSPACE_ROOT", None)
+            else:
+                os.environ["MAYA_WORKSPACE_ROOT"] = old_workspace
         _require(added, note)
         _require(visual_image_cap(10) == 13, "10-slide image cap should be ceil(13.0)")
         _require(visual_image_cap(4) == 6, "4-slide image cap should round 5.2 up to 6")
