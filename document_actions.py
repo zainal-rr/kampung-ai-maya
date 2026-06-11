@@ -30,6 +30,7 @@ from artifact_semantic_resolver import resolve_semantic_artifact_intent
 from document_actions_html import DocumentHtmlMixin
 from document_actions_office import DocumentOfficeMixin
 from document_actions_word import DocumentWordMixin
+from recent_questions_document import recent_questions_requested, requested_recent_question_count
 
 
 _PATCHABLE_SYMBOLS = (
@@ -149,6 +150,9 @@ class DocumentActionRouter(DocumentHtmlMixin, DocumentWordMixin, DocumentOfficeM
             return hard_no_private_exposure_text()
         if action_permission("create_document" if kind != "pptx" else "create_presentation") != "allow":
             return "I need your confirmation before creating that document."
+        if kind == "docx" and recent_questions_requested(original_text, topic):
+            count = requested_recent_question_count(original_text, topic)
+            return await self._create_recent_questions_word(count, project_scoped, channel)
         resolution = await resolve_artifact_parameters(self.db_path, kind, topic, channel)
         if resolution.question:
             self.last_model_lane = "clarification"

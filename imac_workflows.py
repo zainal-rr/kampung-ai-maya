@@ -25,10 +25,16 @@ class ImacWorkflowRouter:
     def __init__(self, db_path: str, bridge: OSBridge | None = None, workspace: Path | None = None):
         self.db_path = db_path
         self.bridge = bridge or OSBridge()
-        self.browser = make_browser_controller(bridge)
+        self._browser = None
         self.human_browser = HumanBrowserWorkflowRouter(db_path, self.bridge)
         self.workspace = workspace or workspace_dir("")
         self.documents = DocumentActionRouter(db_path, workspace=self.workspace, bridge=self.bridge)
+
+    @property
+    def browser(self):
+        if self._browser is None:
+            self._browser = make_browser_controller(self.bridge)
+        return self._browser
 
     async def handle(self, text: str, channel: str) -> str | None:
         return (

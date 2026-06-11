@@ -129,7 +129,10 @@ def _deck_arc_checks() -> None:
             f"{label} deck must not reuse the universal recommendation closing",
         )
     _require(len(set(closings.values())) == 4, f"arc closings should differ: {closings}")
-    _require("works" in closings["issue"] or "way forward" in closings["issue"], f"issue arc closing missing: {closings['issue']}")
+    _require(
+        any(marker in closings["issue"] for marker in ("adoptable", "works", "way forward")),
+        f"issue arc closing missing: {closings['issue']}",
+    )
     general_decide = slides_from_markdown(MD, "help me decide which laptop to buy deck")[-1][0].lower()
     general_explain = slides_from_markdown(MD, "overview of malaysian coffee history deck")[-1][0].lower()
     _require(general_decide != general_explain, "general decks should vary closing by topic")

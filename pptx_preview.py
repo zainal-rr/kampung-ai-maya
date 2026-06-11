@@ -1,16 +1,17 @@
 from __future__ import annotations
 
+import os
+import tempfile
 from pathlib import Path
 
 from PIL import Image, ImageDraw
 
 from office_files import safe_slug
 from pptx_slide_renderer import render_pptx_slides
-from workspace_paths import workspace_dir
 
 
 def powerpoint_contact_sheet(path: Path, *, max_slides: int = 8) -> Path | None:
-    preview_root = workspace_dir("screenshots", create=True) / "pptx-previews" / path.stem
+    preview_root = _preview_root(path)
     slides = render_pptx_slides(path, preview_root / "slides", limit=max_slides)
     if not slides:
         return None
@@ -48,3 +49,16 @@ def _contact_sheet(path: Path, images: list[Image.Image], preview_root: Path) ->
     out = preview_root / f"{safe_slug(path.stem, 72)}-preview.jpg"
     sheet.save(out, "JPEG", quality=92)
     return out
+
+
+def _preview_root(path: Path) -> Path:
+    """Local scratch for preview renders.
+
+    Desktop/Maya can be iCloud-synced on Zainal's iMac. Live tests repeatedly
+    hit `[Errno 60] Operation timed out` while writing preview JPEGs there.
+    Preview/contact-sheet images are scratch artifacts, so default to local tmp.
+    Override with MAYA_PPTX_PREVIEW_DIR if a durable preview directory is needed.
+    """
+    override = os.getenv("MAYA_PPTX_PREVIEW_DIR", "").strip()
+    base = Path(override).expanduser() if override else Path(tempfile.gettempdir()) / "maya-pptx-previews"
+    return base / path.stem

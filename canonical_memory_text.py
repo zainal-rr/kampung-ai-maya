@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 
 STOPWORDS = {"a", "an", "are", "is", "my", "the", "that", "this", "to", "for", "of", "me", "i"}
-TOKEN_ALIASES = {"snacks": "snack"}
+TOKEN_ALIASES = {"snacks": "snack", "replies": "reply"}
 TEST_MARKERS = ("test", "tests", "regression", "smoke", "temporary")
 # Whole-word match only: substring matching wrongly flagged durable memories
 # containing words like "latest" (test) or "contemporary" (temporary).
@@ -13,6 +13,19 @@ _TEST_MARKER_RE = re.compile(r"\b(?:" + "|".join(TEST_MARKERS) + r")\b")
 def subject_key_from_text(text: str) -> str:
     cleaned = " ".join(str(text).strip().rstrip(".?!").split()).lower()
     cleaned = re.sub(r"^(?:remember that|remember|save this memory[: ]*)\s+", "", cleaned)
+    cleaned = re.sub(r"^(?:actually|actually,|no actually|no, actually)\s+", "", cleaned)
+    reply_pref = re.match(
+        r"^(?:i\s+prefer|my\s+preferred)\s+(?:short|brief|concise|direct|detailed|long|longer)\s+(?:telegram\s+)?(?:reply|replies|response|responses)\b",
+        cleaned,
+    )
+    if reply_pref:
+        return "reply_style"
+    reply_query = re.match(
+        r"^(?:what(?:'s| is)|what|how)\s+(?:is\s+)?(?:my\s+)?(?:telegram\s+)?(?:reply|response)\s+style\b",
+        cleaned,
+    )
+    if reply_query:
+        return "reply_style"
     direct = re.match(r"^(?:what(?:'s| is)|do you know)\s+my\s+(.+)$", cleaned)
     if direct:
         cleaned = "my " + direct.group(1)

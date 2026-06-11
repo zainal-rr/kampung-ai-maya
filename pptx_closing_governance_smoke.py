@@ -294,8 +294,9 @@ def _visual_budget_checks(root: Path) -> None:
 
 def _scratch_and_honesty_checks() -> None:
     from pptx_visual_assets import _image_scratch_dir
-    from deck_species import deck_species_prompt_context
+    from deck_species import deck_species_prompt_context, deck_species_review_contract
     from pptx_slide_repair import rescue_slides
+    from office_drafter_deck_scenarios import _issue_deck, _pitch_deck
 
     scratch = str(_image_scratch_dir())
     _require("Desktop" not in scratch, f"image scratch must not default to Desktop: {scratch}")
@@ -303,19 +304,31 @@ def _scratch_and_honesty_checks() -> None:
     _require("Do NOT invent sprint numbers" in review_contract and "visible slide titles" in review_contract,
              f"review honesty contract wrong: {review_contract[:80]}")
     _require("fabricate" in deck_species_prompt_context("pitch"), "pitch honesty contract missing")
+    _require("farm-level" in deck_species_prompt_context("issue"), "issue semantic contract missing")
+    _require("customer or use case" in deck_species_review_contract("pitch"), "pitch review contract missing")
+    _require("who is affected" in deck_species_review_contract("issue"), "issue review contract missing")
     _require(deck_species_prompt_context("teaching") == "", "non-data species must have no contract")
+    pitch_titles = " | ".join(title for title, _ in _pitch_deck("investor pitch deck for a drone inspection startup", []))
+    _require("inspection workflow" in pitch_titles.lower(), f"pitch arc too generic: {pitch_titles}")
+    _require("proof" in pitch_titles.lower(), f"pitch closing should ask for proof, not generic scale: {pitch_titles}")
+    issue_titles = " | ".join(title for title, _ in _issue_deck("agriculture concern in Malaysia", []))
+    _require("farm level" in issue_titles.lower(), f"issue arc lacks local farm lens: {issue_titles}")
+    _require("water, inputs, and labor" in issue_titles.lower(), f"issue arc lacks concrete drivers: {issue_titles}")
     sprint_rescue = rescue_slides([], "make a sprint review deck for the team")
     rescue_titles = " ".join(title for title, _ in sprint_rescue).lower()
     _require("current sprint review" in rescue_titles, f"sprint rescue did not stay sprint-specific: {sprint_rescue}")
     _require("artifact quality" not in rescue_titles, f"sprint rescue fell into artifact-quality template: {sprint_rescue}")
-    print("  image scratch dir + deck honesty contracts + sprint rescue: ok")
+    print("  image scratch dir + semantic deck contracts + sprint rescue: ok")
 
 
 def _image_policy_checks() -> None:
     from pptx_polish_review import image_policy_line, _parse_polish
+    from pptx_document_flow import _append_sentence
 
-    non_visual = image_policy_line("make a presentation about a school robotics workshop")
-    _require("does not use generated images" in non_visual, f"non-visual policy wrong: {non_visual}")
+    plain = image_policy_line("make a plain text only presentation about internal notes")
+    _require("does not use generated images" in plain, f"plain policy wrong: {plain}")
+    visual = image_policy_line("make a presentation about a school robotics workshop")
+    _require("never" in visual and "draft-level" in visual, f"semantic visual policy wrong: {visual}")
     visual = image_policy_line("make an investor pitch deck for a drone startup")
     _require("never" in visual and "draft-level" in visual, f"visual policy wrong: {visual}")
     grade, reason = _parse_polish(
@@ -330,6 +343,24 @@ def _image_policy_checks() -> None:
     _require(grade == "good", f"'every slide has notes' should not be a blocker: {grade} / {reason}")
     grade, _ = _parse_polish('{"grade":"good","reason":"slide 4 has an incomplete sentence."}')
     _require(grade == "draft-level", "numbered slide blocker should still fail")
+    grade, reason = _parse_polish(
+        '{"grade":"good","reason":"Clear pitch spine: problem/use case (s1), service model (s2), '
+        'equipment/margin (s3), compliance risks (s4), and a concrete next ask Start Narrow (s5). '
+        'Labels are short and intentional, notes present on all slides, 4 layout variants, and '
+        'review-ready framing with useful visuals across the deck."}'
+    )
+    _require(grade == "good", f"valid pitch reason should stay good: {grade} / {reason}")
+    joined = _append_sentence(f"Design polish: good. {reason}", "Gemini visual asset added.")
+    _require("and. Gemini" not in joined, f"polish reason cut at dangling conjunction: {joined}")
+    grade, reason = _parse_polish(
+        '{"grade":"good","reason":"Strong issue/awareness arc: concern (rising agriculture pressure), '
+        'drivers (climate volatility, labor, fertilizer exposure), affected economics, policy responses '
+        '(extension, financing, incentives), and clear next direction (resilience through water systems, '
+        'adoption support, and market protection)."}'
+    )
+    _require(grade == "good", f"valid issue reason should stay good: {grade} / {reason}")
+    joined = _append_sentence(f"Design polish: good. {reason}", "Gemini visual asset added.")
+    _require("(resilience. Gemini" not in joined, f"polish reason cut inside parenthetical: {joined}")
     print("  image policy single source of truth: ok")
 
 

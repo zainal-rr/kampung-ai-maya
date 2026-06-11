@@ -16,6 +16,7 @@ from urllib.parse import quote_plus
 from browser_control import note_browser_intent
 from browser_observe import wait_for_content
 from browser_understanding import extract_browser_options_with_gemini, grounded_browser_options
+from flight_search_form_helpers import capture_result_page
 from flight_search_models import FieldAttempt, FlightDetails
 from flight_search_reply import (
     _filled_reply,
@@ -71,7 +72,7 @@ async def run_flight_deep_link(skill, details: FlightDetails) -> str:
         max_chars=14000,
     )
     page = readiness.page if readiness.page.url else await asyncio.to_thread(skill.browser.inspect_page, 14000)
-    skill._capture_result_page(page)
+    capture_result_page(skill, page)
     options = extract_flight_options(page.text, details.destination, details.depart)
     if not options:
         grid = extract_date_grid_price(page.text, details.depart)

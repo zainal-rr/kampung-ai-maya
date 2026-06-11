@@ -44,6 +44,11 @@ def extract_flight_details(question: str, context: ActiveContext) -> FlightDetai
     return FlightDetails(origin=origin, destination=destination, depart=depart, return_date=return_date, one_way=not bool(return_date), missing=tuple(missing), assumptions=tuple(assumptions))
 
 
+def flight_request_needs_active_context(question: str) -> bool:
+    """Return True when the request explicitly points at the current trip/page."""
+    return _is_context_trip_request(question)
+
+
 def _origin(text: str) -> str:
     explicit = _first_match(text, (r"\bfrom\s+([A-Z][A-Za-z ]{2,45}?)(?:\s+to|\s+on|\s+around|$)",))
     if explicit:

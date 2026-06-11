@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import os
 from pathlib import Path
 
+from maya_runtime_config import runtime_config
 
 DEFAULT_WORKSPACE_ROOT = Path.home() / "Desktop" / "Maya"
 LEGACY_WORKSPACE_ROOT = Path.home() / "Downloads" / "Kampung AI"
@@ -22,11 +22,11 @@ WORKSPACE_DIRS = (
 
 
 def maya_workspace_root() -> Path:
-    return Path(os.getenv("MAYA_WORKSPACE_ROOT", str(DEFAULT_WORKSPACE_ROOT))).expanduser()
+    return runtime_config().workspace_root
 
 
 def legacy_workspace_root() -> Path:
-    return LEGACY_WORKSPACE_ROOT
+    return runtime_config().legacy_workspace_root
 
 
 def workspace_dir(name: str, *, create: bool = False) -> Path:
@@ -45,14 +45,7 @@ def ensure_workspace_tree() -> Path:
 
 
 def project_roots() -> tuple[Path, ...]:
-    roots = [
-        Path.home() / "projects",
-        workspace_dir("Projects"),
-        legacy_workspace_root() / "Projects",
-    ]
-    raw = os.getenv("MAYA_PROJECT_ROOTS", "")
-    roots.extend(Path(item.strip()).expanduser() for item in raw.split(",") if item.strip())
-    return tuple(dict.fromkeys(path.resolve(strict=False) for path in roots))
+    return runtime_config().project_roots
 
 
 def is_workspace_path(path: Path) -> bool:

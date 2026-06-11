@@ -16,10 +16,31 @@ from document_actions_word_helpers import (
     _word_edit_request,
     _word_repair_request,
 )
+from recent_questions_document import recent_user_questions
 from word_simple_edit import apply_simple_docx_edit, simple_docx_edit_instruction
 
 
 class DocumentWordMixin:
+    async def _create_recent_questions_word(self, count: int, project_scoped: bool, channel: str) -> str:
+        questions = await recent_user_questions(self.db_path, count=count)
+        if not questions:
+            return "I could not find recent questions in the conversation history yet."
+        topic = f"last {len(questions)} questions"
+        path = await self._path("docx", topic, project_scoped)
+        if not path_allowed(path):
+            return f"I can't write to {path}."
+        sections = [
+            (
+                "Captured Questions",
+                [f"{idx}. {question}" for idx, question in enumerate(questions, start=1)],
+            )
+        ]
+        await asyncio.to_thread(create_docx, path, "Last Questions", sections)
+        self.last_model_lane = "Local recent-question Word export"
+        self.last_cost_recorded = False
+        await self._remember(path, f"Created Word export: {len(questions)} recent questions", project_scoped, channel, "docx", topic)
+        return await self._done("Word draft", path, channel, "Microsoft Word")
+
     async def _create_word(self, topic: str, project_scoped: bool, channel: str) -> str:
         preflight = await self._artifact_preflight("docx", topic)
         self.last_model_lane = f"{preflight.lane_prefix} + Gemini Flash role-based Word draft"

@@ -5,6 +5,7 @@ import time
 from dataclasses import dataclass, replace
 
 from active_context import ActiveContextInspector
+from active_context_models import ActiveContext
 from browser_control import note_browser_intent
 from browser_driver import make_browser_controller
 from browser_understanding import extract_browser_options_with_gemini, grounded_browser_options
@@ -16,6 +17,7 @@ from stay_booking_parsing import (  # noqa: F401 - re-exported for existing call
     booking_url,
     extract_stay_details,
     extract_stay_options,
+    stay_request_needs_active_context,
 )
 from stay_booking_runtime import record_stay_skill, stay_reply, stay_workflow_value
 from travel_budget import save_travel_plan_fields
@@ -55,7 +57,7 @@ class BookingComHotelSkill:
         if action_permission("travel_search") != "allow":
             return "I need your confirmation before searching hotels."
         await record_stay_skill(self.db_path, BOOKING_SKILL_ID, BOOKING_SKILL_NAME, "Search Booking.com with structured hotel parameters.", question)
-        context = await self.inspector.inspect(question, allow_screen_fallback=False)
+        context = await _request_context(self.browser, self.inspector, question)
         details = extract_stay_details(question, context)
         _note_stay_intent(details)
         if details.missing:
@@ -102,7 +104,7 @@ class AirbnbStaySkill:
         if action_permission("travel_search") != "allow":
             return "I need your confirmation before searching Airbnb."
         await record_stay_skill(self.db_path, AIRBNB_SKILL_ID, AIRBNB_SKILL_NAME, "Search Airbnb with structured stay parameters.", question)
-        context = await self.inspector.inspect(question, allow_screen_fallback=False)
+        context = await _request_context(self.browser, self.inspector, question)
         details = extract_stay_details(question, context)
         _note_stay_intent(details)
         if details.missing:
@@ -151,6 +153,12 @@ def _stay_clarification_reply(provider: str, details: StayDetails) -> str:
         )
         if line
     )
+
+
+async def _request_context(browser, inspector: ActiveContextInspector, question: str) -> ActiveContext:
+    if getattr(browser, "DRIVER", "") == "extension" and not stay_request_needs_active_context(question):
+        return ActiveContext(app="Google Chrome", selection_type="none", source="request_only")
+    return await inspector.inspect(question, allow_screen_fallback=False)
 
 
 def _note_stay_intent(details: StayDetails) -> None:

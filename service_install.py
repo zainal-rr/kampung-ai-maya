@@ -88,7 +88,9 @@ def build_nightly_memory_plist() -> dict:
         "WorkingDirectory": str(ROOT),
         "EnvironmentVariables": {
             "KAMPUNG_AI_REPO_ROOT": str(ROOT),
-            "MEMORY_EMBED_RERANK_LIVE": "1",
+            # Keep embedding rerank evidence-gated. The 2026-06-11 memory eval
+            # showed no improvement over lexical + neighbor + supersede recall.
+            "MEMORY_EMBED_RERANK_LIVE": "0",
         },
         "StartCalendarInterval": {"Hour": 2, "Minute": 30},
         "StandardOutPath": str(logs / "nightly-memory.stdout.log"),

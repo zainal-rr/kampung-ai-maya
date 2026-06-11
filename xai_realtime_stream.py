@@ -1,10 +1,8 @@
 from __future__ import annotations
 
 import asyncio
-from array import array
 import contextlib
 import json
-import math
 import os
 import time
 
@@ -22,6 +20,7 @@ from sounddevice_audio import (
     resolve_sounddevice_input,
 )
 from voice_session_log import finish_voice_session, start_voice_session
+from xai_realtime_audio_math import pcm_rms
 from xai_realtime_stream_helpers import append_audio_message, put_latest, put_playback
 from xai_voice_agent import realtime_url
 from xai_realtime_events import XaiRealtimeEventMixin
@@ -234,7 +233,7 @@ class XaiRealtimeStreamingSession(XaiRealtimeEventMixin, XaiRealtimePlaybackMixi
             data = bytes(indata)
             self.input_chunks_captured += 1
             self.last_input_audio_at = time.monotonic()
-            self.last_local_mic_rms = self._pcm_rms(data)
+            self.last_local_mic_rms = pcm_rms(data)
             self.peak_local_mic_rms = max(self.peak_local_mic_rms, self.last_local_mic_rms)
             if self.last_response_done_at and self.last_input_audio_at >= self.last_response_done_at:
                 if self.last_local_mic_rms > self.peak_local_mic_rms_since_response:
@@ -292,16 +291,3 @@ class XaiRealtimeStreamingSession(XaiRealtimeEventMixin, XaiRealtimePlaybackMixi
         if not timestamp or not self.started_at:
             return 0.0
         return round(max(0.0, timestamp - self.started_at), 3)
-
-    @staticmethod
-    def _pcm_rms(audio: bytes) -> float:
-        if len(audio) < 2:
-            return 0.0
-        try:
-            samples = array("h")
-            samples.frombytes(audio[: len(audio) - (len(audio) % 2)])
-            if not samples:
-                return 0.0
-            return round(math.sqrt(sum(sample * sample for sample in samples) / len(samples)), 2)
-        except Exception:
-            return 0.0

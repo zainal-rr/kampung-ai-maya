@@ -16,6 +16,9 @@ from office_drafter_deck_scenarios import (
     _travel_food_deck,
 )
 
+MAX_POWERPOINT_SLIDES = 20
+MAX_VISIBLE_BULLETS = 5
+
 
 _SPECIES_ARCS = {
     "browser": _browser_deck,
@@ -111,8 +114,8 @@ def _clean_slides(slides: list[tuple[str, list[str]]], fallback_title: str) -> l
         bullets = [bullet for bullet in bullets if not _bad_powerpoint_bullet(bullet)]
         if not bullets:
             bullets = ["Use this slide to make one concrete point."]
-        cleaned.append((title, bullets[:3]))
-        if len(cleaned) >= 7:
+        cleaned.append((title, bullets[:MAX_VISIBLE_BULLETS]))
+        if len(cleaned) >= MAX_POWERPOINT_SLIDES:
             break
     return cleaned or [(_display_title(fallback_title), ["Use this deck to make the topic clear and actionable."])]
 

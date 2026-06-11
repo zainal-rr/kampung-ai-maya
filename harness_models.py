@@ -44,6 +44,10 @@ class GroundedObservation:
     screen_summary: str = ""
     confidence: float = 0.0
     provenance: tuple[str, ...] = field(default_factory=tuple)
+    untrusted_influence: bool = False
+    injection_detected: bool = False
+    untrusted_source: str = ""
+    untrusted_signals: tuple[str, ...] = field(default_factory=tuple)
 
     def as_dict(self) -> dict[str, object]:
         return {
@@ -61,6 +65,10 @@ class GroundedObservation:
             "screen_summary": self.screen_summary,
             "confidence": self.confidence,
             "provenance": list(self.provenance),
+            "untrusted_influence": self.untrusted_influence,
+            "injection_detected": self.injection_detected,
+            "untrusted_source": self.untrusted_source,
+            "untrusted_signals": list(self.untrusted_signals),
         }
 
 

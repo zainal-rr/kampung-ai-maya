@@ -4,7 +4,7 @@ import asyncio
 import re
 from dataclasses import dataclass
 
-from domain_knowledge import domain_knowledge_context
+from domain_knowledge import domain_knowledge_context, domain_knowledge_context_for_skill
 from skill_learning_store import get_skill_learning_metadata, increment_skill_usage
 from skill_outcome_store import record_skill_outcome
 from skill_store import latest_skill_usage, list_custom_skills, record_skill_usage
@@ -58,6 +58,28 @@ def _keyword_match(keyword: str, lowered_text: str) -> bool:
     return bool(re.search(rf"(?<![a-z0-9]){re.escape(keyword.strip())}(?![a-z0-9])", lowered_text))
 
 
+_FOLLOWUP_PREFIXES = (
+    "now ", "and ", "also ", "then ", "next ", "ok ", "okay ",
+    "what about", "how about", "what if",
+)
+_FOLLOWUP_REFERENCES = (" it ", " that ", " this ", " its ", " the same ")
+
+
+def _followup_phrasing(query: str) -> bool:
+    lowered = f" {' '.join(str(query).lower().split())} "
+    return lowered.strip().startswith(_FOLLOWUP_PREFIXES) or any(
+        ref in lowered for ref in _FOLLOWUP_REFERENCES
+    )
+
+
+def _latest_domain_skill_id(events: list[dict[str, str]]) -> str:
+    for event in events:
+        skill_id = str(event.get("skill_id") or "")
+        if skill_id.startswith("domain:"):
+            return skill_id.split(":", 1)[1]
+    return ""
+
+
 class SkillRegistry:
     def __init__(self, db_path: str):
         self.db_path = db_path
@@ -101,6 +123,26 @@ class SkillRegistry:
                 query=query,
                 reason="domain knowledge retrieval",
             )
+        elif not knowledge and _followup_phrasing(query):
+            # Sticky follow-up (Phase 5 finding 2026-06-12): "now assess the
+            # preference share issuance from an investor's perspective" lost
+            # the finance domain because follow-up wording missed every
+            # trigger. If the PREVIOUS turn used a domain pack and this turn
+            # reads like a follow-up, retry retrieval against that pack.
+            # Fail-silent: zero token overlap with the pack injects nothing.
+            sticky_id = _latest_domain_skill_id(await latest_skill_usage(self.db_path, limit=8))
+            if sticky_id:
+                knowledge = await asyncio.to_thread(
+                    domain_knowledge_context_for_skill, query, sticky_id
+                )
+                if knowledge:
+                    await record_skill_usage(
+                        self.db_path,
+                        skill_id=f"domain:{sticky_id}",
+                        name=sticky_id,
+                        query=query,
+                        reason="domain knowledge retrieval (sticky follow-up)",
+                    )
         if not lines and not knowledge:
             return ""
         if not lines:

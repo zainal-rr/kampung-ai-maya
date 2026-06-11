@@ -26,10 +26,12 @@ class TheMind(BaseAgent):
         self.client = AsyncOpenAI(api_key=api_key)
 
     async def chat(self, messages: List[Dict[str, str]], reasoning_effort: str | None = None) -> str:
+        # Phase 5 finding 2026-06-12: 1024 truncated the /complex banking answer
+        # mid-sentence. The Mind is the deep-work lane; give it room (env-tunable).
         request = dict(
             model="gpt-5.5",
             input=messages,
-            max_output_tokens=1024,
+            max_output_tokens=int(os.getenv("MAYA_MIND_MAX_OUTPUT_TOKENS", "4096")),
         )
         if reasoning_effort:
             request["reasoning"] = {"effort": reasoning_effort}
@@ -85,7 +87,7 @@ class TheSteward(BaseAgent):
         user_parts = [item.get("content", "") for item in messages if item.get("role") != "system"]
         payload = {
             "model": self.model,
-            "max_tokens": 1024,
+            "max_tokens": int(os.getenv("MAYA_STEWARD_MAX_TOKENS", "2048")),
             "system": "\n\n".join(system_parts) or "You are Maya's careful review lane.",
             "messages": [{"role": "user", "content": "\n\n".join(user_parts)}],
         }

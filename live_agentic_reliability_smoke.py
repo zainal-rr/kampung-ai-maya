@@ -11,6 +11,7 @@ from __future__ import annotations
 """
 
 import asyncio
+import os
 import tempfile
 from pathlib import Path
 
@@ -59,7 +60,13 @@ async def _main() -> None:
         _require(len(rows) == len(agentic_scenarios()), "dry run did not cover every scenario")
         _require(summary["completion_rate"] == 100.0, f"dry-run classification should be 100%, got {summary}")
 
-        originals = (utils.OSBridge._run_applescript, getattr(utils.OSBridge, "open_url", None), getattr(utils.OSBridge, "open_url_new_tab", None))
+        originals = (
+            utils.OSBridge._run_applescript,
+            getattr(utils.OSBridge, "open_url", None),
+            getattr(utils.OSBridge, "open_url_new_tab", None),
+            os.environ.get("MAYA_BROWSER_DRIVER"),
+        )
+        os.environ["MAYA_BROWSER_DRIVER"] = "legacy"
         utils.OSBridge._run_applescript = lambda self, script: _fake_applescript(script)
         utils.OSBridge.open_url = lambda self, url, app_name="Google Chrome": None
         utils.OSBridge.open_url_new_tab = lambda self, url, app_name="Google Chrome": None
@@ -70,6 +77,10 @@ async def _main() -> None:
             utils.OSBridge._run_applescript = originals[0]
             utils.OSBridge.open_url = originals[1]
             utils.OSBridge.open_url_new_tab = originals[2]
+            if originals[3] is None:
+                os.environ.pop("MAYA_BROWSER_DRIVER", None)
+            else:
+                os.environ["MAYA_BROWSER_DRIVER"] = originals[3]
         rows = {row["scenario_id"]: row for row in load_scenarios(base / "ci_live" / "scenarios.jsonl")}
         _require(set(rows) == set(LIVE_SUBSET), "live subset incomplete")
         for scenario_id in LIVE_SUBSET:

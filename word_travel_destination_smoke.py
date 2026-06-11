@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from word_quality_travel import travel_consistency_issues
+from word_quality_travel import destination_consistency_issue_details, travel_consistency_issues
 
 
 def main() -> None:
@@ -13,7 +13,7 @@ def main() -> None:
         "Booking And Transit Notes",
         "Recommendations",
     )
-    wrong = travel_consistency_issues(
+    weak_wrong = travel_consistency_issues(
         "Seoul solo food trip for two days",
         [
             "This Tokyo food itinerary focuses on Shinjuku ramen and Tsukiji market.",
@@ -21,7 +21,27 @@ def main() -> None:
         ],
         list(headings),
     )
-    _require(any("destination mismatch" in issue for issue in wrong), f"expected mismatch, got {wrong!r}")
+    _require(not any("destination mismatch" in issue for issue in weak_wrong), f"open-world body mismatch should not hard-fail: {weak_wrong!r}")
+
+    strong_wrong = travel_consistency_issues(
+        "Seoul solo food trip for two days",
+        [
+            "This Tokyo food itinerary focuses on Shinjuku ramen and Tsukiji market.",
+            "Use Suica and JR lines for the Japan route.",
+        ],
+        ["Tokyo Trip Overview", "Tokyo Day 1 Plan", "Tokyo Day 2 Plan"],
+    )
+    _require(any("destination mismatch" in issue for issue in strong_wrong), f"expected strong mismatch blocker, got {strong_wrong!r}")
+
+    warnings = destination_consistency_issue_details(
+        "Seoul solo food trip for two days",
+        [
+            "This Tokyo food itinerary focuses on Shinjuku ramen and Tsukiji market.",
+            "Use Suica and JR lines for the Japan route.",
+        ],
+        list(headings),
+    )
+    _require(any(issue.severity == "warning" for issue in warnings), f"expected warning details for ambiguous mismatch, got {warnings!r}")
 
     right = travel_consistency_issues(
         "Seoul solo food trip for two days",

@@ -35,6 +35,10 @@ def verify_powerpoint_visible_context(base: ActiveContext, screen_text: str) -> 
         limits=parsed.limits + " Screen visible slide wins if PowerPoint scripting disagrees.",
         source="powerpoint_screen_verified_pptx_parser",
         confidence=max(base.confidence, 0.86),
+        untrusted_influence=base.untrusted_influence,
+        injection_detected=base.injection_detected,
+        untrusted_source=base.untrusted_source,
+        untrusted_signals=base.untrusted_signals,
     )
 
 

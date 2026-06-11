@@ -22,6 +22,7 @@ from dataclasses import dataclass, field
 from artifact_clarification_state import pending_topic_from_request
 from artifact_semantic_enrichment import confidence, infer_domain, merged_parameters, semantic_topic
 from cost_tracker import record_usage
+from domain_knowledge import strong_domain_skill_id
 from models import TheNews
 
 
@@ -44,6 +45,13 @@ class SemanticArtifactIntent:
 async def resolve_semantic_artifact_intent(db_path: str, text: str) -> SemanticArtifactIntent | None:
     cleaned = " ".join(str(text or "").strip().split()).strip(" .")
     if not _candidate(cleaned):
+        return None
+    if domain_question_precedence(cleaned):
+        # Phase 5 finding 2026-06-12: "design the network for a new branch
+        # campus" was hijacked into a Word/Excel/PPT clarification. A message
+        # that strongly matches a domain pack and names no explicit artifact
+        # format is a QUESTION for the chat lane (where domain retrieval
+        # answers it), not an artifact request.
         return None
     ambiguity = _generic_document_question(cleaned)
     if ambiguity:
@@ -88,6 +96,39 @@ Rules:
 9. If this is normal chat or an explanation question, action must be none.
 10. Domain examples: travel_food_budget, travel_budget, household_budget, business_comparison, technical_guide, proposal, research_brief, presentation, generic_sheet.
 """
+
+
+# Explicit artifact-format words. A domain-pack question that ALSO names one of
+# these still goes to the artifact path ("make an Excel liquidity gap analysis"
+# must keep producing a spreadsheet — Phase 4 contract).
+_EXPLICIT_FORMAT_MARKERS = (
+    "word doc", "word document", "docx", " doc ", "document",
+    "excel", "xlsx", "spreadsheet", "workbook", " sheet", "tracker", "ledger",
+    "powerpoint", "pptx", "slides", "slide deck", " deck", "presentation",
+    "markdown", " md ", "html", "pdf", " file", "save it", "save this", "attach",
+    # document-type deliverables (mirror _has_deliverable_signal docx markers):
+    "report", "proposal", "guide", "manual", "memo", "letter", " brief",
+)
+
+
+def _explicit_format_marker(lowered: str) -> bool:
+    padded = f" {lowered} "
+    return any(marker in padded for marker in _EXPLICIT_FORMAT_MARKERS)
+
+
+def domain_question_precedence(text: str) -> bool:
+    """True when the message belongs to a domain pack, not the artifact router.
+
+    Requires BOTH: a strong domain-pack trigger (weak matches never divert) and
+    the absence of any explicit artifact-format word. Pure + deterministic so
+    the smoke can prove routing without a provider.
+    """
+    lowered = " ".join(str(text or "").lower().split())
+    if not lowered:
+        return False
+    if _explicit_format_marker(lowered):
+        return False
+    return bool(strong_domain_skill_id(lowered))
 
 
 def _candidate(text: str) -> bool:

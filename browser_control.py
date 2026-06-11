@@ -5,6 +5,8 @@ from dataclasses import dataclass
 from urllib.parse import quote_plus
 
 from utils import OSBridge
+from browser_control_models import BrowserElement, BrowserPage
+from browser_control_parse import element_summary, page_summary, parse_page
 from browser_control_js import (
     _as_string,
     _click_exact_last_js,
@@ -23,6 +25,7 @@ from browser_control_js import (
 
 
 _RECORDER = None
+_parse_page = parse_page
 
 
 def set_browser_recorder(recorder) -> None:
@@ -48,21 +51,6 @@ def note_browser_route(skill: str, reason: str) -> None:
 def _emit(action: str, *, target: str = "", value: str = "", result: str = "", url: str = "", title: str = "", text_hash: str = "") -> None:
     if _RECORDER is not None:
         _RECORDER.record_step(action, target=target, value=value, result=result, url=url, title=title, text_hash=text_hash)
-
-
-@dataclass(frozen=True)
-class BrowserPage:
-    title: str
-    url: str
-    text: str
-    text_hash: str = ""
-    modal_state: str = ""
-
-
-@dataclass(frozen=True)
-class BrowserElement:
-    label: str
-    kind: str
 
 
 @dataclass(frozen=True)
@@ -134,7 +122,7 @@ class BrowserController:
             "end tell"
         )
         raw = self.bridge._run_applescript(script)
-        page = _parse_page(raw)
+        page = parse_page(raw)
         _emit("inspect", url=page.url, title=page.title, text_hash=page.text_hash, result=f"chars={len(page.text)}")
         return page
 
@@ -306,25 +294,3 @@ class BrowserController:
         raw = self.bridge._run_applescript(script)
         _emit("close_tab", result=raw)
         return raw
-
-
-def page_summary(page: BrowserPage, max_lines: int = 8) -> str:
-    lines = [line.strip() for line in page.text.splitlines() if line.strip()]
-    excerpt = "\n".join(lines[:max_lines])
-    if not excerpt:
-        excerpt = "I can read the page title, but the page body is empty or blocked."
-    return f"Title: {page.title}\nURL: {page.url}\nVisible text:\n{excerpt}"
-
-
-def element_summary(elements: list[BrowserElement], max_items: int = 8) -> str:
-    if not elements:
-        return "Clickable or fillable targets: none obvious."
-    lines = [f"{item.kind}: {item.label}" for item in elements[:max_items]]
-    return "Clickable or fillable targets:\n" + "\n".join(lines)
-
-
-def _parse_page(raw: str) -> BrowserPage:
-    title, _, rest = raw.partition("\n---URL---\n")
-    url, _, text = rest.partition("\n---TEXT---\n")
-    clean_text = text.strip()
-    return BrowserPage(title.strip(), url.strip(), clean_text, _text_hash(clean_text), _modal_state(clean_text))

@@ -95,23 +95,35 @@ async def choose_next_action(state: dict[str, Any], llm_call: LlmCall, knowledge
 
 
 async def verify_goal(state: dict[str, Any], llm_call: LlmCall) -> bool:
-    """Ask the model whether the goal is satisfied. Defaults to True on failure
-    so a broken verifier finishes the run instead of looping blindly."""
-    prompt = (
+    """Ask the model whether the goal is satisfied. FAIL-CLOSED.
+
+    A verifier that cannot confirm success must not claim it (council review
+    W1, 2026-06-11: the old default-True turned a broken verifier into a
+    silent "done" — a safety defect once untrusted users can invoke the loop).
+    Only an explicit YES satisfies the goal. On error or ambiguity, one
+    reflective retry; then return False. False keeps the loop open — which is
+    safe precisely because MAX_STEPS bounds it: fail-closed verifier + hard
+    budget = never-falsely-done AND never-infinite."""
+    base_prompt = (
         "A local personal-agent workflow just executed a step.\n"
         f"Goal: {state.get('goal') or state.get('user_text', '')}\n"
         f"Latest result: {str(state.get('final_response', ''))[:600]}\n"
         f"Observations so far: {_observation_block(state)}\n"
         "Is the goal fully satisfied? Reply with exactly YES or NO."
     )
-    try:
-        raw = (await llm_call(prompt)).strip().upper()
-        if raw.startswith("NO"):
-            return False
-        return True
-    except Exception:
-        logger.exception("LLM goal verification failed; treating goal as satisfied")
-        return True
+    prompt = base_prompt
+    for attempt in range(2):  # initial + one reflective retry
+        try:
+            raw = (await llm_call(prompt)).strip().upper()
+            if raw.startswith("YES"):
+                return True
+            if raw.startswith("NO"):
+                return False
+            # Ambiguous: reflect once with a tighter instruction, then fail closed.
+            prompt = base_prompt + "\nAnswer with exactly YES or NO and nothing else."
+        except Exception:
+            logger.exception("LLM goal verification failed (attempt %d); fail-closed", attempt + 1)
+    return False
 
 
 def _observation_block(state: dict[str, Any]) -> str:

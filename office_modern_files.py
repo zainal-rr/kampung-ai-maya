@@ -112,14 +112,9 @@ def choose_pptx_theme(topic: str) -> str:
 
 
 def _pptx_visual_topic(topic: str) -> bool:
-    lowered = str(topic).lower()
-    markers = (
-        "food", "restaurant", "cafe", "trip", "travel", "itinerary", "tourism",
-        "venue", "hotel", "product", "pitch", "brand", "marketing", "lifestyle",
-        "ai", "agent", "workflow", "system", "quality", "document", "artifact",
-        "process", "strategy", "roadmap", "technical",
-    )
-    return any(marker in lowered for marker in markers)
+    from pptx_visual_assets import topic_benefits_from_visuals
+
+    return topic_benefits_from_visuals(topic)
 
 
 def create_xlsx(path: Path, title: str, headers: list[str], rows: list[list[str]]) -> Path:

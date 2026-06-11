@@ -23,6 +23,10 @@ class ActiveContext:
     fallback_used: str = ""
     confidence: float = 0.0
     error: str = ""
+    untrusted_influence: bool = False
+    injection_detected: bool = False
+    untrusted_source: str = ""
+    untrusted_signals: tuple[str, ...] = ()
 
     def as_tool_text(self) -> str:
         lines = [
@@ -40,6 +44,12 @@ class ActiveContext:
         _append_block(lines, "document_context", self.document_context, 5200)
         _append_block(lines, "visual_context", self.visual_context, 2200)
         _append_block(lines, "limits", self.limits, 1200)
+        if self.untrusted_influence:
+            lines.append("untrusted_influence: true")
+            lines.append(f"injection_detected: {'true' if self.injection_detected else 'false'}")
+            _append_optional(lines, "untrusted_source", self.untrusted_source)
+            if self.untrusted_signals:
+                _append_block(lines, "untrusted_risk_notes", "\n".join(self.untrusted_signals), 1200)
         _append_optional(lines, "error", self.error)
         return "\n".join(lines)[:MAX_CONTEXT_CHARS]
 
@@ -53,7 +63,9 @@ def log_context(context: ActiveContext) -> None:
         f"path={context.active_file or 'none'} "
         f"title={context.active_title or 'none'} "
         f"doc_chars={len(context.document_context)} "
-        f"anchor_chars={len(context.selected_content)}",
+        f"anchor_chars={len(context.selected_content)} "
+        f"untrusted={context.untrusted_influence} "
+        f"injection={context.injection_detected}",
         flush=True,
     )
 

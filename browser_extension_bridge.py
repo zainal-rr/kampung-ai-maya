@@ -14,6 +14,7 @@ from urllib.parse import parse_qs, urlparse
 
 from browser_control import BrowserClickResult, BrowserElement, BrowserPage, _emit
 from browser_control_js import _modal_state, _text_hash
+from untrusted_input_boundary import assess_untrusted_context
 
 
 BRIDGE_HOST = "127.0.0.1"
@@ -200,7 +201,19 @@ class ExtensionBrowserController:
     def inspect_page(self, max_chars: int = 4500) -> BrowserPage:
         result = self.server.request("page_text", {"max_chars": max_chars})
         text = str(result.get("text", ""))
-        page = BrowserPage(str(result.get("title", "")), str(result.get("url", "")), text, _text_hash(text), _modal_state(text))
+        url = str(result.get("url", ""))
+        context = assess_untrusted_context(text, source="browser", source_id=url)
+        page = BrowserPage(
+            str(result.get("title", "")),
+            url,
+            text,
+            _text_hash(text),
+            _modal_state(text),
+            context.untrusted_influence,
+            context.injection_detected,
+            context.source,
+            context.risk_notes,
+        )
         _emit("inspect", url=page.url, title=page.title, text_hash=page.text_hash, result=f"chars={len(page.text)} extension")
         return page
 
@@ -296,37 +309,13 @@ class ExtensionBrowserController:
 
 
 def main() -> None:
-    import argparse
-    import time
+    from browser_extension_cli import run_bridge_cli
 
-    parser = argparse.ArgumentParser(description="Maya extension bridge")
-    parser.add_argument("--serve", action="store_true", help="run the bridge and wait for the extension")
-    parser.add_argument("--probe", action="store_true", help="open example.com in the Maya group and print page text")
-    args = parser.parse_args()
-    server = ExtensionBridgeServer()
-    server.start()
-    print(f"bridge listening on ws://{server.host}:{server.port}/maya")
-    print(f"token file: {TOKEN_PATH}")
-    if args.probe:
-        print("waiting for the Maya Chrome extension to connect...")
-        for _ in range(600):
-            if server.is_connected:
-                break
-            time.sleep(0.2)
-        if not server.is_connected:
-            print("extension did not connect within 120 seconds")
-            return
-        controller = ExtensionBrowserController(server)
-        controller.set_status("probe")
-        controller.open_new_tab_url("https://example.com")
-        time.sleep(2.0)
-        page = controller.inspect_page()
-        print(f"title: {page.title}\nurl: {page.url}\ntext: {page.text[:200]}")
-        return
-    if args.serve:
-        while True:
-            time.sleep(5)
-            print(f"extension connected: {server.is_connected}")
+    run_bridge_cli(
+        server_cls=ExtensionBridgeServer,
+        controller_cls=ExtensionBrowserController,
+        token_path=TOKEN_PATH,
+    )
 
 
 if __name__ == "__main__":

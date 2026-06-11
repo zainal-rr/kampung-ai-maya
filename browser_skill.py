@@ -10,6 +10,7 @@ from urllib.parse import quote_plus
 from browser_control import BrowserPage, element_summary, note_browser_intent, page_summary
 from browser_driver import make_browser_controller
 from browser_site_skill_helpers import _extract_visible_options
+from browser_untrusted_guard import injected_page_action_notice
 from permission_policy import action_permission, contains_sensitive_info, hard_no_private_exposure_text
 from skill_store import init_skill_db, record_skill_usage, upsert_skill
 from storage import upsert_preference
@@ -124,6 +125,9 @@ class BrowserSkill:
             return "Which visible browser item should I click?"
         if _sensitive_action_text(target):
             return f"This looks sensitive. I will stop before clicking `{target}`."
+        guard = await self._injected_page_guard("click")
+        if guard:
+            return guard
         try:
             result = await asyncio.to_thread(self.browser.click_text_verified, target)
         except Exception as exc:
@@ -139,6 +143,9 @@ class BrowserSkill:
             return "Tell me the field and value to fill."
         if contains_sensitive_info(value) or _sensitive_action_text(f"{target} {value}"):
             return hard_no_private_exposure_text()
+        guard = await self._injected_page_guard("fill a field")
+        if guard:
+            return guard
         try:
             result = await asyncio.to_thread(self.browser.fill_field, target, value)
         except Exception as exc:
@@ -170,6 +177,13 @@ class BrowserSkill:
             lane="iMac browser_skill",
             reason="browser intent routed to executable local skill",
         )
+
+    async def _injected_page_guard(self, action: str) -> str:
+        try:
+            page = await asyncio.to_thread(self.browser.inspect_page, 4000)
+        except Exception:
+            return ""
+        return injected_page_action_notice(page, action)
 
 
 async def run_browser_skill(db_path: str, request: str, *, bridge: OSBridge | None = None) -> str:

@@ -23,11 +23,13 @@ Proposed skills are inert: only ``maya_skills/active`` is scanned by default.
 
 from __future__ import annotations
 
-import re
-from dataclasses import dataclass
 from pathlib import Path
 
 from canonical_memory_text import memory_tokens
+from domain_knowledge_chunks import directory_boosts, kb_chunks
+from domain_knowledge_context_builder import build_domain_context
+from domain_knowledge_models import DomainSkill, KnowledgeChunk
+from domain_knowledge_parse import parse_domain_skill, word_match
 
 REPO_ROOT = Path(__file__).resolve().parent
 DEFAULT_SKILL_DIR = REPO_ROOT / "maya_skills" / "active"
@@ -39,32 +41,8 @@ MAX_CHUNKS = 3
 MIN_CHUNK_OVERLAP = 2
 MIN_WEAK_HITS = 2
 
-_CONFIG_WORDS = ("configure", "config", "create", "set up", "setup", "enable", "command", "cli", "deploy", "provision")
-_DESIGN_WORDS = ("design", "topology", "architecture", "choose", "compare", "plan the", "layout")
-
 _skills_cache: dict[str, tuple[tuple[tuple[str, float], ...], list["DomainSkill"]]] = {}
 _chunk_cache: dict[str, tuple[float, list["KnowledgeChunk"]]] = {}
-
-
-@dataclass(frozen=True)
-class DomainSkill:
-    skill_id: str
-    name: str
-    path: str
-    kb_root: str
-    retrieval_order: tuple[str, ...]
-    strong_triggers: tuple[str, ...]
-    weak_triggers: frozenset[str]
-    non_triggers: tuple[str, ...]
-
-
-@dataclass(frozen=True)
-class KnowledgeChunk:
-    source: str
-    header: str
-    text: str
-    tokens: frozenset[str]
-    whole_file: bool = False
 
 
 def load_domain_skills(skill_dir: Path | str | None = None) -> list[DomainSkill]:
@@ -77,7 +55,7 @@ def load_domain_skills(skill_dir: Path | str | None = None) -> list[DomainSkill]
         return cached[1]
     skills = []
     for path in sorted(directory.glob("*.md")):
-        skill = _parse_domain_skill(path)
+        skill = parse_domain_skill(path, REPO_ROOT)
         if skill:
             skills.append(skill)
     _skills_cache[str(directory)] = (stamps, skills)
@@ -89,7 +67,7 @@ def detect_domain_skill(query: str, skills: list[DomainSkill]) -> DomainSkill | 
     tokens = memory_tokens(lowered)
     best: tuple[int, DomainSkill] | None = None
     for skill in skills:
-        strong_hits = [t for t in skill.strong_triggers if _word_match(t, lowered)]
+        strong_hits = [t for t in skill.strong_triggers if word_match(t, lowered)]
         weak_hits = tokens & skill.weak_triggers
         vetoed = any(phrase in lowered for phrase in skill.non_triggers)
         if vetoed and not strong_hits:
@@ -105,9 +83,9 @@ def retrieve_domain_chunks(query: str, skill: DomainSkill, limit: int = MAX_CHUN
     tokens = memory_tokens(query)
     if not tokens:
         return []
-    boosts = _directory_boosts(query, skill.retrieval_order)
+    boosts = directory_boosts(query, skill.retrieval_order)
     scored: list[tuple[float, int, KnowledgeChunk]] = []
-    for index, chunk in enumerate(_kb_chunks(skill)):
+    for index, chunk in enumerate(kb_chunks(skill, REPO_ROOT, _chunk_cache)):
         overlap = tokens & chunk.tokens
         if len(overlap) < MIN_CHUNK_OVERLAP:
             continue
@@ -134,194 +112,90 @@ def domain_knowledge_context(
     matches = retrieve_domain_chunks(query, skill)
     if not matches:
         return "", None
-    parts: list[str] = [f"Domain knowledge ({skill.name}):"]
-    used = len(parts[0])
-    for _score, chunk in matches:
-        chunk_cap = RECIPE_CHUNK_CHARS if chunk.whole_file else MAX_CHUNK_CHARS
-        body = chunk.text[:chunk_cap].rstrip()
-        block = f"[source: {chunk.source} § {chunk.header}]\n{body}"
-        if used + len(block) > budget_chars:
-            break
-        parts.append(block)
-        used += len(block)
-    if len(parts) == 1:
+    context = build_domain_context(
+        skill_name=skill.name,
+        matches=matches,
+        budget_chars=budget_chars,
+        answer_contract=_ANSWER_CONTRACT,
+        max_chunk_chars=MAX_CHUNK_CHARS,
+        recipe_chunk_chars=RECIPE_CHUNK_CHARS,
+    )
+    if not context:
         return "", None
-    parts.append(
-        "Ground the answer in these sources and name the source recipe or doc used. "
-        "If they do not cover the question, say the answer is unverified general knowledge."
-    )
-    return "\n\n".join(parts), skill
+    return context, skill
 
 
-def _parse_domain_skill(path: Path) -> DomainSkill | None:
-    try:
-        text = path.read_text(encoding="utf-8")
-    except OSError:
-        return None
-    sections = _markdown_sections(text)
-    kb_section = _section(sections, "knowledge base")
-    triggers_section = _section(sections, "trigger phrases")
-    if not kb_section or not triggers_section:
-        return None
-    kb_paths = re.findall(r"`([^`]+/?)`", kb_section)
-    kb_root = next((p.strip().rstrip("/") for p in kb_paths if "/" in p), "")
-    if not kb_root or not (REPO_ROOT / kb_root).is_dir():
-        return None
-    retrieval_order = tuple(
-        p.strip().rstrip("/")
-        for p in kb_paths
-        if p.strip().rstrip("/") != kb_root and p.strip().startswith(kb_root)
-    )
-    strong: list[str] = []
-    weak: set[str] = set()
-    non_triggers: list[str] = []
-    for line in triggers_section.splitlines():
-        stripped = line.strip()
-        if stripped.startswith("- non-trigger:"):
-            # Vetoes are phrase segments only ("home wi-fi", "consumer ...").
-            # Single tokens are too dangerous: "consumer router help" must not
-            # put "router" on the veto list.
-            body = stripped.split(":", 1)[1]
-            for segment in re.split(r",| or ", body):
-                phrase = " ".join(segment.lower().split())
-                if len(phrase) >= 4:
-                    non_triggers.append(phrase)
-        elif stripped.startswith("- trigger:"):
-            body = stripped.split(":", 1)[1]
-            terms = _strong_terms(body)
-            strong.extend(terms)
-            captured = memory_tokens(" ".join(terms))
-            weak |= memory_tokens(body) - captured
-    if not strong and not weak:
-        return None
-    title = text.splitlines()[0].lstrip("# ").strip() if text.splitlines() else path.stem
-    return DomainSkill(
-        skill_id=path.stem,
-        name=title or path.stem,
-        path=str(path),
-        kb_root=kb_root,
-        retrieval_order=retrieval_order,
-        strong_triggers=tuple(dict.fromkeys(t.lower() for t in strong)),
-        weak_triggers=frozenset(weak),
-        non_triggers=tuple(dict.fromkeys(t.lower() for t in non_triggers)),
-    )
+# Phase 5 finding 2026-06-12: answers cited recipes but dropped their mandatory
+# sections (VRF without rollback, DCF without a computed range, cloud design
+# without the provider mapping/pricing caveat). The contract makes recipe
+# completeness explicit instead of implied.
+_ANSWER_CONTRACT = (
+    "Domain answer contract:\n"
+    "1. Ground the answer in these sources and NAME the source recipe or doc used.\n"
+    "2. Follow the retrieved recipe completely. If it contains verification steps, "
+    "rollback, a worked sensitivity range, provider mappings (AWS/GCP/Azure), pricing "
+    "or advice caveats, or limitations, the answer MUST include each of them. "
+    "Dropping a mandatory recipe section is a wrong answer.\n"
+    "For cloud architecture recipes, if the source contains an AWS/GCP/Azure service "
+    "mapping, include a compact mapping table or mapping lines even when the user "
+    "asks primarily about one cloud provider.\n"
+    "3. Numbers are computed with shown formulas. When the recipe requires a range, "
+    "compute and state the range values; do not give a single point value and do not "
+    "defer sensitivity to a later step.\n"
+    "4. If these sources do not cover the question, say the answer is unverified general knowledge."
+)
 
 
-def _strong_terms(body: str) -> list[str]:
-    terms: list[str] = []
-    terms.extend(re.findall(r'"([^"]+)"', body))
-    for group in re.findall(r"\(([^)]+)\)", body):
-        terms.extend(part.strip() for part in group.split(",") if part.strip())
-    terms.extend(re.findall(r"\b[A-Z][A-Z0-9-]{1,}\b", body))
-    return [t for t in terms if t]
+def strong_domain_skill_id(
+    query: str,
+    *,
+    skill_dir: Path | str | None = None,
+) -> str:
+    """Return the skill_id whose STRONG trigger matches the query (veto-aware), else "".
 
-
-def _markdown_sections(text: str) -> list[tuple[str, str]]:
-    sections: list[tuple[str, str]] = []
-    header = ""
-    lines: list[str] = []
-    for line in text.splitlines():
-        match = re.match(r"^##\s+(.+)$", line)
-        if match:
-            if header or lines:
-                sections.append((header, "\n".join(lines).strip()))
-            header, lines = match.group(1).strip(), []
-        else:
-            lines.append(line)
-    if header or lines:
-        sections.append((header, "\n".join(lines).strip()))
-    return sections
-
-
-def _section(sections: list[tuple[str, str]], name: str) -> str:
-    for header, body in sections:
-        if header.lower().startswith(name):
-            return body
+    Used by the artifact router for precedence (Phase 5 finding 2026-06-12:
+    'design the network for a new branch campus' was hijacked into a
+    Word/Excel/PPT clarification). Weak-only matches deliberately do not count:
+    only an explicit strong trigger may divert a message away from the
+    artifact path.
+    """
+    lowered = " ".join(str(query).lower().split())
+    if not lowered:
+        return ""
+    for skill in load_domain_skills(skill_dir):
+        strong_hit = any(word_match(t, lowered) for t in skill.strong_triggers)
+        vetoed = any(phrase in lowered for phrase in skill.non_triggers)
+        if strong_hit and not vetoed:
+            return skill.skill_id
     return ""
 
 
-def _kb_chunks(skill: DomainSkill) -> list[KnowledgeChunk]:
-    chunks: list[KnowledgeChunk] = []
-    root = REPO_ROOT / skill.kb_root
-    for path in sorted(root.rglob("*.md")):
-        if path.name.lower() == "readme.md":
-            continue
-        key = str(path)
-        mtime = path.stat().st_mtime
-        cached = _chunk_cache.get(key)
-        if cached and cached[0] == mtime:
-            chunks.extend(cached[1])
-            continue
-        file_chunks = _chunk_file(path)
-        _chunk_cache[key] = (mtime, file_chunks)
-        chunks.extend(file_chunks)
-    return chunks
+def domain_knowledge_context_for_skill(
+    query: str,
+    skill_id: str,
+    *,
+    skill_dir: Path | str | None = None,
+    budget_chars: int = MAX_CONTEXT_CHARS,
+) -> str:
+    """Retrieve against a KNOWN skill, skipping trigger detection.
 
-
-def _chunk_file(path: Path) -> list[KnowledgeChunk]:
-    try:
-        text = path.read_text(encoding="utf-8")
-    except OSError:
-        return []
-    source = str(path.relative_to(REPO_ROOT))
-    title = ""
-    for line in text.splitlines():
-        if line.startswith("# "):
-            title = line.lstrip("# ").strip()
-            break
-    sections = _markdown_sections(text)
-    headers = {header.lower().split(" ")[0] for header, _ in sections}
-    is_recipe = "recipes" in path.parts or ("intent" in headers and "rollback" in headers)
-    if is_recipe:
-        # Worked recipes are retrieved whole: a config answer without its
-        # verification/rollback (or method/limitations) sections breaks the
-        # recipe contract. Anything under a recipes/ directory counts.
-        return [
-            KnowledgeChunk(
-                source=source,
-                header=title or path.stem,
-                text=text.strip(),
-                tokens=frozenset(memory_tokens(text)),
-                whole_file=True,
-            )
-        ]
-    chunks = []
-    for header, body in _markdown_sections(text):
-        if not body:
-            continue
-        label = f"{title}: {header}" if title and header else (header or title or path.stem)
-        chunk_text = f"{label}\n{body}" if label else body
-        chunks.append(
-            KnowledgeChunk(
-                source=source,
-                header=header or title or path.stem,
-                text=chunk_text,
-                tokens=frozenset(memory_tokens(chunk_text)),
-            )
-        )
-    return chunks
-
-
-def _directory_boosts(query: str, retrieval_order: tuple[str, ...]) -> list[tuple[str, float]]:
-    lowered = " ".join(str(query).lower().split())
-    config_like = any(_word_match(word, lowered) for word in _CONFIG_WORDS)
-    design_like = any(_word_match(word, lowered) for word in _DESIGN_WORDS)
-    boosts: list[tuple[str, float]] = []
-    for prefix in retrieval_order:
-        name = prefix.lower()
-        boost = 1.0
-        if "recipe" in name and config_like:
-            boost = 1.3
-        elif "architect" in name and design_like:
-            boost = 1.3
-        elif "recipe" in name:
-            boost = 1.1
-        boosts.append((prefix, boost))
-    return boosts
-
-
-def _word_match(term: str, lowered_text: str) -> bool:
-    term = term.strip().lower()
-    if not term:
-        return False
-    return bool(re.search(rf"(?<![a-z0-9]){re.escape(term)}(?![a-z0-9])", lowered_text))
+    Sticky follow-up path (Phase 5 finding 2026-06-12: 'now assess the
+    preference share issuance from an investor's perspective' lost the finance
+    domain because follow-up wording missed every trigger). Fail-silent: if the
+    query's tokens do not overlap the pack's chunks, returns "" — an unrelated
+    follow-up injects nothing.
+    """
+    skill = next((s for s in load_domain_skills(skill_dir) if s.skill_id == skill_id), None)
+    if skill is None:
+        return ""
+    matches = retrieve_domain_chunks(query, skill)
+    if not matches:
+        return ""
+    return build_domain_context(
+        skill_name=skill.name,
+        matches=matches,
+        budget_chars=budget_chars,
+        answer_contract=_ANSWER_CONTRACT,
+        max_chunk_chars=MAX_CHUNK_CHARS,
+        recipe_chunk_chars=RECIPE_CHUNK_CHARS,
+    )

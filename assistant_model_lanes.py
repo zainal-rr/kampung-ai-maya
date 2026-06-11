@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import os
+import re
 
 from artisan_route_policy import should_use_artisan_path as artisan_route_should_use
 from artisan_runner import create_artisan_implementation_request
@@ -90,7 +91,21 @@ class ModelLanes:
     @staticmethod
     def should_use_plan_path(text: str) -> bool:
         lowered = text.lower()
-        return should_route_complex_plan(text) or lowered.startswith("plan ") or any(marker in lowered for marker in (" plan", "make a plan", "planning", "implementation plan"))
+        if should_route_complex_plan(text):
+            return True
+        if lowered.startswith("plan "):
+            return True
+        # Route to the plan lane only when the user asks Maya to produce a plan.
+        # A domain case may contain ordinary business wording like "it plans to
+        # raise capital"; that must still be answered, not converted into an
+        # implementation-plan/review workflow.
+        return bool(
+            re.search(
+                r"\b(?:make|create|draft|write|prepare|give|build)\s+(?:me\s+|us\s+)?(?:a\s+)?(?:detailed\s+)?plan\b",
+                lowered,
+            )
+            or re.search(r"\bimplementation plan\b", lowered)
+        )
 
     @staticmethod
     def should_use_steward_path(text: str) -> bool:

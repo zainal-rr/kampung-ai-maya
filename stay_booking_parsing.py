@@ -87,6 +87,11 @@ def extract_stay_details(question: str, context: ActiveContext) -> StayDetails:
     )
 
 
+def stay_request_needs_active_context(question: str) -> bool:
+    """Return True when the request explicitly points at an active itinerary/page."""
+    return bool(_TRIP_REFERENCE_RE.search(question))
+
+
 def booking_url(details: StayDetails) -> str:
     params = {
         "ss": details.location,

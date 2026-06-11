@@ -8,6 +8,7 @@ from browser_control import element_summary, page_summary
 from browser_driver import make_browser_controller
 from browser_cost_policy import escalation_decision, local_decision
 from browser_followup_policy import looks_like_general_question, looks_like_writing_or_advice_request
+from browser_untrusted_guard import injected_page_action_notice
 from permission_policy import action_permission, contains_sensitive_info, hard_no_private_exposure_text, safe_sensitive_guidance
 from screen_service import MacScreenService
 from storage import delete_preference, get_preference, upsert_preference
@@ -28,8 +29,14 @@ class HumanBrowserWorkflowRouter:
     def __init__(self, db_path: str, bridge: OSBridge | None = None, screen=None):
         self.db_path = db_path
         self.bridge = bridge or OSBridge()
-        self.browser = make_browser_controller(bridge)
+        self._browser = None
         self.screen = screen or MacScreenService()
+
+    @property
+    def browser(self):
+        if self._browser is None:
+            self._browser = make_browser_controller(self.bridge)
+        return self._browser
 
     async def handle(self, text: str, channel: str) -> str | None:
         return (
@@ -174,6 +181,9 @@ class HumanBrowserWorkflowRouter:
         target, value = match.group(1).strip(), match.group(2).strip()
         if contains_sensitive_info(value):
             return hard_no_private_exposure_text()
+        guard = await self._injected_page_guard("fill a field")
+        if guard:
+            return guard
         try:
             result = await asyncio.to_thread(self.browser.fill_field, target, value)
         except Exception as exc:
@@ -191,6 +201,9 @@ class HumanBrowserWorkflowRouter:
             await upsert_preference(self.db_path, PENDING_CLICK_KEY, target, source="workflow")
             await self._set_pending(target)
             return f"This looks sensitive. Say yes if you want me to click `{target}` in Chrome."
+        guard = await self._injected_page_guard("click")
+        if guard:
+            return guard
         return await self._click_target(target, sensitive=False)
 
     async def _stop(self, text: str) -> str | None:
@@ -234,6 +247,13 @@ class HumanBrowserWorkflowRouter:
         if task:
             task.pending_sensitive_action = target
             await self._save(task)
+
+    async def _injected_page_guard(self, action: str) -> str:
+        try:
+            page = await asyncio.to_thread(self.browser.inspect_page, 4000)
+        except Exception:
+            return ""
+        return injected_page_action_notice(page, action)
 
 
 def _is_browser_start(text: str) -> bool:

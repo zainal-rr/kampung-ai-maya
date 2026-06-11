@@ -70,7 +70,7 @@ def main() -> None:
     assert nightly["StartCalendarInterval"] == {"Hour": 2, "Minute": 30}
     assert any(str(item).endswith("nightly_consolidation.py") for item in nightly["ProgramArguments"])
     assert "--live" in nightly["ProgramArguments"]
-    assert nightly["EnvironmentVariables"]["MEMORY_EMBED_RERANK_LIVE"] == "1"
+    assert nightly["EnvironmentVariables"]["MEMORY_EMBED_RERANK_LIVE"] == "0"
     print("service_install_smoke: ok")
 
 

@@ -10,6 +10,14 @@ from assistant_memory_context import build_assistant_memory_context
 from assistant_model_lanes import ModelLanes
 from assistant_post_route import maybe_curate_memory, route_metadata
 from assistant_reply_paths import prepare_input
+from assistant_route_prefixes import (
+    COMPLEX_ROUTE_PREFIX,
+    SIGHT_ROUTE_PREFIX,
+    complex_payload,
+    is_complex_route,
+    is_sight_route,
+    sight_payload,
+)
 from assistant_routes import AssistantRouter, RouteResult
 from channel_gateway import remember_channel_identity
 from cost_tracker import record_usage
@@ -35,8 +43,6 @@ from voice_transcript_policy import clean_voice_transcript_for_intent
 from vision_responder import VisionResponder
 
 PRIMARY_USER_ID = 1
-COMPLEX_ROUTE_PREFIX = "[complex]"
-SIGHT_ROUTE_PREFIX = "[sight]"
 class KampungAssistant:
     def __init__(self, db_path: str = "session_history.db"):
         self.db_path = db_path
@@ -66,22 +72,6 @@ class KampungAssistant:
             imac_fast_responder=self.imac_fast_responder,
         )
         self.voice = VoiceNode(db_path)
-
-    @staticmethod
-    def _is_complex_route(text: str) -> bool:
-        return text.lower().startswith(COMPLEX_ROUTE_PREFIX)
-    @staticmethod
-    def _is_sight_route(text: str) -> bool:
-        return text.lower().startswith(SIGHT_ROUTE_PREFIX)
-    @staticmethod
-    def _complex_payload(text: str) -> str:
-        return text[len(COMPLEX_ROUTE_PREFIX):].strip()
-    @staticmethod
-    def _sight_payload(text: str) -> str:
-        return text[len(SIGHT_ROUTE_PREFIX):].strip()
-    @staticmethod
-    def spoken_preview(text: str) -> str:
-        return spoken_preview(text)
 
     def _sync_router(self) -> None:
         self.router.commands = self.commands
@@ -140,14 +130,14 @@ class KampungAssistant:
             except Exception:
                 logging.exception("Direct slash command failed on channel %s", channel)
 
-        complex_route = self._is_complex_route(clean_text)
-        sight_route = self._is_sight_route(clean_text)
+        complex_route = is_complex_route(clean_text)
+        sight_route = is_sight_route(clean_text)
         if complex_route:
-            clean_text = self._complex_payload(clean_text)
+            clean_text = complex_payload(clean_text)
             if not clean_text:
                 return "Use /complex followed by the question or decision you want me to think through."
         if sight_route:
-            clean_text = self._sight_payload(clean_text)
+            clean_text = sight_payload(clean_text)
             if not clean_text:
                 return "Tell me what you want me to think through."
 

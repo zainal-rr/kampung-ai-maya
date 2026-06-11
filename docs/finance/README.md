@@ -1,9 +1,16 @@
-# Finance & Credit Analysis Knowledge Base
+# Finance Knowledge Base
 
-Truth layer for Maya's finance and credit analysis skill. Answers about
-institution analysis, credit quality, liquidity, earnings reliability, and
-funding instruments must be grounded in a recipe or concept doc from this tree
-when one exists.
+Truth layer for Maya's finance skill. Answers about financial statement
+analysis, valuation, investing, accounting, risk, personal-finance planning,
+budgeting, and forecasting must be grounded in a recipe or concept doc from
+this tree when one exists.
+
+Disciplines covered (mapped to the major professional bodies of knowledge):
+financial statement analysis and accounting (CPA/CFA), valuation and modeling
+(FMVA), investment and portfolio analysis (CFA), alternatives (CAIA), risk
+management (FRM), personal-finance and goal planning (CFP), and budgeting/
+forecasting (FP&A). Credit and institution analysis live under
+`recipes/analysis/`.
 
 ## Rules
 
@@ -34,8 +41,14 @@ Every file under `recipes/` follows this contract:
 
 | Path | Use |
 | --- | --- |
-| `recipes/analysis/` | Worked analysis recipes (gap analysis, earnings quality, instrument feasibility) |
-| `concepts/` | Reference docs on credit classification, earnings quality, liquidity risk |
+| `recipes/analysis/` | Statement & credit analysis: ratios, DuPont, cash-flow quality, liquidity gap, R&R quality, ROA reliability, survival playbook |
+| `recipes/valuation/` | DCF, comparable companies (FMVA/CFA) |
+| `recipes/investment/` | Portfolio metrics (Sharpe/alpha/beta), private-equity returns (CFA/CAIA) |
+| `recipes/accounting/` | Revenue recognition & accrual quality (CPA) |
+| `recipes/risk/` | Value at Risk, stress testing (FRM) |
+| `recipes/planning/` | Retirement & goal-based planning (CFP) |
+| `recipes/forecasting/` | Driver-based forecasting, budget variance, scenario analysis (FP&A) |
+| `concepts/` | Reference: financial statements, valuation principles, risk taxonomy, portfolio theory, credit classification, earnings quality, liquidity risk |
 
 ## Verified bar
 

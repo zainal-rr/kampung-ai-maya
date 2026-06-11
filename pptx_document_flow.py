@@ -86,6 +86,17 @@ def _qa_note(qa: PptxQualityResult, text: str) -> None:
     qa.notes = [*(qa.notes or []), text]
 
 
+def _append_sentence(text: str, note: str) -> str:
+    clean = " ".join(str(text or "").split()).strip()
+    clean_note = " ".join(str(note or "").split()).strip()
+    if not clean:
+        return clean_note
+    if not clean_note:
+        return clean
+    separator = " " if clean.endswith((".", "?", "!")) else ". "
+    return f"{clean}{separator}{clean_note}"
+
+
 def _visual_budget_seconds() -> float:
     try:
         return float(os.getenv("MAYA_PPTX_VISUAL_BUDGET_SECONDS", "120"))
@@ -180,7 +191,7 @@ async def _run_powerpoint_attempt_impl(
             polish = (await _polish_grade_with_topic(db_path, path, title))[0]
             polish = polish.replace("draft level", "draft-level")
             if visual_added:
-                polish = f"{polish} Gemini visual asset added."
+                polish = _append_sentence(polish, "Gemini visual asset added.")
             qa.polish = polish
             if _draft_level_polish(polish):
                 qa.passed = False

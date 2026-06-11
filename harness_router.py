@@ -4,6 +4,7 @@ import os
 import re
 
 from assistant_command_helpers import confirmation_decision
+from harness_command_bypass import is_fresh_artifact_request
 from harness_graph import HarnessGraphRunner
 from harness_artifact_store import latest_artifacts
 from harness_resume import build_resume_summary
@@ -124,6 +125,8 @@ class HarnessRouter:
             return await self._confirmation(decision, channel)
         lowered_key = lowered.rstrip("?.! ")
         if lowered_key in COMMAND_BYPASS_MARKERS or FILE_OPEN_BYPASS_RE.match(cleaned):
+            return None
+        if is_fresh_artifact_request(cleaned):
             return None
         selection = await self._selection(cleaned, channel)
         if selection is not None:

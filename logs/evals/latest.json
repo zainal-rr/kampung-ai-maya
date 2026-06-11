@@ -1,10 +1,17 @@
 {
-  "created_at": "2026-06-11T03:42:30Z",
-  "passed": 6,
+  "created_at": "2026-06-11T18:35:51Z",
+  "passed": 36,
   "failed": 0,
-  "total": 6,
+  "total": 36,
   "score": 100.0,
   "results": [
+    {
+      "category": "routing",
+      "name": "route tracker",
+      "passed": true,
+      "returncode": 0,
+      "output": "route_tracker_smoke: ok"
+    },
     {
       "category": "memory",
       "name": "canonical memory",
@@ -41,11 +48,214 @@
       "output": "weekly_memory_provider_path_smoke: ok"
     },
     {
+      "category": "research",
+      "name": "source-aware Gemini research",
+      "passed": true,
+      "returncode": 0,
+      "output": "source_aware_research_smoke: ok"
+    },
+    {
+      "category": "browser",
+      "name": "browser field tests",
+      "passed": true,
+      "returncode": 0,
+      "output": "browser_field_tests_smoke: ok"
+    },
+    {
+      "category": "browser",
+      "name": "browser benchmark",
+      "passed": true,
+      "returncode": 0,
+      "output": "browser_benchmark_smoke: ok"
+    },
+    {
       "category": "memory",
       "name": "Omi context sieve",
       "passed": true,
       "returncode": 0,
       "output": "omi_context_sieve_smoke: ok"
+    },
+    {
+      "category": "word",
+      "name": "word quality",
+      "passed": true,
+      "returncode": 0,
+      "output": "word_quality_smoke: ok"
+    },
+    {
+      "category": "word",
+      "name": "word visual QA",
+      "passed": true,
+      "returncode": 0,
+      "output": "word_visual_qa_smoke: ok"
+    },
+    {
+      "category": "excel",
+      "name": "excel golden artifact",
+      "passed": true,
+      "returncode": 0,
+      "output": "excel_golden_artifact_smoke: ok"
+    },
+    {
+      "category": "powerpoint",
+      "name": "pptx quality gate",
+      "passed": true,
+      "returncode": 0,
+      "output": "pptx_quality_gate_smoke: ok"
+    },
+    {
+      "category": "documents",
+      "name": "Office edit workflow",
+      "passed": true,
+      "returncode": 0,
+      "output": "document_edit_office_smoke: ok"
+    },
+    {
+      "category": "imac",
+      "name": "June 8 iMac regression",
+      "passed": true,
+      "returncode": 0,
+      "output": "imac_june8_regression_smoke: ok"
+    },
+    {
+      "category": "self_heal",
+      "name": "self-heal loop",
+      "passed": true,
+      "returncode": 0,
+      "output": "self_heal_loop_smoke: ok"
+    },
+    {
+      "category": "travel",
+      "name": "travel booking safety",
+      "passed": true,
+      "returncode": 0,
+      "output": "travel_booking_safety_smoke: ok"
+    },
+    {
+      "category": "quantum",
+      "name": "quantum leaf boundary",
+      "passed": true,
+      "returncode": 0,
+      "output": "quantum_leaf_smoke: ok"
+    },
+    {
+      "category": "artisan",
+      "name": "artisan runner",
+      "passed": true,
+      "returncode": 0,
+      "output": "artisan_runner_smoke: ok"
+    },
+    {
+      "category": "blender_maker",
+      "name": "maker template",
+      "passed": true,
+      "returncode": 0,
+      "output": "artisan_maker_template_smoke: ok"
+    },
+    {
+      "category": "hardware",
+      "name": "hardware live proof readiness",
+      "passed": true,
+      "returncode": 0,
+      "output": "hardware_live_proof_smoke: ok"
+    },
+    {
+      "category": "live",
+      "name": "live test evidence",
+      "passed": true,
+      "returncode": 0,
+      "output": "live_test_evidence_smoke: ok"
+    },
+    {
+      "category": "live",
+      "name": "live reliability soak",
+      "passed": true,
+      "returncode": 0,
+      "output": "live_reliability_soak_smoke: ok"
+    },
+    {
+      "category": "live",
+      "name": "30-day reliability scorecard",
+      "passed": true,
+      "returncode": 0,
+      "output": "reliability_scorecard_smoke: ok"
+    },
+    {
+      "category": "safety",
+      "name": "secret detection",
+      "passed": true,
+      "returncode": 0,
+      "output": "secret_detection_smoke: ok"
+    },
+    {
+      "category": "maya_desk",
+      "name": "maya desk",
+      "passed": true,
+      "returncode": 0,
+      "output": "maya_desk_smoke: ok"
+    },
+    {
+      "category": "harness",
+      "name": "harness SDK",
+      "passed": true,
+      "returncode": 0,
+      "output": "maya_harness_sdk_smoke: ok"
+    },
+    {
+      "category": "harness",
+      "name": "thread manager",
+      "passed": true,
+      "returncode": 0,
+      "output": "maya_thread_manager_smoke: ok"
+    },
+    {
+      "category": "harness",
+      "name": "event store",
+      "passed": true,
+      "returncode": 0,
+      "output": "maya_event_store_smoke: ok"
+    },
+    {
+      "category": "harness",
+      "name": "tool registry",
+      "passed": true,
+      "returncode": 0,
+      "output": "maya_tool_registry_smoke: ok"
+    },
+    {
+      "category": "harness",
+      "name": "permission kernel",
+      "passed": true,
+      "returncode": 0,
+      "output": "maya_permission_kernel_smoke: ok"
+    },
+    {
+      "category": "skills",
+      "name": "Maya skill creation",
+      "passed": true,
+      "returncode": 0,
+      "output": "youtube_skill_creation_maya_smoke: ok"
+    },
+    {
+      "category": "dependencies",
+      "name": "dependency manifest",
+      "passed": true,
+      "returncode": 0,
+      "output": "dependency_manifest_smoke: ok"
+    },
+    {
+      "category": "demos",
+      "name": "demo evidence",
+      "passed": true,
+      "returncode": 0,
+      "output": "demo_evidence_smoke: ok"
+    },
+    {
+      "category": "hardening",
+      "name": "hardening audit",
+      "passed": true,
+      "returncode": 0,
+      "output": "hardening_audit_smoke: ok"
     }
   ]
 }

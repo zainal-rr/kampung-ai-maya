@@ -105,7 +105,16 @@ class MayaHarnessSDK:
         run = await self._ensure_run(thread_id, channel=channel, run_id=run_id)
         actual_run_id = str(run["run_id"])
         payload = dict(args or {})
-        permission = self.permission_kernel.check(tool_name, action_type=action_type, args=payload)
+        untrusted_context = payload.pop("_untrusted_context", {}) or {}
+        untrusted_influence = bool(payload.pop("_untrusted_influence", False) or untrusted_context.get("untrusted_influence"))
+        injection_detected = bool(payload.pop("_injection_detected", False) or untrusted_context.get("injection_detected"))
+        permission = self.permission_kernel.check(
+            tool_name,
+            action_type=action_type,
+            args=payload,
+            untrusted_influence=untrusted_influence,
+            injection_detected=injection_detected,
+        )
         details = f"{tool_name} {json.dumps(payload, sort_keys=True, default=str)}"
         if permission.decision == "deny":
             await record_event(self.db_path, actual_run_id, "tool_denied", permission.reason)

@@ -38,8 +38,16 @@ def isolate_subsystem(issue: str) -> str:
     return "unknown subsystem, needs reproduction before patching"
 
 
-async def self_heal_text(db_path: str, root: str | Path = ".", *, create_review_task: bool = True) -> str:
+async def self_heal_text(
+    db_path: str,
+    root: str | Path = ".",
+    *,
+    create_review_task: bool = True,
+    issue_hint: str = "",
+) -> str:
     signals = detect_bug_signals(root)
+    if not signals and issue_hint.strip():
+        signals.append(f"User-reported issue: {_compact(issue_hint, 240)}")
     if not signals:
         await record_self_heal_stage(db_path, None, "closed", "No clear bug signal detected.")
         return (

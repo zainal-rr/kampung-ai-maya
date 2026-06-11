@@ -48,15 +48,67 @@ Companion document: `SESSION_CHANGE_REPORT.md`.
 
 ## Phase 5 — Domain knowledge packs
 
+NOTE 2026-06-11: finance pack expanded (FMVA/CFA/CPA/CFP/CAIA/FRM breadth, 26 files)
+and a third pack added: cloud solution architecture (AWS/GCP/Azure, 12 files).
+Skill FILENAMES unchanged for finance — promote commands below are still correct.
+Promote by COPY, not move (`skill_domain_smoke` reads from `proposed/`).
+
+RUN 1 (2026-06-12): 5 pass / 5 partial / 2 fail — all three packs activated;
+failures were in surrounding layers. FIX ROUND 1 shipped same day: output-cap
+truncation, artifact-router precedence gate, domain answer contract, sticky
+follow-up retrieval + singular triggers. Details + retest matrix:
+`docs/phase5_fix_round1_handoff_2026-06-12.md`.
+
+RETEST (2026-06-12, via Telegram text handler): 7/7 PASS after two iMac
+hotfixes — `should_use_plan_path` tightened ("it plans to raise" no longer
+hijacks /complex into plan mode) and provider-mapping rule added to the domain
+answer contract. Both hotfixes now smoke-covered (`_plan_path_checks` in
+`domain_router_precedence_smoke`, mapping-rule assert in `skill_domain_smoke`);
+"make me a plan" regex gap also closed. Evidence:
+`phase5-domain-pack-round1-retest-report-2026-06-12.md` (+ 2 JSONs, Downloads).
+
+- [x] FINAL HUMAN ACCEPTANCE: 5/5 passed from live Telegram (2026-06-12).
+  Evidence: banking `/complex` complete in ~82.7s with gap = 30m, coverage =
+  0.50, cash-adjusted ROA, redemption risk, feasibility recipe cited; investor
+  follow-up landed via sticky finance retrieval; VRF included config +
+  verification + rollback; branch campus stayed with the network pack (no
+  cloud/artifact hijack); three-tier AWS included the AWS/GCP/Azure mapping +
+  cost caveat. All five activations confirmed in `skill_usage_events`. No
+  Telegram delivery errors in this window (log-tail errors are Jun 10/11).
+
+**PHASE 5: PASSED (2026-06-12).**
+
+Known nuance (not a defect, logged for later): `/route` shows only the outer
+model lane (e.g. `Gemini Flash text`, `GPT 5.5 medium`); domain-pack
+activation is visible only in `skill_usage_events`. Optional improvement:
+append `+ domain:<pack>` to the route line when retrieval fired, so one view
+tells the whole story.
+
+Core (unchanged):
 - [ ] Promote `maya_skills/proposed/network_engineering.md` → `active/` (your normal flow).
 - [ ] Promote `maya_skills/proposed/finance_credit_analysis.md` → `active/`.
+- [ ] Promote `maya_skills/proposed/cloud_solution_architecture.md` → `active/` (NEW).
 - [ ] Ask: "create a vrf for customer A on the PE router" → answer should cite the VRF recipe and include config + verification + rollback.
 - [ ] Ask the full banking case (via `/complex`) → answer should cite finance recipes, show formulas (gap = 30, coverage = 0.50, cash-adjusted ROA), and flag the preference-share risks.
 - [ ] Ask a follow-up: "now assess the preference share issuance from an investor's perspective" → fresh retrieval should cite the feasibility recipe.
 - [ ] Ask "my home wifi keeps dropping" → must NOT inject networking recipes (veto).
-- [ ] `/route` (or skill usage view) shows `domain:network_engineering` / `domain:finance_credit_analysis` activations.
+- [ ] `/route` (or skill usage view) shows `domain:network_engineering` / `domain:finance_credit_analysis` / `domain:cloud_solution_architecture` activations.
+
+Breadth (new, optional but recommended — one per new discipline):
+- [ ] Finance: "build a DCF valuation for a company with 100m free cash flow growing 8%, WACC 10%" → cites `dcf_valuation`, shows PV math and a sensitivity range, never a single point value.
+- [ ] Finance: "calculate the 99% value at risk on a 10 million portfolio with 2% daily volatility" → cites `value_at_risk`, shows the z×σ×value formula AND mentions expected shortfall.
+- [ ] Finance: "am I on track to retire with 80k a year if I have 200k saved?" → cites `retirement_goal_planning`, computes the nest egg and gap, presents levers not a prescription.
+- [ ] Cloud: "design a three-tier web app on AWS for an online store" → cites `three_tier_web_app`, gives AZ redundancy reasoning + AWS/GCP/Azure mapping, flags pricing as needing current verification.
+- [ ] Cloud: "what disaster recovery setup do I need for an RTO of 15 minutes?" → cites `high_availability_dr`, lands on warm standby with the cost honesty note.
+- [ ] Cross-domain guard: "design the network for a new branch campus" → routes to NETWORK pack (not cloud); "back up my photos to icloud" → no pack injects anything.
+- [ ] Regression: "monthly budget tracker" still goes to the budget Excel lane (finance veto held after trigger broadening).
 
 ## Phase 6 — Agentic loop (live GPT planner)
+
+DETAILED RUN SHEET (2026-06-12): `docs/phase6_agentic_loop_validation_2026-06-12.md`
+— includes the loop trigger conditions (harness start markers!), exact prompts,
+DB evidence queries, approval-gate both-ways test, budget/honesty test, cost
+review, and the kill-switch drill. Commit the working tree before starting.
 
 - [ ] Set `MAYA_AGENTIC_LOOP=1`, restart Maya.
 - [ ] Give a multi-step request through the harness (e.g. "research X, then remember the key fact, then summarize"). Watch the trace for `loop_iteration`, `agentic_action`, `domain_knowledge` events.

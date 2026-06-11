@@ -16,7 +16,7 @@ from pathlib import Path
 
 from browser_capability import route_browser_capability, run_browser_capability
 from browser_control import set_browser_recorder
-from browser_driver import make_browser_controller
+from browser_driver import extension_bridge_status, make_browser_controller
 from browser_lane_validators import validate_run
 from browser_observe import capture_screenshot, wait_for_content
 from browser_reliability_prompts import LANES, ReliabilityPrompt, reliability_prompts
@@ -260,6 +260,25 @@ def _print_summary(night_id: str, summary: dict) -> None:
         print(f"  {lane}: {stats['pass']} pass / {stats['partial']} partial / {stats['fail']} fail")
 
 
+def _preflight_live_driver(driver: str) -> None:
+    """Fail before running prompts when the requested live driver is unavailable."""
+    if driver != "extension":
+        return
+    try:
+        browser = make_browser_controller()
+        if getattr(browser, "DRIVER", "") != "extension":
+            raise RuntimeError(f"unexpected browser driver: {getattr(browser, 'DRIVER', 'unknown')}")
+    except Exception as exc:  # noqa: BLE001 - convert noisy per-prompt failures into one clear blocker
+        status = extension_bridge_status()
+        raise SystemExit(
+            "Chrome extension preflight failed: the Maya browser extension is not connected.\n"
+            f"status: {status}\n"
+            "Start the local bridge, open Chrome with the Maya extension loaded, paste the bridge token, "
+            "then rerun this reliability command. AppleScript fallback is deliberately disabled for "
+            "extension proof runs."
+        ) from exc
+
+
 def main() -> None:
     parser = argparse.ArgumentParser(description="Live browser reliability night")
     parser.add_argument("--lane", default="all", choices=("all", *LANES))
@@ -280,6 +299,7 @@ def main() -> None:
     if not args.dry_run:
         os.environ["MAYA_BROWSER_DRIVER"] = args.driver
         print(f"browser driver: {args.driver}")
+        _preflight_live_driver(args.driver)
     night_id = args.night_id or datetime.now().strftime("%Y%m%d_%H%M%S") + ("_dry" if args.dry_run else "")
     asyncio.run(
         run_night(

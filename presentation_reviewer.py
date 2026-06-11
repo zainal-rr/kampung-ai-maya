@@ -5,6 +5,8 @@ import os
 import re
 
 from cost_tracker import record_usage
+from deck_species import deck_species_review_contract, detect_deck_species
+from office_drafter_powerpoint import MAX_POWERPOINT_SLIDES
 from models import TheSteward
 from powerpoint_quality_context import powerpoint_quality_context
 from provider_capabilities import CAPABILITIES
@@ -29,7 +31,7 @@ async def review_presentation_slides(db_path: str, topic: str, slides: Slides) -
     reviewed = _parse_slides(response)
     if reviewed:
         await record_usage(db_path, "claude_steward_calls", 1, "presentation review")
-        return reviewed[:8]
+        return reviewed[:MAX_POWERPOINT_SLIDES]
     return slides
 
 
@@ -46,14 +48,16 @@ async def _system_prompt(db_path: str) -> str:
 
 def _user_prompt(topic: str, slides: Slides) -> str:
     payload = [{"title": title, "bullets": bullets[:5]} for title, bullets in slides]
+    species_contract = deck_species_review_contract(detect_deck_species(topic))
     return (
         f"Topic: {topic}\n\n"
-        "Rewrite this as a cleaner, better-designed draft deck. Use 5 to 7 slides. "
+        "Rewrite this as a cleaner, better-designed draft deck. Do not force a fixed slide count; use as many slides as the topic needs while keeping the story focused. "
         "Each slide title should provide a clear visual cue or point. "
-        "Each slide needs 2 to 3 concrete supporting bullets; Maya's builder will condense visible text and move explanation into speaker notes. "
+        "Each slide should carry enough concrete support to be useful; Maya's builder will keep visible text readable and move overflow explanation into speaker notes. "
         "Avoid generic bullets, crowded text, sentence-heavy visible slides, and unsupported certainty. "
         "Use the Gemini content as the factual source. Improve design, structure, pacing, and slide language. "
         "Use a practical flow: context, sharp point of view, key decisions, tradeoffs, and what to do next. "
+        f"{species_contract + ' ' if species_contract else ''}"
         "Return JSON only in this shape: "
         '[{"title":"Slide title","bullets":["bullet one","bullet two"]}]\n\n'
         f"Current slides:\n{json.dumps(payload, ensure_ascii=False)}"

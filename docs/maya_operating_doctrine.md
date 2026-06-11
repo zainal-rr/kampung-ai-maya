@@ -468,5 +468,15 @@ Phase 22 is the transition from local proof to repeated real-world proof. It sho
 - **Local Checkpoint Rule:** Phase 22 may be committed locally for rollback. It should be pushed only after Zainal explicitly asks and only after confirming the GitHub remote is private.
 - **Current Working Scores:** After Telegram and earlier iMac Office tests, a fair working estimate is personal agent 8.3/10, engineering maturity 7.5/10, public technical credibility 7.1/10, daily reliability 7.2/10, and product readiness 6.5/10. These should improve only after real soak/browser/hardware evidence, not from documentation alone.
 
+## 17. Self-Hosted Single-User Boundary
+Kampung AI's current security model is product-scoped to Zainal's self-hosted runtime. It is not a hosted multi-tenant architecture.
+
+- **One Runtime Per Human:** A Maya instance is owned by one user. The runtime, memory database, browser profile, Telegram allowlist, desktop workspace, and local permissions must not be shared between unrelated humans.
+- **No Shared Browser State:** Chrome automation assumes the owner's logged-in browser context. A hosted product must not reuse one browser profile, cookie jar, extension bridge, or automation group across users.
+- **No Shared Memory Store:** Personal memory, project memory, voice transcripts, browser observations, call notes, and document history stay in the owner's local databases and workspace. Shared memory tables are out of scope for the current build.
+- **No Shared Telegram Bot State By Default:** The Telegram allowlist remains an owner-controlled boundary. Adding a second human is an explicit configuration choice, not an automatic product behavior.
+- **Hosted/SaaS Warning:** If Kampung AI becomes a hosted service, W8 must reopen as a major security project covering tenant isolation, per-user browser sandboxes, encrypted tenant-specific storage, audit boundaries, per-user provider credentials, abuse controls, and cross-tenant data-leak testing.
+- **Current Acceptance Rule:** W8 is considered guarded only under this self-host-per-user doctrine. Any claim beyond that boundary is an overclaim until a separate multi-tenant design and test suite exists.
+
 ---
-*Updated June 3, 2026*
+*Updated June 11, 2026*

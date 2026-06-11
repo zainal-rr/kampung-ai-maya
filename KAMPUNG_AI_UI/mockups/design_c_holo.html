@@ -1,0 +1,304 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maya — Holo Kampung</title>
+<link href="https://api.fontshare.com/v2/css?f[]=cabinet-grotesk@400,500,700,800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<style>
+:root{
+  --bg:#0a0c10; --ink:#e9edf2; --ink2:#97a0ac; --ink3:#535b66;
+  --blue:#4d9fff; --blue-dim:rgba(77,159,255,.13);
+  --amber:#ffb454; --amber-dim:rgba(255,180,84,.10);
+  --rose:#ff6b8a;
+  --glass:rgba(16,20,27,.55); --glass-line:rgba(255,255,255,.09);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:400 14px/1.6 "Cabinet Grotesk",sans-serif;height:100dvh;overflow:hidden}
+.mono{font-family:"JetBrains Mono",monospace}
+canvas#scene{position:fixed;inset:0;z-index:0}
+.grain{position:fixed;inset:0;z-index:3;pointer-events:none;opacity:.5;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='120' height='120'%3E%3Cfilter id='n'%3E%3CfeTurbulence baseFrequency='0.85' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.04 0'/%3E%3C/filter%3E%3Crect width='120' height='120' filter='url(%23n)'/%3E%3C/svg%3E")}
+
+.hud{position:relative;z-index:2;height:100dvh;display:grid;grid-template-columns:1.05fr 1.5fr;gap:0;padding:0 4vw}
+@media(max-width:900px){.hud{grid-template-columns:1fr;overflow-y:auto}}
+
+/* ---------- LEFT: identity + run HUD ---------- */
+.left{display:flex;flex-direction:column;justify-content:center;gap:34px;padding-right:3vw;min-width:0}
+.kicker{font-family:"JetBrains Mono";font-size:11px;letter-spacing:.22em;color:var(--blue);text-transform:uppercase;display:flex;align-items:center;gap:10px}
+.kicker::before{content:"";width:26px;height:1px;background:var(--blue)}
+.title{font-size:clamp(40px,4.6vw,68px);font-weight:800;letter-spacing:-.04em;line-height:.96}
+.title .scramble{color:var(--blue)}
+.subtitle{color:var(--ink2);font-size:15px;max-width:42ch}
+.subtitle b{color:var(--ink);font-weight:500}
+
+.hudgrid{display:grid;grid-template-columns:1fr 1fr;gap:0;border-top:1px solid var(--glass-line)}
+.hudcell{padding:14px 4px 14px 0;border-bottom:1px solid var(--glass-line)}
+.hudcell:nth-child(odd){border-right:1px solid var(--glass-line);padding-right:18px}
+.hudcell:nth-child(even){padding-left:18px}
+.hudcell .l{font-family:"JetBrains Mono";font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--ink3)}
+.hudcell .v{font-family:"JetBrains Mono";font-size:16px;margin-top:4px;color:var(--ink)}
+.hudcell .v.b{color:var(--blue)} .hudcell .v.a{color:var(--amber)}
+.hudcell .v .dot{display:inline-block;width:8px;height:8px;border-radius:50%;background:var(--blue);margin-right:8px;animation:breathe 2.2s ease-in-out infinite;vertical-align:1px}
+@keyframes breathe{0%,100%{opacity:.35;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
+
+.lanes{display:flex;gap:8px;flex-wrap:wrap}
+.lane{font-family:"JetBrains Mono";font-size:10.5px;letter-spacing:.06em;padding:5px 12px;border-radius:99px;border:1px solid var(--glass-line);color:var(--ink2);background:var(--glass);backdrop-filter:blur(8px)}
+.lane.on{border-color:rgba(77,159,255,.45);color:var(--blue);box-shadow:inset 0 1px 0 rgba(255,255,255,.08)}
+.lane.busy{border-color:rgba(255,180,84,.45);color:var(--amber)}
+
+/* ---------- RIGHT: glass chat ---------- */
+.right{display:flex;align-items:center;min-width:0;padding:4vh 0}
+.glass{width:100%;max-height:88dvh;display:flex;flex-direction:column;background:var(--glass);backdrop-filter:blur(22px) saturate(1.3);-webkit-backdrop-filter:blur(22px) saturate(1.3);border:1px solid var(--glass-line);border-radius:26px;box-shadow:inset 0 1px 0 rgba(255,255,255,.10), 0 40px 80px -30px rgba(0,0,0,.6);overflow:hidden;transition:transform .3s cubic-bezier(.16,1,.3,1)}
+.glass-head{display:flex;align-items:center;gap:12px;padding:18px 24px;border-bottom:1px solid var(--glass-line)}
+.glass-head .t{font-weight:700;letter-spacing:-.02em;font-size:15px}
+.glass-head .r{margin-left:auto;font-family:"JetBrains Mono";font-size:11px;color:var(--ink3)}
+.glass-head .r b{color:var(--blue);font-weight:500}
+
+.feed{flex:1;overflow-y:auto;padding:24px;display:flex;flex-direction:column;gap:18px;scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.1) transparent}
+.m{max-width:84%;animation:rise .5s cubic-bezier(.16,1,.3,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
+.m .meta{font-family:"JetBrains Mono";font-size:10px;letter-spacing:.1em;text-transform:uppercase;color:var(--ink3);margin-bottom:6px}
+.m.user{align-self:flex-end;text-align:right}
+.m.user .meta{color:var(--ink3)}
+.m.user .txt{display:inline-block;text-align:left;background:rgba(255,255,255,.07);border:1px solid var(--glass-line);box-shadow:inset 0 1px 0 rgba(255,255,255,.07);border-radius:16px 16px 5px 16px;padding:11px 16px;color:var(--ink)}
+.m.maya .meta{color:var(--blue)}
+.m.maya .txt{color:var(--ink);font-size:14.5px}
+
+/* trace lines */
+.trace{font-family:"JetBrains Mono";font-size:11.5px;border-left:1px solid var(--glass-line);margin:10px 0 0 2px;padding-left:14px;display:flex;flex-direction:column;gap:6px}
+.tr{display:flex;gap:10px;color:var(--ink2);opacity:0;animation:rise .4s both}
+.tr:nth-child(1){animation-delay:.1s}.tr:nth-child(2){animation-delay:.25s}.tr:nth-child(3){animation-delay:.4s}.tr:nth-child(4){animation-delay:.55s}.tr:nth-child(5){animation-delay:.7s}
+.tr .s{color:var(--blue)} .tr .s.run{color:var(--amber)} .tr .s.gate{color:var(--rose)}
+.tr .when{margin-left:auto;color:var(--ink3);font-size:10.5px}
+
+/* approval glass card */
+.approve{border:1px solid rgba(255,180,84,.4);background:var(--amber-dim);backdrop-filter:blur(10px);border-radius:18px;padding:16px 18px;box-shadow:inset 0 1px 0 rgba(255,255,255,.08);animation:pop .6s cubic-bezier(.2,1.5,.4,1) both}
+@keyframes pop{from{opacity:0;transform:scale(.93) translateY(10px)}to{opacity:1;transform:none}}
+.approve .h{font-weight:700;font-size:13px;color:var(--amber);display:flex;gap:9px;align-items:center}
+.approve p{font-size:13px;color:var(--ink2);margin:8px 0 13px}
+.approve code{font-family:"JetBrains Mono";font-size:11px;background:rgba(0,0,0,.35);border:1px solid var(--glass-line);padding:1px 7px;border-radius:6px;color:var(--ink)}
+.acts{display:flex;gap:9px}
+.btn{font:500 12.5px "Cabinet Grotesk";padding:8px 18px;border-radius:10px;border:1px solid var(--glass-line);background:rgba(255,255,255,.05);color:var(--ink2);cursor:pointer;transition:transform .12s,border-color .2s,color .2s}
+.btn:active{transform:scale(.96)}
+.btn.yes{background:var(--blue);border-color:var(--blue);color:#06101d;font-weight:700}
+.btn.no:hover{border-color:var(--rose);color:var(--rose)}
+
+/* artifact */
+.file{display:flex;align-items:center;gap:13px;border:1px solid var(--glass-line);border-radius:14px;padding:12px 16px;background:rgba(255,255,255,.04);box-shadow:inset 0 1px 0 rgba(255,255,255,.06)}
+.file .ic{width:36px;height:36px;border-radius:10px;background:var(--blue-dim);color:var(--blue);display:grid;place-items:center;font-family:"JetBrains Mono";font-size:9px}
+.file .nm{font-weight:700;font-size:13px}
+.file .st{font-family:"JetBrains Mono";font-size:10.5px;color:var(--ink3)}
+.file .st b{color:var(--blue);font-weight:500}
+.file a{margin-left:auto;font-size:12.5px;color:var(--blue);text-decoration:none}
+
+/* typing */
+.typing::after{content:"▍";color:var(--blue);animation:blink 1s steps(1) infinite}
+@keyframes blink{50%{opacity:0}}
+
+/* composer */
+.deck{padding:16px 24px 20px;border-top:1px solid var(--glass-line)}
+.deck .box{display:flex;align-items:center;gap:12px;border:1px solid var(--glass-line);background:rgba(0,0,0,.3);border-radius:14px;padding:12px 16px;box-shadow:inset 0 1px 0 rgba(255,255,255,.05);transition:border-color .25s}
+.deck .box:focus-within{border-color:rgba(77,159,255,.5)}
+.deck input{flex:1;background:none;border:none;outline:none;color:var(--ink);font:400 14px "Cabinet Grotesk"}
+.deck .go{width:36px;height:36px;border-radius:10px;background:var(--blue);border:none;display:grid;place-items:center;cursor:pointer;transition:transform .12s}
+.deck .go:active{transform:scale(.93)}
+</style>
+</head>
+<body>
+<canvas id="scene"></canvas>
+<div class="grain"></div>
+
+<div class="hud">
+
+  <!-- LEFT -->
+  <section class="left">
+    <div>
+      <div class="kicker">Kampung runtime · local-first</div>
+      <h1 class="title">Maya is<br><span class="scramble" id="scramble">working.</span></h1>
+      <p class="subtitle" style="margin-top:16px">Checkpointed run <b>run_8f2c41</b> on <b>Penang trip budget</b> — the permission kernel is holding one gate for you.</p>
+    </div>
+
+    <div class="hudgrid">
+      <div class="hudcell"><div class="l">Run state</div><div class="v a">await_approval</div></div>
+      <div class="hudcell"><div class="l">Loop budget</div><div class="v">3 / 8 steps</div></div>
+      <div class="hudcell"><div class="l">Session cost</div><div class="v b">RM 0.0417</div></div>
+      <div class="hudcell"><div class="l">Snapshot</div><div class="v"><span class="dot"></span>rollback armed</div></div>
+      <div class="hudcell"><div class="l">Memory canaries</div><div class="v b">8/8 clean</div></div>
+      <div class="hudcell"><div class="l">Proof overall</div><div class="v">84–86%</div></div>
+    </div>
+
+    <div class="lanes">
+      <span class="lane on">GEMINI</span>
+      <span class="lane busy">GPT-COMPLEX</span>
+      <span class="lane on">CLAUDE STEWARD</span>
+      <span class="lane">GROK / ARA</span>
+      <span class="lane">ARTISAN</span>
+    </div>
+  </section>
+
+  <!-- RIGHT: glass chat -->
+  <section class="right">
+    <div class="glass" id="glass">
+      <div class="glass-head">
+        <div class="t">Penang trip budget</div>
+        <div class="r">thread <b>maya:telegram</b> · 41,209 events</div>
+      </div>
+
+      <div class="feed">
+        <div class="m user">
+          <div class="meta">Zainal · 21:14</div>
+          <div class="txt">/complex build the Penang trip budget workbook with the flight I picked in Chrome just now, 3 pax, 4D3N</div>
+        </div>
+
+        <div class="m maya">
+          <div class="meta">Maya · plan approved by steward</div>
+          <div class="txt">Pulling your browser capture — MH1142 at RM 214.50 per pax — and building the workbook with the financial-model species.</div>
+          <div class="trace">
+            <div class="tr"><span class="s">[ok]</span> route → intent travel_budget_workbook · lane gpt-complex<span class="when">21:14:02</span></div>
+            <div class="tr"><span class="s">[ok]</span> travel_plan.read → MH1142 PEN · RM 214.50/pax<span class="when">21:14:11</span></div>
+            <div class="tr"><span class="s">[ok]</span> domain:finance_credit_analysis · 2 recipes retrieved<span class="when">21:14:12</span></div>
+            <div class="tr"><span class="s run">[..]</span> excel_species.financial_model → building<span class="when">21:14:14</span></div>
+            <div class="tr"><span class="s gate">[!!]</span> permission office.write → confirm<span class="when">21:14:14</span></div>
+          </div>
+        </div>
+
+        <div class="approve">
+          <div class="h">
+            <svg width="13" height="13" viewBox="0 0 16 16" fill="none"><path d="M8 1l7 13H1L8 1z" stroke="currentColor" stroke-width="1.4"/><path d="M8 6v4M8 12.2v.1" stroke="currentColor" stroke-width="1.4"/></svg>
+            Permission kernel — one gate open
+          </div>
+          <p>Allow <code>office.write</code> → <code>penang_4d3n_budget.xlsx</code> in the Maya workspace. Side-effect <code>local-file</code> · replay-safe <code>yes</code> · snapshot taken.</p>
+          <div class="acts">
+            <button class="btn yes">Approve once</button>
+            <button class="btn">Approve for thread</button>
+            <button class="btn no">Deny</button>
+          </div>
+        </div>
+
+        <div class="m maya">
+          <div class="meta">Maya · 21:15 · QA gates passed</div>
+          <div class="file">
+            <div class="ic">XLSX</div>
+            <div>
+              <div class="nm">penang_4d3n_budget.xlsx</div>
+              <div class="st">validation <b>pass</b> · formulas <b>pass</b> · steward <b>approved</b></div>
+            </div>
+            <a href="#">Open locally</a>
+          </div>
+        </div>
+
+        <div class="m maya">
+          <div class="meta">Maya · verifying</div>
+          <div class="txt typing" id="stream"></div>
+        </div>
+      </div>
+
+      <div class="deck">
+        <div class="box">
+          <input id="composer" placeholder="" autocomplete="off">
+          <button class="go"><svg width="14" height="14" viewBox="0 0 16 16" fill="none"><path d="M2 8h11M9 3.5L13.5 8 9 12.5" stroke="#06101d" stroke-width="1.7" stroke-linecap="round"/></svg></button>
+        </div>
+      </div>
+    </div>
+  </section>
+</div>
+
+<script>
+/* ============ THREE.JS — agent core + particle field ============ */
+const canvas = document.getElementById("scene");
+const renderer = new THREE.WebGLRenderer({canvas, antialias:true, alpha:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+const scene = new THREE.Scene();
+scene.fog = new THREE.FogExp2(0x0a0c10, 0.055);
+const camera = new THREE.PerspectiveCamera(55, innerWidth/innerHeight, .1, 100);
+camera.position.set(0, 0, 11);
+
+/* agent core — nested wireframe icosahedra, offset left */
+const core = new THREE.Group();
+const geoA = new THREE.IcosahedronGeometry(2.6, 1);
+const geoB = new THREE.IcosahedronGeometry(3.4, 0);
+core.add(new THREE.LineSegments(new THREE.WireframeGeometry(geoA), new THREE.LineBasicMaterial({color:0x4d9fff, transparent:true, opacity:.5})));
+core.add(new THREE.LineSegments(new THREE.WireframeGeometry(geoB), new THREE.LineBasicMaterial({color:0x4d9fff, transparent:true, opacity:.14})));
+const inner = new THREE.Mesh(new THREE.IcosahedronGeometry(1.1, 2), new THREE.MeshBasicMaterial({color:0x4d9fff, transparent:true, opacity:.07}));
+core.add(inner);
+core.position.set(-4.6, -0.4, 0);
+scene.add(core);
+
+/* particle field */
+const N = 900, pos = new Float32Array(N*3);
+for(let i=0;i<N;i++){ pos[i*3]=(Math.random()-.5)*36; pos[i*3+1]=(Math.random()-.5)*22; pos[i*3+2]=(Math.random()-.5)*18; }
+const pgeo = new THREE.BufferGeometry();
+pgeo.setAttribute("position", new THREE.BufferAttribute(pos, 3));
+const points = new THREE.Points(pgeo, new THREE.PointsMaterial({color:0x97a0ac, size:.035, transparent:true, opacity:.55}));
+scene.add(points);
+
+/* gentle mouse parallax (no useState equivalents — raw values) */
+let mx=0, my=0, tx=0, ty=0;
+addEventListener("pointermove", e=>{ tx=(e.clientX/innerWidth-.5); ty=(e.clientY/innerHeight-.5); });
+
+/* glass panel micro-tilt */
+const glass = document.getElementById("glass");
+
+function resize(){
+  renderer.setSize(innerWidth, innerHeight, false);
+  camera.aspect = innerWidth/innerHeight; camera.updateProjectionMatrix();
+}
+addEventListener("resize", resize); resize();
+
+let t0 = performance.now();
+(function frame(now){
+  const dt = (now - t0)/1000; t0 = now;
+  mx += (tx-mx)*.04; my += (ty-my)*.04;
+  core.rotation.y += dt*.22; core.rotation.x += dt*.07;
+  inner.scale.setScalar(1 + Math.sin(now*.0016)*.16);          /* breathing core */
+  points.rotation.y += dt*.012;
+  camera.position.x = mx*1.4; camera.position.y = -my*1.0;
+  camera.lookAt(0,0,0);
+  glass.style.transform = `perspective(1200px) rotateY(${(-mx*2.2).toFixed(3)}deg) rotateX(${(my*1.6).toFixed(3)}deg)`;
+  renderer.render(scene, camera);
+  requestAnimationFrame(frame);
+})(t0);
+
+/* ============ text scramble on the title ============ */
+const word = document.getElementById("scramble");
+const states = ["working.","planning.","verifying.","listening."];
+const glyphs = "!<>-_\\/[]{}—=+*^?#";
+let si = 0;
+function scrambleTo(next){
+  const from = word.textContent, len = Math.max(from.length, next.length);
+  let frame = 0;
+  const q = Array.from({length:len},(_,i)=>({from:from[i]||"", to:next[i]||"", start:Math.floor(Math.random()*22), end:Math.floor(Math.random()*22)+22}));
+  (function step(){
+    let out="", done=0;
+    for(const c of q){
+      if(frame>=c.end){done++; out+=c.to;}
+      else if(frame>=c.start){out+=glyphs[Math.floor(Math.random()*glyphs.length)];}
+      else out+=c.from;
+    }
+    word.textContent=out;
+    if(done<q.length){frame++; requestAnimationFrame(step);}
+  })();
+}
+setInterval(()=>{ si=(si+1)%states.length; scrambleTo(states[si]); }, 4200);
+
+/* ============ streaming reply ============ */
+const stream = document.getElementById("stream");
+const msg = "Totals reconcile at RM 2,847.20 for 3 pax. The selected-flight row carries your MH1142 capture and the budget snapshot is pinned. Lock this version, or add the Langkawi ferry scenario?";
+let ci = 0;
+(function type(){ if(ci<=msg.length){ stream.textContent=msg.slice(0,ci++); setTimeout(type, 15+Math.random()*25);} else stream.classList.remove("typing"); })();
+
+/* composer placeholder */
+const ph = ["Speak or type — same runtime as Telegram…","/complex self heal Maya after approval","Add the ferry day trip to the workbook","/memory inspect"];
+const input = document.getElementById("composer");
+let pi=0, pc=0, dir=1;
+(function cycle(){
+  const cur=ph[pi]; pc+=dir; input.placeholder=cur.slice(0,pc);
+  if(pc===cur.length&&dir===1){dir=-1;return setTimeout(cycle,2100);}
+  if(pc===0&&dir===-1){dir=1;pi=(pi+1)%ph.length;}
+  setTimeout(cycle,dir===1?38:12);
+})();
+</script>
+</body>
+</html>

@@ -46,9 +46,19 @@ def run_local_ci(*, live_providers: bool = False) -> list[CheckResult]:
         _command_check("artifact parameter resolver", ("artifact_parameter_resolver_smoke.py",)),
         _command_check("artifact parameters", ("artifact_parameters_smoke.py",)),
         _command_check("word travel destination", ("word_travel_destination_smoke.py",)),
+        _command_check("untrusted input boundary", ("tests/smokes/untrusted_input_boundary_smoke.py",)),
+        _command_check("untrusted live path", ("tests/smokes/untrusted_live_path_smoke.py",)),
+        _command_check("browser untrusted action guard", ("tests/smokes/browser_untrusted_action_guard_smoke.py",)),
         _command_check("canonical memory", ("canonical_memory_smoke.py",)),
+        _command_check("canonical memory embeddings", ("canonical_memory_embeddings_smoke.py",)),
         _command_check("nightly consolidation", ("nightly_consolidation_smoke.py",)),
         _command_check("memory time audit", ("memory_time_audit_smoke.py",)),
+        _command_check("memory recall eval", ("tests/evals/memory_recall_eval.py",)),
+        _command_check("memory recall compare", ("tests/evals/memory_recall_eval_compare.py",)),
+        _command_check("runtime config", ("runtime_config_smoke.py",)),
+        _command_check("secret provider", ("tests/smokes/secret_provider_smoke.py",)),
+        _command_check("secret migration", ("tests/smokes/secret_migration_smoke.py",)),
+        _command_check("tool sandbox policy", ("tests/smokes/tool_sandbox_policy_smoke.py",)),
         _command_check("self-heal execution", ("self_heal_execution_smoke.py",)),
         _command_check("voice command aliases", ("voice_command_aliases_smoke.py",)),
         _command_check("OSBridge test mode", ("osbridge_test_mode_smoke.py",)),
@@ -61,6 +71,10 @@ def run_local_ci(*, live_providers: bool = False) -> list[CheckResult]:
         _command_check("browser lane validators", ("browser_lane_validators_smoke.py",)),
         _command_check("browser reliability dry night", ("live_browser_reliability_smoke.py",)),
         _command_check("browser extension bridge", ("browser_extension_bridge_smoke.py",)),
+        _command_check("browser driver mode", ("browser_driver_mode_smoke.py",)),
+        _command_check("workflow document bypass", ("tests/smokes/workflow_document_bypass_smoke.py",)),
+        _command_check("recent questions document", ("tests/smokes/recent_questions_document_smoke.py",)),
+        _command_check("agentic verifier deep", ("harness_agentic_deep_smoke.py",)),
         _command_check("agentic reliability harness", ("live_agentic_reliability_smoke.py",)),
         _command_check("flight deep link", ("flight_deeplink_smoke.py",)),
         _command_check("legacy architecture removed", ("legacy_architecture_removed_smoke.py",)),
@@ -86,7 +100,10 @@ def format_ci(results: list[CheckResult]) -> str:
 
 
 def _compile_check() -> CheckResult:
-    files = sorted(str(path.name) for path in ROOT.glob("*.py"))
+    files = sorted(
+        str(path.relative_to(ROOT))
+        for path in (*ROOT.glob("*.py"), *ROOT.joinpath("tests").rglob("*.py"))
+    )
     return _command_check("python compile", ("-m", "py_compile", *files))
 
 

@@ -2,8 +2,10 @@ from __future__ import annotations
 
 """Browser driver selection for Maya browser skills.
 
-Production can prefer the Maya Chrome extension when it is connected, while
-tests that pass fake OSBridge instances keep the original AppleScript path.
+Production uses the Maya Chrome extension by default, while tests that pass
+fake OSBridge instances keep the original AppleScript path. Set
+MAYA_BROWSER_DRIVER=legacy only when deliberately using the old AppleScript
+fallback.
 """
 
 import os
@@ -12,6 +14,7 @@ from typing import Any
 
 from browser_control import BrowserController
 from browser_extension_bridge import ExtensionBridgeServer, ExtensionBrowserController
+from maya_runtime_config import runtime_config
 
 
 _EXTENSION_SERVER: ExtensionBridgeServer | None = None
@@ -25,15 +28,14 @@ def make_browser_controller(bridge: Any | None = None, app_name: str = "Google C
 
     If a bridge is supplied, keep the legacy BrowserController path so all
     fake-bridge and AppleScript tests behave exactly as before. Without an
-    explicit bridge, `MAYA_BROWSER_DRIVER=auto` prefers the Maya extension if
-    connected, then falls back to AppleScript. `MAYA_BROWSER_DRIVER=extension`
-    is strict and fails if the extension is not connected, so extension proof
-    runs cannot silently become AppleScript runs.
+    explicit bridge, the default is strict extension mode: browser proof runs
+    cannot silently become AppleScript runs. `MAYA_BROWSER_DRIVER=legacy`
+    deliberately opts into the old AppleScript path.
     """
     if bridge is not None:
         return BrowserController(bridge, app_name=app_name)
 
-    mode = os.getenv("MAYA_BROWSER_DRIVER", "auto").strip().lower()
+    mode = _browser_driver_mode()
     if mode in {"applescript", "apple", "legacy"}:
         return BrowserController(app_name=app_name)
 
@@ -62,7 +64,7 @@ def extension_bridge_status() -> dict[str, object]:
 def _extension_controller() -> ExtensionBrowserController | None:
     global _EXTENSION_SERVER, _EXTENSION_FAILED_AT
 
-    mode = os.getenv("MAYA_BROWSER_DRIVER", "auto").strip().lower()
+    mode = _browser_driver_mode()
     if mode not in {"auto", "extension", "chrome_extension"}:
         return None
 
@@ -108,7 +110,7 @@ def _start_extension_server_with_retry(wait_seconds: float) -> ExtensionBridgeSe
 
 
 def _extension_wait_seconds() -> float:
-    mode = os.getenv("MAYA_BROWSER_DRIVER", "auto").strip().lower()
+    mode = _browser_driver_mode()
     default = (
         _DEFAULT_STRICT_EXTENSION_WAIT_SECONDS
         if mode in {"extension", "chrome_extension"}
@@ -119,3 +121,7 @@ def _extension_wait_seconds() -> float:
         return max(0.0, min(30.0, float(raw)))
     except ValueError:
         return default
+
+
+def _browser_driver_mode() -> str:
+    return runtime_config().browser_driver_default.strip().lower() or "auto"

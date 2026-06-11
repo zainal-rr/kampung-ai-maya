@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-import os
-
 import sounddevice as sd
+
+from maya_runtime_config import normalized_names, runtime_config
 
 
 def local_wake_allowed(input_name: str = "", output_name: str = "") -> bool:
@@ -35,13 +35,11 @@ def voice_intent_label(input_name: str = "", output_name: str = "") -> str:
 
 
 def _allowed_names() -> list[str]:
-    raw = os.getenv("MAYA_VOICE_ALLOWED_HEADPHONE_NAMES", "Zainal’s Headphone,Sony,WH-1000XM5,MX5")
-    return [item.casefold().strip() for item in raw.split(",") if item.strip()]
+    return normalized_names(runtime_config().preferred_audio_output_names)
 
 
 def _blocked_names() -> list[str]:
-    raw = os.getenv("MAYA_VOICE_BLOCKED_WAKE_NAMES", "AirPods,iMac Microphone,iMac Speakers")
-    return [item.casefold().strip() for item in raw.split(",") if item.strip()]
+    return normalized_names(runtime_config().blocked_audio_output_names)
 
 
 def _matches(names: str, needles: list[str]) -> bool:

@@ -38,7 +38,7 @@ async def main() -> None:
                 "REJECT: failed quality",
             )
             _require("[file:" in direct_reply, f"failed draft should expose saved draft path: {direct_reply}")
-            _require("not attach it as a finished file" in direct_reply and "I saved the draft at" in direct_reply, f"failed draft should be explicit: {direct_reply}")
+            _require("not calling it final" in direct_reply and "I saved the draft at" in direct_reply, f"failed draft should be explicit: {direct_reply}")
             draft_reply = await EverydayCommandRouter(db_path).handle("give me the rough", "telegram")
             _require(draft_reply is not None and "[file:" in draft_reply, f"rough draft should attach: {draft_reply}")
             _require("bad.xlsx" in draft_reply, f"rough draft should reference failed draft: {draft_reply}")

@@ -67,6 +67,48 @@ def deck_species_prompt_context(species: str) -> str:
             "DECK HONESTY CONTRACT: do NOT fabricate traction numbers, revenue, customer "
             "names, or market sizes. Use clearly marked fill-in slots ('<N> pilots', "
             "'<RM X> pipeline') for anything the user did not provide, and keep "
-            "verifiable claims qualitative."
+            "verifiable claims qualitative. Build a real pitch spine anyway: problem, "
+            "customer/use case, solution workflow, operating model, risk/compliance, "
+            "and a specific next step or ask."
+        )
+    if species == "issue":
+        return (
+            "DECK SEMANTIC CONTRACT: this is an issue/awareness/policy deck, not a sales "
+            "pitch. It should explain the concern through local evidence, farm-level or "
+            "community-level affected groups, drivers, practical responses, and a next "
+            "direction. Use concrete local nouns when the topic provides them; do not hide "
+            "behind generic concern wording."
+        )
+    return ""
+
+
+def deck_species_review_contract(species: str) -> str:
+    if species == "pitch":
+        return (
+            "Species contract: investor/concept pitch. Judge whether the deck names a real "
+            "problem, identifies a customer or use case, explains the solution workflow, "
+            "shows an operating or business model, surfaces risks, and ends with a next ask. "
+            "If the user gave no metrics, do not require invented traction, revenue, TAM, "
+            "or customer names. Mark draft-level only for unresolved visible placeholders, "
+            "fabricated exact numbers, missing problem/solution/ask, or generic startup boilerplate."
+        )
+    if species == "issue":
+        return (
+            "Species contract: issue/awareness/policy deck. Judge whether the deck explains "
+            "the concern, who is affected, the drivers, what responses could work, and the "
+            "next direction. Do not expect a sales pitch, financial model, or investor ask. "
+            "Mark draft-level only when it is off-topic, generic enough to fit any issue, "
+            "missing the affected group/drivers/response arc, or visibly unfinished."
+        )
+    if species == "teaching":
+        return (
+            "Species contract: teaching/workshop deck. It should move from learning outcomes "
+            "to setup, activity flow, roles/practice, and proof of learning."
+        )
+    if species == "review":
+        return (
+            "Species contract: review deck. It should separate delivered work, evidence or "
+            "metrics, lessons, decisions, and owners. With no supplied sprint data, visible "
+            "copy must stay neutral rather than inventing exact sprint numbers."
         )
     return ""

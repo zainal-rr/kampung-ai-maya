@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maya — Living Bamboo Desk (live, read-only)</title>
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+<div class="shell">
+
+  <header>
+    <img class="mark" src="/static/logo.png" alt="Kampung AI" onerror="this.style.display='none'">
+    <div class="word">
+      <h1 id="greet">Selamat petang, Zainal.</h1>
+      <p id="sub">connecting to the runtime…</p>
+    </div>
+    <div class="right">
+      <div class="pill"><span class="pulse" id="health-dot"></span><span id="health-text">checking…</span></div>
+      <div style="position:relative">
+        <button class="icon-btn" id="bellBtn" title="approvals waiting">
+          <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 1.5a4.2 4.2 0 0 0-4.2 4.2c0 3.2-1.3 4.4-1.3 4.4h11s-1.3-1.2-1.3-4.4A4.2 4.2 0 0 0 8 1.5zM6.6 12.8a1.5 1.5 0 0 0 2.8 0" stroke="currentColor" stroke-width="1.3" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          <span class="n" id="bellN" style="display:none">0</span>
+        </button>
+        <div class="alerts-pop" id="alertsPop"></div>
+      </div>
+      <button class="theme-btn" id="themeBtn">Dark</button>
+    </div>
+  </header>
+
+  <nav id="nav">
+    <button data-v="desk" class="on">Desk</button>
+    <button data-v="chat">Conversation</button>
+    <button data-v="auto">Automations</button>
+    <button data-v="memory">Memory</button>
+    <button data-v="artifacts">Artifacts</button>
+    <button data-v="proof">Proof</button>
+  </nav>
+
+  <!-- ============ DESK ============ -->
+  <section class="view on" id="v-desk">
+    <div class="appr-strip" id="apprStrip" style="display:none">
+      <span class="ic"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M8 1l7 13H1L8 1z" stroke="currentColor" stroke-width="1.4"/><path d="M8 6v4M8 12.2v.1" stroke="currentColor" stroke-width="1.4"/></svg></span>
+      <div class="tx"><b id="apprCount">0 approvals waiting.</b><span class="sb2" id="apprNames"></span></div>
+      <div class="acts2"><span class="note-ro">read-only desk — resolve in chat with yes / no</span></div>
+    </div>
+
+    <div class="tile" style="margin-bottom:6px"><div class="pad">
+      <h4>Live runs <span class="sub">parallel · steer in chat</span></h4>
+      <div class="runcards" id="runcards"><div class="empty">no active runs</div></div>
+    </div></div>
+    <div class="tile-label" style="margin-bottom:18px"><b>Blast radius</b> — runs show their state; steering happens in chat in Phase 3</div>
+
+    <div class="row3">
+      <div><div class="tile"><div class="pad">
+        <h4>Approvals <span class="sub">read-only status</span></h4>
+        <div id="approvals"><div class="empty">—</div></div>
+      </div></div>
+      <div class="tile-label"><b>Permission kernel</b> — status here, action in chat</div></div>
+
+      <div><div class="tile"><div class="pad">
+        <h4>Workflow desk <span class="sub">harness runs</span></h4>
+        <div id="runs"><div class="empty">—</div></div>
+      </div></div>
+      <div class="tile-label"><b>Resumable</b> — "where did we stop" answers from checkpoints</div></div>
+
+      <div><div class="tile"><div class="pad">
+        <h4>Today <span class="sub">local state</span></h4>
+        <div id="today"><div class="empty">—</div></div>
+      </div></div>
+      <div class="tile-label"><b>Everyday layer</b> — no model guesswork</div></div>
+    </div>
+
+    <div class="grid">
+      <div class="col">
+        <div class="tile"><div class="pad">
+          <h4>Route and cost <span class="sub">latest routes · masked lanes</span></h4>
+          <table id="routes" style="margin-top:8px"></table>
+        </div></div>
+        <div class="tile-label"><b>/route</b> — lanes use Maya's team names, never engine names</div>
+
+        <div class="tile"><div class="pad">
+          <h4>Live event feed <span class="sub" id="feed-cursor">cursor —</span></h4>
+          <div class="feed scrolly" id="feed"><div class="empty">waiting for events…</div></div>
+        </div></div>
+        <div class="tile-label"><b>Tail of the runtime</b> — harness + route events over SSE</div>
+      </div>
+
+      <div class="col">
+        <div class="tile"><div class="pad">
+          <h4>Threads <span class="sub">latest activity</span></h4>
+          <div id="threads"><div class="empty">—</div></div>
+        </div></div>
+        <div class="tile-label" style="margin-top:-12px"><b>Thread manager</b> — busy threads float up</div>
+
+        <div class="tile"><div class="pad">
+          <h4>Memory canaries</h4>
+          <div id="canaries"><div class="empty">—</div></div>
+        </div></div>
+        <div class="tile-label" style="margin-top:-12px"><b>Trust probes</b> — forget must stay forgotten</div>
+
+        <div class="tile"><div class="pad">
+          <h4>Lanes today <span class="sub">usage</span></h4>
+          <div id="usage"><div class="empty">—</div></div>
+        </div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ============ MEMORY ============ -->
+  <section class="view" id="v-memory">
+    <div class="grid"><div class="col">
+      <div class="tile"><div class="pad">
+        <h4>Canonical memory inspector <span class="sub">/memory inspect · read-only</span></h4>
+        <div class="scrolly" style="margin-top:10px"><table id="memTable"></table></div>
+        <p class="hint">Pin, edit, forget, and teaching happen in chat — this inspector only shows the truth layer.</p>
+      </div></div>
+      <div class="tile-label"><b>One truth per fact</b> — views never disagree with canonical rows</div>
+    </div>
+    <div class="col">
+      <div class="tile"><div class="pad">
+        <h4>Summary</h4>
+        <div id="memSummary" class="memline">—</div>
+      </div></div>
+      <div class="tile"><div class="pad">
+        <h4>Canaries</h4>
+        <div id="canaries2"><div class="empty">—</div></div>
+      </div></div>
+    </div></div>
+  </section>
+
+  <!-- ============ ARTIFACTS ============ -->
+  <section class="view" id="v-artifacts">
+    <div class="grid"><div class="col">
+      <div class="tile"><div class="pad">
+        <h4>Artifact gallery <span class="sub">latest first · harness_artifacts</span></h4>
+        <div class="scrolly" id="gallery" style="margin-top:12px;display:flex;flex-direction:column;gap:10px;max-height:560px"></div>
+      </div></div>
+      <div class="tile-label"><b>Real files, not pasted text</b> — every artifact carries its QA summary</div>
+    </div>
+    <div class="col">
+      <div class="tile"><div class="pad">
+        <h4>Open locally</h4>
+        <p class="hint" style="margin-top:8px">Files live under Desktop/Maya. Opening and re-sending happen in chat ("open the last document") — this desk stays read-only.</p>
+      </div></div>
+    </div></div>
+  </section>
+
+  <!-- ============ PLACEHOLDERS (Phase 3) ============ -->
+  <section class="view" id="v-chat"><div class="tile"><div class="pad ph">
+    <h4>Conversation</h4>
+    <p class="hint">Arrives in Phase 3 with the write protocol. Until then Maya lives in Telegram and iMac voice — this desk mirrors what she does there.</p>
+  </div></div></section>
+  <section class="view" id="v-auto"><div class="tile"><div class="pad ph">
+    <h4>Automations</h4>
+    <p class="hint">Schedules run in launchd and the routine store. The read view lands here in Phase 3; the design is locked in the mockup.</p>
+  </div></div></section>
+  <section class="view" id="v-proof"><div class="tile"><div class="pad ph">
+    <h4>Proof</h4>
+    <p class="hint">Run checks live in local_ci.py on the iMac. The proof surface (scores, boundaries, failures) joins here in Phase 3.</p>
+  </div></div></section>
+
+  <footer>Maya · Kampung AI · Phase 2 read-only client · no write endpoints exist on this server</footer>
+</div>
+<script src="/static/app.js"></script>
+</body>
+</html>

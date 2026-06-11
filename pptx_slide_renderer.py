@@ -3,9 +3,10 @@ from __future__ import annotations
 import os
 import textwrap
 import time
+from io import BytesIO
 from pathlib import Path
 
-from PIL import Image, ImageDraw, ImageFont
+from PIL import Image, ImageDraw, ImageFont, ImageOps
 from pptx import Presentation
 
 
@@ -52,15 +53,18 @@ def render_pptx_slides(
         image = Image.new("RGB", (width, height), _background_rgb(slide))
         draw = ImageDraw.Draw(image)
         for shape in slide.shapes:
-            _draw_shape(draw, shape)
+            _draw_shape(image, draw, shape)
         out = output_dir / f"{path.stem}-slide-{index:02d}.jpg"
         image.save(out, "JPEG", quality=92)
         files.append(out)
     return files
 
 
-def _draw_shape(draw: ImageDraw.ImageDraw, shape) -> None:
+def _draw_shape(canvas: Image.Image, draw: ImageDraw.ImageDraw, shape) -> None:
     x, y, w, h = [_emu_to_px(value) for value in (shape.left, shape.top, shape.width, shape.height)]
+    if getattr(shape, "shape_type", None) == 13:
+        _draw_picture(canvas, draw, shape, x, y, w, h)
+        return
     fill = _fill_rgb(shape)
     line = _line_rgb(shape)
     if fill:
@@ -70,10 +74,44 @@ def _draw_shape(draw: ImageDraw.ImageDraw, shape) -> None:
     text = getattr(shape, "text", "").strip()
     if text:
         _draw_text(draw, text, x + 12, y + 10, max(w - 24, 80), h, _text_rgb(shape))
-    if getattr(shape, "shape_type", None) == 13:
+def _draw_picture(canvas: Image.Image, draw: ImageDraw.ImageDraw, shape, x: int, y: int, w: int, h: int) -> None:
+    try:
+        with Image.open(BytesIO(shape.image.blob)) as image:
+            image = image.convert("RGB")
+            cropped = _crop_picture(image, shape)
+            fitted = ImageOps.fit(cropped, (max(w, 1), max(h, 1)), method=Image.Resampling.LANCZOS)
+            canvas.paste(fitted, (x, y))
+            fitted.close()
+            if cropped is not image:
+                cropped.close()
+    except Exception:
         draw.rectangle((x, y, x + w, y + h), outline=(110, 130, 120), width=2)
         draw.line((x, y, x + w, y + h), fill=(110, 130, 120), width=2)
         draw.line((x + w, y, x, y + h), fill=(110, 130, 120), width=2)
+
+
+def _crop_picture(image: Image.Image, shape) -> Image.Image:
+    left = _crop_fraction(getattr(shape, "crop_left", 0))
+    right = _crop_fraction(getattr(shape, "crop_right", 0))
+    top = _crop_fraction(getattr(shape, "crop_top", 0))
+    bottom = _crop_fraction(getattr(shape, "crop_bottom", 0))
+    if not any((left, right, top, bottom)):
+        return image
+    width, height = image.size
+    x1 = int(width * left)
+    x2 = int(width * (1 - right))
+    y1 = int(height * top)
+    y2 = int(height * (1 - bottom))
+    if x2 <= x1 or y2 <= y1:
+        return image
+    return image.crop((x1, y1, x2, y2))
+
+
+def _crop_fraction(value) -> float:
+    try:
+        return max(0.0, min(0.49, float(value or 0)))
+    except Exception:
+        return 0.0
 
 
 def _draw_text(draw: ImageDraw.ImageDraw, text: str, x: int, y: int, width: int, height: int, color: tuple[int, int, int]) -> None:

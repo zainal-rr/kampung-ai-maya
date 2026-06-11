@@ -37,11 +37,16 @@ def _content_slide(slide, title: str, bullets: list[str], index: int, total: int
     pal = _resolve(palette, theme)
     _accent_bar(slide, theme, pal)
     _text_box(slide, _short(title, 54, complete=False), 0.72, 0.55, 11.4, 0.7, 28, DARK_TEXT if dark else FOREST, True)
-    items = bullets[:3] or ["Add a specific point."]
+    items = bullets[:4] or ["Add a specific point."]
     pattern = (index + rhythm_offset(pal.species)) % 4
     if pattern == 1:
-        for idx, bullet in enumerate(items):
-            _number_card(slide, idx + 1, bullet, 0.9 + idx * 4.02, 1.75, theme, pal)
+        if len(items) <= 3:
+            for idx, bullet in enumerate(items):
+                _number_card(slide, idx + 1, bullet, 0.9 + idx * 4.02, 1.75, theme, pal)
+        else:
+            for idx, bullet in enumerate(items[:4]):
+                row, col = divmod(idx, 2)
+                _compact_card(slide, idx + 1, bullet, 0.9 + col * 5.78, 1.58 + row * 2.22, theme, pal)
     elif pattern == 2:
         _block(slide, 0.9, 1.55, 3.4, 4.55, pal.panel, pal.accent_soft)
         _text_box(slide, "Why it matters", 1.2, 2.0, 2.7, 0.45, 22, DARK_TEXT if dark else FOREST, True)
@@ -60,7 +65,7 @@ def _content_slide_visual(slide, title: str, bullets: list[str], index: int, tot
     pal = _resolve(palette, theme)
     _accent_bar(slide, theme, pal)
     _text_box(slide, _short(title, 54, complete=False), 0.72, 0.52, 11.25, 0.72, 30, DARK_TEXT if dark else FOREST, True)
-    items = bullets[:3] or ["Context", "Choice", "Next step"]
+    items = bullets[:4] or ["Context", "Choice", "Next step"]
     if (index + rhythm_offset(pal.species)) % 3 == 0:
         _content_slide_visual_wide(slide, title, items, index, total, theme, deck_topic, pal)
         return
@@ -70,7 +75,7 @@ def _content_slide_visual(slide, title: str, bullets: list[str], index: int, tot
     _image_panel(slide, image_x, 1.38, 5.85, 4.95, theme, pal)
     _text_box(slide, _slide_kicker(title, deck_topic), text_x, 1.52, 3.05, 0.28, 11, pal.kicker, True)
     _text_box(slide, _short(items[0], 56, complete=False), text_x, 1.96, 4.75, 1.02, 25, DARK_TEXT if dark else INK, True)
-    for idx, bullet in enumerate(items[1:] or items[:1]):
+    for idx, bullet in enumerate((items[1:] or items[:1])[:2]):
         _visual_callout(slide, bullet, text_x, 3.34 + idx * 1.38, theme, pal)
     _footer(slide, index, total, theme)
 
@@ -81,7 +86,7 @@ def _content_slide_visual_wide(slide, title: str, items: list[str], index: int, 
     _image_panel(slide, 0.86, 1.34, 11.65, 2.62, theme, pal)
     _text_box(slide, _slide_kicker(title, deck_topic), 0.92, 4.42, 2.4, 0.28, 11, pal.kicker, True)
     _text_box(slide, _short(items[0], 56, complete=False), 0.9, 4.78, 3.65, 0.7, 22, DARK_TEXT if dark else INK, True)
-    for idx, bullet in enumerate(items[1:] or items[:1]):
+    for idx, bullet in enumerate((items[1:] or items[:1])[:2]):
         _visual_callout(slide, bullet, 4.95 + idx * 3.68, 4.68, theme, pal)
     _footer(slide, index, total, theme)
 
@@ -138,6 +143,14 @@ def _number_card(slide, number: int, text: str, x: float, y: float, theme: str, 
     dot.fill.solid()
     dot.fill.fore_color.rgb = pal.accent
     dot.line.fill.background()
+
+
+def _compact_card(slide, number: int, text: str, x: float, y: float, theme: str, palette: DeckPalette | None = None) -> None:
+    dark = theme == "dark"
+    pal = _resolve(palette, theme)
+    _block(slide, x, y, 5.08, 1.82, pal.card if dark else pal.panel, pal.accent_soft)
+    _text_box(slide, f"0{number}", x + 0.3, y + 0.3, 0.62, 0.26, 15, pal.accent, True)
+    _text_box(slide, _short(text, 88, complete=False), x + 0.96, y + 0.26, 3.7, 0.86, 17, DARK_MUTED if dark else INK, True)
 
 
 def _wide_card(slide, number: int, text: str, x: float, y: float, theme: str, palette: DeckPalette | None = None) -> None:
@@ -197,7 +210,8 @@ def _footer(slide, index: int, total: int, theme: str) -> None:
 def _hero_frame(slide, x: float, y: float, w: float, h: float, theme: str, palette: DeckPalette | None = None) -> None:
     dark = theme == "dark"
     pal = _resolve(palette, theme)
-    _block(slide, x, y, w, h, pal.card, pal.accent_soft)
+    frame = _block(slide, x, y, w, h, pal.card, pal.accent_soft)
+    frame.name = "MAYA_IMAGE_SLOT"
     points = [(x + 0.72, y + 2.88), (x + 1.72, y + 1.78), (x + 3.05, y + 2.42), (x + 4.35, y + 1.24)]
     for start, end in zip(points, points[1:]):
         accent = slide.shapes.add_shape(1, Inches(start[0]), Inches(start[1]), Inches(end[0] - start[0]), Inches(0.08))
@@ -219,7 +233,8 @@ def _hero_frame(slide, x: float, y: float, w: float, h: float, theme: str, palet
 def _image_panel(slide, x: float, y: float, w: float, h: float, theme: str, palette: DeckPalette | None = None) -> None:
     dark = theme == "dark"
     pal = _resolve(palette, theme)
-    _block(slide, x, y, w, h, pal.card, pal.accent_soft)
+    frame = _block(slide, x, y, w, h, pal.card, pal.accent_soft)
+    frame.name = "MAYA_IMAGE_SLOT"
     accent = slide.shapes.add_shape(1, Inches(x), Inches(y), Inches(w), Inches(0.12))
     accent.fill.solid()
     accent.fill.fore_color.rgb = pal.accent

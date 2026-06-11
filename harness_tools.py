@@ -18,6 +18,7 @@ from screen_responder import ScreenResponder
 from self_heal_execution import execute_checkpointed_self_heal
 from self_healing import self_heal_from_complex_plan, self_heal_text
 from skill_factory import SkillFactory
+from untrusted_input_boundary import assess_untrusted_context
 from utils import OSBridge
 from workspace_actions import WorkspaceActionRouter
 
@@ -45,7 +46,7 @@ class HarnessToolResult:
 class HarnessTools:
     def __init__(self, db_path: str):
         self.db_path = db_path
-        self.browser = HumanBrowserWorkflowRouter(db_path)
+        self._browser_router: HumanBrowserWorkflowRouter | None = None
         self.documents = DocumentActionRouter(db_path)
         self.drawing = DrawingActionRouter()
         self.files = FileActionRouter()
@@ -55,6 +56,16 @@ class HarnessTools:
         self.local = LocalActionRouter()
         self.screen = ScreenResponder(db_path)
         self.skills = SkillFactory(db_path)
+
+    @property
+    def browser(self) -> HumanBrowserWorkflowRouter:
+        if self._browser_router is None:
+            self._browser_router = HumanBrowserWorkflowRouter(self.db_path)
+        return self._browser_router
+
+    @browser.setter
+    def browser(self, router: HumanBrowserWorkflowRouter) -> None:
+        self._browser_router = router
 
     async def execute(self, workflow_type: str, text: str, channel: str, approved: bool = False, state: dict | None = None) -> HarnessToolResult:
         if workflow_type == "skill":
@@ -107,6 +118,7 @@ class HarnessTools:
             screen_summary=(reply or "")[:500],
             confidence=0.7 if reply else 0.0,
             provenance=("screen_responder",),
+            **_untrusted_kwargs(reply or "", "screen", "screen_responder"),
         )
         result.keep_open = True
         return result
@@ -164,7 +176,7 @@ class HarnessTools:
                 keep_open=bool(execution.get("requires_approval")),
             )
         else:
-            reply = await self_heal_text(self.db_path, create_review_task=False)
+            reply = await self_heal_text(self.db_path, create_review_task=False, issue_hint=text)
         return HarnessToolResult("completed", reply, next_step="self_heal", keep_open=True)
 
     async def _app(self, text: str, channel: str) -> HarnessToolResult:
@@ -279,4 +291,18 @@ def _browser_observation() -> GroundedObservation | None:
         screen_summary=element_summary(elements, max_items=8),
         confidence=0.75,
         provenance=("browser_dom", "browser_visible_text", "macos_app_state", "screen_capture"),
+        untrusted_influence=page.untrusted_influence,
+        injection_detected=page.injection_detected,
+        untrusted_source=page.untrusted_source,
+        untrusted_signals=page.untrusted_signals,
     )
+
+
+def _untrusted_kwargs(text: str, source: str, source_id: str = "") -> dict[str, object]:
+    context = assess_untrusted_context(text, source=source, source_id=source_id)
+    return {
+        "untrusted_influence": context.untrusted_influence,
+        "injection_detected": context.injection_detected,
+        "untrusted_source": context.source,
+        "untrusted_signals": context.risk_notes,
+    }
