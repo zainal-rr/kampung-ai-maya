@@ -291,8 +291,9 @@ def _reason_has_blocker(reason: str) -> bool:
     if any(marker in lowered for marker in ("no blocker", "not a blocker", "non-blocking", "non blocking")):
         return False
     lowered = _strip_negated_blocker_lists(lowered)
+    if re.search(r"\bslide\s+\d+\b", lowered):
+        return True
     blockers = (
-        "slide ",
         "truncated",
         "incomplete",
         "sentence-heavy",

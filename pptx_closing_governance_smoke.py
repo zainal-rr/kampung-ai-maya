@@ -323,6 +323,13 @@ def _image_policy_checks() -> None:
         'full speaker-note coverage, and no fragments, truncation, or sentence-heavy bodies."}'
     )
     _require(grade == "good", f"negated blocker words should demote false draft-level: {grade} / {reason}")
+    grade, reason = _parse_polish(
+        '{"grade":"draft-level","reason":"Strong POV titles, every slide has notes and a relevant picture, '
+        'and the deck has a clear spine from use case through compliance."}'
+    )
+    _require(grade == "good", f"'every slide has notes' should not be a blocker: {grade} / {reason}")
+    grade, _ = _parse_polish('{"grade":"good","reason":"slide 4 has an incomplete sentence."}')
+    _require(grade == "draft-level", "numbered slide blocker should still fail")
     print("  image policy single source of truth: ok")
 
 
