@@ -86,6 +86,10 @@ def build_nightly_memory_plist() -> dict:
             "--live",
         ],
         "WorkingDirectory": str(ROOT),
+        "EnvironmentVariables": {
+            "KAMPUNG_AI_REPO_ROOT": str(ROOT),
+            "MEMORY_EMBED_RERANK_LIVE": "1",
+        },
         "StartCalendarInterval": {"Hour": 2, "Minute": 30},
         "StandardOutPath": str(logs / "nightly-memory.stdout.log"),
         "StandardErrorPath": str(logs / "nightly-memory.stderr.log"),

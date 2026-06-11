@@ -9,7 +9,9 @@ I3 no_displacement          - association neighbors never push a lexical hit
                               out of the top-`limit` relevance context
 I4 dedup_token              - a rephrasing of an existing fact is detected
                               and NOT inserted by the nightly save gate
-I5 dedup_no_false_positive  - a genuinely new fact is not flagged duplicate
+I5 dedup_embedding          - anchored embedding catches a cross-phrasing
+                              duplicate that token containment misses
+I6 dedup_no_false_positive  - a genuinely new fact is not flagged duplicate
 """
 
 import asyncio
@@ -85,9 +87,19 @@ async def main() -> None:
         _require(duplicate is not None and duplicate[1] == "token_containment",
                  f"I4: rephrasing not detected as duplicate: {duplicate}")
 
-        # I5: a genuinely new fact is not a duplicate.
+        # I5: token containment deliberately misses this cross-phrasing, but
+        # an anchored embedding match should catch it.
+        embedded = await find_semantic_duplicate(
+            db_path,
+            "Zainal reply style is brief, no enthusiastic punctuation",
+            embed_agent=_fake_embed,
+        )
+        _require(embedded is not None and embedded[1] == "embedding_cosine",
+                 f"I5: anchored embedding duplicate not detected: {embedded}")
+
+        # I6: a genuinely new fact is not a duplicate.
         fresh = await find_semantic_duplicate(db_path, "my dentist appointment is in August at Klinik Pergigian")
-        _require(fresh is None, f"I5: new fact wrongly flagged duplicate: {fresh}")
+        _require(fresh is None, f"I6: new fact wrongly flagged duplicate: {fresh}")
 
     print("memory_links_smoke: ok")
 
@@ -95,6 +107,17 @@ async def main() -> None:
 def _require(condition: bool, message: str) -> None:
     if not condition:
         raise AssertionError(message)
+
+
+async def _fake_embed(texts: list[str]) -> list[list[float]]:
+    vectors = []
+    for text in texts:
+        lowered = text.lower()
+        if "reply style" in lowered or "short and direct" in lowered:
+            vectors.append([1.0, 0.0, 0.0])
+        else:
+            vectors.append([0.0, 1.0, 0.0])
+    return vectors
 
 
 if __name__ == "__main__":

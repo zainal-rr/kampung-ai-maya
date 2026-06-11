@@ -28,6 +28,8 @@ from canonical_memory_text import memory_tokens
 
 TOKEN_CONTAINMENT_THRESHOLD = 0.8
 EMBED_DUPLICATE_COSINE = 0.86
+ANCHORED_EMBED_COSINE = 0.74
+MIN_EMBED_SHARED_TOKENS = 2
 MAX_CANDIDATE_ROWS = 24
 MIN_TOKENS = 3
 
@@ -69,9 +71,12 @@ async def find_semantic_duplicate(
         return None
     content_vector = vectors[0]
     best: tuple[float, str] | None = None
-    for (memory_id, _row_text), vector in zip(candidates, vectors[1:]):
+    for (memory_id, row_text), vector in zip(candidates, vectors[1:]):
+        row_tokens = memory_tokens(row_text)
+        shared = tokens & row_tokens
         cosine = _cosine(content_vector, vector)
-        if cosine >= EMBED_DUPLICATE_COSINE and (best is None or cosine > best[0]):
+        anchored = len(shared) >= MIN_EMBED_SHARED_TOKENS and cosine >= ANCHORED_EMBED_COSINE
+        if (cosine >= EMBED_DUPLICATE_COSINE or anchored) and (best is None or cosine > best[0]):
             best = (cosine, memory_id)
     return (best[1], "embedding_cosine") if best else None
 
