@@ -16,6 +16,7 @@ from __future__ import annotations
 from document_actions_context import *
 from artifact_retry_policy import artifact_qa_max_attempts
 from created_file_summary import created_file_content_summary
+from deck_species import deck_species_prompt_context, detect_deck_species
 from excel_species import detect_excel_species
 from excel_species_draft import excel_species_prompt_context
 from document_actions_content_helpers import (
@@ -157,8 +158,11 @@ class DocumentOfficeMixin:
         path = named_artifact_path(self.workspace / "presentations", topic, "pptx")
         if not path_allowed(path):
             return f"I can't write to {path}."
+        # Deck honesty contract: review/pitch species must use fill-in slots
+        # instead of fabricating sprint data or traction (live 2026-06-11).
+        deck_contract = deck_species_prompt_context(detect_deck_species(topic))
         try:
-            draft = await self._draft_markdown(topic, preflight)
+            draft = await self._draft_markdown(topic, preflight, extra_context=deck_contract)
         except Exception as exc:
             return document_generation_failed("PowerPoint", exc)
         if not draft:

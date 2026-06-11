@@ -86,6 +86,13 @@ def _qa_note(qa: PptxQualityResult, text: str) -> None:
     qa.notes = [*(qa.notes or []), text]
 
 
+def _visual_budget_seconds() -> float:
+    try:
+        return float(os.getenv("MAYA_PPTX_VISUAL_BUDGET_SECONDS", "120"))
+    except ValueError:
+        return 120.0
+
+
 async def _polish_grade_with_topic(db_path: str, path, title: str):
     """Call claude_polish_grade with the topic when its signature supports it.
     Smoke fakes patch claude_polish_grade with (db_path, path) signatures, so
@@ -128,7 +135,20 @@ async def _run_powerpoint_attempt_impl(
         qa = await asyncio.to_thread(rebuild_topic_safe, path, slides)
         qa.revisions = 1
     if qa.passed:
-        visual_added, visual_note = await add_gemini_visual_asset(path, title, max_images=visual_image_max)
+        # Wall-clock budget for the entire visual stage: live 2026-06-11 the
+        # drone deck spent 313.9s in image generation/stalled writes. On
+        # timeout the existing availability-note path takes over.
+        visual_budget = _visual_budget_seconds()
+        try:
+            if visual_budget > 0:
+                visual_added, visual_note = await asyncio.wait_for(
+                    add_gemini_visual_asset(path, title, max_images=visual_image_max),
+                    timeout=visual_budget,
+                )
+            else:
+                visual_added, visual_note = await add_gemini_visual_asset(path, title, max_images=visual_image_max)
+        except asyncio.TimeoutError:
+            visual_added, visual_note = False, f"visual stage exceeded its {visual_budget:.0f}s budget"
         wants_visuals = topic_benefits_from_visuals(title)
         if visual_added:
             qa = await asyncio.to_thread(inspect_pptx_quality, path)

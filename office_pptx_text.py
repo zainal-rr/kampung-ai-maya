@@ -178,6 +178,14 @@ def _short(text: str, limit: int = 90, complete: bool = True) -> str:
         if 35 <= len(first) <= limit:
             return first.rstrip(".") + "." if complete else first.rstrip(".")
     clipped = clean[: limit - 1].rsplit(" ", 1)[0].rstrip(" ,;:-")
+    # Strip dangling function/auxiliary words exposed by the character cut so
+    # the clipped text ends on a content word instead of a mid-claim fragment
+    # ("...Is Still Done" -> "...Infrastructure"). Live polish rejections
+    # 2026-06-11 traced to exactly these layout-level cuts.
+    words = clipped.split()
+    while len(words) > 2 and words[-1].lower().strip(",;:.") in _DANGLING_WORDS:
+        words.pop()
+    clipped = " ".join(words)
     return clipped.rstrip(".") + "." if complete else clipped.rstrip(".")
 
 
@@ -336,18 +344,33 @@ def _visual_label(text: str) -> str:
     return _title_words(clean, 4)
 
 
+_DANGLING_WORDS = {
+    "and", "or", "the", "a", "an", "of", "to", "for", "with", "by", "in", "on", "as", "at",
+    "from", "into", "onto", "around", "between", "before", "after", "over", "under", "then",
+    "are", "is", "was", "were", "often", "still", "done", "being", "been", "not", "very",
+    "more", "most", "new", "each", "per", "via", "has", "have", "had", "will", "would",
+    "can", "could", "should", "must", "while", "when", "where", "because", "that", "this",
+}
+
+# Words of grace beyond a title cap: a complete 10-word claim reads better
+# than a 7-word fragment. Live polish rejections 2026-06-11 ("Inspecting
+# Critical Infrastructure Is Still Done", "Eliminate Weeks Of Manual") were
+# manufactured by hard word-caps chopping complete claims mid-thought.
+_TITLE_CAP_GRACE = 3
+
+
 def _title_words(text: str, count: int) -> str:
     words = [word.strip(" ,;:.()[]{}") for word in str(text).split() if word.strip(" ,;:.()[]{}")]
-    stop = {
-        "and", "or", "the", "a", "an", "of", "to", "for", "with", "by", "in", "on", "as", "at",
-        "from", "into", "onto", "around", "between", "before", "after", "over", "under", "then",
-        "are", "is", "was", "were", "often",
-    }
+    stop = _DANGLING_WORDS
     while words and words[-1].lower() in stop:
         words.pop()
     if not words:
         return ""
-    selected = words[:count]
+    if len(words) <= count + _TITLE_CAP_GRACE:
+        # Keep the complete claim instead of manufacturing a fragment.
+        selected = words
+    else:
+        selected = words[:count]
     while selected and selected[-1].lower() in stop:
         selected.pop()
     if not selected:

@@ -44,3 +44,28 @@ def detect_deck_species(title: str) -> str:
         if any(marker in lowered for marker in markers):
             return species
     return "general"
+
+
+def deck_species_prompt_context(species: str) -> str:
+    """Species drafting contracts injected into the Gemini deck draft.
+
+    Live finding 2026-06-11: a 'sprint review deck' request with no actual
+    sprint data produced fabricated specifics ('Sprint 24', invented
+    metrics) — structurally right, semantically wrong. Data-dependent deck
+    species must use marked fill-in slots instead of inventing facts."""
+    if species == "review":
+        return (
+            "DECK HONESTY CONTRACT: this is a review/retrospective deck and the user "
+            "provided no actual sprint or period data. Do NOT invent sprint numbers, "
+            "velocity figures, ticket names, or team member names. Use clearly marked "
+            "fill-in slots like 'Sprint <N>' and '<X> story points', keep claims "
+            "structural, and say in the speaker notes which slots the user must fill."
+        )
+    if species == "pitch":
+        return (
+            "DECK HONESTY CONTRACT: do NOT fabricate traction numbers, revenue, customer "
+            "names, or market sizes. Use clearly marked fill-in slots ('<N> pilots', "
+            "'<RM X> pipeline') for anything the user did not provide, and keep "
+            "verifiable claims qualitative."
+        )
+    return ""

@@ -3,6 +3,7 @@ from __future__ import annotations
 import asyncio
 import math
 import os
+import tempfile
 from pathlib import Path
 
 from PIL import Image, ImageDraw
@@ -52,7 +53,7 @@ async def add_gemini_visual_asset(path: Path, topic: str, max_images: int | None
     timeout_s = _image_timeout_seconds()
     try:
         for index, prompt in enumerate(prompts, 1):
-            image_path = workspace_dir("artifacts", create=True) / "pptx-images" / f"{safe_slug(topic, 56)}-{index}.png"
+            image_path = _image_scratch_dir() / f"{safe_slug(topic, 56)}-{index}.png"
             if fallback_used:
                 await asyncio.to_thread(_fallback_visual, image_path, topic, index)
             else:
@@ -68,6 +69,20 @@ async def add_gemini_visual_asset(path: Path, topic: str, max_images: int | None
     if inserted and fallback_used:
         note = f"{note} Gemini image generation timed out or failed; inserted local abstract fallback visuals."
     return inserted, note
+
+
+def _image_scratch_dir() -> Path:
+    """Scratch directory for generated images BEFORE they are embedded.
+
+    Live incident 2026-06-11 (drone deck, 313.9s): writes to
+    Desktop/Maya/artifacts/pptx-images stalled with `[Errno 60] Operation
+    timed out` because Desktop is iCloud-synced. The png files here are
+    intermediate — they get embedded into the .pptx — so the scratch belongs
+    on a guaranteed-local path. Override: MAYA_PPTX_IMAGE_SCRATCH_DIR."""
+    override = os.getenv("MAYA_PPTX_IMAGE_SCRATCH_DIR", "").strip()
+    base = Path(override).expanduser() if override else Path(tempfile.gettempdir()) / "maya-pptx-images"
+    base.mkdir(parents=True, exist_ok=True)
+    return base
 
 
 def _image_timeout_seconds() -> float:

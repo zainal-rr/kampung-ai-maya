@@ -17,6 +17,7 @@ transformation layer, plus the routing and render-timeout fixes:
 
 from __future__ import annotations
 
+import os
 import tempfile
 from pathlib import Path
 
@@ -211,6 +212,89 @@ def _visual_availability_checks(root: Path) -> None:
     print("  visual-asset unavailability = note, not blocker: ok")
 
 
+def _fragment_cap_checks() -> None:
+    """Live polish rejections 2026-06-11 were manufactured by hard word caps.
+    The exact live fragments are the fixtures."""
+    from office_pptx_text import _short, _title_words
+
+    # Grace rule: complete claims modestly over the cap survive whole.
+    full = _title_words("Inspecting Critical Infrastructure Is Still Done Manually", 7)
+    _require(full.lower().endswith("manually"), f"grace rule failed, fragment kept: {full!r}")
+    flows = _title_words("All Five Core User Flows", 4)
+    _require(flows.lower().endswith("flows"), f"label grace failed: {flows!r}")
+    # When a character cut is unavoidable, never end on a dangling word.
+    cut = _short("Inspecting Critical Infrastructure Is Still Done Manually Every Quarter By Two Teams", 54, complete=False)
+    _require(not cut.lower().split()[-1] in {"is", "still", "done", "of", "by", "to", "the"}, f"layout cut ends dangling: {cut!r}")
+    manual = _title_words("Eliminate Weeks Of Manual Inspection Backlog Within One Quarter", 5)
+    _require(not manual.lower().endswith(" of") and not manual.lower().endswith(" manual"), f"dangling tail kept: {manual!r}")
+    print("  fragment-free title caps (live fixtures): ok")
+
+
+def _visual_budget_checks(root: Path) -> None:
+    """Live P3: 313.9s in the visual stage. The stage now has a wall-clock
+    budget that lands in the availability-note path."""
+    import asyncio
+
+    import pptx_document_flow as flow
+    from storage import init_db
+    from harness_artifact_store import init_harness_artifact_db
+
+    async def _case() -> None:
+        import tempfile as _tempfile
+
+        with _tempfile.TemporaryDirectory(prefix="maya-visual-budget-") as tmp2:
+            db = str(Path(tmp2) / "t.db")
+            await init_db(db)
+            await init_harness_artifact_db(db)
+            title = "make an investor pitch deck for a drone inspection startup"
+
+            async def slow_assets(_path, _title, max_images=None):
+                await asyncio.sleep(30)
+                return True, "never reached"
+
+            async def fake_polish(_db, _path):
+                return "Design polish: good.", False
+
+            original_assets = flow.add_gemini_visual_asset
+            original_polish = flow.claude_polish_grade
+            original_budget = os.environ.get("MAYA_PPTX_VISUAL_BUDGET_SECONDS")
+            flow.add_gemini_visual_asset = slow_assets
+            flow.claude_polish_grade = fake_polish
+            os.environ["MAYA_PPTX_VISUAL_BUDGET_SECONDS"] = "1"
+            try:
+                slides = [
+                    ("Drone Inspection Has A Clear Use Case", ["Towers and roofs cost less by air.", "Insurers accept drone reports."]),
+                    ("Start Narrow", ["Pick two inspection packages.", "Price by risk and output."]),
+                ]
+                qa, _note = await flow._run_powerpoint_attempt(db, root / "budget.pptx", title, slides, "smoke-run", False, None)
+            finally:
+                flow.add_gemini_visual_asset = original_assets
+                flow.claude_polish_grade = original_polish
+                if original_budget is None:
+                    os.environ.pop("MAYA_PPTX_VISUAL_BUDGET_SECONDS", None)
+                else:
+                    os.environ["MAYA_PPTX_VISUAL_BUDGET_SECONDS"] = original_budget
+            _require(qa.passed, f"visual budget timeout must not block the deck: {qa.issues}")
+            _require(qa.notes and "exceeded its 1s budget" in qa.notes[0], f"budget note missing: {qa.notes}")
+
+    asyncio.run(_case())
+    print("  visual stage wall-clock budget = note: ok")
+
+
+def _scratch_and_honesty_checks() -> None:
+    from pptx_visual_assets import _image_scratch_dir
+    from deck_species import deck_species_prompt_context
+
+    scratch = str(_image_scratch_dir())
+    _require("Desktop" not in scratch, f"image scratch must not default to Desktop: {scratch}")
+    review_contract = deck_species_prompt_context("review")
+    _require("Do NOT invent sprint numbers" in review_contract and "Sprint <N>" in review_contract,
+             f"review honesty contract wrong: {review_contract[:80]}")
+    _require("fabricate" in deck_species_prompt_context("pitch"), "pitch honesty contract missing")
+    _require(deck_species_prompt_context("teaching") == "", "non-data species must have no contract")
+    print("  image scratch dir + deck honesty contracts: ok")
+
+
 def _image_policy_checks() -> None:
     from pptx_polish_review import image_policy_line
 
@@ -231,6 +315,9 @@ def main() -> None:
         _storage_stall_checks(root)
         _visual_availability_checks(root)
         _image_policy_checks()
+        _fragment_cap_checks()
+        _visual_budget_checks(root)
+        _scratch_and_honesty_checks()
     print("pptx_closing_governance_smoke: ok")
 
 
