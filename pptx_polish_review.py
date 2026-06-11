@@ -290,6 +290,7 @@ def _reason_has_blocker(reason: str) -> bool:
     lowered = reason.lower()
     if any(marker in lowered for marker in ("no blocker", "not a blocker", "non-blocking", "non blocking")):
         return False
+    lowered = _strip_negated_blocker_lists(lowered)
     blockers = (
         "slide ",
         "truncated",
@@ -311,3 +312,16 @@ def _reason_has_blocker(reason: str) -> bool:
         "placeholder",
     )
     return any(blocker in lowered for blocker in blockers)
+
+
+def _strip_negated_blocker_lists(text: str) -> str:
+    """Remove positive "no fragments/truncation" clauses before blocker scan.
+
+    Live 2026-06-11 drone deck: Claude returned draft-level while its reason
+    was positive: "No fragments, truncation, or ...". The old parser saw the
+    word "truncation" and upheld the draft-level label. Negated blocker words
+    are evidence of cleanliness, not blockers.
+    """
+    blocker_word = r"(?:fragments?|truncation|truncated|incomplete(?: sentences?)?|sentence-heavy(?: bodies?)?)"
+    pattern = rf"\b(?:no|without)\s+{blocker_word}(?:\s*,\s*(?:or\s+)?{blocker_word})*(?:\s*,?\s*or\s*)?"
+    return re.sub(pattern, " ", text)

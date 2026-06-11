@@ -312,12 +312,17 @@ def _scratch_and_honesty_checks() -> None:
 
 
 def _image_policy_checks() -> None:
-    from pptx_polish_review import image_policy_line
+    from pptx_polish_review import image_policy_line, _parse_polish
 
     non_visual = image_policy_line("make a presentation about a school robotics workshop")
     _require("does not use generated images" in non_visual, f"non-visual policy wrong: {non_visual}")
     visual = image_policy_line("make an investor pitch deck for a drone startup")
     _require("never" in visual and "draft-level" in visual, f"visual policy wrong: {visual}")
+    grade, reason = _parse_polish(
+        '{"grade":"draft-level","reason":"Strong POV titles, clean label-style body copy, '
+        'full speaker-note coverage, and no fragments, truncation, or sentence-heavy bodies."}'
+    )
+    _require(grade == "good", f"negated blocker words should demote false draft-level: {grade} / {reason}")
     print("  image policy single source of truth: ok")
 
 
