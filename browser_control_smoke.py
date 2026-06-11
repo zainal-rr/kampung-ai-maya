@@ -4,7 +4,7 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-from browser_control import BrowserController, element_summary, page_summary
+from browser_control import BrowserClickResult, BrowserController, element_summary, page_summary
 from browser_workflows import HumanBrowserWorkflowRouter
 from screen_service import ScreenSnapshot
 from storage import init_db
@@ -34,6 +34,33 @@ class FakeBridge:
 class FakeScreen:
     def capture_once(self):
         return ScreenSnapshot(True, "screen visible", b"fake-png")
+
+
+class FakeFallbackBrowser:
+    def __init__(self):
+        self.search_clicks: list[str] = []
+
+    def click_text_verified(self, target: str) -> BrowserClickResult:
+        return BrowserClickResult(
+            status="not_found",
+            target=target,
+            clicked_label="",
+            before_title="Search",
+            before_url="https://www.google.com/search?q=opr",
+            after_title="Search",
+            after_url="https://www.google.com/search?q=opr",
+            before_hash="a",
+            after_hash="a",
+            before_modal="",
+            after_modal="",
+            target_present_after=False,
+        )
+
+    def click_search_result(self, target: str, rank: int = 1) -> str:
+        self.search_clicks.append(target)
+        if target.lower().endswith("search result"):
+            return "NOT_FOUND"
+        return f"CLICKED: rank={rank} {target}"
 
 
 def main() -> None:
@@ -71,6 +98,17 @@ async def _workflow_grounding() -> None:
         _require("I inspected Chrome" in inspect, "browser workflow did not inspect DOM")
         _require("Clickable or fillable targets" in inspect, "browser workflow missed elements")
         _require("Screen view is available" in inspect, "browser workflow missed screen grounding")
+        fake_fallback = FakeFallbackBrowser()
+        router._browser = fake_fallback
+        clicked = await router._click_target("OPR Decisions Bank Negara Malaysia search result", sensitive=False)
+        _require("matching search result" in clicked, "search-result click fallback did not fire")
+        _require(
+            fake_fallback.search_clicks == [
+                "OPR Decisions Bank Negara Malaysia search result",
+                "OPR Decisions Bank Negara Malaysia",
+            ],
+            f"unexpected fallback candidates: {fake_fallback.search_clicks}",
+        )
 
 
 def _require(condition: bool, message: str) -> None:

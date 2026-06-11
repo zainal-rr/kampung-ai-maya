@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from pathlib import Path
 from typing import Literal
 
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
@@ -179,7 +180,7 @@ class HarnessGraphRunner:
             knowledge, domain_skill = await asyncio.to_thread(domain_knowledge_context, step_text)
             if domain_skill:
                 await record_event(self.db_path, state["run_id"], "domain_knowledge", domain_skill.skill_id)
-            state["planned_action"] = await choose_next_action(dict(state), self.planner_llm, knowledge)
+            state["planned_action"] = _forced_agentic_action(state) or await choose_next_action(dict(state), self.planner_llm, knowledge)
             await record_event(
                 self.db_path,
                 state["run_id"],
@@ -295,11 +296,32 @@ class HarnessGraphRunner:
             state["last_successful_step"] = tool_name
             await record_event(self.db_path, run_id, "execute", f"agentic {tool_name}")
             return state
+        if tool_name == "telegram.send_file":
+            path = str(args.get("path") or "").strip()
+            if path and Path(path).exists():
+                state["final_response"] = f"Approved. I prepared the file for Telegram.\n[file:{path}]"
+            elif path:
+                state["final_response"] = f"I could not send the file because it no longer exists: {path}"
+            else:
+                state["final_response"] = "I could not send the file because no file path was provided."
+            state["current_step"] = int(state.get("current_step") or 0) + 1
+            state["last_successful_step"] = tool_name
+            state["keep_open"] = False
+            state["goal_satisfied"] = True
+            await record_event(self.db_path, run_id, "execute", f"agentic {tool_name}")
+            return state
         workflow = _AGENTIC_TOOL_WORKFLOWS.get(tool_name)
         if workflow:
             # Remap this pass to the matching workflow executor and fall through.
             state["workflow_type"] = workflow
-            instruction = " ".join(str(v) for v in args.values() if isinstance(v, str)).strip()
+            instruction = _agentic_tool_instruction(tool_name, args)
+            if not instruction:
+                instruction = str(
+                    state.get("last_user_instruction")
+                    or state.get("goal")
+                    or state.get("user_text")
+                    or ""
+                ).strip()
             if instruction:
                 state["user_text"] = instruction
             await record_event(self.db_path, run_id, "agentic_remap", f"{tool_name} -> {workflow}")
@@ -318,7 +340,9 @@ class HarnessGraphRunner:
         state["graph_status"] = "verifying"
         ok = bool(state.get("final_response"))
         state["last_error"] = "" if ok else "No final response produced."
-        if bool(state.get("agentic_loop")) and self.planner_llm is not None and ok:
+        if state.get("goal_satisfied"):
+            state["goal_satisfied"] = True
+        elif bool(state.get("agentic_loop")) and self.planner_llm is not None and ok:
             # Model-driven goal check: only an explicit NO keeps the loop open.
             state["goal_satisfied"] = await verify_goal(dict(state), self.planner_llm)
         else:
@@ -350,6 +374,8 @@ class HarnessGraphRunner:
         else:
             status = "completed"
             state["graph_status"] = "completed"
+            if _agentic_budget_exhausted(state):
+                state["final_response"] = _budget_exhausted_message(state)
         await upsert_run(self.db_path, state, status=status)
         if status == "completed":
             await finish_run(self.db_path, state["run_id"])
@@ -390,6 +416,67 @@ def _resume_message(state: HarnessState) -> str:
     if plan:
         return f"I still have this workflow open: {state.get('goal', '')}. Last step: {plan[min(step, len(plan)-1)]}."
     return f"I still have this workflow open: {state.get('goal', '')}."
+
+
+def _agentic_tool_instruction(tool_name: str, args: dict) -> str:
+    if tool_name == "browser.click":
+        target = str(args.get("target") or args.get("label") or args.get("text") or "").strip()
+        if target:
+            return target if target.lower().startswith(("click ", "choose ", "select ", "press ")) else f"click {target}"
+    if tool_name == "docx.create":
+        topic = str(args.get("topic") or args.get("title") or args.get("content") or "").strip()
+        if topic:
+            return topic if topic.lower().startswith(("write ", "make ", "create ")) else f"write a Word document about {topic}"
+    return " ".join(str(v) for v in args.values() if isinstance(v, str)).strip()
+
+
+def _forced_agentic_action(state: HarnessState) -> dict | None:
+    goal = str(state.get("goal") or state.get("user_text") or "")
+    if not _goal_requests_telegram_file(goal):
+        return None
+    artifacts = [str(item) for item in state.get("artifacts") or [] if str(item)]
+    if artifacts:
+        return {"tool": "telegram.send_file", "args": {"path": artifacts[-1]}}
+    observation = dict(state.get("last_observation") or {})
+    if int(state.get("current_step") or 0) < 2 or not observation.get("text_summary"):
+        return None
+    topic = _summary_doc_topic(goal, observation)
+    return {"tool": "docx.create", "args": {"topic": topic}}
+
+
+def _goal_requests_telegram_file(goal: str) -> bool:
+    lowered = goal.lower()
+    return "telegram" in lowered and any(word in lowered for word in ("send", "share", "attach")) and any(
+        word in lowered for word in ("file", "document", "doc", "summary")
+    )
+
+
+def _summary_doc_topic(goal: str, observation: dict) -> str:
+    context = str(observation.get("text_summary") or "").strip()
+    return (
+        "a concise source-grounded summary file for this request: "
+        f"{goal}. Use this browser evidence and do not add unsupported facts: {context[:2200]}"
+    )
+
+
+def _agentic_budget_exhausted(state: HarnessState) -> bool:
+    if not state.get("agentic_loop") or state.get("goal_satisfied"):
+        return False
+    budget = int(state.get("max_steps") or MAX_STEPS)
+    return int(state.get("current_step") or 0) >= budget
+
+
+def _budget_exhausted_message(state: HarnessState) -> str:
+    budget = int(state.get("max_steps") or MAX_STEPS)
+    previous = str(state.get("final_response") or "").strip()
+    if len(previous) > 900:
+        previous = previous[:897].rstrip() + "..."
+    if previous:
+        return (
+            f"I reached the {budget}-step agentic budget before I could verify the full goal. "
+            f"Last useful result:\n{previous}"
+        )
+    return f"I reached the {budget}-step agentic budget before I could verify the full goal."
 
 
 def _config(thread_id: str) -> dict:

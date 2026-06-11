@@ -3,23 +3,21 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass, field
 
-from browser_control import element_summary, page_summary
-from browser_driver import make_browser_controller
 from browser_workflows import HumanBrowserWorkflowRouter
 from document_actions import DocumentActionRouter
 from drawing_actions import DrawingActionRouter
 from file_actions import FileActionRouter
+from harness_browser_observation import agentic_browser_message as _agentic_browser_message
+from harness_browser_observation import browser_observation as _browser_observation
 from harness_models import GroundedObservation, HarnessArtifact, local_artifact
 from imac_workflows import ImacWorkflowRouter
 from local_actions import LocalActionRouter
 from project_actions import ProjectActionRouter
-from screen_service import MacScreenService
 from screen_responder import ScreenResponder
 from self_heal_execution import execute_checkpointed_self_heal
 from self_healing import self_heal_from_complex_plan, self_heal_text
 from skill_factory import SkillFactory
 from untrusted_input_boundary import assess_untrusted_context
-from utils import OSBridge
 from workspace_actions import WorkspaceActionRouter
 
 
@@ -70,7 +68,9 @@ class HarnessTools:
     async def execute(self, workflow_type: str, text: str, channel: str, approved: bool = False, state: dict | None = None) -> HarnessToolResult:
         if workflow_type == "skill":
             return await self._skill(text, channel, approved)
-        if not _approval_owned_by_browser(workflow_type, text) and _needs_approval(text) and not approved:
+        agentic_read_action = _agentic_read_action(state)
+        agentic_local_create_action = _agentic_local_create_action(state)
+        if not agentic_read_action and not agentic_local_create_action and not _approval_owned_by_browser(workflow_type, text) and _needs_approval(text) and not approved:
             return HarnessToolResult(
                 "paused",
                 "This needs your confirmation first.",
@@ -89,13 +89,25 @@ class HarnessTools:
         }.get(workflow_type, self._general)
         if workflow_type == "self_heal":
             return await self._self_heal(text, channel, state or {})
-        return await handler(text, channel)
+        if workflow_type == "browser":
+            return await self._browser(text, channel, state or {})
+        effective_channel = _effective_channel_for_agentic(workflow_type, channel, state)
+        return await handler(text, effective_channel)
 
-    async def _browser(self, text: str, channel: str) -> HarnessToolResult:
-        reply = await self.browser.handle(text, channel) or await self.imac.handle(text, channel)
-        observation = _browser_observation()
+    async def _browser(self, text: str, channel: str, state: dict | None = None) -> HarnessToolResult:
+        state = state or {}
+        effective_channel = "imac" if state.get("agentic_loop") and channel == "telegram" else channel
+        reply = await self.browser.handle(text, effective_channel) or await self.imac.handle(text, effective_channel)
+        agentic = bool(state.get("agentic_loop"))
+        observation = _browser_observation(
+            max_chars=4500 if agentic else 1800,
+            max_lines=18 if agentic else 6,
+            max_targets=12 if agentic else 8,
+        )
         result = _result(reply, "browser")
         result.observation = observation
+        if agentic and observation:
+            result.message = _agentic_browser_message(observation, fallback=reply or "")
         if observation and observation.url:
             result.structured_artifacts.append(
                 HarnessArtifact(
@@ -106,7 +118,7 @@ class HarnessTools:
                     exists_status="observed",
                 )
             )
-        result.keep_open = True
+        result.keep_open = not agentic
         return result
 
     async def _screen(self, text: str, channel: str) -> HarnessToolResult:
@@ -198,7 +210,7 @@ class HarnessTools:
 def _result(reply: str | None, kind: str) -> HarnessToolResult:
     if not reply:
         return HarnessToolResult("skipped", "")
-    artifacts = re.findall(r"\[file:([^\]]+)\]", reply)
+    artifacts = _artifact_paths_from_reply(reply)
     structured = [
         local_artifact(_kind_for_path(path, kind), path, f"{kind} artifact", kind)
         for path in artifacts
@@ -233,6 +245,32 @@ def _approval_owned_by_browser(workflow_type: str, text: str) -> bool:
     return lowered.startswith(("click ", "choose ", "select ", "press ", "fill ", "enter ", "type "))
 
 
+def _agentic_read_action(state: dict | None) -> bool:
+    if not state or not state.get("agentic_loop"):
+        return False
+    action = dict(state.get("planned_action") or {})
+    tool_name = str(action.get("tool") or "")
+    normalized = tool_name.replace("_", ".", 1) if "." not in tool_name else tool_name
+    return normalized in {"browser.inspect", "screen.capture"}
+
+
+def _agentic_local_create_action(state: dict | None) -> bool:
+    if not state or not state.get("agentic_loop"):
+        return False
+    action = dict(state.get("planned_action") or {})
+    tool_name = str(action.get("tool") or "")
+    normalized = tool_name.replace("_", ".", 1) if "." not in tool_name else tool_name
+    return normalized in {"docx.create", "xlsx.create", "pptx.create", "file.create"}
+
+
+def _effective_channel_for_agentic(workflow_type: str, channel: str, state: dict | None) -> str:
+    if channel != "telegram" or workflow_type != "document":
+        return channel
+    if _agentic_local_create_action(state):
+        return "imac"
+    return channel
+
+
 def _skill_subject(text: str) -> str:
     match = re.search(r"(?:skill|ability|capability)\s+(?:for|to)?\s*(.+)$", text, re.IGNORECASE)
     return match.group(1).strip(" .") if match else text.strip()
@@ -255,47 +293,13 @@ def _kind_for_path(path: str, fallback: str) -> str:
     return fallback
 
 
-def _browser_observation() -> GroundedObservation | None:
-    try:
-        controller = make_browser_controller()
-        page = controller.inspect_page(max_chars=1800)
-        elements = controller.inspect_elements(max_items=12)
-    except Exception as exc:
-        return GroundedObservation(
-            source="browser",
-            screenshot_status=f"browser unavailable: {exc}",
-            confidence=0.2,
-            provenance=("browser_control",),
-        )
-    try:
-        bridge = OSBridge()
-        frontmost = bridge.get_frontmost_app()
-        running = tuple(bridge.list_running_apps())
-    except Exception:
-        frontmost, running = "", ()
-    screen = MacScreenService().capture_once()
-    clickable = tuple(f"{item.kind}: {item.label}" for item in elements if item.kind not in {"input", "textarea", "select"})
-    fillable = tuple(f"{item.kind}: {item.label}" for item in elements if item.kind in {"input", "textarea", "select"})
-    return GroundedObservation(
-        source="browser",
-        frontmost_app=frontmost,
-        running_apps=running,
-        page_title=page.title,
-        url=page.url,
-        text_summary=page_summary(page, max_lines=6),
-        text_hash=page.text_hash,
-        modal_state=page.modal_state,
-        clickable_targets=clickable[:8],
-        fillable_targets=fillable[:8],
-        screenshot_status=screen.status if screen.visible else f"unavailable: {screen.status}",
-        screen_summary=element_summary(elements, max_items=8),
-        confidence=0.75,
-        provenance=("browser_dom", "browser_visible_text", "macos_app_state", "screen_capture"),
-        untrusted_influence=page.untrusted_influence,
-        injection_detected=page.injection_detected,
-        untrusted_source=page.untrusted_source,
-        untrusted_signals=page.untrusted_signals,
-    )
+def _artifact_paths_from_reply(reply: str) -> list[str]:
+    paths = list(re.findall(r"\[file:([^\]]+)\]", reply))
+    for match in re.findall(r"(/Users/[^\n\r]+?\.(?:docx|xlsx|pptx|md|html|png|svg|pdf))", reply):
+        path = match.strip().rstrip(".,)")
+        if path not in paths:
+            paths.append(path)
+    return paths
 
 
 def _untrusted_kwargs(text: str, source: str, source_id: str = "") -> dict[str, object]:

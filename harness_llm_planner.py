@@ -138,4 +138,16 @@ def _parse_json(raw: str) -> Any:
     fenced = re.search(r"```(?:json)?\s*(.+?)\s*```", text, re.DOTALL)
     if fenced:
         text = fenced.group(1).strip()
-    return json.loads(text)
+    try:
+        return json.loads(text)
+    except json.JSONDecodeError:
+        decoder = json.JSONDecoder()
+        for index, char in enumerate(text):
+            if char not in "[{":
+                continue
+            try:
+                value, _end = decoder.raw_decode(text[index:])
+            except json.JSONDecodeError:
+                continue
+            return value
+        raise

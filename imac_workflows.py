@@ -24,9 +24,10 @@ MISSING_SKILL_WORDS = ("hotel", "calendar", "shopping", "shop", "account", "desi
 class ImacWorkflowRouter:
     def __init__(self, db_path: str, bridge: OSBridge | None = None, workspace: Path | None = None):
         self.db_path = db_path
+        browser_bridge = bridge
         self.bridge = bridge or OSBridge()
         self._browser = None
-        self.human_browser = HumanBrowserWorkflowRouter(db_path, self.bridge)
+        self.human_browser = HumanBrowserWorkflowRouter(db_path, browser_bridge)
         self.workspace = workspace or workspace_dir("")
         self.documents = DocumentActionRouter(db_path, workspace=self.workspace, bridge=self.bridge)
 

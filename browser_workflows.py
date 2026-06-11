@@ -6,9 +6,13 @@ import re
 from browser_agent_state import BrowserAgentState, observation_id, task_type_for
 from browser_control import element_summary, page_summary
 from browser_driver import make_browser_controller
-from browser_cost_policy import escalation_decision, local_decision
 from browser_followup_policy import looks_like_general_question, looks_like_writing_or_advice_request
 from browser_untrusted_guard import injected_page_action_notice
+from browser_workflow_helpers import browser_cost_note as _cost_note
+from browser_workflow_helpers import browser_options_from_text as _options_from_text
+from browser_workflow_helpers import click_search_result_candidates as _search_result_candidates
+from browser_workflow_helpers import is_url as _is_url
+from browser_workflow_helpers import open_browser_target_new_tab as _open_browser_target_new_tab
 from permission_policy import action_permission, contains_sensitive_info, hard_no_private_exposure_text, safe_sensitive_guidance
 from screen_service import MacScreenService
 from storage import delete_preference, get_preference, upsert_preference
@@ -28,7 +32,10 @@ MISSING_SKILL_WORDS = ("hotel", "calendar", "shopping", "shop", "account", "desi
 class HumanBrowserWorkflowRouter:
     def __init__(self, db_path: str, bridge: OSBridge | None = None, screen=None):
         self.db_path = db_path
-        self.bridge = bridge or OSBridge()
+        # A provided bridge means tests or explicit legacy callers want the
+        # AppleScript controller. Production leaves this as None so
+        # make_browser_controller() can use the Maya Chrome extension path.
+        self.bridge = bridge
         self._browser = None
         self.screen = screen or MacScreenService()
 
@@ -71,8 +78,8 @@ class HumanBrowserWorkflowRouter:
             if task_type == "flight_search":
                 return "I queued the flight search. I can compare options on the iMac browser when it is safe to take over Chrome, and I will stop before booking or payment."
             return "I queued the browser search. I can open and inspect Chrome when it is safe to take over the iMac browser."
-        state.steps.append("opened search")
-        await asyncio.to_thread(_open_search_new_tab, self.browser, state.query)
+        state.steps.append("opened url" if _is_url(state.query) else "opened search")
+        await asyncio.to_thread(_open_browser_target_new_tab, self.browser, state.query)
         await self._save(state)
         if task_type == "flight_search":
             return "I opened Chrome with flight options. I can compare, change filters, and shortlist, but I will stop before booking or payment."
@@ -170,9 +177,9 @@ class HumanBrowserWorkflowRouter:
         task.filters.append(text)
         task.retry_count += 1
         task.steps.append(f"searched follow-up: {text}")
-        await asyncio.to_thread(_open_search_new_tab, self.browser, task.query)
+        await asyncio.to_thread(_open_browser_target_new_tab, self.browser, task.query)
         await self._save(task)
-        return "I updated the browser search and kept the browsing task active."
+        return "I am continuing the browser task with the updated search and kept it active."
 
     async def _fill(self, text: str) -> str | None:
         match = re.match(r"^(?:fill|enter|type)\s+(.+?)\s+(?:with|as|into)\s+(.+)$", text, re.IGNORECASE)
@@ -218,6 +225,9 @@ class HumanBrowserWorkflowRouter:
         except Exception as exc:
             return f"I could not click in Chrome yet: {exc}"
         if not result.clicked:
+            search_result = await self._click_search_result_fallback(target)
+            if search_result:
+                return search_result
             return f"I could not find `{target}` as a visible clickable item in Chrome."
         await self._add_step(f"clicked {target}")
         if result.verified:
@@ -228,6 +238,22 @@ class HumanBrowserWorkflowRouter:
             state = "The page stayed on the same visible result."
         suffix = " I will still stop before booking, payment, submission, or private details." if sensitive else ""
         return f"I clicked {target} in Chrome and verified the result. {state}{suffix}"
+
+    async def _click_search_result_fallback(self, target: str) -> str | None:
+        click_search_result = getattr(self.browser, "click_search_result", None)
+        if not callable(click_search_result):
+            return None
+        for candidate in _search_result_candidates(target):
+            try:
+                raw = await asyncio.to_thread(click_search_result, candidate, 1)
+            except Exception:
+                continue
+            if not str(raw).startswith(("CLICKED:", "CLICKED_RESULT:")):
+                continue
+            await asyncio.sleep(1.0)
+            await self._add_step(f"clicked search result {candidate}")
+            return f"I clicked the matching search result for {candidate} in Chrome and kept the page open for verification."
+        return None
 
     async def _task(self) -> BrowserAgentState | None:
         raw = await get_preference(self.db_path, STATE_KEY)
@@ -258,17 +284,11 @@ class HumanBrowserWorkflowRouter:
 
 def _is_browser_start(text: str) -> bool:
     lowered = _clean(text)
+    if _is_url(lowered):
+        return True
     if "flight" in lowered and any(word in lowered for word in ("check", "find", "search", "book", "compare")):
         return True
     return bool(re.match(r"^(?:browse|search|look up|google|check online|find online)\s+.+", lowered))
-
-
-def _open_search_new_tab(browser, query: str) -> None:
-    opener = getattr(browser, "open_search_new_tab", None)
-    if opener:
-        opener(query)
-        return
-    browser.open_search(query)
 
 
 def _click_target(text: str) -> str | None:
@@ -280,28 +300,3 @@ def _click_target(text: str) -> str | None:
 
 def _clean(text: str) -> str:
     return " ".join(text.lower().strip().split())
-
-
-def _options_from_text(text: str) -> list[str]:
-    lines = [line.strip() for line in text.splitlines() if line.strip()]
-    markers = ("rm", "$", "flight", "airasia", "malaysia", "price", "option")
-    return [line[:160] for line in lines if any(marker in line.lower() for marker in markers)][:8]
-
-
-def _cost_note(text: str, task: BrowserAgentState | None) -> str:
-    if not task:
-        return ""
-    decision = local_decision()
-    if any(word in text for word in ("messy", "visual", "double check", "look carefully", "tiny text")):
-        decision = escalation_decision(
-            reason=text,
-            current_cost=task.estimated_cost,
-            confidence=task.confidence,
-            careful="double check" in text or "look carefully" in text,
-        )
-    if decision.lane == "local":
-        return "\nCost path: local browser evidence only."
-    if decision.needs_confirmation:
-        return f"\nCost path: {decision.reason} needs confirmation before spending more."
-    task.estimated_cost += decision.estimated_cost
-    return f"\nCost path: {decision.reason}, estimated +${decision.estimated_cost:.3f}."
