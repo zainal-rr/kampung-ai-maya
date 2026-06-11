@@ -79,6 +79,38 @@ async def _run_powerpoint_attempt(
     auto_improve: bool,
     visual_image_max: int | None,
 ) -> tuple[PptxQualityResult, str]:
+    return await _run_powerpoint_attempt_impl(db_path, path, title, slides, run_id, auto_improve, visual_image_max)
+
+
+def _qa_note(qa: PptxQualityResult, text: str) -> None:
+    qa.notes = [*(qa.notes or []), text]
+
+
+async def _polish_grade_with_topic(db_path: str, path, title: str):
+    """Call claude_polish_grade with the topic when its signature supports it.
+    Smoke fakes patch claude_polish_grade with (db_path, path) signatures, so
+    introspect instead of breaking them (same pattern as _draft_markdown)."""
+    import inspect as _inspect
+
+    try:
+        signature = _inspect.signature(claude_polish_grade)
+        supports_topic = "topic" in signature.parameters or len(signature.parameters) >= 3
+    except (TypeError, ValueError):
+        supports_topic = False
+    if supports_topic:
+        return await claude_polish_grade(db_path, path, topic=title)
+    return await claude_polish_grade(db_path, path)
+
+
+async def _run_powerpoint_attempt_impl(
+    db_path: str,
+    path,
+    title: str,
+    slides: list[tuple[str, list[str]]],
+    run_id: str,
+    auto_improve: bool,
+    visual_image_max: int | None,
+) -> tuple[PptxQualityResult, str]:
     await asyncio.to_thread(create_pptx, path, title, slides)
     visual_added = False
     visual_note = ""
@@ -97,18 +129,23 @@ async def _run_powerpoint_attempt(
         qa.revisions = 1
     if qa.passed:
         visual_added, visual_note = await add_gemini_visual_asset(path, title, max_images=visual_image_max)
+        wants_visuals = topic_benefits_from_visuals(title)
         if visual_added:
             qa = await asyncio.to_thread(inspect_pptx_quality, path)
             picture_count = await asyncio.to_thread(_picture_count, path)
             required = required_visual_image_count(len(slides))
             if visual_image_max is not None:
                 required = min(required, max(0, visual_image_max))
-            if topic_benefits_from_visuals(title) and picture_count < required:
-                qa.passed = False
-                qa.issues.append(f"visual topic needs at least {required} relevant images, but only {picture_count} were inserted")
-        elif topic_benefits_from_visuals(title):
-            qa.passed = False
-            qa.issues.append("visual topic needs a generated or sourced image, but none was inserted")
+            if wants_visuals and picture_count < required:
+                # Severity-tier rule (live 2026-06-11): image AVAILABILITY is
+                # never a deck blocker. Fewer images than suggested = deliver
+                # with an honest note, not draft-only.
+                _qa_note(qa, f"visual topic got {picture_count} of {required} suggested images; delivered with available visuals")
+        elif wants_visuals:
+            # Live P3 failure shape: generation/insert infrastructure failed
+            # (slow provider, stalled Desktop write, or disabled flag) after
+            # 307s and the deck was blocked for it. The deck itself is fine.
+            _qa_note(qa, f"visual assets unavailable ({visual_note or 'no image inserted'}); delivered without images")
         elif not visual_note:
             visual_note = "No generated visual asset inserted."
     else:
@@ -120,7 +157,7 @@ async def _run_powerpoint_attempt(
             qa.polish = "Design polish: draft-level."
             qa.issues.extend(issues)
         else:
-            polish = (await claude_polish_grade(db_path, path))[0]
+            polish = (await _polish_grade_with_topic(db_path, path, title))[0]
             polish = polish.replace("draft level", "draft-level")
             if visual_added:
                 polish = f"{polish} Gemini visual asset added."

@@ -88,7 +88,30 @@ def _stale_topic_label(texts: list[str]) -> str:
     return ""
 
 
-async def claude_polish_grade(db_path: str, path: Path) -> tuple[str, bool]:
+def image_policy_line(topic: str) -> str:
+    """Single source of truth for image expectations in review prompts.
+
+    Live contradiction 2026-06-11: code-side `topic_benefits_from_visuals`
+    decided robotics/agriculture decks need no images (so none were
+    generated), while the review prompt told Claude to grade "missing visuals
+    for a visual topic" as draft-level — every such deck shipped draft-only.
+    Image AVAILABILITY is governed by code (topic class + generation
+    pipeline health), never by the reviewer."""
+    from pptx_visual_assets import topic_benefits_from_visuals
+
+    if topic and not topic_benefits_from_visuals(topic):
+        return (
+            "Image policy: this topic class does not use generated images. "
+            "Do not mention missing images at all."
+        )
+    return (
+        "Image policy: image generation is handled by code and may be intentionally "
+        "unavailable. Treat missing images as a non-blocking improvement note, never "
+        "as a blocker or a draft-level reason."
+    )
+
+
+async def claude_polish_grade(db_path: str, path: Path, topic: str = "") -> tuple[str, bool]:
     if not os.getenv("ANTHROPIC_API_KEY"):
         return "Design polish: local QA passed. Claude polish critique unavailable.", False
     steward = TheSteward(
@@ -98,7 +121,7 @@ async def claude_polish_grade(db_path: str, path: Path) -> tuple[str, bool]:
     try:
         response = await steward.chat([
             {"role": "system", "content": await _system_prompt(db_path)},
-            {"role": "user", "content": _user_prompt(path)},
+            {"role": "user", "content": _user_prompt(path, topic)},
         ])
     except Exception:
         return "Design polish: good. Claude polish review unavailable; local visual QA passed.", False
@@ -167,7 +190,7 @@ async def _system_prompt(db_path: str) -> str:
     )
 
 
-def _user_prompt(path: Path) -> str:
+def _user_prompt(path: Path, topic: str = "") -> str:
     deck = Presentation(path)
     slides = []
     picture_total = 0
@@ -190,8 +213,9 @@ def _user_prompt(path: Path) -> str:
     return (
         "Review this PPTX structure for polish, not factual truth. "
         "Visible text is intentionally short because speaker notes carry explanation. "
-        "Do not mark compact labels as draft-level when images, notes, title strength, and layout variety are present. "
-        "Mark draft-level when the deck has bland generic labels, poor first-slide framing, missing visuals for a visual topic, repeated layouts, incomplete text, or sentence-heavy slides. "
+        "Do not mark compact labels as draft-level when notes, title strength, and layout variety are present. "
+        "Mark draft-level when the deck has bland generic labels, poor first-slide framing, repeated layouts, incomplete text, or sentence-heavy slides. "
+        f"{image_policy_line(topic)} "
         "If your reason mentions incomplete fragments, incomplete sentences, weak spots, truncation, or similar blockers, the grade must be draft-level. "
         'Return {"grade":"draft-level|good|strong","reason":"short reason"}.\n\n'
         f"Local summary:\n{json.dumps(local_summary, ensure_ascii=False)}\n\n"

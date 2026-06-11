@@ -1,5 +1,8 @@
 from __future__ import annotations
 
+import concurrent.futures
+import errno
+import os
 from dataclasses import dataclass
 from pathlib import Path
 from io import BytesIO
@@ -8,7 +11,7 @@ from PIL import Image
 from pptx import Presentation
 
 from presentation_visual_builder import build_visual_reviewed_deck
-from pptx_slide_renderer import PptxRenderTimeout, render_pptx_slides
+from pptx_slide_renderer import PptxRenderTimeout, _render_deadline_seconds, render_pptx_slides
 from workspace_paths import workspace_dir
 
 
@@ -73,18 +76,58 @@ def inspect_pptx_quality(path: Path) -> PptxQualityResult:
     notes: list[str] = []
     render_timed_out = False
     try:
-        images = render_pptx_slides(path, _review_dir(path), limit=80)
+        images = _render_with_wall_clock_budget(path, _review_dir(path))
     except PptxRenderTimeout as exc:
-        # Severity-tier rule (live incident 2026-06-11, 453s hold): a render
-        # TIMEOUT is a warning, not a blocker — a slow renderer says nothing
-        # about the deck. Real render failures below remain blockers.
+        # Severity-tier rule (live incidents 2026-06-11, 453s/434s holds):
+        # a render TIMEOUT is a warning, not a blocker — a slow renderer says
+        # nothing about the deck. Real render failures below remain blockers.
         render_timed_out = True
         notes.append(f"render QA skipped ({exc}); deck judged on structure only")
+    except OSError as exc:
+        if exc.errno in (errno.ETIMEDOUT, 110, 60):
+            # Live P5 failure shape: `[Errno 60] Operation timed out` INSIDE
+            # image.save() on Desktop/Maya — an environment/storage stall
+            # (syncing volume), not a deck defect. Warning, not blocker.
+            render_timed_out = True
+            notes.append(
+                f"render QA skipped (storage I/O timed out: {exc}); deck judged on structure only. "
+                "Check whether Desktop/Maya sits on a syncing volume (iCloud), or set MAYA_PPTX_REVIEW_DIR to a local path."
+            )
+        else:
+            issues.append(f"render failed: {exc}")
     except Exception as exc:
         issues.append(f"render failed: {exc}")
     if not render_timed_out and len(images) != len(deck.slides):
         issues.append("rendered slide count does not match deck slide count")
     return PptxQualityResult(not issues, issues, images, notes=notes or None)
+
+
+def _render_with_wall_clock_budget(path: Path, review_dir: Path) -> list[Path]:
+    """Run the renderer under a WALL-CLOCK budget in a worker thread.
+
+    The renderer's own between-slides deadline cannot fire while a single
+    image.save() blocks inside a syscall (the live 434s case). The worker
+    thread is abandoned on timeout (shutdown(wait=False)); it holds no locks
+    and at worst finishes writing one orphan jpg later."""
+    budget = _render_deadline_seconds()
+    if budget <= 0:
+        return render_pptx_slides(path, review_dir, limit=80)
+    pool = concurrent.futures.ThreadPoolExecutor(max_workers=1, thread_name_prefix="pptx-render")
+    future = pool.submit(render_pptx_slides, path, review_dir, 80, budget)
+    try:
+        return future.result(timeout=budget + 15)
+    except concurrent.futures.TimeoutError as exc:
+        if future.done():
+            # Python's built-in TimeoutError is an OSError subclass, so a
+            # worker-raised `[Errno 60] Operation timed out` also arrives here.
+            # Re-raise completed worker exceptions so the storage-stall branch
+            # in inspect_pptx_quality can classify them as I/O warnings.
+            raise
+        raise PptxRenderTimeout(
+            f"rendering exceeded the {budget:.0f}s wall-clock budget (likely a stalled file write)"
+        ) from exc
+    finally:
+        pool.shutdown(wait=False)
 
 
 def _slide_issues(index: int, slide) -> list[str]:
@@ -163,6 +206,11 @@ def _slide_notes(slide) -> str:
 
 
 def _review_dir(path: Path) -> Path:
+    # MAYA_PPTX_REVIEW_DIR: escape hatch for syncing-volume stalls — point
+    # review renders at a guaranteed-local directory (e.g. /tmp/maya-reviews).
+    override = os.getenv("MAYA_PPTX_REVIEW_DIR", "").strip()
+    if override:
+        return Path(override).expanduser() / path.stem
     return workspace_dir("screenshots", create=True) / "pptx-reviews" / path.stem
 
 

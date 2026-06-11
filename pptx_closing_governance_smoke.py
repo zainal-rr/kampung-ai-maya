@@ -119,7 +119,9 @@ def _render_timeout_checks(root: Path) -> None:
     from pptx_slide_renderer import render_pptx_slides
 
     original = gate.render_pptx_slides
-    gate.render_pptx_slides = lambda p, d, limit=80: render_pptx_slides(p, d, limit=limit, deadline_seconds=1e-9)
+    gate.render_pptx_slides = lambda p, d, limit=80, deadline_seconds=None: render_pptx_slides(
+        p, d, limit=limit, deadline_seconds=1e-9
+    )
     try:
         result = gate.inspect_pptx_quality(path)
     finally:
@@ -134,6 +136,91 @@ def _render_timeout_checks(root: Path) -> None:
     print("  render timeout = warning, normal render intact: ok")
 
 
+def _storage_stall_checks(root: Path) -> None:
+    """Live P5 failure shape: OSError [Errno 60] inside image.save() on a
+    syncing volume. Must classify as warning, not blocker."""
+    import pptx_quality_gate as gate
+
+    clean_slides = [
+        ("Workshop Outcomes Set The Day", ["Participants build one robot.", "Teams demo at the end."]),
+        ("Practice Time Drives Learning", ["Hands-on blocks come first.", "Helpers rove between teams."]),
+    ]
+    path = create_pptx(root / "stall.pptx", "robotics workshop outcomes deck", clean_slides)
+
+    def _stalled(*_args, **_kwargs):
+        raise OSError(60, "Operation timed out", str(root / "slide-01.jpg"))
+
+    original = gate.render_pptx_slides
+    gate.render_pptx_slides = _stalled
+    try:
+        result = gate.inspect_pptx_quality(path)
+    finally:
+        gate.render_pptx_slides = original
+    _require(result.passed, f"storage-stall (Errno 60) must not block a clean deck: {result.issues}")
+    _require(result.notes and "i/o timed out" in result.notes[0].lower(), f"stall note missing: {result.notes}")
+    # A real render failure must still block.
+    gate.render_pptx_slides = lambda *a, **k: (_ for _ in ()).throw(ValueError("corrupt"))
+    try:
+        broken = gate.inspect_pptx_quality(path)
+    finally:
+        gate.render_pptx_slides = original
+    _require(not broken.passed and any("render failed" in i for i in broken.issues), "real render failures must stay blockers")
+    print("  storage stall (Errno 60) = warning, real failure = blocker: ok")
+
+
+def _visual_availability_checks(root: Path) -> None:
+    """Live P3 failure shape: image generation failed/stalled for a visual
+    topic and the deck was blocked for it. Availability is now a note."""
+    import asyncio
+    import tempfile as _tempfile
+
+    import pptx_document_flow as flow
+    from storage import init_db
+    from harness_artifact_store import init_harness_artifact_db
+
+    async def _case() -> None:
+        with _tempfile.TemporaryDirectory(prefix="maya-visual-avail-") as tmp2:
+            db = str(Path(tmp2) / "t.db")
+            await init_db(db)
+            await init_harness_artifact_db(db)
+            title = "make an investor pitch deck for a drone inspection startup"  # visual topic ("pitch")
+
+            async def fake_assets_unavailable(_path, _title, max_images=None):
+                return False, "Gemini image generation failed: [Errno 60] Operation timed out"
+
+            async def fake_polish(_db, _path):
+                return "Design polish: good. Clear structure.", False
+
+            original_assets = flow.add_gemini_visual_asset
+            original_polish = flow.claude_polish_grade
+            flow.add_gemini_visual_asset = fake_assets_unavailable
+            flow.claude_polish_grade = fake_polish
+            try:
+                slides = [
+                    ("Drone Inspection Has A Clear Use Case", ["Towers and roofs cost less by air.", "Insurers accept drone reports."]),
+                    ("Start Narrow", ["Pick two inspection packages.", "Price by risk and output."]),
+                ]
+                qa, _note = await flow._run_powerpoint_attempt(db, root / "drone.pptx", title, slides, "smoke-run", False, None)
+            finally:
+                flow.add_gemini_visual_asset = original_assets
+                flow.claude_polish_grade = original_polish
+            _require(qa.passed, f"image unavailability must not block a clean visual-topic deck: {qa.issues}")
+            _require(qa.notes and "visual assets unavailable" in qa.notes[0], f"availability note missing: {qa.notes}")
+
+    asyncio.run(_case())
+    print("  visual-asset unavailability = note, not blocker: ok")
+
+
+def _image_policy_checks() -> None:
+    from pptx_polish_review import image_policy_line
+
+    non_visual = image_policy_line("make a presentation about a school robotics workshop")
+    _require("does not use generated images" in non_visual, f"non-visual policy wrong: {non_visual}")
+    visual = image_policy_line("make an investor pitch deck for a drone startup")
+    _require("never" in visual and "draft-level" in visual, f"visual policy wrong: {visual}")
+    print("  image policy single source of truth: ok")
+
+
 def main() -> None:
     with tempfile.TemporaryDirectory(prefix="maya-pptx-governance-") as tmp:
         root = Path(tmp)
@@ -141,6 +228,9 @@ def main() -> None:
         _rescue_path_checks(root)
         _review_routing_checks()
         _render_timeout_checks(root)
+        _storage_stall_checks(root)
+        _visual_availability_checks(root)
+        _image_policy_checks()
     print("pptx_closing_governance_smoke: ok")
 
 
