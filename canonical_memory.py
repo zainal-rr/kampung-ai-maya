@@ -315,7 +315,12 @@ async def _with_association_neighbors(
     if not neighbors:
         return scored
     seen = {memory_id for _score, memory_id, _content in scored}
-    neighbor_score = max(1, scored[0][0] - ASSOCIATION_NEIGHBOR_PENALTY)
+    # Score below the weakest candidate that would be selected, not the
+    # strongest: associations fill spare context slots and trail behind every
+    # lexical/FTS hit, never displacing one from the top-`limit` cut. (The
+    # old top-score-minus-2 let one neighbor outrank the 2nd/3rd true hits.)
+    weakest_selected = scored[: max(limit, 1)][-1][0]
+    neighbor_score = max(1, weakest_selected - ASSOCIATION_NEIGHBOR_PENALTY)
     expanded = list(scored)
     for memory_id, content in neighbors:
         if memory_id in seen:

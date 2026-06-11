@@ -61,6 +61,7 @@ def distiller_prompt(run_key: str, episodes: list[dict[str, str]]) -> str:
         '{"facts":[{"content":"...","kind":"preference|lesson|project_fact|profile_fact","scope":"global","confidence":"high|medium"}],',
         ' "links":[{"source":"<content of one fact or existing memory>","target":"<content of another>","relation":"shared_entity|same_episode|causal"}]}',
         "Facts must be stable and worth keeping for months. No test memories, temporary chatter, sensitive data, guesses, or forgotten facts.",
+        "Phrase each fact as '<short subject> is/are <value>' where possible (e.g. 'Zainal reply style is short with no exclamation marks'), not as a full sentence about 'the user'. Short subjects let identical facts deduplicate.",
         "Links connect memories about the same person, place, project, or cause-effect pair.",
         f"Night: {run_key}",
         "Episodes:",

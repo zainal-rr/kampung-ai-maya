@@ -143,6 +143,8 @@ async def expand_with_neighbors(
         WHERE (links.source_memory_id IN ({placeholders}) OR links.target_memory_id IN ({placeholders}))
           AND items.status = 'active'
           AND (items.expires_at IS NULL OR items.expires_at > datetime('now'))
+          AND items.temporary = 0
+          AND items.test_marker = 0
         GROUP BY neighbor_id, items.content
         ORDER BY best_weight DESC
         LIMIT ?
@@ -163,6 +165,10 @@ async def expand_with_neighbors(
 
 
 async def _active_ids(db: aiosqlite.Connection, memory_ids: tuple[str, ...]) -> set[str]:
+    # temporary/test rows are excluded at both ends: links to them cannot be
+    # created here, and expand_with_neighbors filters them at read time too.
+    # The lexical path deliberately keeps zero-overlap temporary rows out of
+    # context; association must not reopen that door.
     placeholders = ",".join("?" for _ in memory_ids)
     cursor = await db.execute(
         f"""
@@ -170,6 +176,8 @@ async def _active_ids(db: aiosqlite.Connection, memory_ids: tuple[str, ...]) -> 
         WHERE memory_id IN ({placeholders})
           AND status = 'active'
           AND (expires_at IS NULL OR expires_at > datetime('now'))
+          AND temporary = 0
+          AND test_marker = 0
         """,
         memory_ids,
     )

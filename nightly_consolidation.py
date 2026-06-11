@@ -30,6 +30,9 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 
 from canonical_memory import init_canonical_memory_db, upsert_canonical_memory
+from canonical_memory_dedup import find_semantic_duplicate
+from canonical_memory_embeddings import default_embedding_agent
+from canonical_memory_usage import mark_canonical_used
 from memory_links import init_memory_links_db
 from nightly_consolidation_helpers import (
     audit_nightly,
@@ -63,6 +66,7 @@ class NightlyConsolidationResult:
     skipped: bool = False
     skip_reason: str = ""
     saved: int = 0
+    deduped: int = 0
     rejected: int = 0
     links_recorded: int = 0
     links_dropped: int = 0
@@ -140,7 +144,9 @@ async def run_nightly_consolidation(
                     await audit_nightly(db_path, "weekly_reject", run_key, fact, source_ref="review_rejected")
 
     saved = 0
+    deduped = 0
     memory_ids: list[str] = []
+    embed_agent = default_embedding_agent()
     for fact in facts:
         content = _clean(fact.get("content", ""))
         kind = _clean(fact.get("kind", "")) or "lesson"
@@ -148,6 +154,24 @@ async def run_nightly_consolidation(
         if not _stable_fact(content, kind=kind, scope=scope) or await _forgotten_subject_exists(db_path, content):
             rejected += 1
             await audit_nightly(db_path, "weekly_reject", run_key, fact, source_ref="stability_filter")
+            continue
+        # Semantic dedup gate: the truth key never collides for full-sentence
+        # subject keys, so rephrasings of an existing fact would otherwise
+        # insert a new row every night. A confident duplicate reinforces the
+        # existing row instead of inserting.
+        duplicate = await find_semantic_duplicate(db_path, content, embed_agent=embed_agent)
+        if duplicate:
+            duplicate_id, reason = duplicate
+            await mark_canonical_used(
+                db_path, [duplicate_id],
+                event_type="activation",
+                source_ref=f"nightly_dedup:{run_key}:{reason}",
+            )
+            await audit_nightly(
+                db_path, "weekly_reject", run_key, fact,
+                memory_id=duplicate_id, source_ref=f"semantic_duplicate:{reason}",
+            )
+            deduped += 1
             continue
         memory_id = await upsert_canonical_memory(
             db_path,
@@ -172,7 +196,7 @@ async def run_nightly_consolidation(
         links_recorded=links_recorded, provider_calls=provider_calls,
     )
     return NightlyConsolidationResult(
-        run_key=run_key, saved=saved, rejected=rejected,
+        run_key=run_key, saved=saved, deduped=deduped, rejected=rejected,
         links_recorded=links_recorded, links_dropped=links_dropped,
         provider_calls=provider_calls, memory_ids=tuple(memory_ids),
         confirmation_needed=confirmation_needed, reviewer_error=reviewer_error,
