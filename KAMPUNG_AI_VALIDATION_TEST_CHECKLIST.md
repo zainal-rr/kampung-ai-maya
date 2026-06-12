@@ -110,12 +110,34 @@ DETAILED RUN SHEET (2026-06-12): `docs/phase6_agentic_loop_validation_2026-06-12
 DB evidence queries, approval-gate both-ways test, budget/honesty test, cost
 review, and the kill-switch drill. Commit the working tree before starting.
 
-- [ ] Set `MAYA_AGENTIC_LOOP=1`, restart Maya.
-- [ ] Give a multi-step request through the harness (e.g. "research X, then remember the key fact, then summarize"). Watch the trace for `loop_iteration`, `agentic_action`, `domain_knowledge` events.
-- [ ] Confirm the loop STOPS: budget is 8 steps max; a run must never spin.
-- [ ] Trigger an approval path (ask for something that sends a file) → run pauses for your yes/no; decline → honest cancellation.
-- [ ] Check `/cost` for `gpt_harness_planner_calls` — confirm the planner cost is visible and acceptable.
-- [ ] If anything misbehaves: set `MAYA_AGENTIC_LOOP=0` — default behavior returns instantly.
+- [x] Set `MAYA_AGENTIC_LOOP=1`, restart Maya.
+- [x] Multi-step EPF request: browser search + note-save + retirement summary completed in-loop with trace events.
+- [x] Loop STOPS at the 8-step budget — and ends HONESTLY (no claimed success on unverified goals).
+- [x] Approval gate both ways: decline cancels cleanly; approve resumes and prepares the Telegram file.
+- [x] Control test: `hello` and DCF/domain questions created no harness runs (loop correctly scoped).
+- [x] Kill switch proven: `MAYA_AGENTIC_LOOP=0` → planner calls stop, default behavior returns.
+- [x] Full CI: 57/57, zero blocking failures.
+
+**PHASE 6: PASSED (2026-06-12).** Commits: `093634f` (pre-test baseline),
+`4a67c9b` (agentic-loop hardening). Resting state: loop OFF.
+
+Follow-up hardening (2026-06-12): long domain synthesis now has a reserved
+final-answer step inside the loop budget. If the planner keeps gathering until
+the cap, the final step forces a grounded synthesis with evidence gaps named;
+if synthesis fails, the honest budget-exhausted message still appears. Smoke:
+`harness_agentic_deep_smoke.py` covers both paths.
+
+Live-style retest (contained DB, 2026-06-12): finance preference-share prompt
+completed at step 8/8 with `synthesis_reserve` recorded and returned a grounded
+assessment instead of the generic budget message. Resting service state remains
+`MAYA_AGENTIC_LOOP=0`.
+
+W7 STATUS NOTE (2026-06-11 audit, `untrusted_read_surface_audit_2026-06-11.md`):
+entry tagging is wired across ALL live read surfaces (browser AppleScript +
+extension, harness observations, screen, active-app context, PPTX visible-slide,
+harness tool calls → kernel). No unguarded live surface found. W7 closed; keep
+watching: Omi transcript ingestion, future email/PDF readers, browser skills
+bypassing `inspect_page`, MCP connectors reading external content.
 
 ## Phase 7 — One week of honest field use
 

@@ -30,10 +30,12 @@ def _require(condition: bool, message: str) -> None:
         raise AssertionError(message)
 
 
-def _scripted_planner(actions: list[str], verifies: list[str]):
+def _scripted_planner(actions: list[str], verifies: list[str], synthesis: str | None = None):
     state = {"action": 0, "verify": 0}
 
     async def llm(prompt: str) -> str:
+        if "This is the FINAL" in prompt:
+            return synthesis or ""
         if "YES or NO" in prompt:
             reply = verifies[min(state["verify"], len(verifies) - 1)]
             state["verify"] += 1
@@ -135,13 +137,46 @@ async def _deny_path(root: Path) -> None:
     print("  permission deny (honest refusal, no action): ok")
 
 
+async def _synthesis_reserve_path(root: Path) -> None:
+    # Phase 6 finding 2026-06-12: a loop that gathers until the cap must land
+    # a REAL answer on its reserved final step, not the generic budget message.
+    db = str(root / "reserve.db")
+    await init_db(db)
+    await init_harness_db(db)
+    synthesized = (
+        "Best-effort assessment from gathered evidence: the issuance looks marginal; "
+        "evidence on market norms is incomplete, which limits confidence."
+    )
+    planner = _scripted_planner(
+        actions=['{"tool": "memory_write", "args": {"content": "Temporary loop note"}}'],
+        verifies=["NO"],
+        synthesis=synthesized,
+    )
+    runner = HarnessGraphRunner(db, planner_llm=planner)
+    state = initial_harness_state(run_id="hrn_deep_reserve", thread_id="harness:reserve", channel="imac", user_text="keep refining until it cannot be improved")
+    state["agentic_loop"] = True
+    state["max_steps"] = 3
+    out = await runner.run(state)
+    _require(out.get("current_step") == 3, f"expected 3 steps, got {out.get('current_step')}")
+    final = str(out.get("final_response") or "")
+    _require(final == synthesized, f"reserved step should land the synthesized answer: {final}")
+    _require("agentic budget" not in final, f"synthesis must not be clobbered by the budget message: {final}")
+    _require(out.get("graph_status") == "completed", f"status: {out.get('graph_status')}")
+    events = [e["event"] for e in await latest_events(db, "hrn_deep_reserve", limit=80)]
+    _require("synthesis_reserve" in events, f"synthesis_reserve missing from trace: {events}")
+    print("  synthesis reserve (final step lands a real answer): ok")
+
+
 async def _budget_exhaustion_path(root: Path) -> None:
+    # When reserved-step synthesis FAILS (empty reply), the honest budget
+    # message remains the fallback — the W1 net stays underneath the reserve.
     db = str(root / "budget.db")
     await init_db(db)
     await init_harness_db(db)
     planner = _scripted_planner(
         actions=['{"tool": "memory_write", "args": {"content": "Temporary loop note"}}'],
         verifies=["NO"],
+        synthesis="",
     )
     runner = HarnessGraphRunner(db, planner_llm=planner)
     state = initial_harness_state(run_id="hrn_deep_budget", thread_id="harness:budget", channel="imac", user_text="keep refining until it cannot be improved")
@@ -152,7 +187,7 @@ async def _budget_exhaustion_path(root: Path) -> None:
     final = str(out.get("final_response") or "")
     _require("3-step agentic budget" in final, f"budget exhaustion not honest: {final}")
     _require("before I could verify the full goal" in final, f"missing unverified wording: {final}")
-    print("  budget exhaustion (honest, not fake success): ok")
+    print("  budget exhaustion fallback (synthesis failed -> honest message): ok")
 
 
 class _FakeTools:
@@ -338,6 +373,7 @@ async def main() -> None:
         await _approval_path(root)
         await _approved_send_file_preserves_success(root)
         await _deny_path(root)
+        await _synthesis_reserve_path(root)
         await _budget_exhaustion_path(root)
         await _browser_workflow_accepts_url_start(root)
         await _browser_remap_uses_goal_text(root)

@@ -72,14 +72,22 @@ async def choose_next_action(state: dict[str, Any], llm_call: LlmCall, knowledge
     """
     tools = tool_schemas_for_llm()
     knowledge_block = f"\nRelevant domain knowledge:\n{knowledge[:4000]}\n" if knowledge else ""
+    used = int(state.get("current_step") or 0)
+    budget = int(state.get("max_steps") or 0)
+    budget_note = f"Steps used: {used}" + (
+        f" of {budget} (the final step is reserved for answer synthesis)" if budget else ""
+    )
     prompt = (
         "You are executing a local personal-agent workflow one step at a time.\n"
         f"Goal: {state.get('goal') or state.get('user_text', '')}\n"
         f"Plan: {', '.join(state.get('plan') or [])}\n"
-        f"Steps used: {int(state.get('current_step') or 0)}\n"
+        f"{budget_note}\n"
         f"Observations so far: {_observation_block(state)}\n"
         f"{knowledge_block}"
         f"Available tools: {json.dumps(tools)}\n"
+        "Prefer finishing over gathering: once the domain knowledge and at least "
+        "one observation cover the goal, choose done and write the answer now - "
+        "further browsing or observing has diminishing value.\n"
         'Reply with JSON only. Either {"tool": "<name>", "args": {...}} for the '
         'single next tool call, or {"done": true, "answer": "<final answer>"} '
         "if the goal is satisfied or no tool helps. Tool names use dots "
@@ -92,6 +100,35 @@ async def choose_next_action(state: dict[str, Any], llm_call: LlmCall, knowledge
     except Exception:
         logger.exception("LLM next-action selection failed; finishing loop")
     return {"done": True, "answer": str(state.get("final_response") or "")}
+
+
+async def synthesize_final_answer(state: dict[str, Any], llm_call: LlmCall, knowledge: str = "") -> str:
+    """Reserved-step synthesis: the best final answer the evidence supports.
+
+    Phase 6 live finding (2026-06-12): long domain workflows kept gathering
+    until the 8-step budget hit and ended with an honest-but-empty budget
+    message. The graph now reserves the FINAL budget step for this call, so a
+    loop that ran out of room still lands a real answer. Honest by
+    construction: the prompt requires naming evidence gaps, never filling them
+    with invented facts. Returns "" on failure so the caller can fall back to
+    the normal done-path."""
+    knowledge_block = f"\nRelevant domain knowledge:\n{knowledge[:4000]}\n" if knowledge else ""
+    prompt = (
+        "You are finishing a local personal-agent workflow. This is the FINAL "
+        "step: no more tools, browsing, or observations are available.\n"
+        f"Goal: {state.get('goal') or state.get('user_text', '')}\n"
+        f"Observations gathered: {_observation_block(state)}\n"
+        f"{knowledge_block}"
+        "Write the best final answer the gathered evidence supports, grounded in "
+        "the domain knowledge above when present. If the evidence is incomplete, "
+        "state plainly what is missing and how that limits the answer - do not "
+        "invent facts to fill gaps. Reply with the answer text only."
+    )
+    try:
+        return (await llm_call(prompt)).strip()
+    except Exception:
+        logger.exception("LLM final synthesis failed; falling back to done-path")
+        return ""
 
 
 async def verify_goal(state: dict[str, Any], llm_call: LlmCall) -> bool:

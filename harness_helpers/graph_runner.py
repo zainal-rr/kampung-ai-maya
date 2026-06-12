@@ -15,7 +15,7 @@ from harness_state import HarnessState
 from harness_artifact_store import record_structured_artifact
 from harness_checkpoint_migration import snapshot_or_migrate
 from harness_execution import execute_with_ledger
-from harness_llm_planner import LlmCall, choose_next_action, plan_with_llm, verify_goal
+from harness_llm_planner import LlmCall, choose_next_action, plan_with_llm, synthesize_final_answer, verify_goal
 from harness_observation_store import record_observation
 from harness_store import create_approval, finish_run, record_artifact, record_event, upsert_run
 from harness_tools import HarnessTools
@@ -180,7 +180,22 @@ class HarnessGraphRunner:
             knowledge, domain_skill = await asyncio.to_thread(domain_knowledge_context, step_text)
             if domain_skill:
                 await record_event(self.db_path, state["run_id"], "domain_knowledge", domain_skill.skill_id)
-            state["planned_action"] = _forced_agentic_action(state) or await choose_next_action(dict(state), self.planner_llm, knowledge)
+            forced = _forced_agentic_action(state)
+            if forced is None and _at_synthesis_reserve(state):
+                # Synthesis reserve (Phase 6 finding 2026-06-12): the final
+                # budget step is not the planner's to spend on more gathering.
+                # Whatever evidence exists, the loop lands a real answer now.
+                answer = await synthesize_final_answer(dict(state), self.planner_llm, knowledge)
+                if answer:
+                    forced = {"done": True, "answer": answer}
+                    state["forced_synthesis"] = True
+                    await record_event(
+                        self.db_path,
+                        state["run_id"],
+                        "synthesis_reserve",
+                        f"step {int(state.get('current_step') or 0) + 1} of {int(state.get('max_steps') or MAX_STEPS)}",
+                    )
+            state["planned_action"] = forced or await choose_next_action(dict(state), self.planner_llm, knowledge)
             await record_event(
                 self.db_path,
                 state["run_id"],
@@ -374,7 +389,11 @@ class HarnessGraphRunner:
         else:
             status = "completed"
             state["graph_status"] = "completed"
-            if _agentic_budget_exhausted(state):
+            if _agentic_budget_exhausted(state) and not state.get("forced_synthesis"):
+                # The generic budget message is the fallback for runs that hit
+                # the cap WITHOUT a synthesized answer. A reserved-step
+                # synthesis already carries its own evidence-gap honesty and
+                # must not be clobbered.
                 state["final_response"] = _budget_exhausted_message(state)
         await upsert_run(self.db_path, state, status=status)
         if status == "completed":
@@ -457,6 +476,14 @@ def _summary_doc_topic(goal: str, observation: dict) -> str:
         "a concise source-grounded summary file for this request: "
         f"{goal}. Use this browser evidence and do not add unsupported facts: {context[:2200]}"
     )
+
+
+def _at_synthesis_reserve(state: HarnessState) -> bool:
+    """True when the loop is about to spend its FINAL budgeted step."""
+    if not state.get("agentic_loop") or state.get("goal_satisfied"):
+        return False
+    budget = int(state.get("max_steps") or MAX_STEPS)
+    return int(state.get("current_step") or 0) >= budget - 1
 
 
 def _agentic_budget_exhausted(state: HarnessState) -> bool:

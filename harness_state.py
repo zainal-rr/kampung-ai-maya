@@ -42,6 +42,7 @@ class HarnessState(TypedDict, total=False):
     goal_satisfied: bool
     max_steps: int
     planned_action: dict
+    forced_synthesis: bool
 
 
 def initial_harness_state(
