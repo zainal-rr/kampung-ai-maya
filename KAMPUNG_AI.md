@@ -124,6 +124,16 @@ Natural follow-ups update the latest active artifact in place unless the user as
 
 Canonical memory is the truth layer. Preferences, lessons, curated memory, session search, and compacted summaries are views or indexes, not separate truth stores.
 
+The context-window design is agreed but not built yet. Its source of truth is
+`docs/context_window_design_2026-06-12.md`. When implemented, it adds working
+memory underneath canonical memory: a token-budgeted raw window plus rolling
+session summary for continuity, not durable belief. It must use one
+`assemble_context()` chokepoint, preserve forget watermarks across raw,
+summary, and search context, persist untrusted-input taint with stored turns,
+and keep domain packs as the authoritative truth for expert answers. It must
+ship behind `MAYA_CONTEXT_WINDOW=0` by default until canaries prove no forget
+leak, no W7 regression, no prompt-assembly bypass, and no budget overrun.
+
 Core rules:
 
 1. Save explicit memories only after write and read-back verification.
@@ -135,6 +145,9 @@ Core rules:
 7. Weekly provider failures degrade safely: if Claude review is unavailable, Maya may save the conservative weekly summary but must save zero unreviewed canonical facts and audit the reviewer error.
 8. Memory time audit is append-only evidence, not a second truth store. Canonical writes, updates, forgets, recalls, activations, weekly candidates, weekly saves/rejects, and leak checks write redacted audit rows with content hashes.
 9. Memory canaries are long-term trust probes for active, forgotten, temporary, project, and pinned memory. Canary checks must prove forgotten values do not leak through canonical active rows, preferences, lessons, raw history, session search, summaries, weekly summaries, or curated memory.
+10. Working-memory context must remain session continuity, not durable belief. Rolling summaries cannot write canonical memory, and summary claims should carry source pointers so Maya can verify against raw turns when precision matters.
+11. Untrusted context taint is facts-only metadata. Store observed source, influence, injection status, and signals; let the permission kernel derive action policy at prompt-build/action time.
+12. Salience and retrieval strengthening are future features only. Salience must be taint-gated before candidate promotion; retrieval strengthening can affect rank only, with bounded decay, never truth or confidence.
 
 Maya Desk and `/memory inspect` surface recent audit events and canary status so memory drift is visible instead of silently accumulating.
 
@@ -220,6 +233,7 @@ Current conservative operational estimate:
 | Telegram | 92% |
 | Document creation | 90% |
 | Memory architecture | 87% |
+| Context window / working memory | design agreed, not built |
 | Weekly memory automation | 85% |
 | Browser/agent workflow | 90-92% |
 | Agentic workflow | 82% |

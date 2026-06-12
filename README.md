@@ -99,6 +99,13 @@ The current internal harness spine is implemented through:
 
 Maya uses canonical memory as the truth layer for saved facts, with preferences, lessons, session search, and curated memory acting as views or indexes. Direct memory questions search canonical memory first. Forgotten memories must not leak back from raw transcript history.
 
+The next working-memory layer is specified but not built:
+`docs/context_window_design_2026-06-12.md`. It defines a token-budgeted raw
+context window plus rolling session summary for continuity, not durable belief.
+The design requires one `assemble_context()` chokepoint, forget watermarks,
+source pointers, persistent untrusted-input taint, route-specific token
+budgets, and canaries before `MAYA_CONTEXT_WINDOW` can be enabled.
+
 Memory now has a time-audit layer: canonical writes, updates, forgets, recalls, prompt activations, weekly candidates, weekly saves/rejects, and leak checks append redacted audit events with content hashes. Deterministic memory canaries test active, forgotten, temporary, project, and pinned memory so slow drift is visible in `/memory inspect` and Maya Desk.
 
 Omi ambient transcripts pass through the context sieve before storage. Noise, low-signal chatter, and sensitive text are rejected; accepted transcript context is stored as lower-priority ambient memory, not as normal preferences.
@@ -268,6 +275,7 @@ Generate it through the Maya command path or directly from `maya_desk.py` caller
 - Parked voice handoff is deterministic-replay-tested; full live proof still needs a real iMac voice session.
 - June 8 iMac regression and hardware/live proof scripts are readiness proof, not substitutes for physical voice, Mudra, or Omi tests.
 - Weekly memory automation is implemented, but unattended scheduled proof still needs ongoing observation.
+- Context-window working memory is design-approved only; no runtime context window should be claimed until `MAYA_CONTEXT_WINDOW` canaries and live validation pass.
 - The 7-day reliability soak is not complete until seven normal-use daily records exist.
 - The 30-day reliability scorecard is not complete until thirty normal-use daily records exist.
 - Real browser field reliability is not complete until live browser sessions are recorded for the prepared prompts.

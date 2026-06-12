@@ -1546,7 +1546,27 @@ Full detail: `SESSION_CHANGE_REPORT.md`. Validation plan: `KAMPUNG_AI_VALIDATION
     - [x] Normal model chat is blocked from claiming files, attachments, browser work, or memory writes without verified tool/delivery evidence.
     - [x] Strong document/artifact requests that hit command-router failure return an honest document failure instead of falling through to normal chat.
     - [x] `telegram_conversation_contract_smoke.py` pins the June 10 regressions.
-- [ ] **24.7. iMac Validation (owner)**
+- [x] **24.7. Context Window Design Doctrine**
+    - [x] Add `docs/context_window_design_2026-06-12.md` as the agreed source of truth for Maya working memory.
+    - [x] State clearly that the context window is design-approved, stages 0-2 are built, and the master switch remains off by default.
+    - [x] Lock the five-layer separation: raw window, rolling summary, session search, canonical memory, and domain packs.
+    - [x] Record the rule that session continuity is not durable belief.
+    - [x] Require one future `assemble_context()` chokepoint instead of scattered prompt appends.
+    - [x] Require facts-only taint metadata and kernel-derived policy, not stored policy decisions.
+    - [x] Require forget watermark handling across raw window, rolling summary, session search, and context display.
+    - [x] Require rolling summaries to rebuild from raw turns, never summary-of-summary.
+    - [x] Require source pointers for rolling-summary claims.
+    - [x] Require salience gating by taint before any future canonical-memory candidate flow.
+    - [x] Require retrieval strengthening to be rank-only, bounded, and decaying.
+- [ ] **24.8. Context Window Implementation**
+    - [x] Stage 0: add C0-C7 canaries from `docs/context_window_design_2026-06-12.md` and keep them green before any live enablement.
+    - [x] Stage 1: add turn store, facts-only taint metadata, `assemble_recent_context()`, token-budgeted raw window, per-turn cap, and forget watermark. Keep `MAYA_CONTEXT_WINDOW=0` by default.
+    - [x] Stage 2: add rolling compaction, rebuild-on-forget, gist pointers, and taint inheritance.
+    - [ ] Stage 3: add `/context` view from the audit manifest: loaded turns, token usage, rolling summary, excluded counts, watermarked turns, and tainted turns.
+    - [ ] Stage 4: tune route-specific budgets using Phase 7 field data and `/cost`.
+    - [x] Validate remember → recall → forget → ask with `MAYA_CONTEXT_WINDOW=1` and confirm no leak in the canary smoke.
+    - [x] Validate tainted browser content five turns back still confirm-gates external sends until it ages out in the canary smoke.
+- [ ] **24.9. iMac Validation (owner)**
     - [ ] Commit the working tree FIRST (two sessions of uncommitted work; no rollback point exists until this is done).
     - [ ] Run `KAMPUNG_AI_VALIDATION_TEST_CHECKLIST.md` end to end on the iMac with live keys.
     - [x] Live Telegram allowlist Phase 2 check: a second phone/account sent `/start`, `Hi`, and `Hello` at 2026-06-10 23:15 MYT; Maya stayed silent and `logs/launchd.stderr.log` recorded three `Rejected unauthorized Telegram chat ...` warnings.

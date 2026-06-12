@@ -373,6 +373,15 @@ async def forget_canonical_memory(db_path: str, query: str) -> int:
             source_ref=query,
             content=str(row["content"]),
         )
+    if matches:
+        # Forget honesty spans ALL memory tiers: watermark the context window
+        # and drop rolling summaries so a forgotten fact cannot resurface from
+        # working memory (docs/context_window_design_2026-06-12.md, C1/C5).
+        # A no-match forget does NOT watermark — it would erase working memory
+        # for nothing.
+        from context_window import on_canonical_forget
+
+        await on_canonical_forget(db_path)
     return len(matches)
 
 

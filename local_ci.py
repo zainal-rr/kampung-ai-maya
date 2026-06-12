@@ -53,6 +53,7 @@ def run_local_ci(*, live_providers: bool = False) -> list[CheckResult]:
         _command_check("canonical memory embeddings", ("canonical_memory_embeddings_smoke.py",)),
         _command_check("nightly consolidation", ("nightly_consolidation_smoke.py",)),
         _command_check("memory time audit", ("memory_time_audit_smoke.py",)),
+        _command_check("context window canaries", ("context_window_canaries_smoke.py",)),
         _command_check("memory recall eval", ("tests/evals/memory_recall_eval.py",)),
         _command_check("memory recall compare", ("tests/evals/memory_recall_eval_compare.py",)),
         _command_check("runtime config", ("runtime_config_smoke.py",)),

@@ -155,6 +155,10 @@ async def save_history_message(
     role: str,
     content: str,
     channel: str = "",
+    *,
+    source: str | None = None,
+    untrusted_influence: bool = False,
+    injection_detected: bool = False,
 ) -> None:
     async with aiosqlite.connect(db_path) as db:
         await db.execute(
@@ -169,6 +173,21 @@ async def save_history_message(
         except aiosqlite.OperationalError:
             pass
         await db.commit()
+    # Context-window turn store (docs/context_window_design_2026-06-12.md).
+    # save_history_message is the single funnel every turn already flows
+    # through, so the window's turn store extends it rather than creating a
+    # parallel write path. No-op while MAYA_CONTEXT_WINDOW=0 (default).
+    from context_window import record_context_turn
+
+    await record_context_turn(
+        db_path,
+        channel=channel or "unknown",
+        role=role,
+        content=content,
+        source=source,
+        untrusted_influence=untrusted_influence,
+        injection_detected=injection_detected,
+    )
 
 
 async def add_knowledge_chunk(

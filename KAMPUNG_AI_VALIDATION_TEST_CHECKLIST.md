@@ -143,6 +143,7 @@ bypassing `inspect_page`, MCP connectors reading external content.
 
 - [ ] Use Maya daily for real work; keep a running note of every output that feels generic, wrong-shaped, shallow, or mis-routed.
 - [ ] Note every domain question you ask that has no pack (candidates for the next skill+docs tree — zero code needed).
+- [ ] Note every case where Maya loses short-term context across Telegram/iMac/voice. These become budget/tuning examples for the future context-window build. Do not claim the context window is live until `docs/context_window_design_2026-06-12.md` canaries pass and `MAYA_CONTEXT_WINDOW` is intentionally enabled.
 - [ ] End of week: review the disappointment list — that, not a feature idea, decides the next build.
 
 ## Sign-off
