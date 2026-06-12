@@ -75,7 +75,7 @@ class DocumentExcelMixin:
             await self._restore_failed_edit(original, target, backup, save_copy)
             self.last_model_lane += " + Excel edit restore"
             return f"I tried to update the latest Excel workbook, but QA failed: {quality.short_issue_text()}. I kept the original unchanged."
-        await self._remember(target, f"Edited Excel workbook: {quality.summary}", False)
+        await self._remember(target, f"Edited Excel workbook: {quality.summary}", False, channel, "xlsx", topic)
         if session:
             await update_artifact_session_after_edit(self.db_path, session, channel, target, instruction)
         if save_copy:

@@ -22,6 +22,7 @@ from pathlib import Path
 LINE_LIMIT = 300
 WARNING_MIN = 250
 URGENT_MIN = 280
+ROOT_PY_FILE_LIMIT = 724
 
 
 @dataclass(frozen=True)
@@ -40,14 +41,16 @@ class CodeHealth:
     warnings: list[FileLineCount]
     urgent: list[FileLineCount]
     violations: list[FileLineCount]
+    root_python_files: int
 
     @property
     def ok(self) -> bool:
-        return not self.violations
+        return not self.violations and self.root_python_files <= ROOT_PY_FILE_LIMIT
 
 
 def collect_code_health(root: Path | str = ".") -> CodeHealth:
     root_path = Path(root)
+    root_python_files = len(list(root_path.glob("*.py")))
     files = sorted(
         (_count_file(path) for path in root_path.glob("*.py") if not _excluded_from_runtime_gate(path)),
         key=lambda item: item.name,
@@ -55,7 +58,13 @@ def collect_code_health(root: Path | str = ".") -> CodeHealth:
     warnings = [item for item in files if WARNING_MIN <= item.lines < URGENT_MIN]
     urgent = [item for item in files if URGENT_MIN <= item.lines <= LINE_LIMIT]
     violations = [item for item in files if item.lines > LINE_LIMIT]
-    return CodeHealth(files=files, warnings=warnings, urgent=urgent, violations=violations)
+    return CodeHealth(
+        files=files,
+        warnings=warnings,
+        urgent=urgent,
+        violations=violations,
+        root_python_files=root_python_files,
+    )
 
 
 def format_code_health(health: CodeHealth) -> str:
@@ -63,8 +72,16 @@ def format_code_health(health: CodeHealth) -> str:
         f"limit: {LINE_LIMIT} lines per .py file",
         f"warning_range: {WARNING_MIN}-{URGENT_MIN - 1}",
         f"urgent_range: {URGENT_MIN}-{LINE_LIMIT}",
+        f"root_py_files: {health.root_python_files}/{ROOT_PY_FILE_LIMIT}",
     ]
-    if not health.violations and not health.urgent and not health.warnings:
+    if health.root_python_files > ROOT_PY_FILE_LIMIT:
+        lines.append("root_file_violation: move code into packages instead of adding root .py files")
+    if (
+        health.root_python_files <= ROOT_PY_FILE_LIMIT
+        and not health.violations
+        and not health.urgent
+        and not health.warnings
+    ):
         lines.append("status: clean")
         return "\n".join(lines)
 

@@ -55,7 +55,7 @@ class DocumentOfficeMixin(DocumentExcelMixin):
             await self._restore_failed_edit(path, target, backup, save_copy)
             self.last_model_lane += " + PowerPoint edit restore"
             return f"I tried to update the latest PowerPoint, but QA failed: {qa.summary()} I kept the original unchanged."
-        await self._remember(target, f"Edited PowerPoint draft: {qa.summary()}", False)
+        await self._remember(target, f"Edited PowerPoint draft: {qa.summary()}", False, channel, "pptx", topic)
         if session:
             await update_artifact_session_after_edit(self.db_path, session, channel, target, instruction)
         if save_copy:

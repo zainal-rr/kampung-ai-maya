@@ -15,6 +15,14 @@ from canonical_memory_embeddings import (
     rerank_with_embeddings,
 )
 from canonical_memory_fts import ensure_canonical_memory_fts, fts_rank_bonuses
+from canonical_memory_supersede import (
+    archive_superseded_value,
+    ensure_supersede_schema,
+    load_existing_for_upsert,
+    record_supersede_audit,
+    should_supersede,
+    write_active_memory_row,
+)
 from canonical_memory_scoring import activation_score
 from canonical_memory_text import is_temporary_memory, memory_tokens, subject_key_from_text, value_from_text
 from canonical_memory_usage import mark_canonical_used
@@ -54,12 +62,10 @@ async def init_canonical_memory_db(db_path: str) -> None:
             )
             """
         )
-        await db.execute(
-            """
-            CREATE UNIQUE INDEX IF NOT EXISTS idx_canonical_memory_truth
-            ON canonical_memory_items(kind, subject_key, scope)
-            """
-        )
+        # W2-A: the unique truth index is PARTIAL (active rows only) so
+        # superseded archive rows can share the (kind, subject_key, scope)
+        # triple. ensure_supersede_schema owns the migration.
+        await ensure_supersede_schema(db)
         await db.execute(
             """
             CREATE INDEX IF NOT EXISTS idx_canonical_memory_status
@@ -97,17 +103,9 @@ async def upsert_canonical_memory(
     existing_status = ""
     async with aiosqlite.connect(db_path) as db:
         db.row_factory = aiosqlite.Row
-        existing = await (
-            await db.execute(
-                """
-                SELECT status
-                FROM canonical_memory_items
-                WHERE kind = ? AND subject_key = ? AND scope = ?
-                """,
-                (kind, subject_key, scope),
-            )
-        ).fetchone()
-        existing_status = str(existing["status"]) if existing else ""
+        existing, existing_status = await load_existing_for_upsert(
+            db, kind, subject_key, scope, memory_id
+        )
         if existing_status == "forgotten" and not allow_resurrect:
             # Derived writers (weekly distillation, ambient Omi context) must
             # never recreate a fact the user explicitly forgot.
@@ -123,44 +121,45 @@ async def upsert_canonical_memory(
                 content=content,
             )
             return memory_id
-        await db.execute(
-            """
-            INSERT INTO canonical_memory_items (
-                memory_id, kind, subject_key, content, value, scope,
-                source_channel, source_ref, confidence, status, expires_at,
-                pinned, temporary, test_marker, updated_at
+        # W2-A: a changed value archives the prior active row as 'superseded'
+        # before the active row is updated in place, so history is not lost.
+        superseded_archive = ""
+        superseded_prev_content = ""
+        if should_supersede(existing, content):
+            superseded_prev_content = str(existing["content"])
+            superseded_archive = await archive_superseded_value(
+                db,
+                existing,
+                active_memory_id=memory_id,
             )
-            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, CURRENT_TIMESTAMP)
-            ON CONFLICT(kind, subject_key, scope) DO UPDATE SET
-                content = excluded.content,
-                value = excluded.value,
-                source_channel = excluded.source_channel,
-                source_ref = excluded.source_ref,
-                confidence = excluded.confidence,
-                status = 'active',
-                expires_at = excluded.expires_at,
-                pinned = MAX(pinned, excluded.pinned),
-                temporary = excluded.temporary,
-                test_marker = excluded.test_marker,
-                updated_at = CURRENT_TIMESTAMP
-            """,
-            (
-                memory_id,
-                kind,
-                subject_key,
-                content,
-                value,
-                scope,
-                source_channel,
-                source_ref or raw_text[:180],
-                confidence,
-                expires_at,
-                int(pinned),
-                int(temporary),
-                int(temporary),
-            ),
+        await write_active_memory_row(
+            db,
+            memory_id=memory_id,
+            kind=kind,
+            subject_key=subject_key,
+            content=content,
+            value=value,
+            scope=scope,
+            source_channel=source_channel,
+            source_ref=source_ref or raw_text[:180],
+            confidence=confidence,
+            expires_at=expires_at,
+            pinned=pinned,
+            temporary=temporary,
+            existing_status=existing_status,
         )
         await db.commit()
+    if superseded_archive:
+        # Recorded after commit (separate connection) to avoid a write lock on
+        # the open upsert transaction.
+        await record_supersede_audit(
+            db_path,
+            archive_id=superseded_archive,
+            subject_key=subject_key,
+            prev_content=superseded_prev_content,
+            source_channel=source_channel,
+            source_ref=source_ref or raw_text[:180],
+        )
     await record_memory_audit_event(
         db_path,
         event_type="canonical_update" if existing_status else "canonical_write",
@@ -336,11 +335,13 @@ async def forget_canonical_memory(db_path: str, query: str) -> int:
     tokens = memory_tokens(subject_key or query)
     async with aiosqlite.connect(db_path) as db:
         db.row_factory = aiosqlite.Row
+        # R3: forget covers the WHOLE supersede chain, not just the active row,
+        # so history cannot resurrect a forgotten fact.
         cursor = await db.execute(
             """
             SELECT memory_id, subject_key, content
             FROM canonical_memory_items
-            WHERE status = 'active'
+            WHERE status IN ('active', 'superseded')
             """
         )
         rows = await cursor.fetchall()

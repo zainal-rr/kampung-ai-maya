@@ -14,6 +14,7 @@ from __future__ import annotations
 
 from document_actions_context import *
 from artifact_retry_policy import artifact_qa_max_attempts, qa_retry_exhausted_message
+from safe_paths import resolve_safe_path
 from document_actions_content_helpers import (
     _append_text,
     _artifact_kind,
@@ -27,6 +28,7 @@ from artifact_clarification_state import consume_pending_artifact_request, save_
 from artifact_discourse_context import resolve_referenced_artifact_topic
 from artifact_semantic_enrichment import enrich_artifact_topic
 from artifact_semantic_resolver import resolve_semantic_artifact_intent
+from artifact_file_state import record_artifact_fingerprint
 from document_actions_html import DocumentHtmlMixin
 from document_actions_office import DocumentOfficeMixin
 from document_actions_word import DocumentWordMixin
@@ -204,9 +206,15 @@ class DocumentActionRouter(DocumentHtmlMixin, DocumentWordMixin, DocumentOfficeM
     async def _path(self, kind: str, topic: str, project_scoped: bool) -> Path:
         project = await active_project(self.db_path) if project_scoped else None
         if project:
-            return named_artifact_path(project.path / "docs", topic, kind)
-        folder = {"md": "notes", "html": "artifacts", "docx": "documents", "xlsx": "spreadsheets"}.get(kind, "documents")
-        return named_artifact_path(self.workspace / folder, topic, kind)
+            candidate = named_artifact_path(project.path / "docs", topic, kind)
+        else:
+            folder = {"md": "notes", "html": "artifacts", "docx": "documents", "xlsx": "spreadsheets"}.get(kind, "documents")
+            candidate = named_artifact_path(self.workspace / folder, topic, kind)
+        # W5-1 jail: document outputs must land inside allowed roots.
+        decision = resolve_safe_path(candidate, "write")
+        if not decision.allowed:
+            raise PermissionError(f"document output path rejected: {decision.reason}")
+        return decision.resolved or candidate
 
     async def _remember(
         self,
@@ -219,6 +227,7 @@ class DocumentActionRouter(DocumentHtmlMixin, DocumentWordMixin, DocumentOfficeM
     ) -> None:
         await upsert_preference(self.db_path, LAST_DOC_KEY, str(path), source="document")
         await upsert_preference(self.db_path, LAST_DRAFT_DOC_KEY, "", source="document")
+        await record_artifact_fingerprint(self.db_path, path)
         if topic:
             await record_artifact_session(self.db_path, channel, artifact_type or path.suffix.lower().lstrip("."), path, topic)
         await record_structured_artifact(

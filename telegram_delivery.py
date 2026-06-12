@@ -9,6 +9,7 @@ from contextlib import suppress
 from pathlib import Path
 
 from audio_devices import bin_path
+from safe_paths import resolve_safe_path
 from telegram import Bot
 from telegram.error import NetworkError, RetryAfter, TimedOut
 
@@ -228,6 +229,10 @@ def _allowed_file_marker(path: Path) -> Path | None:
     try:
         resolved = path.resolve()
     except OSError:
+        return None
+    # W5-1 jail: the hard denylist overrides every allowlist below, so a
+    # credential file can never ride a [file:...] marker out via Telegram.
+    if not resolve_safe_path(resolved, "read").allowed:
         return None
     if any(_within(resolved, root()) for root in ALLOWED_FILE_ROOTS):
         return resolved

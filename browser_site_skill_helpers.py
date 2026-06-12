@@ -55,8 +55,24 @@ def _clean_site_query(text: str, skill_id: str) -> str:
 
 def _is_result_open_request(text: str) -> bool:
     lowered = text.lower()
-    return bool(re.search(r"\b(open|click|select|choose)\b", lowered)) and any(
+    explicit = bool(re.search(r"\b(open|click|select|choose)\b", lowered)) and any(
         marker in lowered for marker in ("result", "video", "thread", "link", "first", "second", "third", "title")
+    )
+    if explicit:
+        return True
+    return bool(re.search(r"\b(one|result|link|post|page|thread|article)\b", lowered)) and any(
+        re.search(rf"\b{site}\b", lowered)
+        for site in (
+            "reddit",
+            "wikipedia",
+            "gamespot",
+            "polygon",
+            "imdb",
+            "youtube",
+            "github",
+            "stackoverflow",
+            "medium",
+        )
     )
 
 
@@ -80,7 +96,8 @@ def _rank_from_text(text: str) -> int:
 
 
 def _target_from_click_request(text: str) -> str:
-    cleaned = re.sub(r"\b(open|click|select|choose|the|first|top|second|third|fourth|fifth|result|video|thread|link|title)\b", " ", text, flags=re.I)
+    cleaned = re.sub(r"\b(open|click|select|choose|maybe|the|that|this|one|first|top|second|third|fourth|fifth|result|video|thread|post|page|article|link|title)\b", " ", text, flags=re.I)
+    cleaned = re.sub(r"[^\w\s.-]", " ", cleaned)
     cleaned = re.sub(r"^(?:about|for|on|of|regarding)\s+", "", " ".join(cleaned.strip(" .").split()), flags=re.I)
     return cleaned if len(cleaned) >= 3 else ""
 

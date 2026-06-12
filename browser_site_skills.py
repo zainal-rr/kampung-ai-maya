@@ -161,7 +161,12 @@ class SearchSiteSkill:
         visible = await _safe_result_options(self.browser)
         recovery_query = ""
         if target and not _options_match_target(visible, target):
-            recovery_query = target
+            page = await _safe_inspect(self.browser, max_chars=8000)
+            fallback_visible = _extract_visible_options(page.text, limit=10)
+            if _options_match_target(fallback_visible, target):
+                visible = fallback_visible
+            else:
+                recovery_query = target
         elif not visible:
             recovery_query = await self._last_search_query()
             if not recovery_query:
@@ -295,7 +300,6 @@ def _search_reply(spec: SiteSkillSpec, query: str, url: str, options: list[str],
     else:
         lines.append("visible results: none extracted from page text yet.")
     return "\n".join(lines)
-
 
 
 

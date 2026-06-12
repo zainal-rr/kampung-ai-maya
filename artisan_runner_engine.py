@@ -2,26 +2,13 @@ from __future__ import annotations
 
 from artisan_runner_context import *
 from artisan_runner_postprocess import _result, _write_transcript
+from safe_paths import scrubbed_subprocess_env
 
 
-async def _run_artisan_engine(run_id: str, request: str, target: ArtisanTarget, brief: str) -> dict:
-    return await _run_codex(run_id, request, target, brief)
-
-
-async def _run_codex(run_id: str, request: str, target: ArtisanTarget, brief: str) -> dict:
-    prompt = _artisan_prompt(request, target, brief)
-    if os.getenv("ARTISAN_DRY_RUN") == "1" or not shutil.which("codex"):
-        return await _dry_run_result(run_id, target, prompt)
-    auth_ok, auth_status = _codex_chatgpt_auth_state()
-    if not auth_ok:
-        message = (
-            "Codex subscription auth guard blocked Artisan. "
-            "Run `codex login` and confirm `codex login status` says `Logged in using ChatGPT`. "
-            f"Current status: {auth_status}"
-        )
-        return _result("failed", message, b"", message.encode("utf-8"), run_id)
-    transcript_path = _transcript_path(run_id)
-    final_path = transcript_path.with_suffix(".final.txt")
+def build_codex_command(target: ArtisanTarget, final_path: Path, prompt: str) -> list[str]:
+    """Worktree-confined Codex invocation (W5-1/S4): --cd and --add-dir pin the
+    working set to the target worktree, --sandbox workspace-write keeps Codex's
+    own enforcement on. Extracted so the canary can assert confinement."""
     cmd = [
         "codex",
         "--ask-for-approval",
@@ -42,10 +29,35 @@ async def _run_codex(run_id: str, request: str, target: ArtisanTarget, brief: st
     if model:
         cmd.extend(["--model", model])
     cmd.append(prompt)
+    return cmd
+
+
+async def _run_artisan_engine(run_id: str, request: str, target: ArtisanTarget, brief: str) -> dict:
+    return await _run_codex(run_id, request, target, brief)
+
+
+async def _run_codex(run_id: str, request: str, target: ArtisanTarget, brief: str) -> dict:
+    prompt = _artisan_prompt(request, target, brief)
+    if os.getenv("ARTISAN_DRY_RUN") == "1" or not shutil.which("codex"):
+        return await _dry_run_result(run_id, target, prompt)
+    auth_ok, auth_status = _codex_chatgpt_auth_state()
+    if not auth_ok:
+        message = (
+            "Codex subscription auth guard blocked Artisan. "
+            "Run `codex login` and confirm `codex login status` says `Logged in using ChatGPT`. "
+            f"Current status: {auth_status}"
+        )
+        return _result("failed", message, b"", message.encode("utf-8"), run_id)
+    transcript_path = _transcript_path(run_id)
+    final_path = transcript_path.with_suffix(".final.txt")
+    cmd = build_codex_command(target, final_path, prompt)
     timeout = int(os.getenv("ARTISAN_TIMEOUT_SECONDS", "300"))
+    # W5-1 (S4): generated code runs worktree-confined with a scrubbed
+    # environment — no credential-shaped env vars reach the child process.
     proc = await asyncio.create_subprocess_exec(
         *cmd,
         cwd=str(target.cwd),
+        env=scrubbed_subprocess_env(),
         stdin=subprocess.DEVNULL,
         stdout=asyncio.subprocess.PIPE,
         stderr=asyncio.subprocess.PIPE,

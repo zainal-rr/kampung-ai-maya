@@ -41,6 +41,7 @@ async def execute_voice_tool(
     voice_session_id: str = "",
     short_ack: str = "",
     work_kind: str = "",
+    voice_work_id: str | None = None,
 ) -> str:
     question = str(args.get("question") or args.get("text") or "").strip()
     if name == GEMINI_TOOL_NAME:
@@ -49,7 +50,13 @@ async def execute_voice_tool(
         return await read_maya_state(db_path, question)
     if name == BROWSER_TOOL_NAME:
         request = str(args.get("request") or question).strip()
-        return await run_voice_browser_skill(db_path, request, voice_session_id=voice_session_id, short_ack=short_ack)
+        return await run_voice_browser_skill(
+            db_path,
+            request,
+            voice_session_id=voice_session_id,
+            short_ack=short_ack,
+            voice_work_id=voice_work_id,
+        )
     if name in {MAYA_WORK_TOOL_NAME, HANDOFF_TOOL_NAME}:
         request = str(args.get("request") or question).strip()
         if not request:
@@ -61,6 +68,7 @@ async def execute_voice_tool(
             voice_session_id=voice_session_id,
             short_ack=short_ack,
             kind=work_kind or "work",
+            voice_work_id=voice_work_id,
         )
     extra = await execute_visual_context_tool(db_path, name, question)
     if extra is not None:
@@ -166,8 +174,9 @@ async def run_voice_browser_skill(
     *,
     voice_session_id: str = "",
     short_ack: str = "",
+    voice_work_id: str | None = None,
 ) -> str:
-    work_id = await create_voice_work(
+    work_id = voice_work_id or await create_voice_work(
         db_path,
         request,
         kind="browser",
@@ -194,8 +203,9 @@ async def start_maya_work(
     voice_session_id: str = "",
     short_ack: str = "",
     kind: str = "work",
+    voice_work_id: str | None = None,
 ) -> str:
-    work_id = await create_voice_work(
+    work_id = voice_work_id or await create_voice_work(
         db_path,
         request,
         kind=kind or "work",

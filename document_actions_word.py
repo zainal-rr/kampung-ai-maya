@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from document_actions_context import *
+from artifact_file_state import artifact_changed_since_recorded
 from artifact_retry_policy import artifact_qa_max_attempts
 from document_actions_content_helpers import _attach
 from document_actions_word_helpers import (
@@ -143,18 +144,26 @@ class DocumentWordMixin:
         path = Path(raw)
         if not path.exists():
             return f"I cannot find the last document at {path}."
+        manual_changed = False
+        if not save_copy:
+            manual_changed = await artifact_changed_since_recorded(self.db_path, path)
+            if manual_changed:
+                save_copy = True
         suffix = path.suffix.lower()
         if suffix == ".pptx":
-            return await self._edit_latest_powerpoint(path, instruction, channel, save_copy=save_copy)
+            reply = await self._edit_latest_powerpoint(path, instruction, channel, save_copy=save_copy)
+            return _manual_edit_safety_prefix(reply) if manual_changed else reply
         if suffix == ".xlsx":
-            return await self._edit_latest_excel(path, instruction, channel, save_copy=save_copy)
+            reply = await self._edit_latest_excel(path, instruction, channel, save_copy=save_copy)
+            return _manual_edit_safety_prefix(reply) if manual_changed else reply
         if suffix != ".docx":
             return "I can edit the latest Word, Excel, or PowerPoint file first. Tell me which file to use."
         if action_permission("edit_document") != "allow":
             return "I need your confirmation before editing that document."
         session = await active_artifact_session(self.db_path, channel, str(path))
         if simple_docx_edit_instruction(instruction):
-            return await self._simple_word_edit(path, instruction, channel, save_copy=save_copy, session=session)
+            reply = await self._simple_word_edit(path, instruction, channel, save_copy=save_copy, session=session)
+            return _manual_edit_safety_prefix(reply) if manual_changed else reply
         try:
             current = await asyncio.to_thread(extract_docx_text, path)
             topic = _session_edit_topic(session, "docx", instruction) if session else _edited_word_topic(path, instruction, current)
@@ -199,7 +208,7 @@ class DocumentWordMixin:
             if channel == "telegram":
                 return _attach(prefix, target, channel)
             return prefix if "opened it on the iMac" not in reply else f"{prefix} I opened it on the iMac."
-        return reply
+        return _manual_edit_safety_prefix(reply) if manual_changed else reply
 
     async def _simple_word_edit(self, path: Path, instruction: str, channel: str, *, save_copy: bool = False, session=None) -> str:
         current = await asyncio.to_thread(extract_docx_text, path)
@@ -228,6 +237,13 @@ class DocumentWordMixin:
         if save_copy:
             return await self._done("edited Word copy", target, channel, "Microsoft Word")
         return _attach("Done. I updated the latest Word document in place. I kept an internal backup before editing.", target, channel)
+
+
+def _manual_edit_safety_prefix(reply: str) -> str:
+    prefix = "I noticed the file changed, so I made a new version instead of overwriting your edits."
+    if not reply:
+        return prefix
+    return f"{prefix} {reply}"
 
 
 def _session_edit_topic(session, artifact_type: str, instruction: str) -> str:

@@ -155,6 +155,15 @@ async def voice_work_status_text(db_path: str, *, limit: int = 6) -> str:
             suffix += f" File: {artifact_path}"
         ack = f" Acknowledged: {short_ack}" if short_ack and status in {"queued", "running"} else ""
         lines.append(f"{index}) {status} {kind}: {request}.{ack}{suffix}")
+    try:
+        from artifact_steering import latest_steer_status_text
+
+        steering = await latest_steer_status_text(db_path)
+        if steering:
+            lines.append("")
+            lines.append(steering)
+    except Exception:
+        pass
     return "\n".join(lines)
 
 

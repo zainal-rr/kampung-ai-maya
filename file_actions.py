@@ -4,7 +4,8 @@ import asyncio
 import re
 from pathlib import Path
 
-from permission_policy import action_permission, hard_no_private_exposure_text, path_allowed, path_needs_confirmation
+from permission_policy import action_permission, hard_no_private_exposure_text
+from safe_paths import resolve_safe_path
 from workspace_paths import workspace_dir
 
 
@@ -25,10 +26,10 @@ class FileActionRouter:
             return hard_no_private_exposure_text()
 
         path = self._resolve_path(raw_path)
-        if path_needs_confirmation(path):
-            return f"That path is sensitive. Confirm before I write to {path}."
-        if not path_allowed(path):
-            return f"I can't write to {path}."
+        decision = resolve_safe_path(path, "write")
+        if not decision.allowed:
+            return f"I can't write to {path}: {decision.reason}."
+        path = decision.resolved or path
         if action == "create" and path.exists():
             return f"{path} already exists. Say write file if you want me to replace it."
 

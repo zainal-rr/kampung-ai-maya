@@ -87,7 +87,14 @@ class XaiRealtimeStreamingSession(XaiRealtimeEventMixin, XaiRealtimePlaybackMixi
         self.supervised_voice_work_tool_name = ""
         self.supervised_voice_work_kind = ""
         self.supervised_voice_work_ack = ""
+        self.supervised_voice_work_id = ""
+        self.supervised_voice_work_followups: list[str] = []
+        self.supervised_voice_work_steer_events: list[dict] = []
+        self.supervised_voice_work_applied_followup_count = 0
+        self.supervised_voice_work_execution_started = False
         self.supervised_voice_work_suppress_until = 0.0
+        self.supervised_voice_work_auto_cancel_until = 0.0
+        self.supervised_voice_work_auto_cancelled = False
         self.supervised_voice_work_ack_pending = False
         self.supervised_voice_work_task: asyncio.Task | None = None
         self.supervised_browser_request = ""

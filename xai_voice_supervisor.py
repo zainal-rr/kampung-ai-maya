@@ -103,6 +103,8 @@ def _looks_like_visual_work(lowered: str) -> bool:
 
 
 def _looks_like_artifact_work(lowered: str) -> bool:
+    if _looks_like_artifact_edit_work(lowered):
+        return True
     action_prefixes = (
         "make ",
         "create ",
@@ -149,6 +151,48 @@ def _looks_like_artifact_work(lowered: str) -> bool:
             "create a document",
         )
     )
+
+
+def _looks_like_artifact_edit_work(lowered: str) -> bool:
+    edit_starts = (
+        "actually ",
+        "make it ",
+        "it's for ",
+        "it’s for ",
+        "it is for ",
+        "for my ",
+        "for our ",
+        "for the ",
+        "also include ",
+        "include ",
+        "add ",
+        "change it ",
+        "update it ",
+        "use this context",
+        "rewrite ",
+    )
+    artifact_or_content_terms = (
+        "document",
+        "word",
+        "doc",
+        "excel",
+        "spreadsheet",
+        "sheet",
+        "powerpoint",
+        "presentation",
+        "slide",
+        "summary",
+        "executive",
+        "section",
+        "column",
+        "formula",
+        "notes",
+        "audience",
+        "ed",
+    )
+    if not lowered.startswith(edit_starts):
+        return False
+    return any(term in lowered for term in artifact_or_content_terms)
 
 
 def _looks_like_code_or_project_work(lowered: str) -> bool:

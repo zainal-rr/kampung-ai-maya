@@ -5,6 +5,7 @@ import tempfile
 from pathlib import Path
 
 from browser_capability import route_browser_capability, run_browser_capability
+from browser_site_skill_helpers import _is_result_open_request, _target_from_click_request
 from storage import init_db
 
 
@@ -31,6 +32,8 @@ class FakeBridge:
                 return "Google Cloud Console\n---URL---\n" + url + "\n---TEXT---\nProject selector\nLogs Explorer\nCloud Run\nAPIs and Services"
             if "example.test/result" in url:
                 return "Example Result\n---URL---\n" + url + "\n---TEXT---\nOpened result page"
+            if "new+game+releases+in+2026" in url:
+                return "Google Search\n---URL---\n" + url + "\n---TEXT---\nNew game releases in 2026\n2026 Confirmed Release Dates - Post State of Play! Reddit r/videogames\nGamesRadar release calendar"
             return "Google Search\n---URL---\n" + url + "\n---TEXT---\nModern kampung house\nTraditional Malay house design\nArchitectural reference"
         if "rawJson" in script:
             return '[{"kind":"a","label":"Example Result"},{"kind":"button","label":"Search"}]'
@@ -47,6 +50,8 @@ async def main() -> None:
     _require(route_browser_capability("what does Reddit say about AirAsia Japan").child_skill == "reddit_research", "Reddit route failed")
     _require(route_browser_capability("open first thread").child_skill == "reddit_research", "Reddit follow-up route failed")
     _require(route_browser_capability("open Google Cloud Console").child_skill == "google_cloud_console", "GCP route failed")
+    _require(_is_result_open_request("Maybe the Reddit one?"), "implicit Reddit result follow-up was not recognized")
+    _require(_target_from_click_request("Maybe the Reddit one?").lower() == "reddit", "implicit Reddit follow-up target was not cleaned")
 
     with tempfile.TemporaryDirectory(prefix="maya-browser-site-skills-") as tmp:
         db_path = str(Path(tmp) / "smoke.db")
@@ -56,6 +61,13 @@ async def main() -> None:
         reply = await run_browser_capability(db_path, "search modern kampung house", bridge=bridge)
         _require("Google Search skill used" in reply, "Google Search skill not used")
         _require(bridge.urls[-1] == "https://www.google.com/search?q=modern+kampung+house", "Google Search URL wrong")
+
+        reply = await run_browser_capability(db_path, "search new game releases in 2026", bridge=bridge)
+        _require("Google Search skill used" in reply, "new game search did not use Google Search")
+        before = list(bridge.urls)
+        reply = await run_browser_capability(db_path, "Maybe the Reddit one?", bridge=bridge)
+        _require("Google Search skill opened a visible result" in reply, "implicit Reddit result follow-up did not open a Google result")
+        _require(bridge.urls == before, "implicit Reddit result follow-up should not search Reddit for the literal phrase")
 
         reply = await run_browser_capability(db_path, "search YouTube LangGraph tutorial", bridge=bridge)
         _require("YouTube Research skill used" in reply, "YouTube skill not used")

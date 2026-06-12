@@ -60,6 +60,8 @@ def run_local_ci(*, live_providers: bool = False) -> list[CheckResult]:
         _command_check("secret provider", ("tests/smokes/secret_provider_smoke.py",)),
         _command_check("secret migration", ("tests/smokes/secret_migration_smoke.py",)),
         _command_check("tool sandbox policy", ("tests/smokes/tool_sandbox_policy_smoke.py",)),
+        _command_check("blast-radius canaries (W5-1)", ("tests/smokes/blast_radius_canaries_smoke.py",)),
+        _command_check("memory supersede canaries (W2-A)", ("tests/smokes/memory_supersede_canaries_smoke.py",)),
         _command_check("self-heal execution", ("self_heal_execution_smoke.py",)),
         _command_check("voice command aliases", ("voice_command_aliases_smoke.py",)),
         _command_check("OSBridge test mode", ("osbridge_test_mode_smoke.py",)),

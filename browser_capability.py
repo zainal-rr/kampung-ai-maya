@@ -67,6 +67,8 @@ def route_browser_capability(request: str) -> BrowserCapabilityRoute:
         return BrowserCapabilityRoute("google_cloud_console", "Google Cloud Console marker")
     if _youtube_request(lowered):
         return BrowserCapabilityRoute("youtube_research", "YouTube marker")
+    if _site_result_followup_request(lowered):
+        return BrowserCapabilityRoute("google_search", "site result follow-up marker")
     if _reddit_request(lowered):
         return BrowserCapabilityRoute("reddit_research", "Reddit marker")
     if "flight" in lowered or "flights" in lowered:
@@ -115,6 +117,25 @@ def _google_search_request(lowered: str) -> bool:
 def _search_result_open_request(lowered: str) -> bool:
     return bool(re.search(r"\b(open|click|select|choose)\b", lowered)) and any(
         marker in lowered for marker in ("result", "link", "first", "second", "third", "fourth", "fifth")
+    )
+
+
+def _site_result_followup_request(lowered: str) -> bool:
+    if not re.search(r"\b(one|result|link|post|page|thread|article)\b", lowered):
+        return False
+    return any(
+        re.search(rf"\b{site}\b", lowered)
+        for site in (
+            "reddit",
+            "wikipedia",
+            "gamespot",
+            "polygon",
+            "imdb",
+            "youtube",
+            "github",
+            "stackoverflow",
+            "medium",
+        )
     )
 
 

@@ -1,6 +1,6 @@
 # Maya / Kampung AI — Weakness Status & Next Steps (current)
 
-Date: 2026-06-11 (latest)
+Date: 2026-06-11 (latest status file; updated 2026-06-12)
 Supersedes: `MAYA_REMEDIATION_NEXT_STEPS.md` (priority plan) and the two council
 reviews. Use THIS file as the live status for the next session.
 Method: Karpathy LLM Council (four role-seats deliberate, Chairman synthesizes),
@@ -13,6 +13,12 @@ applied as a review discipline. Public model: **self-host-per-user** (decided).
 > runtime constants. W5 has an env/keychain/auto secret provider with env still
 > the default. W6 now treats the Chrome extension as the normal strict browser
 > path; AppleScript is explicit `legacy` mode.
+>
+> 2026-06-12 update: W2 supersede-not-overwrite is implemented and CI-protected.
+> The partial-index regression where repeated canary seeding collided with a
+> forgotten/expired deterministic `memory_id` is fixed. W4 now has a root-file
+> count guard in `code_health.py`: the current 724 top-level `.py` files are the
+> ceiling, so future root growth fails CI until code moves into packages.
 
 ## Verification log (2026-06-11, independent code read — corrections folded in)
 
@@ -25,7 +31,7 @@ the earlier draft was stale, it is corrected below and in the per-weakness secti
 | W2 neighbor boost | `grep expand_with_neighbors canonical_memory.py` | **LIVE** — called at `canonical_memory.py:312` (was wrongly listed "built, not flipped") |
 | W2 embedding rerank | ran baseline + `MEMORY_EMBED_RERANK_LIVE=1` evals | still env-gated; eval showed no improvement, so default stays off |
 | W3 personal wiring | read + patched device/audio/workspace/browser/Telegram paths | typed `maya_runtime_config.py` now owns main runtime constants |
-| W4 file count | `ls -1 *.py \| wc -l` | **687** top-level (not ~660) — worse than first stated |
+| W4 file count | `find . -maxdepth 1 -name '*.py' \| wc -l` | **724** top-level — root growth is now CI-guarded, but W4 remains open until package restructuring |
 | W5 credentials | added `secret_provider.py` + smoke + throwaway Keychain lookup | env/keychain/auto provider exists; live Keychain read/write works; real secret migration still open |
 | W6 driver | patched `browser_driver.py` + smoke | extension is strict normal path; AppleScript only via `MAYA_BROWSER_DRIVER=legacy` |
 | W7 entry-tagging | patched live carriers + smoke | **LIVE-WIRED** — browser/screen/document observations carry untrusted flags into permission checks |
@@ -69,9 +75,9 @@ the earlier draft was stale, it is corrected below and in the per-weakness secti
 | # | Weakness | Was | Now | State |
 | --- | --- | :---: | :---: | --- |
 | **W1** | Agentic loop / verifier | 4 | **3** | **Verifier CLOSED** (fail-closed, live). Loop-depth remainder = capability, not danger |
-| **W2** | Lexical memory | 3 | **3** | **Partly wired:** neighbor/association boost is LIVE. Baseline and embedding-rerank evals were identical, so rerank remains env-gated/off by default. Remaining = better eval/data + supersede-not-overwrite |
+| **W2** | Lexical memory | 3 | **2-3** | **Partly wired:** neighbor/association boost is LIVE; supersede-not-overwrite is built and regression-tested. Embedding rerank remains env-gated/off because eval showed no improvement. Remaining = better recall eval/data |
 | **W3** | Single-user wiring | 5 | **1-2** | Typed runtime config now owns the main personal/runtime constants. Some historical/test literals remain, but runtime behavior is centralized |
-| **W4** | Flat **687**-file root | 4 | **4** | Open, worse than first stated (verified 687 top-level .py). Gating item for public + bus-factor risk |
+| **W4** | Flat **724**-file root | 4 | **4** | Open, now CI-guarded against more root growth. Gating item for public + bus-factor risk |
 | **W5** | Credentials / sandbox | 5 | **4** | Keychain provider exists, env remains default; actual live migration + sandbox still open |
 | **W6** | Browser (driver + surface) | 4 | **2** | Extension is now the strict normal path and passed the clean extension reliability run. AppleScript exists only as explicit `legacy`; removal is optional cleanup, not a proof blocker |
 | **W7** | Untrusted-input boundary | 5 | **1-2** | Live-wired for browser/screen/document/active-context/harness paths; needs continued smoke/live coverage for new surfaces |
@@ -94,11 +100,17 @@ states, not one open item.
   identical recall, so the evidence-based default decision is **keep it off**.
   The eval still shows paraphrase recall is weak; the next W2 improvement needs
   better examples, a stronger rerank candidate set, or supersede/entity work.
-- **Temporal: still overwrite-not-supersede**; no validity windows. Open.
+- **Supersede-not-overwrite: LIVE.** Changed active values are archived as
+  `superseded`, current recall returns only the newest active value, history is
+  available on request, and forget tombstones the whole chain. The 2026-06-12
+  regression fix reactivates forgotten/expired base rows in place for explicit
+  user re-saves, avoiding deterministic `memory_id` collisions.
+- **Temporal validity windows: still deferred.** Supersede history exists, but
+  dated validity semantics are not yet a full temporal reasoning layer.
 - **Entity graph: deferred** until real scale (correct to defer).
 
 So W2's accurate state is "partly wired, needs rerank eval/default + supersede,"
-not "cheap fixes built but unflipped." **Sev 3.**
+not "cheap fixes built but unflipped." **Sev 2-3.**
 
 ### W3 — Single-user wiring — typed config layer added
 Self-host-per-user removed the need for an isolation layer. Remaining work:
@@ -108,14 +120,16 @@ workspace root, project roots, preferred/blocked audio names, browser driver,
 and voice defaults. Existing `.env` names remain compatible. Historical memory,
 profile facts, and project notes are deliberately not config. **Sev 1-2.**
 
-### W4 — Flat 687-file root — open, gating (verified worse than first stated)
-Independent count: **687 top-level `.py` files** (earlier reviews said ~660 — the
-real number is higher, so the maintenance/bus-factor problem is bigger, not
-smaller). Still the structural barrier to any public release and the
-single-maintainer bus-factor risk. Start with `tests/` move (zero logic change),
-then packages (`memory/ harness/ browser/ documents/`). Public release = a
-**separate hardened repo** seeded from the restructured core, no personal wiring.
-**Sev 4**, pre-public.
+### W4 — Flat 724-file root — open, gating, now root-growth guarded
+Independent count on 2026-06-12: **724 top-level `.py` files**. The old 300-line
+gate prevented oversized files but also encouraged splitting into more root
+helpers. `code_health.py` now reports `root_py_files: 724/724` and treats any
+further root growth as a blocking violation. This does not close W4; it only
+stops the hole from getting deeper. The real fix remains package boundaries:
+start with `maya_memory/`, then `harness/`, `browser/`, `documents/`, keeping
+compatibility wrappers while imports migrate. Public release = a **separate
+hardened repo** seeded from the restructured core, no personal wiring. **Sev 4**,
+pre-public.
 
 ### W5 — Credentials / sandbox — provider added, real-secret migration still open
 Two halves. (a) Keys → macOS Keychain — provider is now implemented in
@@ -199,12 +213,13 @@ structurally impossible. No work unless you ever run a hosted service. **Sev 1.*
 2. **Keep Keychain as the preferred live secret source.** Provider secrets and
    Telegram token are migrated; `.env` remains rollback fallback while
    sandboxing matures.
-3. **Improve W2 recall with data, not config flipping.** The current eval did
-   not justify enabling embedding rerank by default.
+3. **Improve W2 recall with data, not config flipping.** Supersede history is
+   built; the current eval still does not justify enabling embedding rerank by
+   default.
 4. **Optional W6 cleanup:** remove the AppleScript legacy path only after deciding
    there is no local browser fallback still worth keeping.
 5. **Then the big pre-public rocks** (only when a public date is real):
-   sandbox (W5), restructure + clean public repo (W4).
+   sandbox (W5), package restructure + clean public repo (W4).
 
 ---
 
