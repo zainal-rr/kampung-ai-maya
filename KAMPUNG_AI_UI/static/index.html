@@ -128,6 +128,10 @@
         <h4>Canaries</h4>
         <div id="canaries2"><div class="empty">—</div></div>
       </div></div>
+      <div class="tile"><div class="pad">
+        <h4>Memory audit <span class="sub">recent events</span></h4>
+        <div id="memoryAudit" class="audit-list"><div class="empty">loading audit…</div></div>
+      </div></div>
     </div></div>
   </section>
 
@@ -142,28 +146,106 @@
     </div>
     <div class="col">
       <div class="tile"><div class="pad">
+        <h4>Active sessions <span class="sub">continuity</span></h4>
+        <div id="artifactSessions"><div class="empty">loading sessions…</div></div>
+      </div></div>
+      <div class="tile"><div class="pad">
+        <h4>QA reviews <span class="sub">latest Steward checks</span></h4>
+        <div id="artifactReviews" class="audit-list"><div class="empty">loading QA…</div></div>
+      </div></div>
+      <div class="tile"><div class="pad">
         <h4>Open locally</h4>
         <p class="hint" style="margin-top:8px">Files live under Desktop/Maya. Opening and re-sending happen in chat ("open the last document") — this desk stays read-only.</p>
       </div></div>
     </div></div>
   </section>
 
-  <!-- ============ PLACEHOLDERS (Phase 3) ============ -->
-  <section class="view" id="v-chat"><div class="tile"><div class="pad ph">
-    <h4>Conversation</h4>
-    <p class="hint">Arrives in Phase 3 with the write protocol. Until then Maya lives in Telegram and iMac voice — this desk mirrors what she does there.</p>
-  </div></div></section>
+  <!-- ============ CONVERSATION ============ -->
+  <section class="view" id="v-chat">
+    <div class="ws">
+      <aside class="tile thread-pane">
+        <div class="pane-head">Threads</div>
+        <div id="chatThreads"><div class="empty">loading threads…</div></div>
+        <div class="pane-foot">Active surfaces: Telegram, iMac voice, workflow desk.</div>
+      </aside>
+
+      <div class="tile chat">
+        <div class="chat-head">
+          <div style="min-width:0">
+            <div class="t" id="chatTitle">Conversation</div>
+            <div class="sub2" id="chatSub">read-only mirror</div>
+          </div>
+          <div class="runchip" id="chatChip"><i></i>LIVE MIRROR</div>
+        </div>
+        <div class="chat-body" id="chatBody"><div class="empty">loading conversation…</div></div>
+        <div class="dock">
+          <div class="ctx-chip" id="ctxChip">
+            <span class="chip"><i></i><span id="ctxChipName">latest context</span></span>
+            <span id="ctxChipText">Maya still answers in Telegram and iMac voice.</span>
+          </div>
+          <div class="box readonly">
+            <input id="composer" placeholder="Reply in Telegram or iMac voice" autocomplete="off" disabled>
+            <button class="go" disabled title="write protocol not enabled">
+              <svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 8h11M9 3.5L13.5 8 9 12.5" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/></svg>
+            </button>
+          </div>
+          <div class="hints"><span><code>/complex</code> serious run</span><span><code>/memory</code> inspect</span><span><code>new topic</code> reset window</span></div>
+        </div>
+      </div>
+
+      <aside class="ctx-pane">
+        <div class="tile"><div class="pad">
+          <h4 id="ctxTitle">Context <span class="sub">selected</span></h4>
+          <div id="ctxBadges" class="badge-row"></div>
+          <table id="ctxTable" style="margin-top:8px"></table>
+        </div></div>
+        <div class="tile"><div class="pad">
+          <h4>Run trace <span class="sub mono" id="traceRun">latest</span></h4>
+          <div class="tl" id="traceList"><div class="empty">no run trace yet</div></div>
+          <div class="bar" id="traceMeter" style="display:none"><div class="t"><span>Loop budget</span><b id="traceStep">0 / 8</b></div><div class="meter"><i id="traceFill"></i></div></div>
+        </div></div>
+      </aside>
+    </div>
+  </section>
+
+  <!-- ============ AUTOMATIONS ============ -->
   <section class="view" id="v-auto"><div class="tile"><div class="pad ph">
-    <h4>Automations</h4>
-    <p class="hint">Schedules run in launchd and the routine store. The read view lands here in Phase 3; the design is locked in the mockup.</p>
+    <h4>Automations <span class="sub">routines · weekly memory · launchd evidence</span></h4>
+    <div class="row3 mini-stats" id="autoStats"></div>
+    <div class="grid slim-grid">
+      <div class="col"><div class="tile inset"><div class="pad">
+        <h4>Routines</h4><div id="routineRows"><div class="empty">loading routines…</div></div>
+      </div></div></div>
+      <div class="col"><div class="tile inset"><div class="pad">
+        <h4>Weekly memory</h4><div id="weeklyRows"><div class="empty">loading weekly memory…</div></div>
+      </div></div></div>
+    </div>
+    <div class="tile-label"><b>Read-only</b> — suspend/resume still resolves in chat until Phase 3 write protocol lands.</div>
   </div></div></section>
+
+  <!-- ============ PROOF ============ -->
   <section class="view" id="v-proof"><div class="tile"><div class="pad ph">
-    <h4>Proof</h4>
-    <p class="hint">Run checks live in local_ci.py on the iMac. The proof surface (scores, boundaries, failures) joins here in Phase 3.</p>
+    <h4>Proof <span class="sub">deterministic · live · pending physical proof</span></h4>
+    <div class="proof-hero">
+      <div><div class="score" id="proofScore">—</div><div class="hint" id="proofLabel">loading proof boundary…</div></div>
+      <div id="proofBars" class="proof-bars"></div>
+    </div>
+    <div class="grid slim-grid">
+      <div class="col"><div class="tile inset"><div class="pad">
+        <h4>Five demos</h4><div id="demoRows"><div class="empty">loading demos…</div></div>
+      </div></div></div>
+      <div class="col"><div class="tile inset"><div class="pad">
+        <h4>Live proof boundary</h4><div id="liveRows"><div class="empty">loading live proof…</div></div>
+      </div></div></div>
+    </div>
+    <div class="tile inset"><div class="pad">
+      <h4>Recent risk areas</h4><div id="riskRows"><div class="empty">loading failures…</div></div>
+    </div></div>
   </div></div></section>
 
   <footer>Maya · Kampung AI · Phase 2 read-only client · no write endpoints exist on this server</footer>
 </div>
 <script src="/static/app.js"></script>
+<script src="/static/ui_extra.js"></script>
 </body>
 </html>

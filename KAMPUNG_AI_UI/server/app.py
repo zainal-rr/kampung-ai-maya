@@ -21,9 +21,11 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse, JSONResponse, StreamingResponse
 from fastapi.staticfiles import StaticFiles
 
+from .automation_reader import artifact_quality_snapshot, automations_snapshot, memory_audit_snapshot
 from .event_reader import latest_cursor, read_after, read_recent
+from .proof_reader import proof_snapshot
 from .readers_common import DB_PATH, PROTO, connect_ro, table_exists
-from .state_reader import artifacts_recent, desk_snapshot, memory_rows
+from .state_reader import artifacts_recent, conversation_recent, desk_snapshot, memory_rows
 
 TOKEN = os.environ.get("MAYA_UI_TOKEN") or secrets.token_urlsafe(16)
 POLL_SECONDS = 1.5
@@ -83,12 +85,49 @@ def memory(limit: int = 40):
         return _error("store_unavailable", f"store not found at {DB_PATH}", 503)
 
 
+@app.get("/api/memory/audit")
+def memory_audit(limit: int = 40):
+    try:
+        return memory_audit_snapshot(min(max(limit, 1), 200))
+    except FileNotFoundError:
+        return _error("store_unavailable", f"store not found at {DB_PATH}", 503)
+
+
 @app.get("/api/artifacts")
 def artifacts(limit: int = 25):
     try:
         return {"items": artifacts_recent(min(max(limit, 1), 100))}
     except FileNotFoundError:
         return _error("store_unavailable", f"store not found at {DB_PATH}", 503)
+
+
+@app.get("/api/artifacts/detail")
+def artifacts_detail(limit: int = 20):
+    try:
+        return artifact_quality_snapshot(min(max(limit, 1), 100))
+    except FileNotFoundError:
+        return _error("store_unavailable", f"store not found at {DB_PATH}", 503)
+
+
+@app.get("/api/conversation")
+def conversation(limit: int = 60):
+    try:
+        return {"items": conversation_recent(min(max(limit, 1), 160))}
+    except FileNotFoundError:
+        return _error("store_unavailable", f"store not found at {DB_PATH}", 503)
+
+
+@app.get("/api/automations")
+def automations():
+    try:
+        return automations_snapshot()
+    except FileNotFoundError:
+        return _error("store_unavailable", f"store not found at {DB_PATH}", 503)
+
+
+@app.get("/api/proof")
+def proof():
+    return proof_snapshot()
 
 
 @app.get("/api/events/recent")

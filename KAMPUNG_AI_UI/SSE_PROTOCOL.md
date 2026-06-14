@@ -39,7 +39,16 @@ data: {"proto":1,"schema_version":1,"type":"harness","ts":"2026-06-11 04:09:15",
 
 ## Snapshot endpoints (plain GET, same auth)
 
-- `/api/health` → `{ok, db, tables}` · `/api/desk` → approvals, runs, canaries, costs, tasks, last routes · `/api/events/recent?limit=N` → last N feed items (same item shape as SSE `data`).
+- `/api/health` → `{ok, db, tables}`
+- `/api/desk` → approvals, runs, canaries, costs, tasks, last routes
+- `/api/conversation?limit=N` → recent chat-like turns
+- `/api/memory?limit=N` → canonical memory rows
+- `/api/memory/audit?limit=N` → append-only memory audit events
+- `/api/artifacts?limit=N` → latest artifact rows
+- `/api/artifacts/detail?limit=N` → artifact sessions, QA reviews, disagreement rows
+- `/api/automations` → routines, weekly memory runs, nightly consolidation runs
+- `/api/proof` → latest eval/demo/live/browser/health proof snapshot
+- `/api/events/recent?limit=N` → last N feed items (same item shape as SSE `data`)
 
 ## Out of scope for v1 (deliberate)
 

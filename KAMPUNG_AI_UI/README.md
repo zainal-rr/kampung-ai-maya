@@ -18,7 +18,7 @@ Everything for the Maya text UI lives in this folder. Nothing else in the repo t
 2. No model/provider names anywhere in the UI — masked team names only.
 3. Light and dark themes both supported via the toggle (persisted).
 4. Brand: Living Bamboo — bamboo green + warm gold signal nodes, no purple/neon/robot motifs (approved PNG used as the mark, pastel palette sampled from it).
-5. LLM Council review (`maya_ui_council_review.md`) accepted and implemented: Automations tab (routines unified, last-outcome always visible), alert bell with two tiers, Stop-all button, Live runs panel with blast radius + steering, gate-decision transparency, artifact diff surface, isolated-worktree badge.
+5. LLM Council review (`maya_ui_council_review.md`) accepted as the target. Phase 2.5 now implements the read-only parts: Automations evidence, Proof evidence, alert bell, live runs, route/cost, memory audit, artifact sessions, and QA review visibility. Write controls such as Stop-all, artifact diff comments, approval buttons, and run steering wait for the Phase 3 MayaAppServer/permission-kernel protocol.
 
 ## How to view mockups
 
@@ -29,22 +29,37 @@ Open any `mockups/*.html` file in a browser. They are self-contained; fonts load
 Phase 1: approve the expanded B2 visual. Phase 2: read-only client over the event store. Phase 3: composer + approvals round-trip. See `maya_text_ui_design_plan.md` section 8.
 
 
-## Phase 2 — read-only live server (2026-06-11, draft until Zainal locks it)
+## Phase 2.5 — read-only live server and proof cockpit (2026-06-14)
 
 | Path | What it is |
 | --- | --- |
 | `SSE_PROTOCOL.md` | One-page wire contract (cursor, reconnect, error envelope, masking rule) |
-| `server/` | FastAPI read API — `readers_common.py` (ro connection + lane masking), `event_reader.py` (cursor tail), `state_reader.py` (desk snapshot), `app.py` (routes + token gate). All 59–107 logical lines, well under the 300 rule |
-| `static/` | Live client — index.html / style.css / app.js + logo. Light default, dark toggle |
+| `server/` | FastAPI read API — read-only connection, lane masking, cursor tail, desk snapshot, proof logs, automations, memory audit, artifact QA/session projections, and token gate |
+| `static/` | Live client — index.html / style.css / app.js / ui_extra.js + logo. Light default, dark toggle |
+| `ui_read_api_smoke.py` | No-network API smoke using FastAPI TestClient |
+| `schema_setup.py` | Explicit maintenance helper for adding `schema_version` to event tables. The live UI server never mutates the store |
+| `start_ui.sh` | One-command local starter using the repo venv |
+| `launchd/com.kampung-ai.maya-ui.plist.example` | Optional launchd template; not installed automatically |
 
 Run it:
 ```bash
-cd KAMPUNG_AI_UI
-pip install -r server/requirements.txt
-MAYA_UI_TOKEN=yourtoken python -m uvicorn server.app:app --port 8765
+cd /Users/zainalabidinjamal/projects/kampung-ai
+KAMPUNG_AI_UI/start_ui.sh
 # open http://127.0.0.1:8765/?token=yourtoken
 ```
 
-Guarantees: SQLite opened with `?mode=ro` (cannot write), zero POST/PUT/DELETE routes, no kampung-ai module imports, no kampung-ai file modified. Engine names are masked server-side (prose + snake_case keys); desk payload verified leak-free against live data.
+Alternative:
+```bash
+cd /Users/zainalabidinjamal/projects/kampung-ai/KAMPUNG_AI_UI
+MAYA_UI_TOKEN=yourtoken ../venv/bin/python -m uvicorn server.app:app --port 8765
+```
 
-Pending items that DO require touching kampung-ai (left for Maya/Artisan approval flow): `schema_version` column on event tables; one doc sentence in KAMPUNG_AI.md clarifying the logical-line counting; `canonical_memory.py` split.
+Smoke it:
+```bash
+cd /Users/zainalabidinjamal/projects/kampung-ai/KAMPUNG_AI_UI
+../venv/bin/python ui_read_api_smoke.py
+```
+
+Guarantees: SQLite opened with `?mode=ro` (cannot write), zero POST/PUT/DELETE routes, no kampung-ai runtime imports inside the server, no engine names across the API, and action controls remain in Telegram/iMac chat until Phase 3.
+
+Still intentionally not built: composer writes, approval buttons, Stop-all, run steering, artifact diff comments, and open-local-file buttons. Those need the internal MayaAppServer protocol and permission kernel, not ad-hoc UI POST routes.

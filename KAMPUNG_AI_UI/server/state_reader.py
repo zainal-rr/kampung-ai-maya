@@ -205,6 +205,83 @@ def artifacts_recent(limit: int = 25) -> list[dict]:
     ]
 
 
+def conversation_recent(limit: int = 60) -> list[dict]:
+    """Recent chat-like turns from the existing read-only history stores."""
+    items: list[dict] = []
+    with connect_ro() as conn:
+        history = _safe(
+            conn,
+            "history",
+            "SELECT rowid AS id, role, content, timestamp AS created_at "
+            "FROM history ORDER BY rowid DESC LIMIT ?",
+            (limit,),
+        )
+        for row in history:
+            items.append({
+                "id": f"history-{row['id']}",
+                "role": "maya" if row["role"] in ("assistant", "maya") else "user",
+                "channel": "history",
+                "content": mask_lanes((row["content"] or "")[:900]),
+                "created_at": row["created_at"],
+                "source": "history",
+            })
+
+        voice = _safe(
+            conn,
+            "voice_session_turns",
+            "SELECT id, role, content, event_type, created_at FROM voice_session_turns "
+            "ORDER BY id DESC LIMIT ?",
+            (limit,),
+        )
+        for row in voice:
+            items.append({
+                "id": f"voice-{row['id']}",
+                "role": "maya" if row["role"] in ("assistant", "maya") else "user",
+                "channel": "imac_voice",
+                "content": mask_lanes((row["content"] or "")[:900]),
+                "created_at": row["created_at"],
+                "source": row["event_type"] or "voice",
+            })
+
+        telegram = _safe(
+            conn,
+            "telegram_turn_events",
+            "SELECT id, input_type, prompt_preview, response_preview, status, "
+            "created_at FROM telegram_turn_events ORDER BY id DESC LIMIT ?",
+            (limit,),
+        )
+        for row in telegram:
+            prompt = (row["prompt_preview"] or "").strip()
+            response = (row["response_preview"] or "").strip()
+            if prompt:
+                items.append({
+                    "id": f"telegram-u-{row['id']}",
+                    "role": "user",
+                    "channel": "telegram",
+                    "content": mask_lanes(prompt[:900]),
+                    "created_at": row["created_at"],
+                    "source": row["input_type"] or "telegram",
+                })
+            if response:
+                items.append({
+                    "id": f"telegram-m-{row['id']}",
+                    "role": "maya",
+                    "channel": "telegram",
+                    "content": mask_lanes(response[:900]),
+                    "created_at": row["created_at"],
+                    "source": row["status"] or "telegram",
+                })
+
+    deduped: list[dict] = []
+    seen: set[tuple[str, str, str]] = set()
+    for item in sorted(items, key=lambda x: (x.get("created_at") or "", x["id"])):
+        key = (item["role"], item["channel"], item["content"])
+        if item["content"] and key not in seen:
+            deduped.append(item)
+            seen.add(key)
+    return deduped[-limit:]
+
+
 def desk_snapshot() -> dict:
     with connect_ro() as conn:
         return {

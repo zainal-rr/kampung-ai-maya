@@ -84,6 +84,7 @@ def run_local_ci(*, live_providers: bool = False) -> list[CheckResult]:
         _command_check("memory perspective", ("memory_perspective_smoke.py",)),
         _command_check("hardening audit", ("hardening_audit_smoke.py",)),
         _command_check("latest demo evidence", ("demo_evidence.py", "--check")),
+        _command_check("maya UI read API", ("KAMPUNG_AI_UI/ui_read_api_smoke.py",)),
     ]
     if live_providers:
         results.append(_command_check("provider live text", ("provider_smoke.py", "--stage", "text", "--strict")))
