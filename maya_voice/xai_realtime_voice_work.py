@@ -194,7 +194,7 @@ class XaiRealtimeVoiceWorkMixin:
         except Exception as exc:
             print(f"maya-hotkey-supervisor-note> result saved but voice session could not receive it: {exc}", flush=True)
 
-    async def _apply_late_supervised_followups(self, event_module, work: SupervisedVoiceWork, output: str, start_index: int = 0) -> str:
+    async def _apply_late_supervised_followups(self, work: SupervisedVoiceWork, output: str, start_index: int = 0) -> str:
         late_followups = getattr(self, "supervised_voice_work_followups", [])[start_index:]
         late_event_ids = [
             str(item.get("id") or "")

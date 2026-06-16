@@ -209,7 +209,6 @@ class XaiRealtimeEventMixin(XaiRealtimeVoiceWorkMixin, XaiRealtimeVadGuardMixin)
                     acknowledgement="",
                 )
                 output = await self._apply_late_supervised_followups(
-                    __import__("xai_realtime_events"),
                     work,
                     output,
                     getattr(self, "supervised_voice_work_applied_followup_count", 0),
