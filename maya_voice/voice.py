@@ -10,6 +10,7 @@ except ImportError:
     aiohttp = None
 
 from cost_tracker import record_usage
+from maya_core.repo_paths import repo_root
 
 
 def spoken_preview(text: str, max_len: int = 160) -> str:
@@ -32,7 +33,7 @@ class VoiceNode:
         self.db_path = db_path or os.getenv("KAMPUNG_DB_PATH")
         self.api_key = os.getenv("XAI_API_KEY")
         self.tts_url = "https://api.x.ai/v1/tts"
-        self.log_dir = Path(__file__).resolve().parent / "logs"
+        self.log_dir = repo_root(__file__) / "logs"
         self.log_dir.mkdir(parents=True, exist_ok=True)
         self.local_voice_en = os.getenv("MACOS_SAY_VOICE_EN", "Flo (English (US))")
         self.local_voice_ms = os.getenv("MACOS_SAY_VOICE_MS", "Amira")

@@ -7,6 +7,8 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+from maya_core.repo_paths import repo_root
+
 
 @dataclass(frozen=True)
 class Check:
@@ -180,7 +182,7 @@ def _run(check: Check) -> subprocess.CompletedProcess[str]:
     command = (sys.executable, *check.command)
     env = os.environ.copy()
     env.setdefault("MAYA_TEST_MODE", "1")
-    root = Path(__file__).resolve().parent
+    root = repo_root(__file__)
     current_pythonpath = env.get("PYTHONPATH", "")
     env["PYTHONPATH"] = str(root) if not current_pythonpath else f"{root}{os.pathsep}{current_pythonpath}"
     return subprocess.run(

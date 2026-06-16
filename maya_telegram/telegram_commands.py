@@ -24,6 +24,7 @@ from telegram_turn_log import latest_telegram_turn_text
 from telegram_voice_state import voice_enabled, voice_text
 from vision_session import guided_sight_status, toggle_guided_sight
 from weekly_memory_status import run_weekly_memory_now_text, weekly_memory_status_text
+from maya_core.repo_paths import repo_root
 
 
 @dataclass(frozen=True)
@@ -139,7 +140,7 @@ async def command_to_text(db_path: str, parsed: ParsedCommand) -> str:
     if name == "status":
         return await status_text(db_path)
     if name == "selfheal":
-        scoped = await handle_memory_self_heal_command(db_path, parsed.args)
+        scoped = await handle_memory_self_heal_command(db_path, parsed.args, root=repo_root(__file__))
         return scoped or await self_heal_text(db_path)
     if name == "voice":
         return await voice_text(db_path, parsed.args)

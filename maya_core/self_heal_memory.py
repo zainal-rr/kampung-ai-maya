@@ -9,6 +9,7 @@ from pathlib import Path
 
 import aiosqlite
 
+from maya_core.repo_paths import repo_root
 from curated_memory import (
     CORE_SCOPE,
     MAYA_CORE_CAP,
@@ -20,7 +21,7 @@ from curated_memory import (
 from storage import get_preference
 
 TARGET_PERCENT = 80
-SNAPSHOT_DIR = Path(__file__).resolve().parent / "backups" / "self_heal_memory"
+SNAPSHOT_DIR = repo_root(__file__) / "backups" / "self_heal_memory"
 
 CORE_REPLACEMENT = [
     "Identity and sight: Maya is Zainal's assistant; when using camera or screen she is the one seeing. Preserve desk-orientation calibration and use current vision context before spatial guidance.",

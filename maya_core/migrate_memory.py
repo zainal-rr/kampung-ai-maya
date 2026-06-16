@@ -2,8 +2,10 @@ import asyncio
 import aiosqlite
 import os
 
+from maya_core.repo_paths import repo_root
+
 # Paths
-BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+BASE_DIR = str(repo_root(__file__))
 CHROMA_DB_PATH = os.path.join(BASE_DIR, "_archive_v2/chroma_db/chroma.sqlite3")
 SESSION_DB_PATH = os.path.join(BASE_DIR, "session_history.db")
 
@@ -77,7 +79,7 @@ async def migrate():
             )
         
         await session_db.commit()
-        print(f"✅ Success: Ported {len(knowledge_items)} knowledge chunks into 'knowledge_base' table.")
+        print(f"Success: Ported {len(knowledge_items)} knowledge chunks into 'knowledge_base' table.")
 
 if __name__ == "__main__":
     asyncio.run(migrate())
