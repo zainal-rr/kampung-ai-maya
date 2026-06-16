@@ -1,17 +1,4 @@
-from __future__ import annotations
-
-from dataclasses import dataclass
-from pathlib import Path
-
-
-@dataclass(frozen=True)
-class ArtisanTarget:
-    workflow_type: str
-    cwd: Path
-    permission_mode: str
-    approval_state: str
-    project_slug: str = ""
-    original_repo_path: Path | None = None
-    isolation_mode: str = "workspace"
-    base_ref: str = ""
-    dirty_summary: str = ""
+# W4 compatibility shim — re-exports the relocated module (removed/converted in Wave 5).
+from maya_core import artisan_runner_models as _m
+import sys as _sys
+_sys.modules[__name__] = _m
