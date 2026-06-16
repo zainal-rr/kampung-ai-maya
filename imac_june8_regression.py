@@ -1,4 +1,12 @@
-# W4 compatibility shim — re-exports the relocated module (removed/converted in Wave 5).
-from maya_core import imac_june8_regression as _m
-import sys as _sys
-_sys.modules[__name__] = _m
+# W4 CLI wrapper — runs maya_core.imac_june8_regression as a CLI; safe to delete only if the
+# command is migrated to `python -m`. NOT a compatibility shim.
+from __future__ import annotations
+import runpy
+_TARGET = "maya_core.imac_june8_regression"
+import importlib
+import sys
+if __name__ == "__main__":
+    runpy.run_module(_TARGET, run_name="__main__")
+else:
+    _module = importlib.import_module(_TARGET)
+    sys.modules[__name__] = _module

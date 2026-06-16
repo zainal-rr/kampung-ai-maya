@@ -67,7 +67,10 @@ KEEP_AT_ROOT = {"code_health", "local_ci", "scored_eval_suite", "main", "conftes
 WRAPPER_ALLOWLIST = {"browser_extension_bridge", "service_install", "doctor",
                      "run_demo", "demo_evidence", "live_browser_reliability_run",
                      "live_agentic_reliability_run", "may1_rehearsal",
-                     "self_heal_memory", "weekly_memory", "memory_watchdog"}
+                     "self_heal_memory", "weekly_memory", "memory_watchdog",
+                     "browser_benchmark", "browser_field_tests", "dependency_manifest",
+                     "hardware_live_proof", "imac_june8_regression",
+                     "memory_recall_eval_compare"}
 
 HUBS = {"storage", "skill_store", "harness_store", "lesson_store", "routine_store",
         "permission_policy", "assistant", "session_memory_store", "route_tracker",
@@ -182,6 +185,11 @@ def dest_pkg(stem: str) -> str:
 def is_shim(stem: str) -> bool:
     p = ROOT / f"{stem}.py"
     return p.exists() and SHIM_MARK in p.read_text(errors="ignore")
+
+
+def is_cli_wrapper(stem: str) -> bool:
+    p = ROOT / f"{stem}.py"
+    return p.exists() and WRAPPER_MARK in p.read_text(errors="ignore")
 
 
 # --- Step 0 generators -----------------------------------------------------
@@ -444,17 +452,17 @@ def plan_batches(wave: int, bs: int = 15) -> list[dict]:
                  "moves": [(s, smoke_dest(s)) for s in b["items"]]} for b in chunks(files, bs)]
     elif wave == 2:
         imp_ns = {d for d, ms in importers.items() if any(not is_smoke(m) for m in ms)}
-        leaves = [s for s in names if not is_smoke(s) and s not in KEEP_AT_ROOT
+        leaves = [s for s in names if not is_smoke(s) and s not in KEEP_AT_ROOT and not is_cli_wrapper(s)
                   and s not in HUBS and s not in imp_ns]
         out += [{**b, "kind": "move", "wrap": "shim",
                  "moves": [(s, dest_pkg(s)) for s in b["items"]]} for b in chunks(leaves, bs)]
     elif wave == 3:
-        mov = [s for s in names if not is_smoke(s) and s not in KEEP_AT_ROOT
+        mov = [s for s in names if not is_smoke(s) and s not in KEEP_AT_ROOT and not is_cli_wrapper(s)
                and s not in HUBS and not is_shim(s)]
         out += [{**b, "kind": "move", "wrap": "shim",
                  "moves": [(s, dest_pkg(s)) for s in b["items"]]} for b in chunks(mov, bs)]
     elif wave == 4:
-        mov = [s for s in names if not is_smoke(s) and s not in KEEP_AT_ROOT and not is_shim(s)]
+        mov = [s for s in names if not is_smoke(s) and s not in KEEP_AT_ROOT and not is_cli_wrapper(s) and not is_shim(s)]
         out += [{**b, "kind": "move", "wrap": "shim", "full_gate_each": True,
                  "moves": [(s, dest_pkg(s)) for s in b["items"]]} for b in chunks(mov, max(3, min(6, bs)))]
     elif wave == 5:
