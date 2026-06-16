@@ -22,7 +22,7 @@ from pathlib import Path
 LINE_LIMIT = 300
 WARNING_MIN = 250
 URGENT_MIN = 280
-ROOT_PY_FILE_LIMIT = 447
+ROOT_PY_FILE_LIMIT = 24
 GRANDFATHER_BASELINE = Path("logs/w4/grandfather_baseline.txt")
 PACKAGE_PREFIXES = (
     "maya_",
