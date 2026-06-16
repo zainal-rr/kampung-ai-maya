@@ -33,7 +33,7 @@ DEMOS = {
         ),
         (
             ("tests/smokes/document_route_flow_smoke.py",),
-            ("word_golden_artifact_smoke.py",),
+            ("tests/smokes/word_golden_artifact_smoke.py",),
             ("tests/smokes/excel_golden_artifact_smoke.py",),
             ("tests/smokes/pptx_quality_gate_smoke.py",),
             ("tests/smokes/telegram_delivery_file_smoke.py",),
@@ -48,7 +48,7 @@ DEMOS = {
             "Weekly memory dry run completes without live provider calls.",
             "Nightly consolidation proves no-resurrect, association links, decay report, and zero-delta skip.",
         ),
-        (("tests/smokes/canonical_memory_smoke.py",), ("tests/smokes/memory_control_smoke.py",), ("weekly_memory_smoke.py",), ("tests/smokes/nightly_consolidation_smoke.py",)),
+        (("tests/smokes/canonical_memory_smoke.py",), ("tests/smokes/memory_control_smoke.py",), ("tests/smokes/weekly_memory_smoke.py",), ("tests/smokes/nightly_consolidation_smoke.py",)),
     ),
     "self_heal": Demo(
         "self_heal",
