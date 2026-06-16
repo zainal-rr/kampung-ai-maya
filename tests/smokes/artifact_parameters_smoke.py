@@ -8,7 +8,7 @@ if str(_w4_root) not in _w4_sys.path:
 del _w4_Path, _w4_root, _w4_sys
 
 
-from artifact_parameters import artifact_parameter_question
+from maya_documents.artifact_parameters import artifact_parameter_question
 
 
 def main() -> None:

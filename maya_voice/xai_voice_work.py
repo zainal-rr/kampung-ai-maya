@@ -344,7 +344,7 @@ async def voice_work_status_text(db_path: str, *, limit: int = 6) -> str:
         ack = f" Acknowledged: {short_ack}" if short_ack and phase in ACTIVE_PHASES else ""
         lines.append(f"{index}) {phase} {kind}: {request}.{ack}{suffix}")
     try:
-        from artifact_steering import latest_steer_status_text
+        from maya_documents.artifact_steering import latest_steer_status_text
 
         steering = await latest_steer_status_text(db_path)
         if steering:

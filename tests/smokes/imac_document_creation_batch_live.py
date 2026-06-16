@@ -18,7 +18,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
-from artifact_quality import extract_docx_text, validate_docx_path, validate_xlsx_path
+from maya_documents.artifact_quality import extract_docx_text, validate_docx_path, validate_xlsx_path
 from storage import init_db
 from xai_realtime_document_tools import execute_desktop_file_tool
 from office_edit_helpers import pptx_outline

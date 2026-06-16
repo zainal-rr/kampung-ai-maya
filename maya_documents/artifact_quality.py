@@ -3,15 +3,15 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from artifact_qa_governance import (
+from maya_documents.artifact_qa_governance import (
     QAIssue,
     blocker_messages,
     legacy_blocker,
 )
-from artifact_quality_core import ArtifactQualityResult, artifact_skill_context
+from maya_documents.artifact_quality_core import ArtifactQualityResult, artifact_skill_context
 from word_quality import validate_word_doc_quality_details
 from word_visual_qa import inspect_word_visual_quality
-from artifact_quality_extractors import (
+from maya_documents.artifact_quality_extractors import (
     extract_docx_text,
     extract_xlsx_text,
     food_trip_workbook,
@@ -159,4 +159,4 @@ def validate_xlsx_path(path: Path, topic: str = "") -> ArtifactQualityResult:
     )
 
 
-from artifact_quality_review import resolve_quality_disagreement, review_artifact_quality
+from maya_documents.artifact_quality_review import resolve_quality_disagreement, review_artifact_quality

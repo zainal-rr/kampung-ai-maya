@@ -20,7 +20,7 @@ from pathlib import Path
 
 import aiosqlite
 
-from artifact_naming import short_artifact_stem
+from maya_documents.artifact_naming import short_artifact_stem
 from travel_parameters import extract_destination
 from word_quality_travel import explicit_day_count
 

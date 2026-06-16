@@ -1,7 +1,7 @@
 import logging, os
 
-from artifact_clarification_state import cleanup_expired_pending_artifact_request
-from artifact_sessions import cleanup_expired_artifact_sessions
+from maya_documents.artifact_clarification_state import cleanup_expired_pending_artifact_request
+from maya_documents.artifact_sessions import cleanup_expired_artifact_sessions
 from assistant_context_helpers import handle_context_command
 from assistant_text import clean_model_text, normalize_history, strip_wake_prefix
 from assistant_commands import AssistantCommandRouter

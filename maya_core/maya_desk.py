@@ -5,7 +5,7 @@ from datetime import UTC, datetime
 from html import escape
 from pathlib import Path
 
-from approval_inbox import approval_items
+from maya_core.approval_inbox import approval_items
 from cost_tracker import usage_summary_text
 from curated_memory import curated_memory_status
 from demo_evidence import load_latest

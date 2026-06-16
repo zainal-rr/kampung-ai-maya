@@ -2,9 +2,9 @@ import os
 import asyncio
 import logging
 
-from agent_runtime import AgentRuntime
+from maya_core.agent_runtime import AgentRuntime
 from assistant import KampungAssistant
-from artifact_review_store import init_artifact_review_db
+from maya_documents.artifact_review_store import init_artifact_review_db
 from camera_adapter import ExternalCameraAdapter
 from config import require_env
 from context_layers import init_context_layers_db

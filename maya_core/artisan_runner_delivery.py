@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from artisan_runner_context import *
-from artisan_runner_postprocess import _compact
+from maya_core.artisan_runner_context import *
+from maya_core.artisan_runner_postprocess import _compact
 
 
 async def latest_artisan_summary_text(db_path: str) -> str:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from artisan_runner_context import *
+from maya_core.artisan_runner_context import *
 
 
 async def _post_process_artisan_output(

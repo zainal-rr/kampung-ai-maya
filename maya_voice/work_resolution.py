@@ -5,7 +5,7 @@ import os
 
 import aiosqlite
 
-from active_context_parsers import _safe_path
+from maya_core.active_context_parsers import _safe_path
 from maya_voice.active_context_inspector import ActiveContextInspector
 from xai_voice_work import (
     VOICE_WORK_TABLE,

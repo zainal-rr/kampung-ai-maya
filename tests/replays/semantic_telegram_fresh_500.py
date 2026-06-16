@@ -15,7 +15,7 @@ from pathlib import Path
 
 from openpyxl import Workbook, load_workbook
 
-from artifact_builder import ArtifactBuilder
+from maya_documents.artifact_builder import ArtifactBuilder
 from assistant import KampungAssistant
 from context_layers import init_context_layers_db
 from harness_artifact_store import init_harness_artifact_db
@@ -45,7 +45,7 @@ async def main() -> None:
         old_env = _capture_env()
         _set_test_env(workspace)
 
-        import artifact_semantic_resolver as semantic_resolver
+        import maya_documents.artifact_semantic_resolver as semantic_resolver
         import document_actions as da
         import travel_budget
 

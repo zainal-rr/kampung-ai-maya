@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 from word_quality_proposal import proposal_consistency_issues, proposal_prompt_notes
 from word_quality_technical import technical_consistency_issues, technical_prompt_notes
-from artifact_qa_governance import MECHANICAL, QAIssue, blocker
+from maya_documents.artifact_qa_governance import MECHANICAL, QAIssue, blocker
 from word_quality_travel import travel_consistency_issue_details, travel_consistency_issues, travel_day_headings, travel_default_note
 from word_quality_helpers import (
     _generic_filler_issues,

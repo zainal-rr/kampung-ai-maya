@@ -228,7 +228,7 @@ def _dry_run_intent(case: ReliabilityPrompt) -> dict:
 
 
 def _empty_context():
-    from active_context_models import ActiveContext
+    from maya_core.active_context_models import ActiveContext
 
     return ActiveContext(
         app="Google Chrome",

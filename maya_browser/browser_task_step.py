@@ -4,7 +4,7 @@ import asyncio
 import re
 from urllib.parse import urlsplit
 
-from active_context import ActiveContextInspector
+from maya_core.active_context import ActiveContextInspector
 from browser_capability import run_browser_capability, route_browser_capability
 from browser_driver import make_browser_controller
 from browser_control import element_summary, page_summary

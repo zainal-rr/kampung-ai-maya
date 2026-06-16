@@ -4,8 +4,8 @@ import asyncio
 import os
 from datetime import datetime, timezone
 
-from agent_actions import AgentActionExecutor
-from agent_planner import AgentPlanner
+from maya_core.agent_actions import AgentActionExecutor
+from maya_core.agent_planner import AgentPlanner
 from autonomy import AutonomyPolicy
 from harness_graph import HarnessGraphRunner
 from routine_store import claim_due_routines

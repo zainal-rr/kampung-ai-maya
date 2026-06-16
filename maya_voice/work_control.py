@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from pathlib import Path
 
-from artifact_steering import (
+from maya_documents.artifact_steering import (
     apply_late_artifact_steers,
     create_artifact_steer_event,
 )

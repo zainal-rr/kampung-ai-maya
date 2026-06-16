@@ -4,8 +4,8 @@ import asyncio
 import time
 from dataclasses import dataclass, replace
 
-from active_context import ActiveContextInspector
-from active_context_models import ActiveContext
+from maya_core.active_context import ActiveContextInspector
+from maya_core.active_context_models import ActiveContext
 from browser_control import note_browser_intent
 from browser_driver import make_browser_controller
 from browser_understanding import extract_browser_options_with_gemini, grounded_browser_options

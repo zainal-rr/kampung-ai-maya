@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from artisan_maker_models import ArtisanMakerTemplatePlan
-from artisan_maker_script_templates import (
+from maya_core.artisan_maker_models import ArtisanMakerTemplatePlan
+from maya_core.artisan_maker_script_templates import (
     _cable_clip_script,
     _label_tag_script,
     _number_after,

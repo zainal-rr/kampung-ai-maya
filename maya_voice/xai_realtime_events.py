@@ -7,7 +7,7 @@ import time
 from voice_session_log import record_voice_turn
 from xai_realtime_models import PlaybackCommand, SessionCloseReason, _decode_audio_delta
 from xai_realtime_stream_helpers import append_audio_message, event_error, put_playback
-from artifact_steering import pending_steer_events_for_work, update_artifact_steer_event
+from maya_documents.artifact_steering import pending_steer_events_for_work, update_artifact_steer_event
 from maya_voice.tool_results import failed_tool_result_for_maya, tool_result_for_maya
 from xai_realtime_tools import BROWSER_TOOL_NAME, MAYA_WORK_TOOL_NAME, execute_voice_tool
 from xai_realtime_vad_guard import XaiRealtimeVadGuardMixin

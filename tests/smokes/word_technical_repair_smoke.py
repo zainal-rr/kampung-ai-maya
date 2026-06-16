@@ -11,7 +11,7 @@ del _w4_Path, _w4_root, _w4_sys
 import tempfile
 from pathlib import Path
 
-from artifact_quality import validate_docx_path
+from maya_documents.artifact_quality import validate_docx_path
 from document_actions_word_helpers import (
     _generic_technical_troubleshooting_repair_markdown,
     _router_network_repair_markdown,

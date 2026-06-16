@@ -3,7 +3,7 @@ from __future__ import annotations
 from datetime import datetime
 from zoneinfo import ZoneInfo
 
-from active_context import active_context_instruction
+from maya_core.active_context import active_context_instruction
 from assistant import KampungAssistant
 from curated_memory import curated_memory_prompt
 

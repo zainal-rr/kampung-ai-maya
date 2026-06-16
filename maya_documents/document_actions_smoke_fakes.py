@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from artifact_quality import ArtifactQualityResult
+from maya_documents.artifact_quality import ArtifactQualityResult
 from markdown_drafter import MarkdownDraft
 
 

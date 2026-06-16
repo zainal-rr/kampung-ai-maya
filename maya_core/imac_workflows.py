@@ -5,7 +5,7 @@ import re
 from pathlib import Path
 
 from assistant_command_helpers import confirmation_decision
-from artifact_builder import ArtifactBuilder
+from maya_documents.artifact_builder import ArtifactBuilder
 from browser_control import page_summary
 from browser_driver import make_browser_controller
 from browser_workflow_helpers import open_browser_target_new_tab as _open_browser_target_new_tab

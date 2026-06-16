@@ -11,7 +11,7 @@ del _w4_Path, _w4_root, _w4_sys
 import tempfile
 from pathlib import Path
 
-from artifact_naming import named_artifact_path
+from maya_documents.artifact_naming import named_artifact_path
 
 
 def _require(condition: bool, message: str) -> None:

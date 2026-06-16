@@ -4,8 +4,8 @@ import asyncio
 import re
 from dataclasses import dataclass
 
-from active_context import ActiveContextInspector
-from active_context_models import ActiveContext
+from maya_core.active_context import ActiveContextInspector
+from maya_core.active_context_models import ActiveContext
 from browser_capability import route_browser_capability, run_browser_capability
 from browser_driver import make_browser_controller
 from permission_policy import action_permission

@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import re
 
-from activation import current_work_location
+from maya_core.activation import current_work_location
 from assistant_command_helpers import direct_key
 from cost_tracker import record_usage
 from language_policy import language_instruction

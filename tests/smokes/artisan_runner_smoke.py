@@ -17,7 +17,7 @@ from pathlib import Path
 
 import aiosqlite
 
-from artisan_runner import (
+from maya_core.artisan_runner import (
     _codex_chatgpt_auth_state,
     classify_artisan_request,
     create_artisan_implementation_request,

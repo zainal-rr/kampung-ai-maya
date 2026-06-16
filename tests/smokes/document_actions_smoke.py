@@ -24,7 +24,7 @@ from session_memory_store import init_session_memory_db
 from skill_store import init_skill_db
 from storage import init_db, upsert_preference
 from telegram_delivery import split_file_markers
-from artifact_preflight import ArtifactPreflight
+from maya_documents.artifact_preflight import ArtifactPreflight
 from markdown_drafter import MarkdownDraft, _apply_source_quality, should_ground_topic
 from openpyxl import load_workbook
 from document_actions_smoke_helpers import (

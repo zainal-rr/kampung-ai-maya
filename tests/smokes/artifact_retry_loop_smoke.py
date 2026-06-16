@@ -15,8 +15,8 @@ from pathlib import Path
 
 from openpyxl import Workbook
 
-from artifact_builder import ArtifactBuilder
-from artifact_quality import ArtifactQualityResult
+from maya_documents.artifact_builder import ArtifactBuilder
+from maya_documents.artifact_quality import ArtifactQualityResult
 from context_layers import init_context_layers_db
 from document_actions import DocumentActionRouter
 from harness_artifact_store import init_harness_artifact_db
@@ -151,7 +151,7 @@ async def _fake_draft(db_path: str, topic: str, preflight_context: str = "") -> 
 
 
 async def _fake_preflight(db_path: str, artifact_type: str, topic: str):
-    from artifact_preflight import ArtifactPreflight
+    from maya_documents.artifact_preflight import ArtifactPreflight
 
     return ArtifactPreflight(artifact_type, topic, "gemini", "runtime preflight", True)
 

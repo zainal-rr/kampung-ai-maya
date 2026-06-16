@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from artisan_maker_completion import complete_blender_maker_output
-from artisan_maker_models import ArtisanMakerResult, ArtisanMakerTemplatePlan
-from artisan_maker_templates import select_maker_template, write_maker_template_source
+from maya_core.artisan_maker_completion import complete_blender_maker_output
+from maya_core.artisan_maker_models import ArtisanMakerResult, ArtisanMakerTemplatePlan
+from maya_core.artisan_maker_templates import select_maker_template, write_maker_template_source
 
 
 __all__ = [

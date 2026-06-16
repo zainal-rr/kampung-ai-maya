@@ -12,7 +12,7 @@ from dataclasses import dataclass
 from datetime import date, datetime, timedelta
 from urllib.parse import quote, urlencode
 
-from active_context_models import ActiveContext
+from maya_core.active_context_models import ActiveContext
 
 
 # Context (an open itinerary or page) may only supply the stay location when

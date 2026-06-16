@@ -13,7 +13,7 @@ when attaching a Telegram file versus opening/focusing a native iMac app.
 from __future__ import annotations
 
 from document_actions_context import *
-from artifact_retry_policy import artifact_qa_max_attempts, qa_retry_exhausted_message
+from maya_documents.artifact_retry_policy import artifact_qa_max_attempts, qa_retry_exhausted_message
 from safe_paths import resolve_safe_path
 from document_actions_content_helpers import (
     _append_text,
@@ -26,11 +26,11 @@ from document_actions_content_helpers import (
 )
 from document_actions_word_helpers import _document_edit_request
 from created_file_summary import created_file_content_summary
-from artifact_clarification_state import consume_pending_artifact_request, save_pending_artifact_request
-from artifact_discourse_context import resolve_referenced_artifact_topic
-from artifact_semantic_enrichment import enrich_artifact_topic
-from artifact_semantic_resolver import resolve_semantic_artifact_intent
-from artifact_file_state import record_artifact_fingerprint
+from maya_documents.artifact_clarification_state import consume_pending_artifact_request, save_pending_artifact_request
+from maya_documents.artifact_discourse_context import resolve_referenced_artifact_topic
+from maya_documents.artifact_semantic_enrichment import enrich_artifact_topic
+from maya_documents.artifact_semantic_resolver import resolve_semantic_artifact_intent
+from maya_documents.artifact_file_state import record_artifact_fingerprint
 from maya_voice.work_runtime import set_current_voice_work_phase
 from document_actions_html import DocumentHtmlMixin
 from document_actions_office import DocumentOfficeMixin

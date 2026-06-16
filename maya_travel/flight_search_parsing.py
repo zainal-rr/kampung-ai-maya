@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from datetime import datetime
 
-from active_context_models import ActiveContext
+from maya_core.active_context_models import ActiveContext
 from flight_search_models import FlightDetails, KNOWN_DESTINATIONS, MONTHS
 
 

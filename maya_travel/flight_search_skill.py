@@ -4,8 +4,8 @@ import asyncio
 import time
 from pathlib import Path
 
-from active_context import ActiveContextInspector
-from active_context_models import ActiveContext
+from maya_core.active_context import ActiveContextInspector
+from maya_core.active_context_models import ActiveContext
 from browser_driver import make_browser_controller
 from browser_observe import wait_for_content
 from flight_search_deeplink import is_extension_driver, note_flight_intent, run_flight_deep_link

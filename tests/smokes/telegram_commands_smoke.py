@@ -14,7 +14,7 @@ import tempfile
 from pathlib import Path
 
 from lesson_store import init_lesson_db
-from artifact_review_store import record_artifact_review
+from maya_documents.artifact_review_store import record_artifact_review
 from routine_store import init_routine_db
 from skill_store import init_skill_db
 from route_tracker import record_route

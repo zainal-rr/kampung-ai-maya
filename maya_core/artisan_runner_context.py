@@ -22,10 +22,10 @@ from lane_prompts import ARTISAN_SYSTEM_PROMPT
 from project_store import active_project, remember_project_note
 from storage import get_preference, upsert_preference
 from workspace_paths import is_workspace_path, workspace_dir
-from artisan_app_qa import qa_artisan_app_project
-from artisan_maker import complete_blender_maker_output, select_maker_template, write_maker_template_source
-from artisan_worktree import create_repo_isolation
-from artisan_runner_models import ArtisanTarget
+from maya_core.artisan_app_qa import qa_artisan_app_project
+from maya_core.artisan_maker import complete_blender_maker_output, select_maker_template, write_maker_template_source
+from maya_core.artisan_worktree import create_repo_isolation
+from maya_core.artisan_runner_models import ArtisanTarget
 
 
 load_dotenv(repo_root(__file__) / ".env")

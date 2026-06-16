@@ -6,7 +6,7 @@ from pathlib import Path
 from docx import Document
 from pptx import Presentation
 
-from active_context_parsers import MAX_EXCERPT_CHARS, ParsedDocumentContext, _clip, _safe_path, infer_markdown_path
+from maya_core.active_context_parsers import MAX_EXCERPT_CHARS, ParsedDocumentContext, _clip, _safe_path, infer_markdown_path
 
 
 def parse_word_context(path: str, selected_text: str = "") -> ParsedDocumentContext:

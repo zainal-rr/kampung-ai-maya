@@ -13,7 +13,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from artifact_preflight import ArtifactPreflight
+from maya_documents.artifact_preflight import ArtifactPreflight
 from document_actions import DocumentActionRouter
 from markdown_drafter import MarkdownDraft
 from office_modern_files import create_pptx

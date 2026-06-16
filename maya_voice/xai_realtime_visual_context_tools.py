@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from active_context import inspect_active_context
+from maya_core.active_context import inspect_active_context
 from visual_workflow import VisualWorkflowRenderer
 
 

@@ -18,9 +18,9 @@ import re
 from dataclasses import dataclass
 from pathlib import Path
 
-from artifact_naming import named_artifact_path
-from artifact_builder import ArtifactBuilder
-from artifact_sessions import active_artifact_session
+from maya_documents.artifact_naming import named_artifact_path
+from maya_documents.artifact_builder import ArtifactBuilder
+from maya_documents.artifact_sessions import active_artifact_session
 
 from markdown_drafter import draft_markdown_with_gemini
 from storage import get_preference, upsert_preference

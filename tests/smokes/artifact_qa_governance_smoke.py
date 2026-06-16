@@ -16,11 +16,11 @@ from pathlib import Path
 from docx import Document
 from openpyxl import Workbook
 
-import artifact_quality_review
-from artifact_qa_governance import MECHANICAL, OPEN_WORLD, SEMANTIC, blocker, warning
-from artifact_quality import ArtifactQualityResult, resolve_quality_disagreement, validate_docx_path, validate_xlsx_path
-from artifact_retry_policy import artifact_qa_max_attempts
-from artifact_review_store import (
+import maya_documents.artifact_quality_review as artifact_quality_review
+from maya_documents.artifact_qa_governance import MECHANICAL, OPEN_WORLD, SEMANTIC, blocker, warning
+from maya_documents.artifact_quality import ArtifactQualityResult, resolve_quality_disagreement, validate_docx_path, validate_xlsx_path
+from maya_documents.artifact_retry_policy import artifact_qa_max_attempts
+from maya_documents.artifact_review_store import (
     latest_artifact_review_text,
     record_artifact_review,
     resolve_review_activity_text,

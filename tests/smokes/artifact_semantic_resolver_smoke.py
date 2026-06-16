@@ -32,7 +32,7 @@ async def main() -> None:
         old_allow = os.environ.get("MAYA_TEST_ALLOW_SEMANTIC_PROVIDER")
         old_xai = os.environ.get("XAI_API_KEY")
 
-        import artifact_semantic_resolver as resolver
+        import maya_documents.artifact_semantic_resolver as resolver
 
         old_news = resolver.TheNews
         try:

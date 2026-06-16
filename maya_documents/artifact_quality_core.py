@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from pathlib import Path
 
-from artifact_qa_governance import (
+from maya_documents.artifact_qa_governance import (
     QAIssue,
     blocker_issues,
     blocker_messages,

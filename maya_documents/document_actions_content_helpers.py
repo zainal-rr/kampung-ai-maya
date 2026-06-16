@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from document_actions_context import *
-from artifact_file_state import record_artifact_fingerprint
+from maya_documents.artifact_file_state import record_artifact_fingerprint
 from document_actions_excel_rows import _budget_rows, _saas_tracker_rows, _task_tracker_rows, _travel_budget_topic
 
 

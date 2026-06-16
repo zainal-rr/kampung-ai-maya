@@ -12,9 +12,9 @@ from pathlib import Path
 
 from docx import Document
 
-from artifact_file_state import record_artifact_fingerprint
-from artifact_sessions import record_artifact_session
-from artifact_steering import (
+from maya_documents.artifact_file_state import record_artifact_fingerprint
+from maya_documents.artifact_sessions import record_artifact_session
+from maya_documents.artifact_steering import (
     apply_late_artifact_steers,
     create_artifact_steer_event,
     latest_steer_status_text,

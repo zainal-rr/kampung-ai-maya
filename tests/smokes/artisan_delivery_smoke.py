@@ -12,7 +12,7 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-from artisan_runner import latest_artisan_delivery_text
+from maya_core.artisan_runner import latest_artisan_delivery_text
 from harness_store import init_harness_db, upsert_run
 from storage import init_db
 

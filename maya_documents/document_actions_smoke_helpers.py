@@ -13,8 +13,8 @@ from routine_store import init_routine_db
 from session_memory_store import init_session_memory_db
 from skill_store import init_skill_db
 from storage import init_db, upsert_preference
-from artifact_preflight import ArtifactPreflight
-from artifact_quality import ArtifactQualityResult
+from maya_documents.artifact_preflight import ArtifactPreflight
+from maya_documents.artifact_quality import ArtifactQualityResult
 from markdown_drafter import MarkdownDraft, _apply_source_quality
 from openpyxl import load_workbook
 from telegram_delivery import split_file_markers

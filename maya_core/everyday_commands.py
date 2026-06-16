@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from approval_inbox import approval_inbox_text
-from artisan_runner import latest_artisan_delivery_text
+from maya_core.approval_inbox import approval_inbox_text
+from maya_core.artisan_runner import latest_artisan_delivery_text
 from daily_cockpit import daily_cockpit_text, focus_text, project_cockpit_text
 from desktop_file_opener import DesktopFileOpener
 from harness_artifact_store import latest_artifacts

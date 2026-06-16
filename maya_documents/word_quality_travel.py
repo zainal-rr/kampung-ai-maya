@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from artifact_qa_governance import MECHANICAL, OPEN_WORLD, QAIssue, blocker, warning
+from maya_documents.artifact_qa_governance import MECHANICAL, OPEN_WORLD, QAIssue, blocker, warning
 from travel_parameters import (
     destination_allowed_norms,
     destination_names_in_text,

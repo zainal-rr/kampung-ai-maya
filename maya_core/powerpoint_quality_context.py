@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from artifact_quality import artifact_skill_context
+from maya_documents.artifact_quality import artifact_skill_context
 
 
 async def powerpoint_quality_context(db_path: str) -> str:

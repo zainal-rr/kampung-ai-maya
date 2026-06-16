@@ -12,7 +12,7 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-from artifact_review_store import latest_artifact_review_text, record_artifact_review
+from maya_documents.artifact_review_store import latest_artifact_review_text, record_artifact_review
 
 
 async def main() -> None:

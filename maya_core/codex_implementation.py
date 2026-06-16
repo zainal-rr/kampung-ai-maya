@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from artisan_runner import create_artisan_implementation_request
+from maya_core.artisan_runner import create_artisan_implementation_request
 
 
 async def create_codex_implementation_request(

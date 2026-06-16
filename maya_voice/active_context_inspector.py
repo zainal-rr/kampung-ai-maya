@@ -5,17 +5,17 @@ import json
 from datetime import datetime
 from pathlib import Path
 
-from active_context_scripts import (
+from maya_core.active_context_scripts import (
     EXCEL_CONTEXT_SCRIPT,
     GENERIC_TEXT_CONTEXT_SCRIPT,
     POWERPOINT_CONTEXT_SCRIPT,
     WORD_CONTEXT_SCRIPT,
     browser_context_script,
 )
-from active_context_document_parsers import parse_markdown_context, parse_powerpoint_context, parse_word_context
-from active_context_models import ActiveContext, log_context
-from active_context_parsers import infer_markdown_path, is_sensitive_browser_context, parse_excel_context
-from active_context_powerpoint import verify_powerpoint_visible_context
+from maya_core.active_context_document_parsers import parse_markdown_context, parse_powerpoint_context, parse_word_context
+from maya_core.active_context_models import ActiveContext, log_context
+from maya_core.active_context_parsers import infer_markdown_path, is_sensitive_browser_context, parse_excel_context
+from maya_core.active_context_powerpoint import verify_powerpoint_visible_context
 from screen_responder import ScreenResponder
 from untrusted_input_boundary import assess_untrusted_context
 from utils import OSBridge

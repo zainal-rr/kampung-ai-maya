@@ -11,7 +11,7 @@ del _w4_Path, _w4_root, _w4_sys
 import asyncio
 import tempfile
 
-from artifact_parameter_resolver import resolve_artifact_parameters
+from maya_documents.artifact_parameter_resolver import resolve_artifact_parameters
 from storage import init_db, save_history_message
 
 

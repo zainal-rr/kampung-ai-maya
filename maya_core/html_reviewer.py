@@ -6,7 +6,7 @@ import os
 import re
 
 from cost_tracker import record_usage
-from artifact_quality import artifact_skill_context
+from maya_documents.artifact_quality import artifact_skill_context
 from models import TheSteward
 from provider_capabilities import CAPABILITIES
 

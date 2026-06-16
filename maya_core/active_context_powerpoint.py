@@ -4,8 +4,8 @@ import re
 
 from pptx import Presentation
 
-from active_context_document_parsers import parse_powerpoint_context
-from active_context_models import ActiveContext
+from maya_core.active_context_document_parsers import parse_powerpoint_context
+from maya_core.active_context_models import ActiveContext
 
 
 def verify_powerpoint_visible_context(base: ActiveContext, screen_text: str) -> ActiveContext:

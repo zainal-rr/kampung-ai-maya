@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from artisan_maker_models import ArtisanMakerResult
-from artisan_maker_quality import (
+from maya_core.artisan_maker_models import ArtisanMakerResult
+from maya_core.artisan_maker_quality import (
     _append_readme_qa,
     _best_output_folder,
     _blender_binary,

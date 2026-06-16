@@ -11,7 +11,7 @@ del _w4_Path, _w4_root, _w4_sys
 import tempfile
 from pathlib import Path
 
-from artisan_maker import complete_blender_maker_output
+from maya_core.artisan_maker import complete_blender_maker_output
 
 
 def main() -> None:

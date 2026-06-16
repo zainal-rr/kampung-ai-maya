@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from artifact_qa_governance import BLOCKER, MECHANICAL
+from maya_documents.artifact_qa_governance import BLOCKER, MECHANICAL
 
 
 _COMMON_HARD_MARKERS = (

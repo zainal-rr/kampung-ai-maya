@@ -8,7 +8,7 @@ async def read_maya_state(db_path: str, question: str) -> str:
 
         return await voice_work_status_text(db_path)
     if "approval" in lowered or "approve" in lowered:
-        from approval_inbox import approval_inbox_text
+        from maya_core.approval_inbox import approval_inbox_text
         return await approval_inbox_text(db_path)
     if "artifact" in lowered or "file" in lowered or "created" in lowered:
         return await _artifact_text(db_path)

@@ -6,9 +6,9 @@ from pathlib import Path
 
 import aiosqlite
 
-from artifact_file_state import artifact_changed_since_recorded
-from artifact_file_state import record_artifact_fingerprint
-from artifact_sessions import active_artifact_session, record_artifact_session
+from maya_documents.artifact_file_state import artifact_changed_since_recorded
+from maya_documents.artifact_file_state import record_artifact_fingerprint
+from maya_documents.artifact_sessions import active_artifact_session, record_artifact_session
 from maya_voice.revision_delivery import reopen_revised_artifact, verify_revision_postcondition, word_open_with_unsaved_changes
 from storage import get_preference
 from storage import upsert_preference

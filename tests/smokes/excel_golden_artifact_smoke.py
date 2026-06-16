@@ -13,7 +13,7 @@ from pathlib import Path
 
 from openpyxl import load_workbook
 
-from artifact_quality import validate_xlsx_path
+from maya_documents.artifact_quality import validate_xlsx_path
 from document_actions import _budget_rows
 from office_modern_files import create_xlsx
 from travel_budget import TravelParty, _build_workbook

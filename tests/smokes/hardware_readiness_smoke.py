@@ -12,7 +12,7 @@ import json
 import tempfile
 from pathlib import Path
 
-from activation import WakeWindow, mudra_is_near, split_wake_phrase, wake_phrases
+from maya_core.activation import WakeWindow, mudra_is_near, split_wake_phrase, wake_phrases
 from mudra_adapter import load_mudra_event
 from omi_adapter import load_omi_transcript
 from permission_policy import permission_summary

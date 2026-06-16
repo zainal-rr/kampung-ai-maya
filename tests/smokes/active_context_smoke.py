@@ -14,7 +14,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from active_context import ActiveContextInspector
+from maya_core.active_context import ActiveContextInspector
 from docx import Document
 from maya_voice.tool_results import voice_safe_paths
 from openpyxl import Workbook

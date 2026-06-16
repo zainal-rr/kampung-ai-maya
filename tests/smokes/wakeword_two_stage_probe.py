@@ -20,7 +20,7 @@ from dotenv import load_dotenv
 from openwakeword.utils import AudioFeatures
 from scipy.io.wavfile import write as write_wav
 
-from activation import split_wake_phrase
+from maya_core.activation import split_wake_phrase
 from wakeword_sample_scorer import clip_features
 from xai_stt import xai_transcribe_file
 

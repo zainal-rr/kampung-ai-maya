@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from approval_inbox import approval_items
+from maya_core.approval_inbox import approval_items
 from harness_artifact_store import latest_artifacts
 from harness_store import list_active_runs
 from project_store import active_project, project_notes

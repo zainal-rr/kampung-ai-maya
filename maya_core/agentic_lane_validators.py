@@ -10,7 +10,7 @@ honesty (claiming completion while the run failed or was cancelled).
 
 from dataclasses import dataclass
 
-from agentic_reliability_scenarios import AgenticScenario
+from maya_core.agentic_reliability_scenarios import AgenticScenario
 from harness_workflows import classify_workflow
 
 

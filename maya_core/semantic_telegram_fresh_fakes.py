@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import re
 
-from artifact_preflight import ArtifactPreflight
+from maya_documents.artifact_preflight import ArtifactPreflight
 from assistant_routes import RouteResult
 from markdown_drafter import MarkdownDraft
 from pptx_quality_gate import PptxQualityResult

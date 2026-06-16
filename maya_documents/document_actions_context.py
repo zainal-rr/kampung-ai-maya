@@ -8,18 +8,18 @@ import re
 import shutil
 from pathlib import Path
 
-from artifact_naming import named_artifact_path, versioned_path
-from artifact_sessions import (
+from maya_documents.artifact_naming import named_artifact_path, versioned_path
+from maya_documents.artifact_sessions import (
     active_artifact_session,
     apply_artifact_edit_delta,
     record_artifact_session,
     topic_from_state,
     update_artifact_session_after_edit,
 )
-from artifact_parameters import artifact_parameter_question
-from artifact_parameter_resolver import resolve_artifact_parameters
-from artifact_preflight import ArtifactPreflight, artifact_preflight_with_gemini
-from artifact_quality import (
+from maya_documents.artifact_parameters import artifact_parameter_question
+from maya_documents.artifact_parameter_resolver import resolve_artifact_parameters
+from maya_documents.artifact_preflight import ArtifactPreflight, artifact_preflight_with_gemini
+from maya_documents.artifact_quality import (
     ArtifactQualityResult,
     extract_docx_text,
     extract_xlsx_text,

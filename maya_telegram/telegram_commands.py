@@ -4,9 +4,9 @@ from dataclasses import dataclass
 
 from telegram import BotCommand
 
-from artifact_review_store import latest_artifact_review_text, resolve_review_activity_text
-from artisan_apply import apply_latest_artisan_repo_changes
-from artisan_runner import latest_artisan_delivery_text, latest_artisan_summary_text, latest_artisan_transcript_text
+from maya_documents.artifact_review_store import latest_artifact_review_text, resolve_review_activity_text
+from maya_core.artisan_apply import apply_latest_artisan_repo_changes
+from maya_core.artisan_runner import latest_artisan_delivery_text, latest_artisan_summary_text, latest_artisan_transcript_text
 from cost_tracker import usage_summary_text
 from canonical_memory_inspector import inspect_canonical_memory
 from canonical_memory_migration import migrate_memory_to_canonical

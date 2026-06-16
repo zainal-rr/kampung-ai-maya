@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from artisan_runner_context import *
+from maya_core.artisan_runner_context import *
 
 
 async def _target_for_request(db_path: str | None, request: str, run_id: str) -> ArtisanTarget:

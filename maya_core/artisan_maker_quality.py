@@ -8,7 +8,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from artisan_maker_models import ArtisanMakerResult
+from maya_core.artisan_maker_models import ArtisanMakerResult
 
 
 def _candidate_blender_scripts(root: Path) -> list[Path]:

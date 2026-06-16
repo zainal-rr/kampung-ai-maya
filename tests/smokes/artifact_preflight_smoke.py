@@ -13,7 +13,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from artifact_preflight import artifact_preflight_with_gemini, local_artifact_preflight
+from maya_documents.artifact_preflight import artifact_preflight_with_gemini, local_artifact_preflight
 
 
 async def main() -> None:

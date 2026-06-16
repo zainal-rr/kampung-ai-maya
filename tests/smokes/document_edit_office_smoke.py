@@ -13,7 +13,7 @@ import tempfile
 from pathlib import Path
 
 import document_actions as da
-from artifact_preflight import ArtifactPreflight
+from maya_documents.artifact_preflight import ArtifactPreflight
 from document_actions_word_helpers import _document_edit_request
 from markdown_drafter import MarkdownDraft
 from office_edit_helpers import apply_simple_xlsx_edit

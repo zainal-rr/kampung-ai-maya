@@ -7,7 +7,7 @@ from pathlib import Path
 from openpyxl import load_workbook
 from pptx import Presentation
 
-from artifact_naming import versioned_path
+from maya_documents.artifact_naming import versioned_path
 
 
 def backup_office_file(path: Path) -> Path:

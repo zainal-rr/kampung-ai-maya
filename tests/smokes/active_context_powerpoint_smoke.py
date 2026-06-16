@@ -13,9 +13,9 @@ from tempfile import TemporaryDirectory
 
 from pptx import Presentation
 
-from active_context_document_parsers import parse_powerpoint_context
-from active_context_models import ActiveContext
-from active_context_powerpoint import verify_powerpoint_visible_context
+from maya_core.active_context_document_parsers import parse_powerpoint_context
+from maya_core.active_context_models import ActiveContext
+from maya_core.active_context_powerpoint import verify_powerpoint_visible_context
 
 
 def main() -> None:

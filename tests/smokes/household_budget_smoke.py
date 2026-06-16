@@ -14,7 +14,7 @@ from pathlib import Path
 
 from openpyxl import load_workbook
 
-from artifact_builder import ArtifactBuilder
+from maya_documents.artifact_builder import ArtifactBuilder
 from document_actions_content_helpers import _budget_rows, _budget_title
 from office_files import create_xlsx
 from storage import init_db

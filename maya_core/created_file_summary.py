@@ -12,7 +12,7 @@ def created_file_content_summary(path: Path, limit: int = 420) -> str:
         if suffix == ".md":
             return _summary_sentence(_plain_text_lines(path.read_text(encoding="utf-8", errors="ignore"), path), limit)
         if suffix == ".docx":
-            from artifact_quality_extractors import extract_docx_text
+            from maya_documents.artifact_quality_extractors import extract_docx_text
 
             return _summary_sentence(_plain_text_lines(extract_docx_text(path, limit=9000), path), limit)
         if suffix == ".xlsx":

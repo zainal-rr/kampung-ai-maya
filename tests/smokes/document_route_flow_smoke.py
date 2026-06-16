@@ -19,7 +19,7 @@ from context_layers import init_context_layers_db
 from harness_artifact_store import init_harness_artifact_db
 from harness_store import init_harness_db
 from lesson_store import init_lesson_db
-from artifact_preflight import ArtifactPreflight
+from maya_documents.artifact_preflight import ArtifactPreflight
 from markdown_drafter import MarkdownDraft
 from route_tracker import last_route_text
 from routine_store import init_routine_db
@@ -38,7 +38,7 @@ async def main() -> None:
         await _init(db_path)
 
         import document_actions as da
-        import artifact_semantic_resolver as semantic_resolver
+        import maya_documents.artifact_semantic_resolver as semantic_resolver
         import travel_budget
 
         old_draft = da.draft_markdown_with_gemini

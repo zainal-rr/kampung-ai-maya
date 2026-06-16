@@ -19,8 +19,8 @@ from pathlib import Path
 import aiosqlite
 from pptx import Presentation
 
-from artifact_preflight import ArtifactPreflight
-from artifact_quality import ArtifactQualityResult
+from maya_documents.artifact_preflight import ArtifactPreflight
+from maya_documents.artifact_quality import ArtifactQualityResult
 from document_actions_smoke_fakes import _fake_artifact_quality_review, _fake_draft, _fake_html_draft
 from document_actions_smoke_helpers import FakeBridge, _init
 from markdown_drafter import MarkdownDraft
@@ -73,7 +73,7 @@ async def _fake_artisan(self, text: str, memory: str, skills: str, channel: str)
 
 
 async def _fake_pptx_qa(db_path: str, path: Path, title: str, slides, run_id: str, last_doc_key: str, auto_improve: bool = True):
-    from artifact_review_store import record_artifact_review
+    from maya_documents.artifact_review_store import record_artifact_review
     from pptx_quality_gate import PptxQualityResult
     from storage import upsert_preference
 
@@ -111,7 +111,7 @@ def _patched_environment(root: Path):
 
 @contextmanager
 def _patched_models():
-    import artifact_builder
+    import maya_documents.artifact_builder as artifact_builder
     import assistant_routes
     import document_actions as da
 

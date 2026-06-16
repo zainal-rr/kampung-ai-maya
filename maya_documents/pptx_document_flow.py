@@ -17,7 +17,7 @@ import asyncio
 import os
 from pathlib import Path
 
-from artifact_review_store import record_artifact_review
+from maya_documents.artifact_review_store import record_artifact_review
 from harness_artifact_store import record_structured_artifact
 from harness_models import local_artifact
 from pptx_polish_review import claude_polish_grade, local_polish_issues

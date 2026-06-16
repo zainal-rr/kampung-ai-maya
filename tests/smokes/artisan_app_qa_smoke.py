@@ -11,7 +11,7 @@ del _w4_Path, _w4_root, _w4_sys
 import tempfile
 from pathlib import Path
 
-from artisan_app_qa import qa_artisan_app_project
+from maya_core.artisan_app_qa import qa_artisan_app_project
 
 
 def main() -> None:

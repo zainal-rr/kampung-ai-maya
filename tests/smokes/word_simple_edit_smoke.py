@@ -13,8 +13,8 @@ import os
 import tempfile
 from pathlib import Path
 
-from artifact_preflight import ArtifactPreflight
-from artifact_quality import ArtifactQualityResult
+from maya_documents.artifact_preflight import ArtifactPreflight
+from maya_documents.artifact_quality import ArtifactQualityResult
 from document_actions import DocumentActionRouter
 from document_actions_context import LAST_DOC_KEY
 from document_actions_smoke_helpers import _init, _require
@@ -60,7 +60,7 @@ async def main() -> None:
             text, files = split_file_markers(reply or "")
             _require("Done. I updated" in text, "simple Word edit did not finish")
             _require(files and files[0].resolve() == path.resolve(), "successful Word edit did not attach updated file")
-            from artifact_quality_extractors import extract_docx_text
+            from maya_documents.artifact_quality_extractors import extract_docx_text
 
             updated = extract_docx_text(path)
             _require("Transit Tips" in updated, "transit tips section missing")

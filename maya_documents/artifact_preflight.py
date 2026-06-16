@@ -5,7 +5,7 @@ import os
 import re
 from dataclasses import dataclass
 
-from artifact_quality import artifact_skill_context
+from maya_documents.artifact_quality import artifact_skill_context
 from cost_tracker import record_usage
 from models import TheSenses
 from word_quality import WORD_DOC_KINDS, normalize_word_doc_kind, word_prompt_context

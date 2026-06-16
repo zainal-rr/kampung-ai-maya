@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from document_actions_context import *
-from artifact_retry_policy import artifact_qa_max_attempts
+from maya_documents.artifact_retry_policy import artifact_qa_max_attempts
 from document_actions_content_helpers import (
     _attach,
     _budget_filename_topic,

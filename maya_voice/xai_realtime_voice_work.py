@@ -6,7 +6,7 @@ import json
 import time
 
 from voice_session_log import record_voice_turn
-from artifact_steering import apply_late_artifact_steers, update_artifact_steer_event
+from maya_documents.artifact_steering import apply_late_artifact_steers, update_artifact_steer_event
 from maya_voice.tool_guard import empty_request_reason
 from maya_voice.artifact_manifest import create_or_get_manifest
 from xai_realtime_tools import BROWSER_TOOL_NAME, MAYA_WORK_TOOL_NAME
