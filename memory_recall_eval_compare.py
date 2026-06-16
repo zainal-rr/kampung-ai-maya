@@ -1,8 +1,4 @@
-from tests.evals.memory_recall_eval_compare import *  # noqa: F401,F403
-from tests.evals.memory_recall_eval_compare import _main
-
-
-if __name__ == "__main__":
-    import asyncio
-
-    raise SystemExit(asyncio.run(_main()))
+# W4 compatibility shim — re-exports the relocated module (removed/converted in Wave 5).
+from maya_memory import memory_recall_eval_compare as _m
+import sys as _sys
+_sys.modules[__name__] = _m
