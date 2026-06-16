@@ -1,31 +1,4 @@
-from __future__ import annotations
-
-from office_drafter_helpers.deck_scenarios import (
-    _browser_deck,
-    _first,
-    _issue_deck,
-    _matching_lines,
-    _pitch_deck,
-    _proposal_deck,
-    _review_deck,
-    _take,
-    _teaching_deck,
-    _technical_deck,
-    _travel_deck,
-    _travel_food_deck,
-)
-
-__all__ = [
-    "_browser_deck",
-    "_first",
-    "_issue_deck",
-    "_matching_lines",
-    "_pitch_deck",
-    "_proposal_deck",
-    "_review_deck",
-    "_take",
-    "_teaching_deck",
-    "_technical_deck",
-    "_travel_deck",
-    "_travel_food_deck",
-]
+# W4 compatibility shim — re-exports the relocated module (removed/converted in Wave 5).
+from maya_documents import office_drafter_deck_scenarios as _m
+import sys as _sys
+_sys.modules[__name__] = _m
