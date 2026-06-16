@@ -63,7 +63,7 @@ EVAL_CASES = (
     EvalCase("harness", "event store", ("tests/smokes/maya_event_store_smoke.py",)),
     EvalCase("harness", "tool registry", ("tests/smokes/maya_tool_registry_smoke.py",)),
     EvalCase("harness", "permission kernel", ("tests/smokes/maya_permission_kernel_smoke.py",)),
-    EvalCase("skills", "Maya skill creation", ("youtube_skill_creation_maya_smoke.py",)),
+    EvalCase("skills", "Maya skill creation", ("tests/smokes/youtube_skill_creation_maya_smoke.py",)),
     EvalCase("dependencies", "dependency manifest", ("tests/smokes/dependency_manifest_smoke.py",)),
     EvalCase("demos", "demo evidence", ("tests/smokes/demo_evidence_smoke.py",)),
     EvalCase("hardening", "hardening audit", ("tests/smokes/hardening_audit_smoke.py",)),

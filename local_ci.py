@@ -42,7 +42,7 @@ def run_local_ci(*, live_providers: bool = False) -> list[CheckResult]:
         _command_check("semantic telegram fresh 500", ("tests/replays/semantic_telegram_fresh_500.py",)),
         _command_check("voice document transcript", ("tests/smokes/voice_document_transcript_smoke.py",)),
         _command_check("voice semantic seam manifest", ("tests/smokes/voice_semantic_seam_manifest_smoke.py",)),
-        _command_check("voice browser steering", ("xai_realtime_browser_supervisor_smoke.py",)),
+        _command_check("voice browser steering", ("tests/smokes/xai_realtime_browser_supervisor_smoke.py",)),
         _command_check("voice artifact transcript replay 500", ("tests/replays/voice_artifact_transcript_replay_500.py",)),
         _command_check("voice telegram transcript replay 10000", ("tests/replays/voice_telegram_transcript_replay_10000.py",)),
         _command_check("artifact parameter resolver", ("tests/smokes/artifact_parameter_resolver_smoke.py",)),
