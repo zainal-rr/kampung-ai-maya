@@ -32,6 +32,7 @@ from maya_browser.intent_normalizer import normalize_browser_request
 from maya_browser.pending_actions import clear_pending_browser_action, clear_pending_browser_clarification, remember_pending_browser_action, remember_pending_browser_clarification
 from maya_browser.query_guard import browser_query_is_incomplete
 from maya_browser.site_runtime import browser_for as _browser
+from maya_core.repo_paths import repo_root
 from maya_browser.site_runtime import safe_inspect as _safe_inspect
 from maya_browser.site_runtime import safe_result_options as _safe_result_options
 from maya_browser.site_runtime import search_reply as _search_reply
@@ -297,10 +298,9 @@ async def run_google_cloud_console_skill(db_path: str, request: str, *, bridge: 
 
 async def _record_site_skill(db_path: str, skill_id: str, name: str, description: str, request: str, lane: str) -> None:
     await init_skill_db(db_path)
-    scaffold = Path(__file__).resolve().parent / "maya_skills" / "active" / f"{skill_id}.md"
+    scaffold = repo_root(__file__) / "maya_skills" / "active" / f"{skill_id}.md"
     await upsert_skill(db_path, skill_id, name, description, "bounded", "policy_guard", "active", "local", str(scaffold))
     await record_skill_usage(db_path, skill_id=skill_id, name=name, query=request, lane=lane, reason="browser capability routed to executable site skill")
-
 
 
 

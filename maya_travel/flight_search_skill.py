@@ -10,6 +10,7 @@ from browser_driver import make_browser_controller
 from browser_observe import wait_for_content
 from flight_search_deeplink import is_extension_driver, note_flight_intent, run_flight_deep_link
 from browser_understanding import extract_browser_options_with_gemini, grounded_browser_options
+from maya_core.repo_paths import repo_root
 from permission_policy import action_permission, contains_sensitive_info, hard_no_private_exposure_text
 from skill_store import init_skill_db, record_skill_usage, upsert_skill
 from storage import upsert_preference
@@ -251,7 +252,7 @@ class FlightSearchSkill:
 
     async def _record_skill(self, question: str) -> None:
         await init_skill_db(self.db_path)
-        scaffold = Path(__file__).resolve().parent / "maya_skills" / "active" / "flight_search.md"
+        scaffold = repo_root(__file__) / "maya_skills" / "active" / "flight_search.md"
         await upsert_skill(
             self.db_path,
             skill_id=SKILL_ID,

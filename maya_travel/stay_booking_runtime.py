@@ -2,13 +2,14 @@ from __future__ import annotations
 
 from pathlib import Path
 
+from maya_core.repo_paths import repo_root
 from skill_store import init_skill_db, record_skill_usage, upsert_skill
 from travel_booking_safety import travel_booking_safety_footer
 
 
 async def record_stay_skill(db_path: str, skill_id: str, name: str, description: str, question: str) -> None:
     await init_skill_db(db_path)
-    scaffold = Path(__file__).resolve().parent / "maya_skills" / "active" / f"{skill_id}.md"
+    scaffold = repo_root(__file__) / "maya_skills" / "active" / f"{skill_id}.md"
     await upsert_skill(db_path, skill_id, name, description, "bounded", "policy_guard", "active", "local", str(scaffold))
     await record_skill_usage(
         db_path,

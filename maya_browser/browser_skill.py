@@ -14,6 +14,7 @@ from browser_untrusted_guard import injected_page_action_notice
 from maya_browser.intent_normalizer import normalize_browser_request
 from maya_browser.pending_actions import clear_pending_browser_clarification, remember_pending_browser_clarification
 from maya_browser.query_guard import browser_query_is_incomplete
+from maya_core.repo_paths import repo_root
 from permission_policy import action_permission, contains_sensitive_info, hard_no_private_exposure_text
 from skill_store import init_skill_db, record_skill_usage, upsert_skill
 from storage import upsert_preference
@@ -163,7 +164,7 @@ class BrowserSkill:
 
     async def _record_skill(self, request: str) -> None:
         await init_skill_db(self.db_path)
-        scaffold = Path(__file__).resolve().parent / "maya_skills" / "active" / "browser_control.md"
+        scaffold = repo_root(__file__) / "maya_skills" / "active" / "browser_control.md"
         await upsert_skill(
             self.db_path,
             skill_id=SKILL_ID,
