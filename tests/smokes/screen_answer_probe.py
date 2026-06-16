@@ -24,7 +24,7 @@ from maya_core.screen_responder import ScreenResponder
 from maya_core.screen_session import activate_screen_sight
 from maya_core.skill_store import init_skill_db
 from maya_core.storage import init_db
-from utils import OSBridge
+from maya_core.utils import OSBridge
 
 
 async def main() -> None:

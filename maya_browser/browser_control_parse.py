@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from maya_browser.browser_control_js import _modal_state, _text_hash
 from maya_browser.browser_control_models import BrowserElement, BrowserPage
-from untrusted_input_boundary import assess_untrusted_context
+from maya_core.untrusted_input_boundary import assess_untrusted_context
 
 
 def page_summary(page: BrowserPage, max_lines: int = 8) -> str:

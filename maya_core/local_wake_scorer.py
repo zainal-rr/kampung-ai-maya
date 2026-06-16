@@ -12,7 +12,7 @@ import sounddevice as sd
 from openwakeword.utils import AudioFeatures
 from scipy.io.wavfile import write as write_wav
 
-from wakeword_sample_scorer import clip_features
+from maya_core.wakeword_sample_scorer import clip_features
 
 
 DEFAULT_MODEL_PATH = Path.home() / "Desktop/Maya/artifacts/wakeword_models/maya_wake_scorer.pkl"

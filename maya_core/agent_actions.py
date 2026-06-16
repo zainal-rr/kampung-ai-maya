@@ -10,8 +10,8 @@ from maya_core.delivery_redaction import redact_for_delivery
 from maya_core.skill_factory import SkillFactory
 from maya_core.storage import get_history, get_preference, list_tasks
 from maya_telegram.telegram_delivery import send_speech, send_text
-from utils import OSBridge
-from voice import VoiceNode
+from maya_core.utils import OSBridge
+from maya_voice.voice import VoiceNode
 
 
 class AgentActionExecutor:

@@ -21,7 +21,7 @@ from maya_core.session_memory_store import init_session_memory_db, save_session_
 from maya_core.skill_store import init_skill_db
 from maya_core.storage import init_db
 from maya_telegram.telegram_commands import command_to_text, parse_command
-from weekly_memory_store import init_weekly_memory_db
+from maya_core.weekly_memory_store import init_weekly_memory_db
 from workflow_store import init_workflow_db
 
 

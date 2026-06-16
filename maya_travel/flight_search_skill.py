@@ -15,7 +15,7 @@ from maya_core.permission_policy import action_permission, contains_sensitive_in
 from maya_core.skill_store import init_skill_db, record_skill_usage, upsert_skill
 from maya_core.storage import upsert_preference
 from maya_travel.travel_budget import save_travel_plan_fields
-from utils import OSBridge
+from maya_core.utils import OSBridge
 from maya_travel.flight_search_models import FieldAttempt, FlightDetails
 from maya_travel.flight_search_parsing import extract_flight_details, flight_request_needs_active_context
 from maya_travel.flight_search_form_helpers import capture_result_page, close_active_overlay, field_labels, finalize_attempts

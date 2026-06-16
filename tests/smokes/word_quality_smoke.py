@@ -14,7 +14,7 @@ from pathlib import Path
 from maya_documents.artifact_quality import validate_docx_path
 from maya_documents.office_drafter import word_sections_from_markdown
 from maya_documents.office_modern_files import create_docx
-from word_quality import detect_word_intent, word_prompt_context, word_quality_spec
+from maya_documents.word_quality import detect_word_intent, word_prompt_context, word_quality_spec
 
 
 SCENARIOS = (

@@ -5,7 +5,7 @@ import contextlib
 import json
 import time
 
-from voice_session_log import record_voice_turn
+from maya_voice.voice_session_log import record_voice_turn
 from maya_documents.artifact_steering import apply_late_artifact_steers, update_artifact_steer_event
 from maya_voice.tool_guard import empty_request_reason
 from maya_voice.artifact_manifest import create_or_get_manifest

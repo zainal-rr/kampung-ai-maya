@@ -8,7 +8,7 @@ if str(_w4_root) not in _w4_sys.path:
 del _w4_Path, _w4_root, _w4_sys
 
 
-from word_section_repair import strengthen_word_sections
+from maya_documents.word_section_repair import strengthen_word_sections
 
 
 def main() -> None:

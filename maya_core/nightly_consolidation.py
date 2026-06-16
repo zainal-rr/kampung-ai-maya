@@ -225,7 +225,7 @@ async def _main() -> None:
     args = parser.parse_args()
     distiller = reviewer = None
     if args.live:
-        from weekly_memory_providers import weekly_distiller_agent, weekly_reviewer_agent
+        from maya_core.weekly_memory_providers import weekly_distiller_agent, weekly_reviewer_agent
 
         distiller = weekly_distiller_agent()
         reviewer = weekly_reviewer_agent()

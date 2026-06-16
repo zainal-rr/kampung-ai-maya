@@ -5,7 +5,7 @@ import contextlib
 import json
 import time
 
-from voice_session_log import record_voice_turn
+from maya_voice.voice_session_log import record_voice_turn
 from xai_realtime_models import PlaybackCommand, SessionCloseReason
 from xai_realtime_stream_helpers import put_playback
 

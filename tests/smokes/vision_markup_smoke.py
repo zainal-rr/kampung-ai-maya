@@ -11,7 +11,7 @@ del _w4_Path, _w4_root, _w4_sys
 import numpy as np
 import cv2
 
-from vision_markup import draw_visual_marks, parse_targets, should_group_targets
+from maya_core.vision_markup import draw_visual_marks, parse_targets, should_group_targets
 
 
 def main() -> None:

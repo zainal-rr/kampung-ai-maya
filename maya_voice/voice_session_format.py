@@ -6,7 +6,7 @@ from pathlib import Path
 
 import aiosqlite
 
-from voice_session_store import (
+from maya_voice.voice_session_store import (
     latest_voice_session,
     list_today_voice_sessions,
     search_voice_sessions,

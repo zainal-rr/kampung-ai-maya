@@ -44,8 +44,8 @@ from maya_documents.office_drafter import (
 from maya_documents.office_modern_files import create_docx, create_xlsx
 from maya_documents.pptx_document_flow import create_powerpoint_with_qa
 from maya_core.presentation_reviewer import review_presentation_slides
-from word_quality import word_prompt_context
-from word_section_repair import strengthen_word_sections
+from maya_documents.word_quality import word_prompt_context
+from maya_documents.word_section_repair import strengthen_word_sections
 from maya_harness.harness_artifact_store import record_structured_artifact
 from maya_harness.harness_models import local_artifact
 from maya_core.markdown_drafter import (
@@ -60,8 +60,8 @@ from maya_core.permission_policy import action_permission, contains_sensitive_in
 from maya_core.project_store import active_project, remember_project_note
 from maya_core.storage import get_preference, upsert_preference
 from maya_core.testing_spreadsheet import is_kampung_ai_testing_comparison, kampung_ai_testing_rows
-from utils import OSBridge
-from visual_workflow import VisualWorkflowRenderer
+from maya_core.utils import OSBridge
+from maya_core.visual_workflow import VisualWorkflowRenderer
 from workspace_paths import workspace_dir
 
 

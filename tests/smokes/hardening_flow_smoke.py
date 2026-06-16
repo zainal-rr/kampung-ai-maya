@@ -23,7 +23,7 @@ from maya_core.routine_store import init_routine_db
 from maya_core.session_memory_store import init_session_memory_db
 from maya_core.skill_store import find_skill, init_skill_db, list_skill_proposals
 from maya_core.storage import init_db
-from weekly_memory_store import init_weekly_memory_db
+from maya_core.weekly_memory_store import init_weekly_memory_db
 from workflow_store import init_workflow_db
 
 

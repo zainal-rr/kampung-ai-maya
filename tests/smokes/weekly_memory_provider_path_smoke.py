@@ -10,7 +10,7 @@ del _w4_Path, _w4_root, _w4_sys
 
 import os
 
-from weekly_memory_providers import WeeklyClaudeReviewer, WeeklyGeminiDistiller, _weekly_gemini_model
+from maya_core.weekly_memory_providers import WeeklyClaudeReviewer, WeeklyGeminiDistiller, _weekly_gemini_model
 
 
 def main() -> None:

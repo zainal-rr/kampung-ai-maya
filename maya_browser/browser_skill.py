@@ -18,7 +18,7 @@ from maya_core.repo_paths import repo_root
 from maya_core.permission_policy import action_permission, contains_sensitive_info, hard_no_private_exposure_text
 from maya_core.skill_store import init_skill_db, record_skill_usage, upsert_skill
 from maya_core.storage import upsert_preference
-from utils import OSBridge
+from maya_core.utils import OSBridge
 
 
 SKILL_ID = "browser_control"

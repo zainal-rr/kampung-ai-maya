@@ -7,9 +7,9 @@ from pathlib import Path
 import time
 
 from maya_core.assistant import KampungAssistant
-from voice_agent_audio import VoiceAgentAudioCapture
-from voice_agent_session import build_voice_agent_session
-from voice_context import build_imac_voice_context
+from maya_voice.voice_agent_audio import VoiceAgentAudioCapture
+from maya_voice.voice_agent_session import build_voice_agent_session
+from maya_voice.voice_context import build_imac_voice_context
 from xai_realtime_stream import XaiRealtimeStreamingSession
 from xai_voice_handoff import (
     complete_voice_handoff_request,

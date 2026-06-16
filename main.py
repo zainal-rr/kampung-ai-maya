@@ -34,9 +34,9 @@ from maya_core.skill_memory_store import init_skill_memory_db
 from maya_core.skill_outcome_store import init_skill_outcome_db
 from maya_core.storage import init_db
 from maya_telegram.telegram_channel import TelegramChannel
-from weekly_memory_store import init_weekly_memory_db
-from weekly_skill_review import init_skill_review_db
-from user_model_store import init_user_model_db
+from maya_core.weekly_memory_store import init_weekly_memory_db
+from maya_core.weekly_skill_review import init_skill_review_db
+from maya_core.user_model_store import init_user_model_db
 from workflow_store import init_workflow_db
 from xai_voice_work import init_voice_work_db
 

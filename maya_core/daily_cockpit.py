@@ -5,8 +5,8 @@ from maya_harness.harness_artifact_store import latest_artifacts
 from maya_harness.harness_store import list_active_runs
 from maya_core.project_store import active_project, project_notes
 from maya_core.storage import list_tasks
-from waiting_on import list_waiting_on
-from workflow_desk import is_quiet_mode
+from maya_core.waiting_on import list_waiting_on
+from maya_core.workflow_desk import is_quiet_mode
 
 
 BUCKETS = {

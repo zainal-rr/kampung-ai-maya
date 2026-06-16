@@ -13,8 +13,8 @@ from maya_core.safe_paths import resolve_safe_path
 from telegram import Bot
 from telegram.error import NetworkError, RetryAfter, TimedOut
 
-from voice import VoiceNode
-from vision_markup import split_image_marker
+from maya_voice.voice import VoiceNode
+from maya_core.vision_markup import split_image_marker
 from workspace_paths import legacy_workspace_root, maya_workspace_root, project_roots
 
 

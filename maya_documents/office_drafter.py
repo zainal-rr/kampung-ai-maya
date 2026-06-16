@@ -4,7 +4,7 @@ import re
 
 from maya_documents.excel_species import detect_excel_species, species_rows_structured
 from maya_documents.excel_species_draft import rows_from_species_draft, seed_rows
-from word_quality import canonicalize_word_sections
+from maya_documents.word_quality import canonicalize_word_sections
 from maya_documents.office_drafter_powerpoint import _clean_slides, _general_powerpoint_slides, _scenario_powerpoint_slides
 from maya_documents.office_text_utils import _plain
 

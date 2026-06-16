@@ -221,7 +221,7 @@ async def apply_late_browser_followups(event_module, session, work: SupervisedVo
 
 
 async def send_supervised_work_status(session, question: str) -> bool:
-    from voice_session_log import record_voice_turn
+    from maya_voice.voice_session_log import record_voice_turn
     from xai_voice_work import voice_work_status_text
 
     status = await voice_work_status_text(session.db_path, limit=3)

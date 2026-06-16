@@ -9,8 +9,8 @@ from maya_core.skill_library import mirror_skill
 from maya_core.skill_memory_store import add_skill_memory, disable_skill_memory, list_skill_memory
 from maya_core.skill_registry import BUILT_IN_SKILLS, SkillRegistry
 from maya_core.skill_learning_store import mark_skill_disabled, missing_required_tests, record_skill_test, skill_has_required_tests
-from weekly_skill_review import latest_skill_review
-from user_model_store import list_user_model_items
+from maya_core.weekly_skill_review import latest_skill_review
+from maya_core.user_model_store import list_user_model_items
 from maya_core.skill_store import find_skill, latest_skill_usage, list_custom_skills, list_skill_proposals, update_skill_status
 from maya_core.mcp_registry import audit_mcp_server, list_mcp_servers, propose_mcp_server, set_mcp_status
 from maya_core.security_manifest import get_manifest, list_manifests, manifest_summary

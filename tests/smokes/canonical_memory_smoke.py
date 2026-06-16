@@ -23,7 +23,7 @@ from maya_memory.memory_control import forget_memory
 from maya_memory.memory_links import add_memory_link
 from maya_memory.memory_service import MemoryService
 from maya_core.storage import init_db
-from voice_transcript_policy import clean_voice_transcript_for_intent
+from maya_voice.voice_transcript_policy import clean_voice_transcript_for_intent
 
 
 async def main() -> None:

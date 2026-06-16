@@ -39,7 +39,7 @@ from maya_browser.site_runtime import search_reply as _search_reply
 from maya_core.permission_policy import action_permission
 from maya_core.skill_store import init_skill_db, record_skill_usage, upsert_skill
 from maya_core.storage import get_preference, upsert_preference
-from utils import OSBridge
+from maya_core.utils import OSBridge
 
 
 GOOGLE_SEARCH_SKILL_ID = "google_search"

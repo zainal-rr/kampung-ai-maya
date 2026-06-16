@@ -21,7 +21,7 @@ from maya_core.routine_store import init_routine_db
 from maya_core.session_memory_store import init_session_memory_db
 from maya_core.skill_store import init_skill_db
 from maya_core.storage import init_db
-from workflow_desk import background_tasks_text, close_matching_workflow, workflow_desk_text
+from maya_core.workflow_desk import background_tasks_text, close_matching_workflow, workflow_desk_text
 
 
 async def main() -> None:

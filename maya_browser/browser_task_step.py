@@ -13,7 +13,7 @@ from maya_travel.flight_search_reply import extract_flight_options
 from maya_travel.stay_booking_parsing import extract_stay_options
 from maya_travel.travel_booking_safety import travel_booking_boundary_reply, travel_booking_safety_footer
 from maya_travel.travel_budget import save_travel_plan_fields
-from utils import OSBridge
+from maya_core.utils import OSBridge
 
 
 class BrowserTaskStepper:

@@ -4,7 +4,7 @@ import json
 from dataclasses import dataclass
 from urllib.parse import quote_plus
 
-from utils import OSBridge
+from maya_core.utils import OSBridge
 from maya_browser.browser_control_models import BrowserElement, BrowserPage
 from maya_browser.browser_control_parse import element_summary, page_summary, parse_page
 from maya_browser.browser_control_js import (

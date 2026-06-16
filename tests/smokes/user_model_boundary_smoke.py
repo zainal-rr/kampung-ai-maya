@@ -12,7 +12,7 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-from user_model_store import add_user_model_item, list_user_model_items
+from maya_core.user_model_store import add_user_model_item, list_user_model_items
 
 
 async def main() -> None:

@@ -9,7 +9,7 @@ from pptx import Presentation
 
 from maya_documents.document_request_parser import document_request
 from maya_core.storage import upsert_preference
-from travel_budget_plan import _parse_plan_updates
+from maya_travel.travel_budget_plan import _parse_plan_updates
 
 
 class FastReplayDocuments:

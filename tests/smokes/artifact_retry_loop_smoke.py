@@ -28,7 +28,7 @@ from maya_core.session_memory_store import init_session_memory_db
 from maya_core.skill_store import init_skill_db
 from maya_core.storage import init_db
 from maya_travel.travel_budget import TravelParty
-from travel_budget_workbook import _build_workbook
+from maya_travel.travel_budget_workbook import _build_workbook
 
 
 async def main() -> None:

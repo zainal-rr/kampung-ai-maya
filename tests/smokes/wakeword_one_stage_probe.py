@@ -17,7 +17,7 @@ import sounddevice as sd
 from openwakeword.utils import AudioFeatures
 from scipy.io.wavfile import write as write_wav
 
-from wakeword_sample_scorer import clip_features
+from maya_core.wakeword_sample_scorer import clip_features
 from workspace_paths import workspace_dir
 
 

@@ -18,7 +18,7 @@ from maya_documents.document_actions_word_helpers import (
 )
 from maya_documents.office_drafter import word_sections_from_markdown
 from maya_documents.office_modern_files import create_docx
-from word_section_repair import strengthen_word_sections
+from maya_documents.word_section_repair import strengthen_word_sections
 
 
 def main() -> None:

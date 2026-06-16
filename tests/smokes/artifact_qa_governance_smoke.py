@@ -25,7 +25,7 @@ from maya_documents.artifact_review_store import (
     record_artifact_review,
     resolve_review_activity_text,
 )
-from word_quality_travel import destination_consistency_issue_details
+from maya_documents.word_quality_travel import destination_consistency_issue_details
 
 
 def _require(condition: bool, message: str) -> None:

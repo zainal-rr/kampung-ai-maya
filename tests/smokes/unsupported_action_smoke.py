@@ -24,7 +24,7 @@ from maya_core.routine_store import init_routine_db
 from maya_core.skill_store import init_skill_db
 from maya_core.skill_factory import SkillFactory
 from maya_core.storage import init_db
-from web_actions import WebActionRouter
+from maya_core.web_actions import WebActionRouter
 
 
 class FakeBridge:

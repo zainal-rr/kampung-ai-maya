@@ -112,7 +112,7 @@ async def check_tts() -> str:
         return "skipped (missing XAI_API_KEY; macOS fallback is not counted as Ara)"
     sample = "Maya audio check."
     try:
-        from voice import VoiceNode
+        from maya_voice.voice import VoiceNode
         voice = VoiceNode(os.getenv("KAMPUNG_DB_PATH"))
         audio_path = await voice.render_audio_file(sample)
         exists = audio_path.exists()

@@ -37,10 +37,10 @@ from maya_telegram.telegram_commands import PASSTHROUGH_COMMANDS, command_to_tex
 from maya_telegram.telegram_conversation_contract import enforce_telegram_truth_contract, strong_artifact_request, telegram_document_failure_reply, telegram_greeting_reply, telegram_short_followup_context
 from maya_telegram.telegram_rewrite_context import is_rewrite_followup, latest_rewrite_candidate, remember_rewrite_candidate, rewrite_context_prompt
 from maya_core.topic_context import format_topic_context, recent_topic_history
-from voice import VoiceNode, spoken_preview
-from voice_command_aliases import spoken_command_alias
-from voice_transcript_policy import clean_voice_transcript_for_intent
-from vision_responder import VisionResponder
+from maya_voice.voice import VoiceNode, spoken_preview
+from maya_voice.voice_command_aliases import spoken_command_alias
+from maya_voice.voice_transcript_policy import clean_voice_transcript_for_intent
+from maya_core.vision_responder import VisionResponder
 
 PRIMARY_USER_ID = 1
 class KampungAssistant:

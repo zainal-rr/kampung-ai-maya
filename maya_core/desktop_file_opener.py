@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 
 from workspace_paths import legacy_workspace_root, maya_workspace_root, workspace_dir
-from utils import OSBridge
+from maya_core.utils import OSBridge
 
 
 TYPE_CONFIG = {

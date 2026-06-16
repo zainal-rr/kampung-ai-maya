@@ -15,7 +15,7 @@ from maya_core.network_tools import network_doc_sections, run_network_diagnostic
 from maya_documents.office_modern_files import create_docx
 from maya_core.permission_policy import action_permission
 from maya_core.storage import delete_preference, get_preference, upsert_preference
-from utils import OSBridge
+from maya_core.utils import OSBridge
 from workspace_paths import workspace_dir
 
 SENSITIVE_BROWSER_WORDS = ("buy", "book", "pay", "checkout", "purchase", "submit", "passport", "card", "confirm")

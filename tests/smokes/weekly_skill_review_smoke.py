@@ -14,7 +14,7 @@ from pathlib import Path
 
 from maya_core.skill_outcome_store import record_skill_outcome
 from maya_core.skill_store import init_skill_db, upsert_skill
-from weekly_skill_review import WeeklySkillReviewer, latest_skill_review
+from maya_core.weekly_skill_review import WeeklySkillReviewer, latest_skill_review
 
 
 async def main() -> None:

@@ -5,7 +5,7 @@ import re
 from urllib.parse import quote_plus
 
 from maya_core.permission_policy import action_permission
-from utils import OSBridge
+from maya_core.utils import OSBridge
 
 
 FLIGHT_MARKERS = ("flight", "flights", "airline", "ticket", "airasia", "malaysia airlines")

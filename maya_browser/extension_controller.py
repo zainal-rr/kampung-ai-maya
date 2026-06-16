@@ -7,7 +7,7 @@ from urllib.parse import quote_plus
 from maya_browser.browser_control import BrowserClickResult, BrowserElement, BrowserPage, _emit
 from maya_browser.browser_control_js import _modal_state, _text_hash
 from maya_browser.extension_state import remember_extension_open_result
-from untrusted_input_boundary import assess_untrusted_context
+from maya_core.untrusted_input_boundary import assess_untrusted_context
 
 
 PING_TIMEOUT = 3.0

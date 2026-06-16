@@ -6,7 +6,7 @@ if str(_w4_root) not in _w4_sys.path:
     _w4_sys.path.insert(0, str(_w4_root))
 del _w4_Path, _w4_root, _w4_sys
 
-from voice_device_policy import local_wake_allowed, voice_intent_label
+from maya_voice.voice_device_policy import local_wake_allowed, voice_intent_label
 
 
 def _require(condition: bool, message: str) -> None:

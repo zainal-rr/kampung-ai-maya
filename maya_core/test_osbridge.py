@@ -1,4 +1,4 @@
-from utils import OSBridge
+from maya_core.utils import OSBridge
 
 def test_osbridge():
     bridge = OSBridge()

@@ -8,7 +8,7 @@ from maya_core.speech_input import (
     build_transcript_source_from_env,
     build_wake_transcript_source_from_env,
 )
-from voice_agent_session import build_voice_agent_session
+from maya_voice.voice_agent_session import build_voice_agent_session
 
 
 class LocalVoiceChannel:

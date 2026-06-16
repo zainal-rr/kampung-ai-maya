@@ -28,7 +28,7 @@ _ROOT = _Path(__file__).resolve().parents[2]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from untrusted_input_boundary import (
+from maya_core.untrusted_input_boundary import (
     assess_untrusted_content,
     boundary_notice,
     is_untrusted_source,

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from maya_core.active_context import inspect_active_context
-from visual_workflow import VisualWorkflowRenderer
+from maya_core.visual_workflow import VisualWorkflowRenderer
 
 
 ACTIVE_CONTEXT_TOOL_NAME = "inspect_active_context"

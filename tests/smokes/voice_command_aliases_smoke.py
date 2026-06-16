@@ -8,7 +8,7 @@ if str(_w4_root) not in _w4_sys.path:
 del _w4_Path, _w4_root, _w4_sys
 
 
-from voice_command_aliases import spoken_command_alias
+from maya_voice.voice_command_aliases import spoken_command_alias
 
 
 def main() -> None:

@@ -15,7 +15,7 @@ from pathlib import Path
 from maya_documents.artifact_file_state import record_artifact_fingerprint
 from maya_documents.artifact_sessions import record_artifact_session
 from maya_core.storage import init_db
-from voice_session_log import voice_session_turns
+from maya_voice.voice_session_log import voice_session_turns
 from xai_realtime_events import XaiRealtimeEventMixin
 from xai_realtime_playback import XaiRealtimePlaybackMixin
 from xai_realtime_tools import CANCEL_WORK_TOOL_NAME, MAYA_WORK_TOOL_NAME, REVISE_WORK_TOOL_NAME, execute_voice_tool

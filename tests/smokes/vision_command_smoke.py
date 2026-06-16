@@ -21,9 +21,9 @@ from maya_core.storage import init_db, upsert_preference
 from maya_core.route_tracker import last_route_text
 from maya_telegram.telegram_commands import command_to_text, parse_command
 from maya_core.assistant import KampungAssistant
-from vision_responder import VisionResponder
-from vision_service import VisionSnapshot
-from vision_session import activate_guided_sight
+from maya_core.vision_responder import VisionResponder
+from maya_core.vision_service import VisionSnapshot
+from maya_core.vision_session import activate_guided_sight
 
 
 async def main() -> None:

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from travel_parameters import extract_destination
+from maya_travel.travel_parameters import extract_destination
 
 _COUNT_WORDS = {
     "one": 1,

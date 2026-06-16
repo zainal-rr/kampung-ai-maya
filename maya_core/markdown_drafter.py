@@ -10,7 +10,7 @@ from maya_core.cost_tracker import record_usage
 from maya_core.models import TheSenses
 from google import genai
 from google.genai import types
-from word_quality import word_prompt_context
+from maya_documents.word_quality import word_prompt_context
 
 
 @dataclass(frozen=True)

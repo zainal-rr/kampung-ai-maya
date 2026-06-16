@@ -12,7 +12,7 @@ import tempfile
 from pathlib import Path
 
 from maya_documents.office_modern_files import create_docx
-from word_visual_qa import inspect_word_visual_quality
+from maya_documents.word_visual_qa import inspect_word_visual_quality
 
 
 def main() -> None:

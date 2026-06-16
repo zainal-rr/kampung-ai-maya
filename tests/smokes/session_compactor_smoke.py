@@ -21,7 +21,7 @@ from maya_core.session_compactor import build_session_context, compact_if_needed
 from maya_core.session_memory_store import init_session_memory_db, latest_session_summary
 from maya_core.skill_store import init_skill_db
 from maya_core.storage import init_db, save_history_message
-from weekly_memory_store import init_weekly_memory_db
+from maya_core.weekly_memory_store import init_weekly_memory_db
 
 
 async def main() -> None:

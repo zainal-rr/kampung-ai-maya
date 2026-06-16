@@ -18,7 +18,7 @@ from openpyxl import load_workbook
 from maya_browser.browser_task_step import BrowserTaskStepper
 from maya_core.storage import get_preference, init_db
 from maya_travel.travel_budget import TRAVEL_PLAN_KEY, TravelParty
-from travel_budget_workbook import _build_workbook
+from maya_travel.travel_budget_workbook import _build_workbook
 
 
 class FakeBridge:

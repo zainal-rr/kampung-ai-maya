@@ -4,7 +4,7 @@ import cv2
 import threading
 import time
 
-from vision_blocked import frame_blocked
+from maya_core.vision_blocked import frame_blocked
 
 class VisionNode:
     """

@@ -24,8 +24,8 @@ from pathlib import Path
 from maya_documents.document_actions_content_helpers import _budget_topic, _task_tracker_topic
 from maya_documents.excel_species import detect_excel_species, species_rows
 from maya_documents.office_drafter import slides_from_markdown, spreadsheet_from_markdown
-from word_quality import detect_word_intent, word_quality_spec
-from word_quality_travel import travel_consistency_issues
+from maya_documents.word_quality import detect_word_intent, word_quality_spec
+from maya_documents.word_quality_travel import travel_consistency_issues
 
 
 MD = (

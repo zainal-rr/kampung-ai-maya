@@ -21,7 +21,7 @@ from maya_travel.stay_booking_parsing import (  # noqa: F401 - re-exported for e
 )
 from maya_travel.stay_booking_runtime import record_stay_skill, stay_reply, stay_workflow_value
 from maya_travel.travel_budget import save_travel_plan_fields
-from utils import OSBridge
+from maya_core.utils import OSBridge
 
 
 BOOKING_SKILL_ID = "booking_com_hotel_search"

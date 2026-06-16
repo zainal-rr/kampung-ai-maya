@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 
 from weekly_memory import WeeklyMemoryDistiller
-from weekly_memory_providers import weekly_distiller_agent, weekly_reviewer_agent
-from weekly_memory_store import latest_weekly_memory_runs, latest_weekly_summary
+from maya_core.weekly_memory_providers import weekly_distiller_agent, weekly_reviewer_agent
+from maya_core.weekly_memory_store import latest_weekly_memory_runs, latest_weekly_summary
 
 
 async def weekly_memory_status_text(db_path: str) -> str:

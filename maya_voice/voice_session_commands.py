@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from voice_session_log import (
+from maya_voice.voice_session_log import (
     export_latest_voice_session,
     format_last_voice_session,
     format_today_voice_sessions,

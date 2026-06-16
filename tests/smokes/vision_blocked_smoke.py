@@ -10,7 +10,7 @@ del _w4_Path, _w4_root, _w4_sys
 
 import numpy as np
 
-from vision_blocked import frame_blocked
+from maya_core.vision_blocked import frame_blocked
 
 
 def main() -> None:

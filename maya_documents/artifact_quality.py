@@ -9,8 +9,8 @@ from maya_documents.artifact_qa_governance import (
     legacy_blocker,
 )
 from maya_documents.artifact_quality_core import ArtifactQualityResult, artifact_skill_context
-from word_quality import validate_word_doc_quality_details
-from word_visual_qa import inspect_word_visual_quality
+from maya_documents.word_quality import validate_word_doc_quality_details
+from maya_documents.word_visual_qa import inspect_word_visual_quality
 from maya_documents.artifact_quality_extractors import (
     extract_docx_text,
     extract_xlsx_text,

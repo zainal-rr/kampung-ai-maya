@@ -13,7 +13,7 @@ from maya_core.models import TheMind, TheNews, TheSenses, TheSteward
 from maya_core.lane_prompts import MIND_ESCALATION_PROMPT
 from maya_core.provider_capabilities import CAPABILITIES, review_triggers
 from maya_core.source_aware_research import format_source_research, should_use_source_research, source_aware_research
-from weather_lookup import current_weather_summary, is_weather_question
+from maya_core.weather_lookup import current_weather_summary, is_weather_question
 
 
 class ModelLanes:

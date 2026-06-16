@@ -4,7 +4,7 @@ import asyncio
 import json
 import time
 
-from voice_session_log import record_voice_turn
+from maya_voice.voice_session_log import record_voice_turn
 from xai_realtime_models import PlaybackCommand, SessionCloseReason, _decode_audio_delta
 from xai_realtime_stream_helpers import append_audio_message, event_error, put_playback
 from maya_documents.artifact_steering import pending_steer_events_for_work, update_artifact_steer_event

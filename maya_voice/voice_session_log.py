@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import aiosqlite
 
-from voice_session_store import (
+from maya_voice.voice_session_store import (
     init_voice_session_log_db,
     latest_voice_session,
     list_today_voice_sessions,
@@ -11,7 +11,7 @@ from voice_session_store import (
     start_voice_session,
     voice_session_turns,
 )
-from voice_session_format import (
+from maya_voice.voice_session_format import (
     export_latest_voice_session,
     export_voice_session_markdown,
     format_last_voice_session,

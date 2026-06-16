@@ -24,9 +24,9 @@ from maya_core.route_tracker import last_route_text
 from maya_core.self_heal_store import latest_self_heal_report
 from maya_core.skill_outcome_store import recent_skill_outcomes
 from maya_core.skill_store import list_custom_skills, list_skill_proposals
-from user_model_store import list_user_model_items
-from weekly_memory_status import weekly_memory_status_text
-from workflow_desk import workflow_desk_text
+from maya_core.user_model_store import list_user_model_items
+from maya_core.weekly_memory_status import weekly_memory_status_text
+from maya_core.workflow_desk import workflow_desk_text
 from workspace_paths import workspace_dir
 
 

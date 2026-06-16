@@ -4,7 +4,7 @@ import asyncio
 import re
 from dataclasses import dataclass
 
-from utils import OSBridge
+from maya_core.utils import OSBridge
 
 
 APP_ALIASES = {

@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import re
 
-from utils import OSBridge
+from maya_core.utils import OSBridge
 
 
 APP_ALIASES = {

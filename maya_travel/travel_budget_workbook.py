@@ -7,7 +7,7 @@ from openpyxl.styles import Font, PatternFill
 from openpyxl.worksheet.datavalidation import DataValidation
 
 from maya_travel.travel_budget_food import _food_restaurant_section
-from travel_budget_style import _add_table, _style_sheet, _yes_no_validation
+from maya_travel.travel_budget_style import _add_table, _style_sheet, _yes_no_validation
 
 
 def _build_workbook(path: Path, plan: dict, party: TravelParty) -> None:

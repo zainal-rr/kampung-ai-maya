@@ -35,7 +35,7 @@ from maya_harness.harness_models import local_artifact
 from maya_voice.work_runtime import set_current_voice_work_phase
 from maya_documents.delivery_policy import docx_quality_hard_block, excel_quality_hard_block
 from maya_core.storage import upsert_preference
-from utils import OSBridge
+from maya_core.utils import OSBridge
 
 
 LAST_DOC_KEY = "maya_last_document_path"

@@ -23,7 +23,7 @@ from maya_core.storage import create_task, init_db, save_history_message, upsert
 from maya_core.storage import update_task_status
 from maya_telegram.telegram_commands import ParsedCommand, command_to_text
 from weekly_memory import WeeklyMemoryDistiller
-from weekly_memory_store import init_weekly_memory_db, latest_weekly_memory_runs, latest_weekly_summary
+from maya_core.weekly_memory_store import init_weekly_memory_db, latest_weekly_memory_runs, latest_weekly_summary
 
 
 async def main() -> None:

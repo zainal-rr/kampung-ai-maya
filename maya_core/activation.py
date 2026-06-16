@@ -6,7 +6,7 @@ import time
 
 from maya_core.storage import get_preference, upsert_preference
 from maya_core.screen_session import deactivate_screen_sight
-from vision_session import deactivate_guided_sight
+from maya_core.vision_session import deactivate_guided_sight
 
 
 def wake_phrases() -> tuple[str, ...]:

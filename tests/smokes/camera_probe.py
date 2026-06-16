@@ -16,7 +16,7 @@ load_dotenv()
 
 import cv2
 
-from vision import VisionNode
+from maya_core.vision import VisionNode
 
 
 def main() -> None:

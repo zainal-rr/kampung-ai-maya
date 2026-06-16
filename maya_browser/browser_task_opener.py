@@ -10,7 +10,7 @@ from maya_browser.browser_capability import route_browser_capability, run_browse
 from maya_browser.browser_driver import make_browser_controller
 from maya_core.permission_policy import action_permission
 from maya_core.storage import upsert_preference
-from utils import OSBridge
+from maya_core.utils import OSBridge
 
 
 @dataclass(frozen=True)

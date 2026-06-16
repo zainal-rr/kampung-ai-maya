@@ -16,7 +16,7 @@ from maya_browser.browser_workflow_helpers import open_browser_target_new_tab as
 from maya_core.permission_policy import action_permission, contains_sensitive_info, hard_no_private_exposure_text, safe_sensitive_guidance
 from maya_core.screen_service import MacScreenService
 from maya_core.storage import delete_preference, get_preference, upsert_preference
-from utils import OSBridge
+from maya_core.utils import OSBridge
 
 
 STATE_KEY = "maya_browser_workflow"

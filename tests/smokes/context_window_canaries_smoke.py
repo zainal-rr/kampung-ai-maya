@@ -28,7 +28,7 @@ from maya_core.context_window import (
     record_context_turn,
     resolve_route,
 )
-from untrusted_input_boundary import untrusted_action_decision
+from maya_core.untrusted_input_boundary import untrusted_action_decision
 
 
 def _require(condition: bool, message: str) -> None:

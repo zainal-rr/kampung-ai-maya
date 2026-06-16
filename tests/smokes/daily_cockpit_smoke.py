@@ -19,8 +19,8 @@ from maya_core.routine_store import init_routine_db
 from maya_core.session_memory_store import init_session_memory_db
 from maya_core.skill_store import init_skill_db
 from maya_core.storage import create_task, init_db
-from waiting_on import create_waiting_on
-from workflow_desk import quiet_mode_text
+from maya_core.waiting_on import create_waiting_on
+from maya_core.workflow_desk import quiet_mode_text
 
 
 async def main() -> None:

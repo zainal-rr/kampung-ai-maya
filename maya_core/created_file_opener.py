@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from utils import OSBridge
+from maya_core.utils import OSBridge
 
 
 def app_candidates_for_path(path: Path) -> tuple[str | None, ...]:

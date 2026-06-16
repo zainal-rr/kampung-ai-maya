@@ -26,7 +26,7 @@ from maya_voice.artifact_manifest import (
     record_current_render_report_for_sections,
 )
 from maya_core.recent_questions_document import recent_user_questions
-from word_simple_edit import apply_simple_docx_edit, simple_docx_edit_instruction
+from maya_documents.word_simple_edit import apply_simple_docx_edit, simple_docx_edit_instruction
 
 
 class DocumentWordMixin:

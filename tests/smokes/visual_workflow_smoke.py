@@ -13,7 +13,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from visual_workflow import VisualWorkflowRenderer, visual_workflow_subject
+from maya_core.visual_workflow import VisualWorkflowRenderer, visual_workflow_subject
 
 
 class FakeBridge:

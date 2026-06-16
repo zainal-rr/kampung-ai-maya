@@ -18,7 +18,7 @@ load_dotenv()
 os.environ["ENABLE_VISION_CAMERA"] = "1"
 os.environ["ENABLE_IMAC_CHANNEL"] = "1"
 
-from vision import VisionNode
+from maya_core.vision import VisionNode
 
 
 def main() -> None:

@@ -24,7 +24,7 @@ from maya_browser.pending_actions import pending_browser_voice_request
 from maya_core.permission_policy import action_permission
 from maya_travel.stay_booking_skill import run_airbnb_skill, run_booking_com_skill
 from maya_core.storage import upsert_preference
-from utils import OSBridge
+from maya_core.utils import OSBridge
 
 
 @dataclass(frozen=True)

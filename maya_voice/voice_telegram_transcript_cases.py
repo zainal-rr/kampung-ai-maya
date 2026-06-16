@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from voice_telegram_transcript_extra_cases import build_chat_cases, build_edit_cases, build_park_cases
+from maya_voice.voice_telegram_transcript_extra_cases import build_chat_cases, build_edit_cases, build_park_cases
 
 
 TARGET_CASES = 10_000

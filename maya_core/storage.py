@@ -19,7 +19,7 @@ from maya_core.storage_tasks import (
     record_task_event,
     update_task_status,
 )
-from voice_session_log import init_voice_session_log_db
+from maya_voice.voice_session_log import init_voice_session_log_db
 
 
 async def init_db(db_path: str) -> None:

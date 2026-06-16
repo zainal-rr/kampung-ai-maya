@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from travel_budget_style import _add_table
+from maya_travel.travel_budget_style import _add_table
 
 
 def _food_restaurant_section(ws, plan: dict, template_mode: bool) -> tuple[int, int]:

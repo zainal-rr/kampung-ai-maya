@@ -8,7 +8,7 @@ from datetime import datetime, timedelta
 
 import aiosqlite
 
-from weekly_memory_helpers import (
+from maya_core.weekly_memory_helpers import (
     INTERNAL_TASK_ACTIONS,
     _canonical_memory_ids,
     _fetch_all,
@@ -23,9 +23,9 @@ from maya_core.retention_policy import run_retention_cleanup
 from maya_core.storage import init_db
 from maya_core.time_parser import local_now
 from weekly_memory_live import ProviderCall, live_weekly_canonical_distillation
-from weekly_memory_providers import weekly_distiller_agent, weekly_reviewer_agent
-from weekly_memory_store import finish_weekly_memory_run, save_weekly_summary, start_weekly_memory_run
-from weekly_memory_store import init_weekly_memory_db
+from maya_core.weekly_memory_providers import weekly_distiller_agent, weekly_reviewer_agent
+from maya_core.weekly_memory_store import finish_weekly_memory_run, save_weekly_summary, start_weekly_memory_run
+from maya_core.weekly_memory_store import init_weekly_memory_db
 
 
 @dataclass(frozen=True)

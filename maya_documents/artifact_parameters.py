@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import re
 
-from travel_parameters import extract_destination
-from word_quality import detect_word_intent
-from word_quality_travel import explicit_day_count
+from maya_travel.travel_parameters import extract_destination
+from maya_documents.word_quality import detect_word_intent
+from maya_documents.word_quality_travel import explicit_day_count
 
 
 def artifact_parameter_question(kind: str, topic: str, channel: str) -> str:

@@ -11,7 +11,7 @@ del _w4_Path, _w4_root, _w4_sys
 import subprocess
 import sys
 
-from utils import OSBridge, _test_mode
+from maya_core.utils import OSBridge, _test_mode
 
 
 class GuardedBridge(OSBridge):

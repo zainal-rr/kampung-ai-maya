@@ -10,7 +10,7 @@ del _w4_Path, _w4_root, _w4_sys
 
 import asyncio
 
-from web_actions import WebActionRouter
+from maya_core.web_actions import WebActionRouter
 
 
 class FakeBridge:

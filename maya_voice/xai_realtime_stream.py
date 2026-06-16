@@ -19,7 +19,7 @@ from maya_core.sounddevice_audio import (
     resolve_first_output_name,
     resolve_sounddevice_input_after_refresh,
 )
-from voice_session_log import finish_voice_session, start_voice_session
+from maya_voice.voice_session_log import finish_voice_session, start_voice_session
 from xai_realtime_audio_math import pcm_rms
 from xai_realtime_stream_helpers import append_audio_message, put_latest, put_playback
 from xai_voice_agent import realtime_url

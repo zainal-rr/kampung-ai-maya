@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 import cv2
 
-from vision import VisionNode
+from maya_core.vision import VisionNode
 
 
 @dataclass(frozen=True)
