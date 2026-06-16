@@ -32,9 +32,9 @@ DEMOS = {
             "No live provider call is required in replay mode.",
         ),
         (
-            ("document_route_flow_smoke.py",),
+            ("tests/smokes/document_route_flow_smoke.py",),
             ("word_golden_artifact_smoke.py",),
-            ("excel_golden_artifact_smoke.py",),
+            ("tests/smokes/excel_golden_artifact_smoke.py",),
             ("pptx_quality_gate_smoke.py",),
             ("telegram_delivery_file_smoke.py",),
         ),
@@ -48,7 +48,7 @@ DEMOS = {
             "Weekly memory dry run completes without live provider calls.",
             "Nightly consolidation proves no-resurrect, association links, decay report, and zero-delta skip.",
         ),
-        (("canonical_memory_smoke.py",), ("memory_control_smoke.py",), ("weekly_memory_smoke.py",), ("nightly_consolidation_smoke.py",)),
+        (("tests/smokes/canonical_memory_smoke.py",), ("memory_control_smoke.py",), ("weekly_memory_smoke.py",), ("nightly_consolidation_smoke.py",)),
     ),
     "self_heal": Demo(
         "self_heal",
@@ -58,7 +58,7 @@ DEMOS = {
             "Memory self-heal dry-run/proceed guardrails pass.",
             "Complex agentic workflow pauses for approval and resumes safely.",
         ),
-        (("self_healing_smoke.py",), ("self_heal_memory_smoke.py",), ("complex_agentic_workflow_smoke.py",)),
+        (("self_healing_smoke.py",), ("self_heal_memory_smoke.py",), ("tests/smokes/complex_agentic_workflow_smoke.py",)),
     ),
     "artisan_project": Demo(
         "artisan_project",
@@ -68,7 +68,7 @@ DEMOS = {
             "App QA rejects broken assets and accepts complete projects.",
             "Latest-app delivery packages a Telegram-ready zip.",
         ),
-        (("artisan_runner_smoke.py",), ("artisan_app_qa_smoke.py",), ("artisan_delivery_smoke.py",)),
+        (("tests/smokes/artisan_runner_smoke.py",), ("tests/smokes/artisan_app_qa_smoke.py",), ("tests/smokes/artisan_delivery_smoke.py",)),
     ),
     "blender_maker": Demo(
         "blender_maker",
@@ -78,7 +78,7 @@ DEMOS = {
             "Blender can export real .blend and .stl files when available.",
             "Delivery summary includes safety status and no physical print action.",
         ),
-        (("artisan_maker_template_smoke.py",), ("blender_maker_smoke.py",), ("artisan_delivery_smoke.py",)),
+        (("tests/smokes/artisan_maker_template_smoke.py",), ("tests/smokes/blender_maker_smoke.py",), ("tests/smokes/artisan_delivery_smoke.py",)),
     ),
 }
 
@@ -115,6 +115,8 @@ def format_demo_result(payload: dict) -> str:
 def _run_command(command: tuple[str, ...]) -> dict:
     env = os.environ.copy()
     env.setdefault("MAYA_TEST_MODE", "1")
+    current_pythonpath = env.get("PYTHONPATH", "")
+    env["PYTHONPATH"] = str(ROOT) if not current_pythonpath else f"{ROOT}{os.pathsep}{current_pythonpath}"
     proc = subprocess.run([sys.executable, *command], cwd=ROOT, capture_output=True, text=True, env=env, timeout=120)
     output = (proc.stdout + proc.stderr).strip()
     return {

@@ -10,6 +10,14 @@ Covers the review findings on document sameness:
 """
 
 from __future__ import annotations
+# W4_TEST_ROOT_BOOTSTRAP
+import sys as _w4_sys
+from pathlib import Path as _w4_Path
+_w4_root = _w4_Path(__file__).resolve().parents[2]
+if str(_w4_root) not in _w4_sys.path:
+    _w4_sys.path.insert(0, str(_w4_root))
+del _w4_Path, _w4_root, _w4_sys
+
 
 from pathlib import Path
 
@@ -139,7 +147,7 @@ def _deck_arc_checks() -> None:
 
 
 def _live_batch_validator_checks() -> None:
-    source = (Path(__file__).parent / "imac_document_creation_batch_live.py").read_text(encoding="utf-8")
+    source = (Path(__file__).parent / "tests/smokes/imac_document_creation_batch_live.py").read_text(encoding="utf-8")
     _require(
         "or len(text.split()) >= 260" not in source,
         "live batch validator must not pass Word docs on word count when QA fails",

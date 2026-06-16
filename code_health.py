@@ -136,7 +136,7 @@ def _runtime_python_files(root: Path) -> list[Path]:
 def _scanned_package_dir(path: Path) -> bool:
     if path.name in EXCLUDED_DIRS or path.name.startswith("."):
         return False
-    if not (path / "__init__.py").exists():
+    if not (path / "tests/smokes/__init__.py").exists():
         return False
     return path.name.startswith(PACKAGE_PREFIXES) or path.name in {
         "telegram_helpers",

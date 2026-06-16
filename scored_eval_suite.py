@@ -32,41 +32,41 @@ class EvalResult:
 
 EVAL_CASES = (
     EvalCase("routing", "route tracker", ("route_tracker_smoke.py",)),
-    EvalCase("memory", "canonical memory", ("canonical_memory_smoke.py",)),
+    EvalCase("memory", "canonical memory", ("tests/smokes/canonical_memory_smoke.py",)),
     EvalCase("memory", "nightly consolidation", ("nightly_consolidation_smoke.py",)),
     EvalCase("memory", "self-heal memory", ("self_heal_memory_smoke.py",)),
     EvalCase("weekly_memory", "weekly memory dry run", ("weekly_memory_smoke.py",)),
     EvalCase("weekly_memory", "weekly provider path", ("weekly_memory_provider_path_smoke.py",)),
     EvalCase("research", "source-aware Gemini research", ("source_aware_research_smoke.py",)),
-    EvalCase("browser", "browser field tests", ("browser_field_tests_smoke.py",)),
-    EvalCase("browser", "browser benchmark", ("browser_benchmark_smoke.py",)),
+    EvalCase("browser", "browser field tests", ("tests/smokes/browser_field_tests_smoke.py",)),
+    EvalCase("browser", "browser benchmark", ("tests/smokes/browser_benchmark_smoke.py",)),
     EvalCase("memory", "Omi context sieve", ("omi_context_sieve_smoke.py",)),
     EvalCase("word", "word quality", ("word_quality_smoke.py",)),
     EvalCase("word", "word visual QA", ("word_visual_qa_smoke.py",)),
-    EvalCase("excel", "excel golden artifact", ("excel_golden_artifact_smoke.py",)),
+    EvalCase("excel", "excel golden artifact", ("tests/smokes/excel_golden_artifact_smoke.py",)),
     EvalCase("powerpoint", "pptx quality gate", ("pptx_quality_gate_smoke.py",)),
-    EvalCase("documents", "Office edit workflow", ("document_edit_office_smoke.py",)),
-    EvalCase("imac", "June 8 iMac regression", ("imac_june8_regression_smoke.py",)),
+    EvalCase("documents", "Office edit workflow", ("tests/smokes/document_edit_office_smoke.py",)),
+    EvalCase("imac", "June 8 iMac regression", ("tests/smokes/imac_june8_regression_smoke.py",)),
     EvalCase("self_heal", "self-heal loop", ("self_heal_loop_smoke.py",)),
     EvalCase("travel", "travel booking safety", ("travel_booking_safety_smoke.py",)),
     EvalCase("quantum", "quantum leaf boundary", ("quantum_leaf_smoke.py",)),
-    EvalCase("artisan", "artisan runner", ("artisan_runner_smoke.py",)),
-    EvalCase("blender_maker", "maker template", ("artisan_maker_template_smoke.py",)),
-    EvalCase("hardware", "hardware live proof readiness", ("hardware_live_proof_smoke.py",)),
-    EvalCase("live", "live test evidence", ("live_test_evidence_smoke.py",)),
-    EvalCase("live", "live reliability soak", ("live_reliability_soak_smoke.py",)),
+    EvalCase("artisan", "artisan runner", ("tests/smokes/artisan_runner_smoke.py",)),
+    EvalCase("blender_maker", "maker template", ("tests/smokes/artisan_maker_template_smoke.py",)),
+    EvalCase("hardware", "hardware live proof readiness", ("tests/smokes/hardware_live_proof_smoke.py",)),
+    EvalCase("live", "live test evidence", ("tests/smokes/live_test_evidence_smoke.py",)),
+    EvalCase("live", "live reliability soak", ("tests/smokes/live_reliability_soak_smoke.py",)),
     EvalCase("live", "30-day reliability scorecard", ("reliability_scorecard_smoke.py",)),
     EvalCase("safety", "secret detection", ("secret_detection_smoke.py",)),
-    EvalCase("maya_desk", "maya desk", ("maya_desk_smoke.py",)),
+    EvalCase("maya_desk", "maya desk", ("tests/smokes/maya_desk_smoke.py",)),
     EvalCase("harness", "harness SDK", ("maya_harness_sdk_smoke.py",)),
     EvalCase("harness", "thread manager", ("maya_thread_manager_smoke.py",)),
     EvalCase("harness", "event store", ("maya_event_store_smoke.py",)),
     EvalCase("harness", "tool registry", ("maya_tool_registry_smoke.py",)),
     EvalCase("harness", "permission kernel", ("maya_permission_kernel_smoke.py",)),
     EvalCase("skills", "Maya skill creation", ("youtube_skill_creation_maya_smoke.py",)),
-    EvalCase("dependencies", "dependency manifest", ("dependency_manifest_smoke.py",)),
-    EvalCase("demos", "demo evidence", ("demo_evidence_smoke.py",)),
-    EvalCase("hardening", "hardening audit", ("hardening_audit_smoke.py",)),
+    EvalCase("dependencies", "dependency manifest", ("tests/smokes/dependency_manifest_smoke.py",)),
+    EvalCase("demos", "demo evidence", ("tests/smokes/demo_evidence_smoke.py",)),
+    EvalCase("hardening", "hardening audit", ("tests/smokes/hardening_audit_smoke.py",)),
 )
 
 
@@ -107,6 +107,8 @@ def format_eval_summary(payload: dict) -> str:
 def _run_case(case: EvalCase) -> EvalResult:
     env = os.environ.copy()
     env.setdefault("MAYA_TEST_MODE", "1")
+    current_pythonpath = env.get("PYTHONPATH", "")
+    env["PYTHONPATH"] = str(ROOT) if not current_pythonpath else f"{ROOT}{os.pathsep}{current_pythonpath}"
     proc = subprocess.run(
         [sys.executable, *case.command],
         cwd=ROOT,

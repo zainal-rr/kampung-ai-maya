@@ -220,7 +220,7 @@ def gen_grandfather_baseline() -> list[str]:
     import code_health
     excl = FIXTURE_EXCLUDE
     pkgs = [d for d in ROOT.iterdir()
-            if d.is_dir() and (d / "__init__.py").exists()
+            if d.is_dir() and (d / "tests/smokes/__init__.py").exists()
             and d.name not in {"tests", "venv", ".venv"}]
     over = []
     for d in pkgs:
@@ -247,7 +247,7 @@ def ensure_pkg(pkg: str) -> None:
     p = ROOT / pkg
     p.mkdir(parents=True, exist_ok=True)
     if not pkg.startswith("tests"):
-        (p / "__init__.py").touch(exist_ok=True)
+        (p / "tests/smokes/__init__.py").touch(exist_ok=True)
 
 
 def write_shim(stem: str, pkg: str) -> None:
@@ -271,13 +271,13 @@ def write_cli_wrapper(stem: str, pkg: str, *, also_importable: bool) -> None:
 
 
 def update_ci_refs(stem: str, dest_dir: str) -> None:
-    ci = ROOT / "local_ci.py"
-    if not ci.exists():
-        return
-    t = ci.read_text()
-    n = t.replace(f'"{stem}.py"', f'"{dest_dir}/{stem}.py"').replace(f"'{stem}.py'", f"'{dest_dir}/{stem}.py'")
-    if n != t:
-        ci.write_text(n)
+    for path in all_py_files():
+        if path.parts[0] in {"tests", "venv", ".venv"}:
+            continue
+        t = path.read_text(errors="ignore")
+        n = t.replace(f'"{stem}.py"', f'"{dest_dir}/{stem}.py"').replace(f"'{stem}.py'", f"'{dest_dir}/{stem}.py'")
+        if n != t:
+            path.write_text(n)
 
 
 def existing_target_wrapper(stem: str, dest: str) -> bool:
@@ -289,6 +289,57 @@ def existing_target_wrapper(stem: str, dest: str) -> bool:
     text = source.read_text(errors="ignore")
     module_path = f"{dest.replace('/', '.')}.{stem}"
     return module_path in text or f"{dest}/{stem}.py" in text
+
+
+def add_test_root_bootstrap(path: Path) -> None:
+    """Make moved test scripts runnable as `python tests/.../name.py`."""
+    text = path.read_text(errors="ignore")
+    lines = text.splitlines()
+    if "W4_TEST_ROOT_BOOTSTRAP" in text:
+        cleaned: list[str] = []
+        index = 0
+        while index < len(lines):
+            if lines[index].strip() == "# W4_TEST_ROOT_BOOTSTRAP":
+                index += 1
+                while index < len(lines):
+                    current = lines[index].strip()
+                    index += 1
+                    if current == "del _w4_Path, _w4_root, _w4_sys":
+                        if index < len(lines) and not lines[index].strip():
+                            index += 1
+                        break
+                continue
+            cleaned.append(lines[index])
+            index += 1
+        lines = cleaned
+        text = "\n".join(lines) + "\n"
+    insert_at = 0
+    try:
+        tree = ast.parse(text)
+        if (
+            tree.body
+            and isinstance(tree.body[0], ast.Expr)
+            and isinstance(getattr(tree.body[0], "value", None), ast.Constant)
+            and isinstance(tree.body[0].value.value, str)
+        ):
+            insert_at = getattr(tree.body[0], "end_lineno", 0)
+    except SyntaxError:
+        insert_at = 0
+    for index, line in enumerate(lines[:80]):
+        if line.startswith("from __future__ import "):
+            insert_at = max(insert_at, index + 1)
+    bootstrap = [
+        "# W4_TEST_ROOT_BOOTSTRAP",
+        "import sys as _w4_sys",
+        "from pathlib import Path as _w4_Path",
+        "_w4_root = _w4_Path(__file__).resolve().parents[2]",
+        "if str(_w4_root) not in _w4_sys.path:",
+        "    _w4_sys.path.insert(0, str(_w4_root))",
+        "del _w4_Path, _w4_root, _w4_sys",
+        "",
+    ]
+    lines[insert_at:insert_at] = bootstrap
+    path.write_text("\n".join(lines) + "\n")
 
 
 def shim_target(stem: str) -> str | None:
@@ -416,9 +467,12 @@ def run_move_batch(b, *, dry, auto_rollback) -> bool:
             if existing_target_wrapper(stem, dest):
                 sh("git", "rm", "-q", f"{stem}.py")
                 update_ci_refs(stem, dest)
+                add_test_root_bootstrap(ROOT / dest / f"{stem}.py")
                 moved.append(stem)
                 continue
             sh("git", "mv", f"{stem}.py", f"{dest}/{stem}.py")
+            if b["wrap"] == "none":
+                add_test_root_bootstrap(ROOT / dest / f"{stem}.py")
             if b["wrap"] == "shim":
                 if stem in WRAPPER_ALLOWLIST:
                     write_cli_wrapper(stem, dest.replace("/", "."), also_importable=True)
