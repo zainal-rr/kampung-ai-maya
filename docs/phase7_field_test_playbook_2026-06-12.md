@@ -128,6 +128,39 @@ The question: does Maya feel like ONE assistant across voice + Telegram?
 - Voice + steer: while a file is being created, add context naturally ("make it
   for my ED", "also include assumptions", "change it to an executive version").
   Maya should treat that as steering the active artifact, not a random new chat.
+- Voice tool-seam + QA authority probe:
+  - Say "Can you make me a" and pause. No local work should start from the raw
+    transcript. Maya should either wait or ask naturally.
+  - Say "I told you to make me a router config... Meraki firewall config." Maya
+    should resolve the correction conversationally and start work only once,
+    through `start_maya_work`, with the full intended request.
+    Fail if Maya repeats a canned option list such as platform/config examples.
+  - Say "No wait, I mean..." and continue the sentence. Maya should not launch
+    background work from the fragment.
+  - Say "Make me a Word document about branch firewall setup for the operations team." Work should start
+    only after Maya understands the request and calls the work tool.
+  - While that work is running, say "also add an executive summary." Pass only
+    if the final draft includes that steer text in the generated content, not
+    just in the chat log. Then start a second harmless document and say
+    "cancel that." Pass only if cancelled work does not open a file.
+  - Say "Make a document for this travel", then answer "maybe a Word document",
+    then "make it three-day instead." Maya should preserve the Word
+    clarification and understand word-number durations such as three-day.
+  - If a soft QA warning appears during an iMac voice artifact/edit, Maya should
+    open the usable draft and say it is not final yet. Only corrupt/unopenable
+    files, unsafe overwrite/manual-edit risk, broken Excel formulas, unsafe
+    paths, or external/destructive actions should block delivery.
+  - Manifest/evidence probe: create a travel Word doc, revise the day count,
+    then highlight text in Word and ask Maya what changed. Pass only if Maya
+    answers from separated evidence (selection, saved-file parse, timestamps)
+    and does not claim the saved file contains highlighted text unless the
+    saved parse supports it.
+  - Browser strict probe: ask for a Google search. Pass only if Chrome opens in
+    the Maya tab group. If the extension bridge is disconnected, Maya should
+    say the browser bridge is unavailable instead of using normal Chrome.
+  - Confirmation probe: if Maya asks before an external/destructive action,
+    approve once and decline once. Pass only if the approval is tied to the
+    exact pending action; stale or changed confirmations should be rejected.
 
 ## Day 7 — Context window ON + the honest review
 
@@ -164,3 +197,53 @@ without being prompted to, more days than not, for real work; no `[SAFETY]` or
 `[MEMORY]`-leak miss went unlogged; and the disappointment list is specific
 enough to be a build plan. A week that produces a sharp, sorted weak-point list
 is a SUCCESS even if it's long — that list is the whole deliverable.
+
+## D-Retest Matrix — 2026-06-15
+
+Use this compact set when retesting the current D-list fixes.
+
+### Part A — Browser
+
+1. Google search: "Google search best beaches in Bali for a two day trip."
+   Pass only if Chrome opens in the Maya group and Maya answers conversationally
+   instead of turning it into a long travel article.
+2. Visible-result follow-up: search for a topic, then say "Maybe the Reddit
+   one" or "Open the Tripadvisor one." Pass only if Maya clicks/opens the
+   visible result instead of searching the literal phrase.
+3. Review follow-up: "Search for The Witcher 3 review", then "Open the Reddit."
+   Pass only if the Witcher-related Reddit result opens and Maya verifies the
+   title/URL.
+4. Continuity: "Find the Reddit one", then "Yes please." Pass only if the
+   confirmation continues the same browser task.
+5. Tool-choice sample: ask naturally for a game suggestion or similar voice
+   help without asking Maya to operate the browser. Pass if Maya answers in
+   voice or offers a lookup instead of browsing by habit. Then ask for a specific
+   browser action, such as a Google search or a YouTube search, and pass only if
+   that browser action happens in the Maya group.
+
+### Part B — Office
+
+1. Word: create a document, steer it while running, then add a section after it
+   opens. Pass only if the right document is edited or a safe v2 is created.
+2. Excel: create a monthly budget tracker, steer with a notes column. Pass only
+   if formulas still work and the file opens.
+3. PowerPoint: create a robotics workshop deck, steer the audience, then add a
+   closing slide. Pass only if the deck reflects the steer and later changes are
+   safe/versioned.
+
+### Part C — Status / Wrong Document
+
+Start a Word document, then ask "What are you doing?" and "What is the document
+name?" Pass only if Maya answers status/name and does not treat either as an
+edit or open the wrong document.
+
+### Part D — Sight / Highlight
+
+Highlight text in Word or Chrome and ask Maya to explain it. Pass only if Maya
+narrates from the exact selected text returned by `inspect_active_context`.
+
+### Part E — Tone
+
+Use Zainal's current preference: keep Maya's earlier direct voice feel. Simple
+answers can be brief; active-context answers should give the direct answer, key
+evidence, and one practical implication when useful.

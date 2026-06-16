@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Awaitable, Callable
 
 from canonical_memory import upsert_canonical_memory
-from permission_policy import contains_sensitive_info
+from permission_policy import contains_sensitive_info, contains_sensitive_phrase_cue
 from storage import add_knowledge_chunk
 
 OmiProvider = Callable[[str], Awaitable[str]]
@@ -36,7 +36,7 @@ async def sieve_omi_transcript(text: str, provider: OmiProvider | None = None) -
     cleaned = clean_transcript(text)
     if is_omi_noise(cleaned):
         return OmiSieveDecision(False, "noise", reason="low-signal transcript")
-    if contains_sensitive_info(cleaned):
+    if contains_sensitive_info(cleaned) or contains_sensitive_phrase_cue(cleaned):
         return OmiSieveDecision(False, "blocked_sensitive", reason="sensitive content")
     if provider:
         decision = _parse_provider_decision(await provider(_omi_prompt(cleaned)))

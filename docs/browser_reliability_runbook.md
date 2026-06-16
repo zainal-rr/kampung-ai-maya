@@ -12,6 +12,25 @@ google_images, youtube, reddit (10 each) + 10 safety stops.
 3. Do not use the iMac while a lane is running; Maya owns Chrome during a run.
 4. Local CI is green: `./venv/bin/python local_ci.py`.
 
+For Phase 7 voice proof, do not use `--probe` as readiness evidence because it
+can start a manual bridge. Query the live engine bridge only:
+
+```bash
+./venv/bin/python browser_extension_bridge.py --status
+```
+
+A valid live proof shows `owner_kind: "engine"` and `client_connected: true`.
+`/health` only proves that a bridge server is listening; it does not prove the
+Chrome extension client is connected. If status reports
+`bridge_port_contended`, the port is held by an unknown or wedged process and
+needs manual cleanup; Maya will not kill it blindly.
+
+The unpacked Maya Chrome extension is expected to run on Chrome 116 or newer.
+Its MV3 service worker keeps the WebSocket alive with a 20s in-worker
+heartbeat, while the engine voice preflight allows a 12s reconnect window for
+cold workers. A warm bridge should still answer immediately; the longer window
+is only a ceiling when Chrome has suspended the extension worker.
+
 ## Running
 
 Live browser nights use the Maya Chrome extension by default. That means every

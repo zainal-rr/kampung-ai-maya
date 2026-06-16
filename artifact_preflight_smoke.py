@@ -15,6 +15,7 @@ async def main() -> None:
             db_path = str(Path(tmp) / "smoke.db")
             word = await artifact_preflight_with_gemini(db_path, "docx", "make router setup guide in Word")
             _require(word.source == "local", "missing-key preflight should fall back locally")
+            _require(word.doc_kind == "generic_document", "missing-key Word preflight must not locally classify doc_kind")
             _require("admin password" in word.content.lower() or "scenario-specific" in word.content.lower(), "Word preflight too generic")
 
             excel = local_artifact_preflight("xlsx", "2-day Seoul food trip budget tracker")

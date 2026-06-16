@@ -7,14 +7,16 @@ import time
 from voice_session_log import record_voice_turn
 from xai_realtime_models import PlaybackCommand, SessionCloseReason, _decode_audio_delta
 from xai_realtime_stream_helpers import append_audio_message, event_error, put_playback
+from artifact_steering import pending_steer_events_for_work, update_artifact_steer_event
+from maya_voice.tool_results import failed_tool_result_for_maya, tool_result_for_maya
 from xai_realtime_tools import BROWSER_TOOL_NAME, MAYA_WORK_TOOL_NAME, execute_voice_tool
 from xai_realtime_vad_guard import XaiRealtimeVadGuardMixin
 from xai_realtime_voice_work import (
     XaiRealtimeVoiceWorkMixin,
-    _looks_like_browser_status_question,
-    _supervised_browser_request,
-    _supervised_voice_work,
 )
+from xai_voice_supervisor import SupervisedVoiceWork
+from xai_voice_work import complete_voice_work, set_voice_work_phase, voice_work_cancel_requested
+from xai_voice_work_followups import context_grace_seconds
 
 
 class XaiRealtimeEventMixin(XaiRealtimeVoiceWorkMixin, XaiRealtimeVadGuardMixin):
@@ -119,14 +121,19 @@ class XaiRealtimeEventMixin(XaiRealtimeVoiceWorkMixin, XaiRealtimeVadGuardMixin)
         call_id = event.get("call_id")
         if not name or not call_id:
             return
-        if self._supervisor_owns_tool(name):
-            print(f"maya-hotkey-tool-note> ignored duplicate {name}; voice supervisor already started it", flush=True)
-            return
         print(f"maya-hotkey-tool> {name}", flush=True)
+        if self.current_response_id:
+            calls = getattr(self, "tool_calls_by_response", {})
+            calls.setdefault(self.current_response_id, set()).add(name)
+            self.tool_calls_by_response = calls
         try:
             args = json.loads(event.get("arguments") or "{}")
         except json.JSONDecodeError:
             args = {}
+        if self._supervisor_owns_tool(name, args):
+            print(f"maya-hotkey-tool-note> ignored duplicate {name}; voice supervisor already started it", flush=True)
+            return
+        supervised = await self._begin_supervised_tool_call(name, args)
         await record_voice_turn(
             self.db_path,
             self.voice_log_session_id,
@@ -142,25 +149,80 @@ class XaiRealtimeEventMixin(XaiRealtimeVoiceWorkMixin, XaiRealtimeVadGuardMixin)
                 args=args,
                 call_id=call_id,
                 response_id=self.current_response_id,
+                work_kind=str(supervised.get("kind") or ""),
+                voice_work_id=str(supervised.get("work_id") or "") or None,
+                supervised_request=str(supervised.get("request") or ""),
             )
         )
+        self._attach_supervised_tool_task(task, name, str(supervised.get("work_id") or "") or None)
         self.function_call_tasks.add(task)
         task.add_done_callback(self.function_call_tasks.discard)
 
-    async def _run_function_call_task(self, *, name: str, args: dict, call_id: str, response_id: str) -> None:
+    async def _run_function_call_task(
+        self,
+        *,
+        name: str,
+        args: dict,
+        call_id: str,
+        response_id: str,
+        work_kind: str = "",
+        voice_work_id: str | None = None,
+        supervised_request: str = "",
+    ) -> None:
         try:
+            if voice_work_id and name in {BROWSER_TOOL_NAME, MAYA_WORK_TOOL_NAME}:
+                args = await self._prepare_supervised_tool_args(
+                    name=name,
+                    args=args,
+                    work_kind=work_kind,
+                    voice_work_id=voice_work_id,
+                    supervised_request=supervised_request,
+                )
+                if await voice_work_cancel_requested(self.db_path, voice_work_id):
+                    output = tool_result_for_maya(
+                        supervised_request or str(args.get("request") or ""),
+                        "I cancelled that work before opening or delivering anything.",
+                        status="cancelled",
+                    )
+                    await complete_voice_work(
+                        self.db_path,
+                        voice_work_id,
+                        result=output,
+                        status="cancelled",
+                    )
+                    await self._send_function_call_output(call_id, response_id, name, output)
+                    return
             output = await execute_voice_tool(
                 self.db_path,
                 name,
                 args,
                 assistant=getattr(self, "assistant", None),
                 voice_session_id=str(self.voice_log_session_id or ""),
+                work_kind=work_kind,
+                voice_work_id=voice_work_id,
             )
+            if voice_work_id and name in {BROWSER_TOOL_NAME, MAYA_WORK_TOOL_NAME}:
+                work = SupervisedVoiceWork(
+                    request=supervised_request or str(args.get("request") or args.get("question") or args.get("text") or ""),
+                    kind=work_kind or "work",
+                    tool_name=name,
+                    acknowledgement="",
+                )
+                output = await self._apply_late_supervised_followups(
+                    __import__("xai_realtime_events"),
+                    work,
+                    output,
+                    getattr(self, "supervised_voice_work_applied_followup_count", 0),
+                )
         except Exception as exc:
-            output = (
-                "I could not finish that request. "
-                f"Reason: {exc}"
+            output = failed_tool_result_for_maya(
+                str(args.get("request") or args.get("question") or args.get("text") or name),
+                exc,
+                work_id=voice_work_id,
             )
+            if voice_work_id and name in {BROWSER_TOOL_NAME, MAYA_WORK_TOOL_NAME}:
+                await set_voice_work_phase(self.db_path, voice_work_id, "failed", str(exc))
+                await complete_voice_work(self.db_path, voice_work_id, result=output, status="failed")
             print(f"maya-hotkey-tool-error> {name}: {exc}", flush=True)
         await record_voice_turn(
             self.db_path,
@@ -171,6 +233,47 @@ class XaiRealtimeEventMixin(XaiRealtimeVoiceWorkMixin, XaiRealtimeVadGuardMixin)
             response_id=response_id,
             tool_name=name,
         )
+        await self._send_function_call_output(call_id, response_id, name, output)
+        if voice_work_id and name in {BROWSER_TOOL_NAME, MAYA_WORK_TOOL_NAME}:
+            self._clear_supervised_voice_work()
+
+    async def _prepare_supervised_tool_args(
+        self,
+        *,
+        name: str,
+        args: dict,
+        work_kind: str,
+        voice_work_id: str,
+        supervised_request: str,
+    ) -> dict:
+        await asyncio.sleep(context_grace_seconds(work_kind or "work"))
+        if name != MAYA_WORK_TOOL_NAME:
+            return args
+        request = supervised_request or str(args.get("request") or args.get("question") or args.get("text") or "")
+        followups = [item for item in getattr(self, "supervised_voice_work_followups", []) if str(item).strip()]
+        steer_events = getattr(self, "supervised_voice_work_steer_events", [])
+        pending_events = await pending_steer_events_for_work(self.db_path, voice_work_id)
+        for event in pending_events:
+            text = str(event.get("steer_text") or "").strip()
+            if text and text not in followups:
+                followups.append(text)
+                steer_events.append({"id": str(event.get("id") or ""), "text": text})
+        self.supervised_voice_work_followups = followups
+        self.supervised_voice_work_steer_events = steer_events
+        self.supervised_voice_work_applied_followup_count = len(followups)
+        if followups:
+            args = dict(args)
+            args["request"] = _request_with_opaque_revisions(request, followups)
+            for event in steer_events[: len(followups)]:
+                await update_artifact_steer_event(
+                    self.db_path,
+                    str(event.get("id") or ""),
+                    status="applied",
+                    action_taken="merged_initial_request",
+                )
+        return args
+
+    async def _send_function_call_output(self, call_id: str, response_id: str, name: str, output: str) -> None:
         if self.stop_event.is_set():
             return
         if not self.websocket:
@@ -198,3 +301,12 @@ class XaiRealtimeEventMixin(XaiRealtimeVoiceWorkMixin, XaiRealtimeVadGuardMixin)
         self.pending_audio.append(audio)
         if len(self.pending_audio) > self.max_pending_chunks:
             self.pending_audio.pop(0)
+
+
+def _request_with_opaque_revisions(request: str, revisions: list[str]) -> str:
+    clean_revisions = [" ".join(str(item).strip().split()) for item in revisions if str(item).strip()]
+    if not clean_revisions:
+        return request
+    lines = [request.strip(), "", "Additional context from explicit revise_maya_work tool calls:"]
+    lines.extend(f"- {item}" for item in clean_revisions)
+    return "\n".join(lines).strip()

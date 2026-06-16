@@ -22,6 +22,14 @@ from skill_store import init_skill_db
 from storage import get_preference, init_db
 
 
+class FakeBridge:
+    def __init__(self) -> None:
+        self.opened: list[tuple[str, str | None]] = []
+
+    def open_file(self, path: str, app_name: str | None = None) -> None:
+        self.opened.append((path, app_name))
+
+
 async def main() -> None:
     with tempfile.TemporaryDirectory(prefix="maya-artifact-session-") as tmp:
         old_anthropic = os.environ.get("ANTHROPIC_API_KEY")
@@ -46,7 +54,8 @@ async def main() -> None:
 
 
 async def _channel_case(db_path: str, workspace: Path, channel: str) -> None:
-    router = DocumentActionRouter(db_path, workspace=workspace)
+    bridge = FakeBridge()
+    router = DocumentActionRouter(db_path, workspace=workspace, bridge=bridge)
     created = await router.handle("make me a Word document for Tokyo itinerary for two days and two people", channel)
     _require(created and ("created" in created.lower()), f"{channel} create failed: {created}")
     first_path = Path(await get_preference(db_path, "maya_last_document_path") or "")
@@ -62,7 +71,7 @@ async def _channel_case(db_path: str, workspace: Path, channel: str) -> None:
     _require(second_path == first_path, f"{channel} edit should update same file path: {first_path} -> {second_path}")
     text = extract_docx_text(second_path)
     _require("Day 3 Plan" in text and "Day 4 Plan" in text, f"{channel} edit did not produce 4-day content:\n{text[:1200]}")
-    qa = validate_docx_path(second_path, "Tokyo itinerary 4 days 2 people")
+    qa = validate_docx_path(second_path, "Tokyo itinerary 4 days 2 people", doc_kind="travel_itinerary")
     _require(qa.passed, f"{channel} edited file failed 4-day QA: {qa.issues}")
 
     budget = await router.handle("make an Excel spreadsheet for the Tokyo itinerary", channel)
@@ -71,6 +80,12 @@ async def _channel_case(db_path: str, workspace: Path, channel: str) -> None:
     _require(budget_path.suffix == ".xlsx", f"{channel} latest document should be xlsx: {budget_path}")
     sheet = load_workbook(budget_path, data_only=False)["Travel Budget"]
     _require(sheet["B3"].value == 2, f"{channel} Excel did not inherit 2 travelers: {sheet['B3'].value!r}")
+    if channel == "imac":
+        opened_names = [Path(path).name for path, _ in bridge.opened]
+        _require(any(name.startswith("tokyo-itinerary-v") for name in opened_names), "iMac case should request Word open through fake bridge")
+        _require(any(name.startswith("tokyo-budget-tracker-v") for name in opened_names), "iMac case should request Excel open through fake bridge")
+    else:
+        _require(not bridge.opened, "telegram case should not request desktop opens")
 
 
 async def _fake_preflight(_db_path: str, artifact_type: str, topic: str) -> ArtifactPreflight:

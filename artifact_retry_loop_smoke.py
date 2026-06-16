@@ -51,7 +51,7 @@ async def _word_retries_until_pass(db_path: str, workspace: Path) -> None:
     quality_calls = 0
     repairs: list[int] = []
 
-    async def fake_quality(path: Path, topic: str, *, attempt_number: int = 1) -> ArtifactQualityResult:
+    async def fake_quality(path: Path, topic: str, *, attempt_number: int = 1, **_kwargs) -> ArtifactQualityResult:
         nonlocal quality_calls
         quality_calls += 1
         if quality_calls < 3:
@@ -114,7 +114,7 @@ async def _word_default_retry_cap_exhausts_at_three(db_path: str, workspace: Pat
     quality_calls = 0
     repairs: list[int] = []
 
-    async def fake_quality(path: Path, topic: str, *, attempt_number: int = 1) -> ArtifactQualityResult:
+    async def fake_quality(path: Path, topic: str, *, attempt_number: int = 1, **_kwargs) -> ArtifactQualityResult:
         nonlocal quality_calls
         quality_calls += 1
         return ArtifactQualityResult("docx", str(path), False, issues=[f"forced unresolved failure {quality_calls}"])

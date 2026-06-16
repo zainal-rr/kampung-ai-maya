@@ -32,6 +32,8 @@ from artifact_quality import (
 from created_file_opener import open_created_file
 from harness_artifact_store import record_structured_artifact
 from harness_models import local_artifact
+from maya_voice.work_runtime import set_current_voice_work_phase
+from maya_documents.delivery_policy import docx_quality_hard_block, excel_quality_hard_block
 from storage import upsert_preference
 from utils import OSBridge
 
@@ -65,16 +67,30 @@ class ArtifactBuilder:
         success_message: str | None = None,
         draft_message: str | None = None,
         open_file: bool | None = None,
+        doc_kind: str = "generic_document",
         rebuild=None,
     ) -> BuiltArtifact:
-        quality = await self._docx_quality(path, topic, attempt_number=1)
+        quality = await self._docx_quality(path, topic, attempt_number=1, doc_kind=doc_kind)
         attempts = 1
         while not quality.passed and rebuild and attempts < artifact_qa_max_attempts("docx"):
             attempts += 1
             await _run_rebuild(rebuild, attempts, quality)
-            quality = await self._docx_quality(path, topic, attempt_number=attempts)
+            quality = await self._docx_quality(path, topic, attempt_number=attempts, doc_kind=doc_kind)
             quality.repair_attempted = True
-        return await self._finish(path, topic, quality, channel, run_id, source_tool, app_name, success_message, draft_message, open_file)
+        return await self._finish(
+            path,
+            topic,
+            quality,
+            channel,
+            run_id,
+            source_tool,
+            app_name,
+            success_message,
+            draft_message,
+            open_file,
+            attempts_run=attempts,
+            repair_available=bool(rebuild),
+        )
 
     async def finish_xlsx(
         self,
@@ -98,10 +114,30 @@ class ArtifactBuilder:
             quality.repair_attempted = True
         success = f"Done. I created {label}."
         draft = f"I created {label}, but QA found: {quality.short_issue_text()}. I’m keeping it as a draft."
-        return await self._finish(path, topic, quality, channel, run_id, source_tool, app_name, success, draft, open_file)
+        return await self._finish(
+            path,
+            topic,
+            quality,
+            channel,
+            run_id,
+            source_tool,
+            app_name,
+            success,
+            draft,
+            open_file,
+            attempts_run=attempts,
+            repair_available=bool(rebuild),
+        )
 
-    async def _docx_quality(self, path: Path, topic: str, *, attempt_number: int = 1) -> ArtifactQualityResult:
-        local_qa = await asyncio.to_thread(validate_docx_path, path, topic)
+    async def _docx_quality(
+        self,
+        path: Path,
+        topic: str,
+        *,
+        attempt_number: int = 1,
+        doc_kind: str = "generic_document",
+    ) -> ArtifactQualityResult:
+        local_qa = await asyncio.to_thread(validate_docx_path, path, topic, doc_kind=doc_kind)
         extracted = await asyncio.to_thread(extract_docx_text, path)
         review_qa = await review_artifact_quality(
             self.db_path,
@@ -154,11 +190,19 @@ class ArtifactBuilder:
         success_message: str | None,
         draft_message: str | None,
         open_file: bool | None,
+        *,
+        attempts_run: int = 1,
+        repair_available: bool = True,
     ) -> BuiltArtifact:
         message = success_message or f"Done. I created {path.name}."
         if not quality.passed:
             await self.record_draft(path, f"Draft artifact rejected: {quality.summary}", run_id, source_tool)
-            message = qa_retry_exhausted_message(path.name, artifact_qa_max_attempts(_artifact_type(path)))
+            if channel == "imac" and not _quality_hard_block(path, quality):
+                await upsert_preference(self.db_path, self.last_doc_key, str(path), source="document")
+                draft = draft_message or f"I created a draft, but QA found: {quality.short_issue_text()}. I am not calling it final yet."
+                reply = await self.deliver(draft, path, channel, app_name, open_file=True)
+                return BuiltArtifact(path, quality, reply)
+            message = qa_retry_exhausted_message(path.name, attempts_run, repair_available=repair_available)
             return BuiltArtifact(path, quality, _draft_only_reply(message))
         await self.record(path, topic, channel, f"Created artifact: {quality.summary}", run_id, source_tool)
         reply = await self.deliver(message, path, channel, app_name, open_file=open_file)
@@ -187,13 +231,19 @@ class ArtifactBuilder:
         if not should_open:
             return _attach(message, path, channel)
         summary = await asyncio.to_thread(created_file_content_summary, path)
+        if not await set_current_voice_work_phase("opening", f"opening {path.name}"):
+            return _attach(
+                f"I cancelled that work before opening it. The file is saved in the Maya documents folder as {path.name}.",
+                path,
+                channel,
+            )
         try:
             opened_app = await asyncio.to_thread(open_created_file, path, self.bridge, app_name)
         except Exception as exc:
             return _attach(f"{message} I saved it here: {path}. I could not open it: {exc}. {summary}", path, channel)
-        suffix = f" in {opened_app}" if opened_app else ""
         save_note = f" I saved it here: {path}." if channel == "imac" else ""
-        return _attach(f"{message}{save_note} I opened it on the iMac{suffix}. {summary}", path, channel)
+        opened = opened_app or app_name or "the associated app"
+        return _attach(f"{message}{save_note} I asked {opened} to open it on the iMac. {summary}", path, channel)
 
 
 def _attach(message: str, path: Path, channel: str) -> str:
@@ -223,6 +273,15 @@ def _artifact_kind(path: Path) -> str:
 
 def _artifact_type(path: Path) -> str:
     return path.suffix.lower().lstrip(".") or "artifact"
+
+
+def _quality_hard_block(path: Path, quality: ArtifactQualityResult) -> bool:
+    suffix = path.suffix.lower()
+    if suffix == ".xlsx":
+        return excel_quality_hard_block(quality)
+    if suffix == ".docx":
+        return docx_quality_hard_block(quality)
+    return True
 
 
 async def _run_rebuild(rebuild, attempt: int, quality: ArtifactQualityResult) -> None:

@@ -29,6 +29,11 @@ def summarize_network(results: list[tuple[str, str, str]]) -> str:
 def network_doc_sections(results: list[tuple[str, str, str]]) -> list[tuple[str, list[str]]]:
     sections = [("Summary", [summarize_network(results)])]
     sections.append(("Checks Run", [f"{name}: {status}" for name, status, _ in results]))
+    failures = [f"{name}: {status}. {detail[:180]}" for name, status, detail in results if status != "ok"]
+    sections.append((
+        "Findings",
+        failures or ["No failed basic route, DNS, or ping checks were observed in this diagnostic run."],
+    ))
     sections.append((
         "Next Steps",
         [

@@ -100,17 +100,8 @@ async def active_artifact_session(db_path: str, channel: str, fallback_path: str
     now = _now()
     async with aiosqlite.connect(db_path) as db:
         db.row_factory = aiosqlite.Row
-        cursor = await db.execute(
-            """
-            SELECT * FROM artifact_sessions
-            WHERE channel = ? AND status = 'active' AND expires_at > ?
-            ORDER BY updated_at DESC, id DESC
-            LIMIT 1
-            """,
-            (channel, now),
-        )
-        row = await cursor.fetchone()
-        if not row and fallback_path:
+        row = None
+        if fallback_path:
             cursor = await db.execute(
                 """
                 SELECT * FROM artifact_sessions
@@ -119,6 +110,17 @@ async def active_artifact_session(db_path: str, channel: str, fallback_path: str
                 LIMIT 1
                 """,
                 (fallback_path,),
+            )
+            row = await cursor.fetchone()
+        if not row:
+            cursor = await db.execute(
+                """
+                SELECT * FROM artifact_sessions
+                WHERE channel = ? AND status = 'active' AND expires_at > ?
+                ORDER BY updated_at DESC, id DESC
+                LIMIT 1
+                """,
+                (channel, now),
             )
             row = await cursor.fetchone()
     return _row_to_session(row) if row else None

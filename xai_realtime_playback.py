@@ -4,6 +4,7 @@ import asyncio
 import contextlib
 import json
 import os
+import re
 import time
 
 import sounddevice as sd
@@ -215,6 +216,17 @@ class XaiRealtimePlaybackMixin:
             response_id=self.current_response_id,
             interrupted=interrupted,
         )
+        tool_calls = getattr(self, "tool_calls_by_response", {}).get(self.current_response_id, set())
+        if _action_promise_without_tool(cleaned, tool_calls):
+            await record_voice_turn(
+                self.db_path,
+                self.voice_log_session_id,
+                "system",
+                "voice_action_promise_without_tool",
+                event_type="voice_action_promise_without_tool",
+                response_id=self.current_response_id,
+                diagnostics={"transcript": cleaned[:800], "tool_calls": sorted(tool_calls)},
+            )
         self.assistant_transcript_recorded = True
         self.assistant_transcript_parts = []
 
@@ -254,3 +266,16 @@ class XaiRealtimePlaybackMixin:
             print("maya-hotkey> playback interrupted", flush=True)
         elif log:
             print("maya-hotkey> playback closed", flush=True)
+
+
+def _action_promise_without_tool(transcript: str, tool_calls: set[str]) -> bool:
+    if tool_calls:
+        return False
+    lowered = " ".join(str(transcript or "").lower().split())
+    if not lowered:
+        return False
+    action_re = re.compile(
+        r"\b(?:i(?:'ll| will| am going to|'m going to)|let me|one moment,?\s*i(?:'m| am)?)\s+"
+        r"(?:create|make|open|check|inspect|update|revise|cancel|search|look|read|send|save)\b"
+    )
+    return bool(action_re.search(lowered))

@@ -29,6 +29,15 @@ def resolve_sounddevice_input(name: str | None = None):
     return _resolve_device(target, input_required=True)
 
 
+def resolve_sounddevice_input_after_refresh(name: str | None = None):
+    device = resolve_sounddevice_input(name)
+    if device is not None:
+        return device
+    refresh_sounddevice_hostapi()
+    time.sleep(0.05)
+    return resolve_sounddevice_input(name)
+
+
 def resolve_sounddevice_output(name: str | None = None):
     target = name or _first_name(os.getenv("IMAC_AUDIO_OUTPUT_NAMES") or os.getenv("IMAC_AUDIO_OUTPUT") or DEFAULT_OUTPUT_NAMES)
     return _resolve_device(target, output_required=True)

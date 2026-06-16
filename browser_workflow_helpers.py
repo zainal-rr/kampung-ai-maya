@@ -3,18 +3,35 @@ from __future__ import annotations
 import re
 
 from browser_agent_state import BrowserAgentState
+from browser_control_models import BrowserPage
 from browser_cost_policy import escalation_decision, local_decision
 
 
-def open_browser_target_new_tab(browser, query: str) -> None:
+def open_browser_target_new_tab(browser, query: str) -> BrowserPage | None:
     if is_url(query):
         browser.open_new_tab_url(query.strip())
-        return
+        return _inspect_after_open(browser)
     opener = getattr(browser, "open_search_new_tab", None)
     if opener:
         opener(query)
-        return
+        return _inspect_after_open(browser)
     browser.open_search(query)
+    return _inspect_after_open(browser)
+
+
+def _inspect_after_open(browser) -> BrowserPage | None:
+    inspector = getattr(browser, "inspect_page", None)
+    if not inspector:
+        return None
+    try:
+        return inspector(max_chars=1200)
+    except TypeError:
+        try:
+            return inspector()
+        except Exception:
+            return None
+    except Exception:
+        return None
 
 
 def click_search_result_candidates(target: str) -> list[str]:

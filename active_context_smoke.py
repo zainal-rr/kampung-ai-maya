@@ -8,6 +8,7 @@ from pathlib import Path
 
 from active_context import ActiveContextInspector
 from docx import Document
+from maya_voice.tool_results import voice_safe_paths
 from openpyxl import Workbook
 from pptx import Presentation
 
@@ -63,6 +64,9 @@ async def main() -> None:
         _require("=SUM" in excel_context.selected_content, "Excel formula missing")
         _require("Bank Financial Decision" in excel_context.document_context, "Excel document context missing")
         _require(excel_context.source == "excel_applescript_plus_xlsx_parser", "Excel source diagnostic missing")
+        excel_tool_text = excel_context.as_tool_text()
+        _require("active_file_display_name: budget" in excel_tool_text, "Excel display filename not exposed")
+        _require("budget.xlsx" not in excel_tool_text, "Excel extension leaked into active-context voice text")
 
         doc_path = Path(tmp) / "drone.docx"
         doc = Document()
@@ -76,6 +80,18 @@ async def main() -> None:
         )
         word_context = await word.inspect("rewrite this", allow_screen_fallback=False)
         _require("Drone Requirements" in word_context.document_context, "Word document context missing")
+        word_tool_text = word_context.as_tool_text()
+        _require("selected_text_present: true" in word_tool_text, "selected text presence not exposed in tool text")
+        _require("selected_text:\ndrone payload" in word_tool_text, "selected text block not exposed in tool text")
+        _require("active_title: Drone Requirements" in word_tool_text, "Word title not exposed")
+        _require("active_file_display_name: drone" in word_tool_text, "Word display filename not exposed")
+        _require("active_file_display_name: drone.docx" not in word_tool_text, "Word display filename kept extension")
+        _require("drone.docx" not in word_tool_text, "Word extension leaked into active-context voice text")
+        hfs_safe = voice_safe_paths(
+            "active_path_or_url: Macintosh HD:Users:zainalabidinjamal:Desktop:Maya:documents:add-document-v1.docx"
+        )
+        _require("add-document-v1.docx" not in hfs_safe, "HFS Word extension leaked into voice-safe text")
+        _require("the Maya documents folder (add-document-v1)" in hfs_safe, "HFS Word path not voice-safe")
 
         deck_path = Path(tmp) / "agriculture.pptx"
         deck = Presentation()
@@ -95,6 +111,9 @@ async def main() -> None:
         _require("highlight_status" in ppt_context.document_context, "PowerPoint highlight honesty note missing")
         _require("current slide text is reliable" in ppt_context.limits, "PowerPoint slide context limit missing")
         _require("clipboard" not in ppt_context.source, "PowerPoint should not use stale clipboard fallback")
+        ppt_tool_text = ppt_context.as_tool_text()
+        _require("active_file_display_name: agriculture" in ppt_tool_text, "PowerPoint display filename not exposed")
+        _require("agriculture.pptx" not in ppt_tool_text, "PowerPoint extension leaked into active-context voice text")
 
         md_path = notes / "agentic-commerce.md"
         md_path.write_text("# Agentic Commerce\n\nSelected paragraph about checkout agents.\n", encoding="utf-8")

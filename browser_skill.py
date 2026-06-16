@@ -11,6 +11,9 @@ from browser_control import BrowserPage, element_summary, note_browser_intent, p
 from browser_driver import make_browser_controller
 from browser_site_skill_helpers import _extract_visible_options
 from browser_untrusted_guard import injected_page_action_notice
+from maya_browser.intent_normalizer import normalize_browser_request
+from maya_browser.pending_actions import clear_pending_browser_clarification, remember_pending_browser_clarification
+from maya_browser.query_guard import browser_query_is_incomplete
 from permission_policy import action_permission, contains_sensitive_info, hard_no_private_exposure_text
 from skill_store import init_skill_db, record_skill_usage, upsert_skill
 from storage import upsert_preference
@@ -32,12 +35,13 @@ class BrowserSkillIntent:
 class BrowserSkill:
     def __init__(self, db_path: str, bridge: OSBridge | None = None):
         self.db_path = db_path
-        self.bridge = bridge or OSBridge()
-        self.browser = make_browser_controller(bridge)
+        self.bridge = bridge
+        self.browser = None
 
     async def run(self, request: str) -> str:
         if action_permission("browse_web") != "allow":
             return "I need your confirmation before browsing."
+        request = normalize_browser_request(request)
         await self._record_skill(request)
         intent = parse_browser_intent(request)
         if intent.action == "open":
@@ -57,33 +61,35 @@ class BrowserSkill:
         return await self._inspect()
 
     async def _open_browser(self) -> str:
-        await asyncio.to_thread(self.browser.open_new_tab_url, GOOGLE_HOME)
+        await asyncio.to_thread(_browser(self).open_new_tab_url, GOOGLE_HOME)
         await upsert_preference(self.db_path, "maya_active_workflow", "browser:open", source="skill")
         return "Browser skill opened Chrome in a new tab."
 
     async def _open_url(self, url: str) -> str:
-        if _looks_sensitive_url(url):
-            return "I will not open a URL that looks like login, payment, checkout, OTP, card, or private-key handling."
-        await asyncio.to_thread(self.browser.open_new_tab_url, url)
+        await asyncio.to_thread(_browser(self).open_new_tab_url, url)
         await upsert_preference(self.db_path, "maya_active_workflow", f"browser:url:{url}", source="skill")
         return f"Browser skill opened this URL in Chrome: {url}"
 
     async def _search(self, query: str) -> str:
-        if not query:
+        if browser_query_is_incomplete(query):
+            await remember_pending_browser_clarification(self.db_path, "google_search")
             return "What should I search for?"
         note_browser_intent({"query": query})
-        await asyncio.to_thread(self.browser.open_search_new_tab, query)
+        await asyncio.to_thread(_browser(self).open_search_new_tab, query)
+        await clear_pending_browser_clarification(self.db_path)
         await upsert_preference(self.db_path, "maya_active_workflow", f"browser:search:{query}", source="skill")
         return f"Browser skill opened a Google search for: {query}"
 
     async def _image_search(self, query: str) -> str:
-        if not query:
+        if browser_query_is_incomplete(query):
+            await remember_pending_browser_clarification(self.db_path, "google_images")
             return "What image topic should I search for?"
         note_browser_intent({"image_query": query})
         url = "https://www.google.com/search?udm=2&q=" + quote_plus(query)
-        await asyncio.to_thread(self.browser.open_new_tab_url, url)
+        await asyncio.to_thread(_browser(self).open_new_tab_url, url)
         await asyncio.to_thread(time.sleep, 1.5)
         page, options = await self._inspect_image_results()
+        await clear_pending_browser_clarification(self.db_path)
         await upsert_preference(self.db_path, "maya_active_workflow", f"browser:image_search:{query}", source="skill")
         lines = [f"Browser skill opened Google Images for: {query}", f"url: {page.url or url}"]
         if options:
@@ -98,11 +104,11 @@ class BrowserSkill:
 
     async def _inspect_image_results(self) -> tuple[BrowserPage, list[str]]:
         try:
-            page = await asyncio.to_thread(self.browser.inspect_page, 9000)
+            page = await asyncio.to_thread(_browser(self).inspect_page, 9000)
         except Exception:
             page = BrowserPage("", "", "")
         try:
-            raw = await asyncio.to_thread(self.browser.inspect_search_results, 8)
+            raw = await asyncio.to_thread(_browser(self).inspect_search_results, 8)
         except Exception:
             raw = []
         options = [item for item in raw if len(item) >= 12]
@@ -113,8 +119,8 @@ class BrowserSkill:
     async def _inspect(self) -> str:
         try:
             page, elements = await asyncio.gather(
-                asyncio.to_thread(self.browser.inspect_page),
-                asyncio.to_thread(self.browser.inspect_elements),
+                asyncio.to_thread(_browser(self).inspect_page),
+                asyncio.to_thread(_browser(self).inspect_elements),
             )
         except Exception as exc:
             return f"I could not inspect Chrome yet: {exc}"
@@ -129,7 +135,7 @@ class BrowserSkill:
         if guard:
             return guard
         try:
-            result = await asyncio.to_thread(self.browser.click_text_verified, target)
+            result = await asyncio.to_thread(_browser(self).click_text_verified, target)
         except Exception as exc:
             return f"I could not click in Chrome yet: {exc}"
         if not result.clicked:
@@ -147,7 +153,7 @@ class BrowserSkill:
         if guard:
             return guard
         try:
-            result = await asyncio.to_thread(self.browser.fill_field, target, value)
+            result = await asyncio.to_thread(_browser(self).fill_field, target, value)
         except Exception as exc:
             return f"I could not fill that field in Chrome yet: {exc}"
         if not result.startswith("FILLED:"):
@@ -180,7 +186,7 @@ class BrowserSkill:
 
     async def _injected_page_guard(self, action: str) -> str:
         try:
-            page = await asyncio.to_thread(self.browser.inspect_page, 4000)
+            page = await asyncio.to_thread(_browser(self).inspect_page, 4000)
         except Exception:
             return ""
         return injected_page_action_notice(page, action)
@@ -190,11 +196,17 @@ async def run_browser_skill(db_path: str, request: str, *, bridge: OSBridge | No
     return await BrowserSkill(db_path, bridge).run(request)
 
 
+def _browser(skill: BrowserSkill):
+    if skill.browser is None:
+        skill.browser = make_browser_controller(skill.bridge)
+    return skill.browser
+
+
 def parse_browser_intent(text: str) -> BrowserSkillIntent:
     cleaned = " ".join(text.strip().split())
     lowered = cleaned.lower()
     url = _extract_url(cleaned)
-    if url and any(word in lowered for word in ("open", "go to", "visit")):
+    if url and (_is_bare_url_request(cleaned, url) or any(word in lowered for word in ("open", "go to", "visit"))):
         return BrowserSkillIntent("url", _normalize_url(url))
     fill = re.match(r"^(?:fill|enter|type)\s+(.+?)\s+(?:with|as|into)\s+(.+)$", cleaned, re.I)
     if fill:
@@ -224,6 +236,8 @@ def _image_query(text: str) -> str | None:
         match = re.search(pattern, text, re.I)
         if match:
             return _clean_query(match.group(1))
+    if re.search(r"\b(?:google\s+images?|image\s+search|search\s+(?:a\s+)?google\s+image|search\s+images?|find\s+images?)\b", text, re.I):
+        return ""
     return None
 
 
@@ -259,12 +273,12 @@ def _extract_url(text: str) -> str:
     return match.group(0).strip(" .") if match else ""
 
 
+def _is_bare_url_request(text: str, url: str) -> bool:
+    return text.strip().strip(" .") == url
+
+
 def _normalize_url(url: str) -> str:
     return url if re.match(r"https?://", url, re.I) else f"https://{url}"
-
-
-def _looks_sensitive_url(url: str) -> bool:
-    return _sensitive_action_text(url)
 
 
 def _sensitive_action_text(text: str) -> bool:

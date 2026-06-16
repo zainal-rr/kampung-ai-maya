@@ -21,6 +21,7 @@ from document_actions_content_helpers import (
 from document_actions_office_sessions import _office_session_edit_topic
 from excel_species import detect_excel_species
 from excel_species_draft import excel_species_prompt_context
+from maya_documents.delivery_policy import excel_quality_hard_block
 from office_edit_helpers import (
     apply_simple_xlsx_edit,
     backup_office_file,
@@ -72,6 +73,17 @@ class DocumentExcelMixin:
     async def _finish_excel_edit(self, original: Path, target: Path, backup: Path | None, topic: str, instruction: str, channel: str, session, save_copy: bool) -> str:
         quality = await self._excel_quality(target, topic)
         if not quality.passed:
+            if channel == "imac" and not excel_quality_hard_block(quality):
+                if session:
+                    await update_artifact_session_after_edit(self.db_path, session, channel, target, instruction)
+                return await self._draft_with_issues(
+                    "edited Excel draft",
+                    target,
+                    channel,
+                    "Microsoft Excel",
+                    quality.short_issue_text(),
+                    topic=topic,
+                )
             await self._restore_failed_edit(original, target, backup, save_copy)
             self.last_model_lane += " + Excel edit restore"
             return f"I tried to update the latest Excel workbook, but QA failed: {quality.short_issue_text()}. I kept the original unchanged."

@@ -59,6 +59,16 @@ def main() -> None:
             named_artifact_path(root, "make me a router config", "docx").name == "router-config-v1.docx",
             "router config should use two meaningful words",
         )
+        _require(
+            named_artifact_path(root, "both chicken shawarma and nasi lemak recipes in a Word document", "docx").name
+            == "shawarma-nasi-lemak-v1.docx",
+            "recipe filenames should use the dishes, not generic 'both document'",
+        )
+        _require(
+            named_artifact_path(root, "put all the recipes and ingredients in Word document", "docx").name
+            == "recipes-v1.docx",
+            "generic recipe filenames should not use filler words like all/both",
+        )
     print("artifact_naming_smoke: ok")
 
 

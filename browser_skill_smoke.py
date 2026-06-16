@@ -50,6 +50,14 @@ async def main() -> None:
         intent = parse_browser_intent("open Google Images and search for Pokémon")
         _require(intent.target == "Pokémon", f"unicode image query was not preserved: {intent.target}")
 
+        reply = await run_browser_skill(db_path, "Can you gind a Google image of nasi lemak", bridge=bridge)
+        _require("Google Images" in reply, "misspelled image request should route to Google Images")
+        _require("q=nasi+lemak" in bridge.urls[-1], f"misspelled image request used wrong URL: {bridge.urls[-1]}")
+
+        reply = await run_browser_skill(db_path, "Can you Google say modern kampung house", bridge=bridge)
+        _require("Google search" in reply, "misheard Google search request should route to search")
+        _require("modern+kampung+house" in bridge.urls[-1], f"misheard Google search used wrong URL: {bridge.urls[-1]}")
+
         reply = await run_browser_skill(db_path, "find google images of modern kampung house", bridge=bridge)
         _require("Google Images" in reply, "image search reply missing")
         _require("udm=2" in bridge.urls[-1], "image search should use the current Google Images URL format")
@@ -59,6 +67,11 @@ async def main() -> None:
         reply = await run_browser_skill(db_path, "search for best lightweight drone", bridge=bridge)
         _require("Google search" in reply, "web search reply missing")
         _require("best+lightweight+drone" in bridge.urls[-1], "wrong web search URL")
+
+        before = len(bridge.urls)
+        reply = await run_browser_skill(db_path, "google search, uh, the", bridge=bridge)
+        _require(reply == "What should I search for?", "incomplete filler search should ask for a topic")
+        _require(len(bridge.urls) == before, "incomplete filler search must not open a literal Google URL")
 
         reply = await run_browser_skill(db_path, "open browser", bridge=bridge)
         _require(bridge.urls[-1] == "https://www.google.com", "open browser did not open Google home")

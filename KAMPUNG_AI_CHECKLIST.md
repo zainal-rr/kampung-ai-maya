@@ -344,6 +344,12 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Block quantum advisory output from overriding `/complex`, coding-to-Artisan, current-news, vision, screen, commands, learning, safety, or permission routes.
     - [x] Add `quantum_advisory_smoke.py` and include it in launch rehearsal.
     - [ ] Test normal embeddings before any GCP tensor-network or PennyLane cloud path.
+- [ ] **8.5. Meeting Bot API Research**
+    - [ ] Keep this out of Phase 7. Finish normal assistant reliability first.
+    - [ ] Evaluate Google Meet as the first proper call-mode target instead of WhatsApp/FaceTime audio routing.
+    - [ ] Compare meeting bot providers such as Recall.ai and MeetStream for real participant join, transcript/audio streaming, output media, cost, privacy, and consent requirements.
+    - [ ] Prototype only after Phase 7 evidence says Maya is stable as a normal assistant.
+    - [ ] Preserve the v1 doctrine: no WhatsApp/FaceTime call mode, no Loopback-only call feature, and no claim that Maya can privately join or summarize calls.
 
 ## 📡 Phase 9: Channel Integration
 *Goal: Make every channel feel like one Maya.*
@@ -1572,6 +1578,8 @@ Full detail: `SESSION_CHANGE_REPORT.md`. Validation plan: `KAMPUNG_AI_VALIDATION
     - [x] Live Telegram allowlist Phase 2 check: a second phone/account sent `/start`, `Hi`, and `Hello` at 2026-06-10 23:15 MYT; Maya stayed silent and `logs/launchd.stderr.log` recorded three `Rejected unauthorized Telegram chat ...` warnings.
     - [x] Smoke/proof app-control boundary: `local_ci.py` now forces `MAYA_TEST_MODE=1` for child checks, and `OSBridge` treats `_smoke.py`, `test_*.py`, `local_ci.py`, and `scored_eval_suite.py` as no-op app-control entrypoints so Word, Excel, PowerPoint, Cursor, Chrome, and notifications cannot wake during log/security/memory proof runs.
     - [x] Live Telegram Kazakhstan QA governance check: turn 5743 delivered `kazakhstan-itinerary-v3.docx` cleanly with Day 1 through Day 9 headings, `/review` turn 5744 showed Claude PASS, and `qa_disagreement_events` stayed empty for the known-good case.
+    - [x] Add D10 tool-seam fix for iMac voice: raw transcripts no longer start supervised work; xAI owns semantic intent and calls `start_maya_work` / `run_browser_skill` only when ready; local Python only guards empty/unsafe/mechanically impossible tool arguments. iMac soft-QA draft delivery for Word/Excel/PPTX remains in place.
+    - [ ] Live D10 retest on iMac voice: incomplete fragments do not start local work; corrected requests such as router config -> Meraki firewall config result in one xAI tool call with the full intended request; Maya must not repeat canned platform/config option lists; soft QA drafts still open.
     - [ ] Promote `network_engineering` and `finance_credit_analysis` to `maya_skills/active/` after Phase 5 checks.
     - [ ] Decide on the concurrent-session changes (cost-lane refactor, browser extension lane) and commit the working tree.
     - [ ] One week of field use; collect the disappointment list to drive the next phase.

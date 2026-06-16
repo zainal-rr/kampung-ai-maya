@@ -28,6 +28,33 @@ COMMON_BANNED_HEADINGS = (
     "Confidence",
 )
 
+WORD_DOC_KINDS = (
+    "technical_guide",
+    "travel_itinerary",
+    "workshop_plan",
+    "proposal",
+    "research_brief",
+    "strategy",
+    "report",
+    "plan",
+    "explainer",
+    "letter",
+    "meeting_notes",
+    "sop",
+    "checklist",
+    "investor_brief",
+    "diagnostic_report",
+    "generic_document",
+)
+
+_DOC_KIND_ALIASES = {
+    "generic": "generic_document",
+    "standard_operating_procedure": "sop",
+    "technical": "technical_guide",
+    "itinerary": "travel_itinerary",
+    "diagnostic": "diagnostic_report",
+}
+
 
 @dataclass(frozen=True)
 class WordQualitySpec:
@@ -58,7 +85,7 @@ def detect_word_intent(topic: str) -> str:
         return "checklist"
     if _has_any(lowered, ("workshop", "training day", "training session", "bootcamp", "hands-on session", "class plan", "lesson plan")):
         return "workshop_plan"
-    if _has_any(lowered, ("setup", "configure", "configuration", "install", "technical guide", "troubleshoot", "router", "network", "server", "api", "integration", "runbook")):
+    if _has_any(lowered, ("setup", "configure", "configuration", "config", "install", "technical guide", "troubleshoot", "router", "network", "server", "api", "integration", "runbook")):
         return "technical_guide"
     if _has_any(lowered, ("travel", "trip", "itinerary", "holiday", "vacation", "flight", "hotel", "food trip")):
         return "travel_itinerary"
@@ -73,8 +100,46 @@ def detect_word_intent(topic: str) -> str:
     return "generic"
 
 
+def normalize_word_doc_kind(doc_kind: str | None) -> str:
+    normalized = _normalize(str(doc_kind or "")).replace("-", "_").replace(" ", "_")
+    kind = _DOC_KIND_ALIASES.get(normalized, normalized)
+    return kind if kind in WORD_DOC_KINDS else "generic_document"
+
+
 def word_quality_spec(topic: str) -> WordQualitySpec:
-    intent = detect_word_intent(topic)
+    return _word_quality_spec_for_intent(detect_word_intent(topic), topic, declared=False)
+
+
+def word_quality_spec_for_kind(doc_kind: str | None, topic: str = "") -> WordQualitySpec:
+    return _word_quality_spec_for_intent(normalize_word_doc_kind(doc_kind), topic, declared=True)
+
+
+def _word_quality_spec_for_intent(intent: str, topic: str, *, declared: bool) -> WordQualitySpec:
+    intent = normalize_word_doc_kind(intent)
+    if intent == "diagnostic_report":
+        return WordQualitySpec(
+            intent,
+            "diagnostic report",
+            ("Summary", "Checks Run", "Findings", "Next Steps"),
+            (
+                "Write as a diagnostic report with observed checks, findings, and practical next steps.",
+                "Do not turn diagnostics into a configuration guide unless the user asks for configuration.",
+            ),
+            80,
+            min_section_words=8,
+        )
+    if intent == "generic_document" and declared:
+        return WordQualitySpec(
+            intent,
+            "general document",
+            (),
+            (
+                "Validate only generic document mechanics when no specific document kind is declared.",
+                "Do not infer a stricter species from topic words.",
+            ),
+            60,
+            min_section_words=8,
+        )
     if intent == "travel_itinerary":
         daily = travel_day_headings(topic)
         highlight = "Food And Restaurant Highlights" if _has_any(_normalize(topic), ("food", "restaurant", "eat")) else "Place Highlights"
@@ -298,8 +363,14 @@ def validate_word_doc_quality(
     paragraphs: list[str],
     headings: list[str],
     sections: list[tuple[str, list[str]]] | None = None,
+    *,
+    doc_kind: str = "generic_document",
 ) -> list[str]:
-    return [issue.message for issue in validate_word_doc_quality_details(topic, paragraphs, headings, sections) if issue.blocks_delivery]
+    return [
+        issue.message
+        for issue in validate_word_doc_quality_details(topic, paragraphs, headings, sections, doc_kind=doc_kind)
+        if issue.blocks_delivery
+    ]
 
 
 def validate_word_doc_quality_details(
@@ -307,10 +378,13 @@ def validate_word_doc_quality_details(
     paragraphs: list[str],
     headings: list[str],
     sections: list[tuple[str, list[str]]] | None = None,
+    *,
+    doc_kind: str = "generic_document",
 ) -> list[QAIssue]:
-    if not topic.strip():
+    kind = normalize_word_doc_kind(doc_kind)
+    if not topic.strip() and kind == "generic_document":
         return []
-    spec = word_quality_spec(topic)
+    spec = word_quality_spec_for_kind(kind, topic)
     issues: list[QAIssue] = []
     normalized_headings = {_normalize_heading(heading) for heading in headings}
     banned = {_normalize_heading(heading) for heading in spec.banned_headings}

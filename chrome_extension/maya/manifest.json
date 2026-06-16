@@ -1,5 +1,6 @@
 {
   "manifest_version": 3,
+  "minimum_chrome_version": "116",
   "name": "Maya Browser Automation",
   "version": "0.1.0",
   "description": "Maya's automation tab group: labeled tabs, live status badge, and a local bridge to the Maya assistant.",

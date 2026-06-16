@@ -10,12 +10,14 @@ const SENSITIVE_URL = /checkout|payment|signin|login|password|otp/i;
 const RECONNECT_DELAY_MS = 1500;
 const HEALTH_TIMEOUT_MS = 800;
 const HEALTH_EXPECTED_BODY = "maya-extension-bridge-ok";
+const HEARTBEAT_INTERVAL_MS = 20000;
 
 let socket = null;
 let groupId = null;
 let automationWindowId = null;
 let activeOps = 0;
 let reconnectTimer = null;
+let heartbeatTimer = null;
 
 function setBadge() {
   const connected = socket && socket.readyState === WebSocket.OPEN;
@@ -50,6 +52,7 @@ async function connect() {
   }
   ws.onopen = () => {
     safeSend(ws, { event: "connected", extension: "maya", version: 1 });
+    sendHeartbeat();
     setBadge();
   };
   ws.onclose = async () => {
@@ -99,6 +102,21 @@ function safeSend(ws, payload) {
   }
 }
 
+function sendHeartbeat() {
+  safeSend(socket, { event: "heartbeat", at: Date.now() });
+}
+
+function startHeartbeatLoop() {
+  if (heartbeatTimer) return;
+  heartbeatTimer = setInterval(() => {
+    if (socket && socket.readyState === WebSocket.OPEN) {
+      sendHeartbeat();
+    } else {
+      connect();
+    }
+  }, HEARTBEAT_INTERVAL_MS);
+}
+
 function scheduleReconnect() {
   if (reconnectTimer) return;
   reconnectTimer = setTimeout(() => {
@@ -108,13 +126,22 @@ function scheduleReconnect() {
 }
 
 // Keep the service worker and the socket alive.
-chrome.alarms.create("maya-keepalive", { periodInMinutes: 0.4 });
-chrome.alarms.onAlarm.addListener(() => connect());
-chrome.runtime.onStartup.addListener(() => connect());
-chrome.runtime.onInstalled.addListener(() => connect());
+startHeartbeatLoop();
+chrome.alarms.create("maya-keepalive", { periodInMinutes: 0.5 });
+chrome.alarms.onAlarm.addListener(() => {
+  startHeartbeatLoop();
+  if (socket && socket.readyState === WebSocket.OPEN) {
+    sendHeartbeat();
+  } else {
+    connect();
+  }
+});
+chrome.runtime.onStartup.addListener(() => { startHeartbeatLoop(); connect(); });
+chrome.runtime.onInstalled.addListener(() => { startHeartbeatLoop(); connect(); });
 connect();
 
 async function ensureGroup() {
+  await loadAutomationWindowId();
   if (groupId !== null) {
     try {
       const group = await chrome.tabGroups.get(groupId);
@@ -125,7 +152,7 @@ async function ensureGroup() {
       return groupId;
     } catch (e) { groupId = null; }
   }
-  const groups = await liveMayaGroups();
+  const groups = automationWindowId === null ? [] : await liveMayaGroups({ windowId: automationWindowId });
   for (const group of groups) {
     if (group.windowId === undefined) continue;
     const tabs = await chrome.tabs.query({ groupId: group.id });
@@ -136,14 +163,38 @@ async function ensureGroup() {
     return groupId;
   }
   const windowId = await ensureWindow();
-  const tab = await chrome.tabs.create({ url: "about:blank", active: false, windowId });
+  const windowTabs = await chrome.tabs.query({ windowId }).catch(() => []);
+  const tab = windowTabs.find(isBannerTab) || await chrome.tabs.create({ url: "about:blank", active: false, windowId });
   groupId = await chrome.tabs.group({ tabIds: [tab.id] });
   automationWindowId = windowId;
+  await saveAutomationWindowId(windowId);
   await chrome.tabGroups.update(groupId, { title: GROUP_TITLE, color: GROUP_COLOR });
   return groupId;
 }
 
+async function loadAutomationWindowId() {
+  if (automationWindowId !== null) return automationWindowId;
+  const stored = await chrome.storage.local.get("automationWindowId").catch(() => ({}));
+  const value = Number(stored.automationWindowId || 0);
+  if (!value) return null;
+  try {
+    const existing = await chrome.windows.get(value);
+    if (existing && existing.type === "normal") {
+      automationWindowId = value;
+      return automationWindowId;
+    }
+  } catch (e) {}
+  await chrome.storage.local.remove("automationWindowId").catch(() => {});
+  return null;
+}
+
+async function saveAutomationWindowId(windowId) {
+  automationWindowId = windowId;
+  await chrome.storage.local.set({ automationWindowId: windowId }).catch(() => {});
+}
+
 async function ensureWindow() {
+  await loadAutomationWindowId();
   if (automationWindowId !== null) {
     try {
       const existing = await chrome.windows.get(automationWindowId);
@@ -152,20 +203,15 @@ async function ensureWindow() {
       automationWindowId = null;
     }
   }
-  try {
-    const focused = await chrome.windows.getLastFocused({ windowTypes: ["normal"] });
-    if (focused && focused.id !== undefined) {
-      automationWindowId = focused.id;
-      return automationWindowId;
-    }
-  } catch (e) {}
   const created = await chrome.windows.create({ url: "about:blank", focused: true });
-  automationWindowId = created.id;
+  await saveAutomationWindowId(created.id);
   return automationWindowId;
 }
 
-async function liveMayaGroups() {
-  const windows = await chrome.windows.getAll({ windowTypes: ["normal"] }).catch(() => []);
+async function liveMayaGroups(options = {}) {
+  const windows = options.windowId !== undefined
+    ? [await chrome.windows.get(options.windowId).catch(() => null)].filter(Boolean)
+    : await chrome.windows.getAll({ windowTypes: ["normal"] }).catch(() => []);
   const rows = [];
   for (const win of windows) {
     if (win.id === undefined) continue;
@@ -213,6 +259,16 @@ async function targetTab(args) {
 function pageTextFn(maxChars) {
   const text = document.body ? document.body.innerText : "";
   return { title: document.title, url: location.href, text: text.slice(0, Math.max(500, maxChars)) };
+}
+
+function mayaGroupProofForTab(tab) {
+  const tabGroupId = tab.groupId === undefined ? -1 : tab.groupId;
+  return {
+    tabId: tab.id,
+    groupId,
+    windowId: tab.windowId,
+    openedInMayaGroup: groupId !== null && tabGroupId === groupId && tab.windowId === automationWindowId,
+  };
 }
 
 function elementsFn(maxItems) {
@@ -490,6 +546,45 @@ function clickSearchResultFn(targetText, rankValue) {
   return "CLICKED_RESULT: " + chosen.label.slice(0, 160) + " | " + chosen.href;
 }
 
+function dismissReadingOverlayFn() {
+  const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
+  const norm = (s) => (s || "").toLowerCase().replace(/\s+/g, " ").trim();
+  const visible = (e) => {
+    const r = e.getBoundingClientRect();
+    return r.width > 0 && r.height > 0 && getComputedStyle(e).visibility !== "hidden";
+  };
+  const label = (e) => norm(e.innerText || e.value || e.getAttribute("aria-label") || e.title || "");
+  const allowed = new Set([
+    "close", "×", "x", "no thanks", "not now", "continue reading",
+    "got it", "accept cookies", "accept all", "agree", "i agree",
+  ]);
+  const before = location.href;
+  document.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", code: "Escape", keyCode: 27, which: 27, bubbles: true }));
+  window.dispatchEvent(new KeyboardEvent("keydown", { key: "Escape", code: "Escape", keyCode: 27, which: 27, bubbles: true }));
+  window.scrollBy(0, 1);
+  return sleep(120).then(() => {
+    const nodes = [...document.querySelectorAll("button,[role=button],a,input,summary")].filter(visible);
+    const match = nodes.find((e) => allowed.has(label(e)));
+    if (match) {
+      match.click();
+      return sleep(180).then(() => ({
+        dismissed: true,
+        method: "dismiss_control",
+        before,
+        after: location.href,
+        sameHost: new URL(before).host === location.host,
+      }));
+    }
+    return {
+      dismissed: false,
+      method: "escape_scroll",
+      before,
+      after: location.href,
+      sameHost: new URL(before).host === location.host,
+    };
+  });
+}
+
 async function executeOnTab(tab, func, args) {
   const [res] = await chrome.scripting.executeScript({
     target: { tabId: tab.id },
@@ -525,8 +620,11 @@ function assertSafeInteraction(tab) {
 }
 
 async function handle(op, args) {
-  if (op === "ping") return { pong: true, groupId };
-  if (op === "ensure_group") return { groupId: await ensureGroup() };
+  if (op === "ping") return { pong: true, groupId, automationWindowId };
+  if (op === "ensure_group") {
+    const id = await ensureGroup();
+    return { groupId: id, windowId: automationWindowId, openedInMayaGroup: id !== null && automationWindowId !== null };
+  }
   if (op === "set_status") {
     const id = await ensureGroup();
     await chrome.tabGroups.update(id, { title: GROUP_TITLE, color: GROUP_COLOR });
@@ -536,15 +634,39 @@ async function handle(op, args) {
     const id = await ensureGroup();
     const group = await chrome.tabGroups.get(id);
     const windowId = group.windowId === undefined ? await ensureWindow() : group.windowId;
-    automationWindowId = windowId;
-    const tab = await chrome.tabs.create({ url: args.url, active: args.activate !== false, windowId });
-    await chrome.tabs.group({ tabIds: [tab.id], groupId: id });
+    await saveAutomationWindowId(windowId);
+    const tabs = await chrome.tabs.query({ groupId: id });
+    const reusable = tabs.find(isBannerTab);
+    const tab = reusable
+      ? await chrome.tabs.update(reusable.id, { url: args.url, active: args.activate !== false })
+      : await chrome.tabs.create({ url: args.url, active: args.activate !== false, windowId });
+    if (!reusable) await chrome.tabs.group({ tabIds: [tab.id], groupId: id });
     await waitForTabComplete(tab.id, args.timeout_ms || 12000);
-    return { tabId: tab.id };
+    let finalTab = await chrome.tabs.get(tab.id).catch(() => tab);
+    let overlay = { dismissed: false, method: "", sameHost: true };
+    if (!SENSITIVE_URL.test(finalTab.url || "")) {
+      overlay = await executeOnTab(finalTab, dismissReadingOverlayFn, []).catch(() => overlay);
+      await waitForTabComplete(tab.id, 1200);
+      finalTab = await chrome.tabs.get(tab.id).catch(() => finalTab);
+      if (overlay && overlay.sameHost === false) throw new Error("overlay dismissal changed page host; stopped for review");
+    }
+    const finalGroupId = finalTab.groupId === undefined ? -1 : finalTab.groupId;
+    const openedInMayaGroup = finalGroupId === id && finalTab.windowId === windowId;
+    return {
+      tabId: tab.id,
+      groupId: id,
+      windowId,
+      openedInMayaGroup,
+      overlayDismissed: !!(overlay && overlay.dismissed),
+      overlayMethod: overlay.method || "",
+      url: finalTab.url || "",
+      title: finalTab.title || ""
+    };
   }
   if (op === "page_text") {
     const tab = await targetTab(args);
-    return executeOnTab(tab, pageTextFn, [args.max_chars || 4500]);
+    const page = await executeOnTab(tab, pageTextFn, [args.max_chars || 4500]);
+    return { ...page, ...mayaGroupProofForTab(tab) };
   }
   if (op === "elements") {
     const tab = await targetTab(args);

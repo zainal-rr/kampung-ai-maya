@@ -17,7 +17,7 @@ class FakeAssistant:
 
     async def handle_text(self, text, channel, speak_reply=False):
         self.handled.append((text, channel, speak_reply))
-        return "Created the document and opened it."
+        return "Created the document at /Users/zainalabidinjamal/Desktop/Maya/documents/router-document-v1.docx and opened it."
 
 
 async def main():
@@ -71,12 +71,14 @@ async def main():
             voice_session_id="smoke",
         )
         assert "Status: completed" in output
+        assert "/Users/zainalabidinjamal" not in output
+        assert "the Maya documents folder (router-document-v1)" in output
         assert "handoff" not in output.lower()
         assert "paid voice" not in output.lower()
         assert assistant.handled == [("make a Word document about routers", "imac", False)]
         status = await voice_work_status_text(db_path)
-        assert "completed work: make a Word document about routers" in status
-        assert "completed work: make a Word document about routers" in await read_maya_state(db_path, "what are you doing")
+        assert "done work: make a Word document about routers" in status
+        assert "done work: make a Word document about routers" in await read_maya_state(db_path, "what are you doing")
         assert "Maya voice work:" in await read_maya_state(db_path, "status")
     os.environ["XAI_VOICE_ENABLE_SEARCH_TOOLS"] = "1"
     enabled_tools = session._session_update()["session"]["tools"]

@@ -17,7 +17,7 @@ from sounddevice_audio import (
     refresh_sounddevice_hostapi,
     resolve_first_output,
     resolve_first_output_name,
-    resolve_sounddevice_input,
+    resolve_sounddevice_input_after_refresh,
 )
 from voice_session_log import finish_voice_session, start_voice_session
 from xai_realtime_audio_math import pcm_rms
@@ -37,7 +37,7 @@ class XaiRealtimeStreamingSession(XaiRealtimeEventMixin, XaiRealtimePlaybackMixi
         self.stop_event = stop_event or asyncio.Event()
         self.sample_rate = int(os.getenv("XAI_VOICE_AGENT_SAMPLE_RATE", "24000"))
         self.blocksize = int(os.getenv("XAI_VOICE_STREAM_BLOCKSIZE", "2400"))
-        self.input_device = resolve_sounddevice_input()
+        self.input_device = resolve_sounddevice_input_after_refresh()
         self.output_device, self.output_device_name = resolve_first_output_name()
         self.started_at = 0.0
         self.websocket = None
@@ -80,6 +80,7 @@ class XaiRealtimeStreamingSession(XaiRealtimeEventMixin, XaiRealtimePlaybackMixi
         self.fragment_response_suppression_seconds = float(os.getenv("XAI_VOICE_FRAGMENT_SUPPRESSION_SECONDS", "3.0"))
         self.voice_log_session_id: int | None = None
         self.current_response_id = ""
+        self.tool_calls_by_response: dict[str, set[str]] = {}
         self.assistant_transcript_parts: list[str] = []
         self.assistant_transcript_recorded = False
         self.function_call_tasks: set[asyncio.Task] = set()
@@ -116,6 +117,12 @@ class XaiRealtimeStreamingSession(XaiRealtimeEventMixin, XaiRealtimePlaybackMixi
             )
         except Exception as exc:
             print(f"maya-hotkey-voice-log-error> start failed: {exc}", flush=True)
+        print(
+            "maya-hotkey-runtime> voice_tool_seam=tool_call_only "
+            "transcript_auto_start=disabled local_guard=empty_only_safety "
+            "clarification_style=open_question_no_examples",
+            flush=True,
+        )
         try:
             async with await self._connect_websocket() as websocket:
                 self.websocket = websocket
@@ -278,7 +285,7 @@ class XaiRealtimeStreamingSession(XaiRealtimeEventMixin, XaiRealtimePlaybackMixi
         except Exception as exc:
             print(f"maya-hotkey-input-error> {exc}; refreshing PortAudio and retrying once", flush=True)
             refresh_sounddevice_hostapi()
-            self.input_device = resolve_sounddevice_input()
+            self.input_device = resolve_sounddevice_input_after_refresh()
             stream = sd.RawInputStream(
                 samplerate=self.sample_rate,
                 blocksize=self.blocksize,

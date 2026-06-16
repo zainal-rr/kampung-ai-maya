@@ -8,7 +8,7 @@ from pathlib import Path
 from docx import Document
 from openpyxl import Workbook
 
-import artifact_quality
+import artifact_quality_review
 from artifact_qa_governance import MECHANICAL, OPEN_WORLD, SEMANTIC, blocker, warning
 from artifact_quality import ArtifactQualityResult, resolve_quality_disagreement, validate_docx_path, validate_xlsx_path
 from artifact_retry_policy import artifact_qa_max_attempts
@@ -48,13 +48,13 @@ async def _main() -> None:
         root = Path(tmp)
         good = root / "kazakhstan.docx"
         _write_docx(good, _kazakhstan_sections(include_day_5=True))
-        good_quality = validate_docx_path(good, "make a nine day Kazakhstan itinerary doc")
+        good_quality = validate_docx_path(good, "make a nine day Kazakhstan itinerary doc", doc_kind="travel_itinerary")
         _require(good_quality.passed, good_quality.short_issue_text())
         _require(not any("destination mismatch" in issue for issue in good_quality.issues), "Almaty must not fail Kazakhstan")
 
         missing_day = root / "kazakhstan-missing-day.docx"
         _write_docx(missing_day, _kazakhstan_sections(include_day_5=False))
-        missing_quality = validate_docx_path(missing_day, "make a nine day Kazakhstan itinerary doc")
+        missing_quality = validate_docx_path(missing_day, "make a nine day Kazakhstan itinerary doc", doc_kind="travel_itinerary")
         _require(not missing_quality.passed, "missing day must block")
         _require(any("Day 5 Plan" in issue for issue in missing_quality.issues), missing_quality.issues)
 
@@ -76,12 +76,12 @@ async def _main() -> None:
         target = blocker("travel.destination_match", OPEN_WORLD, "travel document destination mismatch: expected Kazakhstan, found Almaty")
         local = ArtifactQualityResult("docx", str(good), False, "local failed", issue_details=[target])
         review = ArtifactQualityResult("docx", str(good), True, "PASS: semantically valid.", review_model="fake-claude")
-        old_arbiter = artifact_quality._arbitrate_validator_claim
+        old_arbiter = artifact_quality_review._arbitrate_validator_claim
 
         async def fake_arbiter(*_args, **_kwargs):
             return "validator_wrong", "VALIDATOR_WRONG: Almaty is valid Kazakhstan context."
 
-        artifact_quality._arbitrate_validator_claim = fake_arbiter
+        artifact_quality_review._arbitrate_validator_claim = fake_arbiter
         try:
             adjusted = await resolve_quality_disagreement(
                 db_path,
@@ -94,7 +94,7 @@ async def _main() -> None:
                 attempt_number=1,
             )
         finally:
-            artifact_quality._arbitrate_validator_claim = old_arbiter
+            artifact_quality_review._arbitrate_validator_claim = old_arbiter
         _require(adjusted.passed, adjusted.short_issue_text())
         _require(adjusted.warnings, "demoted issue should become warning")
 
@@ -109,7 +109,7 @@ async def _main() -> None:
         async def validator_correct_arbiter(*_args, **_kwargs):
             return "validator_correct", "VALIDATOR_CORRECT: The document is about Tokyo, not Kazakhstan."
 
-        artifact_quality._arbitrate_validator_claim = validator_correct_arbiter
+        artifact_quality_review._arbitrate_validator_claim = validator_correct_arbiter
         try:
             upheld = await resolve_quality_disagreement(
                 db_path,
@@ -122,7 +122,7 @@ async def _main() -> None:
                 attempt_number=2,
             )
         finally:
-            artifact_quality._arbitrate_validator_claim = old_arbiter
+            artifact_quality_review._arbitrate_validator_claim = old_arbiter
         _require(not upheld.passed, "Gemini-confirmed validator issue must stay blocking")
         _require(upheld.issues == [confirmed.message], upheld.issues)
 

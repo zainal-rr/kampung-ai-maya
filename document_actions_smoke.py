@@ -216,13 +216,13 @@ async def main() -> None:
         _require("updated the Markdown file" in updated, "markdown update failed")
         _require("add cable notes" in scoped_files[0].read_text(encoding="utf-8"), "markdown update not written")
 
-        blocked = await assistant.handle_text("create an md file about API key token", "telegram")
+        blocked = await assistant.handle_text("create an md file about sk-test1234567890abcdef1234567890abcdef1234567890", "telegram")
         _require("can't expose sensitive" in blocked.lower(), "sensitive document was not blocked")
 
         imac = await assistant.handle_text("write a Word document about desk setup", "imac")
-        _require("opened it on the iMac" in imac and bridge.opened, "iMac document did not open")
+        _require("asked Microsoft Word to open it on the iMac" in imac and bridge.opened, "iMac document did not open")
         imac_md = await assistant.handle_text("create an md file about imac context test", "imac")
-        _require("opened it on the iMac in Cursor" in imac_md, "iMac markdown did not prefer Cursor")
+        _require("asked Cursor to open it on the iMac" in imac_md, "iMac markdown did not prefer Cursor")
         imac_budget = await assistant.handle_text("make me a budgeting Excel for Tokyo from June 1 to June 3 for 1 person", "imac")
         _require("travel budget workbook" in imac_budget and "Content summary:" in imac_budget and bridge.opened[-1][1] == "Microsoft Excel", "iMac budget Excel did not open")
         budget = await assistant.handle_text("make me an Excel budget tracker for Tokyo from June 1 to June 3 for 1 person", "telegram")

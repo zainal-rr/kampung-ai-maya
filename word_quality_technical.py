@@ -5,6 +5,12 @@ import re
 
 def technical_prompt_notes(topic: str) -> tuple[str, ...]:
     lowered = _normalize(topic)
+    if "meraki" in lowered:
+        notes = [
+            "For Cisco Meraki content, use Meraki-specific wording: Dashboard, organization, network, claim device, templates, firmware/scheduling, SSID for MR, switch port/VLAN settings for MS, and security appliance/firewall/VPN settings for MX where relevant.",
+            "Do not hedge with generic router-brand wording when the user explicitly asked for Cisco Meraki. If an exact menu may vary, say to verify it in the Meraki Dashboard rather than saying every router brand differs.",
+        ]
+        return tuple(notes)
     if "router" in lowered or "wifi" in lowered or "wi fi" in lowered:
         notes = [
             "For router or WiFi setup, include admin interface login, admin password change, WAN/internet setup, SSID/password setup, WPA2/WPA3 security, firmware update, and final connectivity verification.",
@@ -19,6 +25,15 @@ def technical_prompt_notes(topic: str) -> tuple[str, ...]:
 
 def technical_consistency_issues(topic: str, paragraphs: list[str]) -> list[str]:
     lowered = _normalize(topic)
+    if "meraki" in lowered:
+        body = _normalize(" ".join(paragraphs))
+        required = ("dashboard", "organization", "network")
+        missing = [item for item in required if item not in body]
+        if missing:
+            return ["Meraki guide missing: " + ", ".join(missing)]
+        if "router brand" in body or "every router brand" in body:
+            return ["Meraki guide uses generic router-brand hedging despite explicit Cisco Meraki topic"]
+        return []
     if not ("router" in lowered or "wifi" in lowered or "wi fi" in lowered):
         return []
     body = _normalize(" ".join(paragraphs))

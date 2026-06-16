@@ -47,7 +47,7 @@ def validate_html_content(topic: str, html: str) -> ArtifactQualityResult:
     )
 
 
-def validate_docx_path(path: Path, topic: str = "") -> ArtifactQualityResult:
+def validate_docx_path(path: Path, topic: str = "", *, doc_kind: str = "generic_document") -> ArtifactQualityResult:
     from docx import Document
 
     issues: list[str] = []
@@ -81,7 +81,7 @@ def validate_docx_path(path: Path, topic: str = "") -> ArtifactQualityResult:
         issue_details.append(legacy_blocker("document has no useful headings", "docx.headings_missing"))
     bad = ("lorem ipsum", "todo", "placeholder section", "placeholder text", "draft document about", "add a specific point", "```", "###")
     issue_details.extend(legacy_blocker(f"placeholder or malformed text found: {marker}", "docx.placeholder_scan") for marker in bad if marker in joined)
-    issue_details.extend(validate_word_doc_quality_details(topic, paragraphs, headings, sections))
+    issue_details.extend(validate_word_doc_quality_details(topic, paragraphs, headings, sections, doc_kind=doc_kind))
     visual = inspect_word_visual_quality(path)
     issue_details.extend(legacy_blocker(issue, "docx.visual_layout") for issue in visual.issues)
     issues = blocker_messages(issue_details)

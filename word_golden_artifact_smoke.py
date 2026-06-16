@@ -12,7 +12,7 @@ def main() -> None:
         root = Path(tmp)
         for index, case in enumerate(_cases(), start=1):
             path = create_docx(root / f"golden-{index}.docx", case["title"], case["sections"])
-            qa = validate_docx_path(path, case["topic"])
+            qa = validate_docx_path(path, case["topic"], doc_kind=case["doc_kind"])
             _require(qa.passed, f"{case['topic']} should pass golden Word QA: {qa.issues}")
             text = extract_docx_text(path).lower()
             for marker in case["must_contain"]:
@@ -29,7 +29,7 @@ def main() -> None:
                 ("Next Steps", ["Add more detail later."]),
             ],
         )
-        weak_qa = validate_docx_path(weak, "make me a project plan doc")
+        weak_qa = validate_docx_path(weak, "make me a project plan doc", doc_kind="plan")
         _require(not weak_qa.passed, "generic meta Word draft should fail")
         _require(any("generic" in issue.lower() or "too thin" in issue.lower() for issue in weak_qa.issues), "weak failure reason missing")
     print("word_golden_artifact_smoke: ok")
@@ -39,6 +39,7 @@ def _cases() -> list[dict]:
     return [
         {
             "topic": "make me a Seoul food trip doc",
+            "doc_kind": "travel_itinerary",
             "title": "Seoul Food Trip",
             "must_contain": ["Myeongdong Kyoja", "Gwangjang Market", "Korean BBQ", "T-money"],
             "sections": [
@@ -53,6 +54,7 @@ def _cases() -> list[dict]:
         },
         {
             "topic": "make router setup guide in Word",
+            "doc_kind": "technical_guide",
             "title": "Router Setup Guide",
             "must_contain": ["admin password", "SSID", "WPA2", "firmware", "WAN IP"],
             "sections": [
@@ -67,6 +69,7 @@ def _cases() -> list[dict]:
         },
         {
             "topic": "make proposal doc for Kampung AI document quality",
+            "doc_kind": "proposal",
             "title": "Proposal For Kampung AI Document Quality",
             "must_contain": ["quality gates", "one repair pass", "Telegram and iMac", "Out of Scope"],
             "sections": [

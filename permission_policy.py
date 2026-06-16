@@ -54,24 +54,6 @@ SENSITIVE_PATH_PARTS = {
     ".bash_profile",
 }
 SENSITIVE_MARKERS = (
-    "password",
-    "passcode",
-    "bank details",
-    "bank account",
-    "account number",
-    "credit card",
-    "debit card",
-    "cvv",
-    "otp",
-    "2fa",
-    "api key",
-    "api token",
-    "access token",
-    "auth token",
-    "bearer token",
-    "client secret",
-    "secret key",
-    "private key",
     "seed phrase",
     "recovery phrase",
 )
@@ -84,6 +66,10 @@ SECRET_PATTERNS = (
     re.compile(r"glpat-[A-Za-z0-9_-]{20,}"),
     re.compile(r"-----BEGIN [A-Z ]*PRIVATE KEY-----"),
     re.compile(r"\b\d{6}\b.*\b(?:otp|2fa|code)\b", re.IGNORECASE),
+    re.compile(r"\b(?:otp|2fa|code)\b.{0,24}\b\d{6}\b", re.IGNORECASE),
+    re.compile(r"\b(?:api[_ -]?key|api[_ -]?token|access[_ -]?token|auth[_ -]?token|bearer[_ -]?token|client[_ -]?secret|secret[_ -]?key)\s*[:=]\s*[A-Za-z0-9_\-]{16,}\b", re.IGNORECASE),
+    re.compile(r"\b(?:cvv|cvc)\s*[:=]?\s*\d{3,4}\b", re.IGNORECASE),
+    re.compile(r"\b(?:account\s+number|acct\s+no)\s*[:=]?\s*\d{8,20}\b", re.IGNORECASE),
 )
 CARD_CANDIDATE_RE = re.compile(r"\b(?:\d[ -]?){13,19}\b")
 EXPOSURE_STARTERS = (
@@ -141,7 +127,38 @@ def contains_sensitive_info(text: str) -> bool:
     return (
         any(marker in lowered for marker in SENSITIVE_MARKERS)
         or any(pattern.search(text) for pattern in SECRET_PATTERNS)
+        or _looks_like_password_secret(text)
         or looks_like_card_number(text)
+    )
+
+
+def _looks_like_password_secret(text: str) -> bool:
+    safe_password_terms = {"minimum", "required", "field", "enter", "create", "strong", "choose", "use", "needed"}
+    for match in re.finditer(r"\b(?:my\s+|the\s+)?password\s+is\s+([^\s.,;:!?]{4,})", text, re.IGNORECASE):
+        token = match.group(1).strip().lower()
+        if token not in safe_password_terms:
+            return True
+    for match in re.finditer(r"\bpassword\s*[:=]\s*([^\s.,;:!?]{4,})", text, re.IGNORECASE):
+        token = match.group(1).strip().lower()
+        if token not in safe_password_terms:
+            return True
+    return False
+
+
+def contains_sensitive_phrase_cue(text: str) -> bool:
+    lowered = " ".join(str(text or "").lower().split())
+    return any(
+        cue in lowered
+        for cue in (
+            "my password is",
+            "password is",
+            "my passcode is",
+            "api key",
+            "api token",
+            "access token",
+            "bank account",
+            "account number",
+        )
     )
 
 
@@ -178,6 +195,12 @@ def action_permission(action_type: str, content: str = "") -> str:
         "upload_file",
     }:
         return "deny"
+    if content and contains_sensitive_phrase_cue(content) and action_type in {
+        "send_message",
+        "share_file",
+        "upload_file",
+    }:
+        return "confirm"
     if action_type in CONFIRMATION_ACTIONS:
         return "confirm"
     if action_type in AUTO_ALLOWED_ACTIONS:

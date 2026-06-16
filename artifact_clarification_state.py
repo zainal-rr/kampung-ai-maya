@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import re
 from datetime import datetime, timedelta, timezone
 
 from document_natural_artifact_parser import clean_topic, clean_topic_part, normalize_artifact_command_text, strip_creation_prefix
@@ -71,6 +72,7 @@ def artifact_kind_answer(text: str) -> str:
     cleaned = normalize_artifact_command_text(text).lower()
     cleaned = cleaned.replace("file", "").strip(" .")
     cleaned = _strip_confirmation_prefix(cleaned)
+    cleaned = _strip_answer_fillers(cleaned)
     word_answers = {"word", "word doc", "word document", "doc", "docx", "work document"}
     excel_answers = {"excel", "excel sheet", "excel workbook", "spreadsheet", "sheet", "xlsx", "workbook"}
     ppt_answers = {"powerpoint", "powerpoint slides", "powerpoint deck", "slides", "deck", "pptx", "presentation"}
@@ -79,6 +81,12 @@ def artifact_kind_answer(text: str) -> str:
     if cleaned in excel_answers:
         return "xlsx"
     if cleaned in ppt_answers:
+        return "pptx"
+    if _contains_only_artifact_answer(cleaned, word_answers):
+        return "docx"
+    if _contains_only_artifact_answer(cleaned, excel_answers):
+        return "xlsx"
+    if _contains_only_artifact_answer(cleaned, ppt_answers):
         return "pptx"
     return ""
 
@@ -110,6 +118,35 @@ def _strip_confirmation_prefix(text: str) -> str:
                 cleaned = cleaned[len(prefix) :].strip(" .,")
                 changed = True
     return cleaned
+
+
+def _strip_answer_fillers(text: str) -> str:
+    filler = {
+        "mean",
+        "i mean",
+        "maybe",
+        "probably",
+        "uh",
+        "um",
+        "erm",
+        "hmm",
+        "a",
+        "an",
+        "the",
+    }
+    words = [word for word in re.findall(r"[a-z0-9]+", text.lower()) if word not in filler]
+    return " ".join(words)
+
+
+def _contains_only_artifact_answer(text: str, answers: set[str]) -> bool:
+    if not text:
+        return False
+    normalized = " ".join(re.findall(r"[a-z0-9]+", text.lower()))
+    for answer in answers:
+        answer_norm = " ".join(re.findall(r"[a-z0-9]+", answer.lower()))
+        if normalized == answer_norm:
+            return True
+    return False
 
 
 def _key(channel: str) -> str:

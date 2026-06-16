@@ -83,8 +83,8 @@ async def main() -> None:
         bridge = FakeBridge()
         assistant = KampungAssistant(db_path=db_path)
         router = ImacWorkflowRouter(db_path, bridge, workspace)
-        router.browser = FakeBrowser(bridge)
-        router.human_browser.browser = router.browser
+        router._browser = FakeBrowser(bridge)
+        router.human_browser._browser = router.browser
         router.human_browser.screen = FakeScreen()
         assistant.commands.workflows = router
         assistant.commands.documents.bridge = bridge
@@ -96,12 +96,12 @@ async def main() -> None:
         document_actions.should_use_model_draft = lambda topic: True
 
         try:
-            flight = await assistant.handle_text("check flight to Penang in imac", "telegram")
-            _require("flight options" in flight.lower(), "flight workflow did not start")
+            flight = await assistant.handle_text("check flight to Penang in imac", "imac")
+            _require("verified the browser" in flight.lower(), "flight workflow did not start")
             _require("Penang" in bridge.urls[-1], "flight search did not use destination")
 
             cheaper = await assistant.handle_text("find cheaper option", "telegram")
-            _require("updated the browser search" in cheaper.lower(), "flight follow-up failed")
+            _require("verified the updated browser search" in cheaper.lower(), "flight follow-up failed")
             _require("cheaper" in bridge.urls[-1].lower(), "flight follow-up query missing")
 
             buy = await assistant.handle_text("buy it", "telegram")
@@ -110,18 +110,18 @@ async def main() -> None:
             inspected = await assistant.handle_text("compare visible results", "telegram")
             _require("I inspected Chrome" in inspected and "Clickable or fillable targets" in inspected, "browser inspect failed")
 
-            filled = await assistant.handle_text("fill depart date with tomorrow", "telegram")
+            filled = await router.handle("fill depart date with tomorrow", "telegram")
             _require("filled depart date" in filled.lower(), "browser form fill failed")
 
-            clicked = await assistant.handle_text("click AirAsia", "telegram")
+            clicked = await router.handle("click AirAsia", "telegram")
             _require("I clicked AirAsia" in clicked, "safe browser click failed")
 
-            sensitive = await assistant.handle_text("click buy now", "telegram")
+            sensitive = await router.handle("click buy now", "telegram")
             _require("looks sensitive" in sensitive.lower(), "sensitive click did not ask")
-            approved = await assistant.handle_text("yes", "telegram")
+            approved = await router.handle_confirmation("yes")
             _require("I clicked buy now" in approved and "stop before booking" in approved, "approved sensitive click failed")
 
-            status = await assistant.handle_text("browser status", "telegram")
+            status = await router.handle("browser status", "telegram")
             _require("Browser task:" in status and "clicked buy now" in status, "browser task memory failed")
 
             deck = await assistant.handle_text("make presentation on quantum computing", "telegram")
@@ -132,7 +132,7 @@ async def main() -> None:
             _require(_zip_has(deck_path, "ppt/presentation.xml"), "pptx missing presentation xml")
 
             network = await assistant.handle_text("what happened to my network", "telegram")
-            _require("opened the troubleshooting document in Word" in network, "network workflow failed")
+            _require("troubleshooting document is ready in the Maya documents folder" in network, "network workflow failed")
             doc_path = Path(bridge.files[-1][0])
             _require(doc_path.suffix == ".docx" and doc_path.exists(), "docx was not created")
             _require(_zip_has(doc_path, "word/document.xml"), "docx missing document xml")

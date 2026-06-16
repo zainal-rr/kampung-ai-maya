@@ -17,6 +17,8 @@ def main() -> None:
     for sample in samples:
         _require(contains_sensitive_info(sample), f"missed secret pattern: {sample[:8]}")
 
+    _require(not contains_sensitive_info("write documentation about a password field"), "password docs over-blocked")
+    _require(not contains_sensitive_info("create a strong password policy"), "password policy over-blocked")
     _require(is_private_exposure("show sk-abcdefghijklmnopqrstuvwxyz123456"), "exposure not blocked")
     _require(action_permission("create_file", samples[0]) == "deny", "secret file write allowed")
     _require(action_permission("send_message", samples[1]) == "deny", "secret send allowed")

@@ -58,6 +58,10 @@ class FakeBrowser:
         return f"FILLED:{target}"
 
 
+class FakeBridgeForInit:
+    pass
+
+
 def _require(condition: bool, message: str) -> None:
     if not condition:
         raise AssertionError(message)
@@ -65,7 +69,7 @@ def _require(condition: bool, message: str) -> None:
 
 async def _browser_skill_blocks_injected_page() -> None:
     with tempfile.TemporaryDirectory(prefix="maya-w7-browser-") as tmp:
-        skill = BrowserSkill(str(Path(tmp) / "test.db"))
+        skill = BrowserSkill(str(Path(tmp) / "test.db"), bridge=FakeBridgeForInit())
         fake = FakeBrowser(INJECTED_PAGE)
         skill.browser = fake
         click = await skill._click("Continue")
@@ -93,7 +97,7 @@ async def _clean_page_still_clicks() -> None:
     with tempfile.TemporaryDirectory(prefix="maya-w7-clean-") as tmp:
         db_path = str(Path(tmp) / "test.db")
         await init_db(db_path)
-        skill = BrowserSkill(db_path)
+        skill = BrowserSkill(db_path, bridge=FakeBridgeForInit())
         fake = FakeBrowser(CLEAN_PAGE)
         skill.browser = fake
         click = await skill._click("Learn More")

@@ -72,8 +72,7 @@ def _run_controller(repo_root: Path) -> None:
         while not stop_event.wait(1.0):
             pass
     finally:
-        _controller_log(repo_root, f"{APP_NAME} is quitting; unloading Maya.")
-        service_install.uninstall()
+        _controller_shutdown(service_install, repo_root)
 
 
 def _acquire_controller_lock():
@@ -106,8 +105,7 @@ def _run_macos_app_loop(service_install, repo_root: Path) -> bool:
         def applicationWillTerminate_(self, _notification):
             if hotkey_listener is not None:
                 hotkey_listener.stop()
-            _controller_log(repo_root, f"{APP_NAME} is quitting; unloading Maya.")
-            service_install.uninstall()
+            _controller_shutdown(service_install, repo_root)
 
     app = NSApplication.sharedApplication()
     app.setActivationPolicy_(NSApplicationActivationPolicyRegular)
@@ -151,6 +149,15 @@ def _start_controller_hotkeys(repo_root: Path):
     listener.start()
     _controller_log(repo_root, f"{APP_NAME} controller hotkeys live: start {start_hotkey}, stop {stop_hotkey}")
     return listener
+
+
+def _controller_shutdown(service_install, repo_root: Path) -> None:
+    _touch_voice_trigger(repo_root / os.getenv("MAYA_VOICE_STOP_TRIGGER_FILE", ".maya_voice_stop"))
+    if os.getenv("KAMPUNG_AI_CONTROLLER_UNLOADS_SERVICE", "0") == "1":
+        _controller_log(repo_root, f"{APP_NAME} is quitting; unloading Maya.")
+        service_install.uninstall()
+        return
+    _controller_log(repo_root, f"{APP_NAME} is quitting; requested voice stop; engine service remains installed.")
 
 
 def _touch_voice_trigger(path: Path) -> None:

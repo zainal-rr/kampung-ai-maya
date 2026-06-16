@@ -41,7 +41,7 @@ def explicit_day_count(topic: str) -> int:
         "twelve": 12,
     }
     for word, count in words.items():
-        if re.search(rf"\b{word}\s+(?:day|days)\b", lowered):
+        if re.search(rf"\b{word}\s*[- ]?\s*(?:day|days)\b", lowered):
             return count
     return 0
 

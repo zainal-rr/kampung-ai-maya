@@ -1,11 +1,30 @@
 from __future__ import annotations
 
+import json
 import re
+import time
+from urllib.parse import parse_qs, urlparse
+
+from storage import get_preference, upsert_preference
 
 
 GOOGLE_SEARCH_SKILL_ID = "google_search"
 YOUTUBE_SKILL_ID = "youtube_research"
 REDDIT_SKILL_ID = "reddit_research"
+RESULT_CONTEXT_KEY = "maya_browser_result_context"
+RESULT_CONTEXT_TTL_SECONDS = 1800
+SITE_RESULT_TARGETS = (
+    "reddit",
+    "wikipedia",
+    "gamespot",
+    "polygon",
+    "imdb",
+    "youtube",
+    "github",
+    "stackoverflow",
+    "medium",
+    "tripadvisor",
+)
 
 
 def _extract_visible_options(text: str, limit: int = 5) -> list[str]:
@@ -32,6 +51,7 @@ def _clean_site_query(text: str, skill_id: str) -> str:
         wrappers = (
             r"^(?:and\s+)?(?:google|search\s+for|search|look\s+up|find\s+online|check\s+online)\s+",
             r"^(?:and\s+)?(?:open\s+a\s+google\s+search\s+for|open\s+google\s+search\s+for)\s+",
+            r"^(?:and\s+)?(?:open|pull\s+up|bring\s+up|show\s+me|show|go\s+to|visit)\s+(?:the\s+)?",
         )
     elif skill_id == YOUTUBE_SKILL_ID:
         wrappers = (
@@ -60,20 +80,21 @@ def _is_result_open_request(text: str) -> bool:
     )
     if explicit:
         return True
+    if _site_followup_target(text):
+        return True
     return bool(re.search(r"\b(one|result|link|post|page|thread|article)\b", lowered)) and any(
-        re.search(rf"\b{site}\b", lowered)
-        for site in (
-            "reddit",
-            "wikipedia",
-            "gamespot",
-            "polygon",
-            "imdb",
-            "youtube",
-            "github",
-            "stackoverflow",
-            "medium",
-        )
+        re.search(rf"\b{site}\b", lowered) for site in SITE_RESULT_TARGETS
     )
+
+
+def _site_followup_target(text: str) -> str:
+    lowered = " ".join(text.lower().split())
+    for site in SITE_RESULT_TARGETS:
+        if re.search(rf"\bthe\s+{site}\b", lowered):
+            return site
+        if re.search(rf"\b{site}\s+(one|result|review|thread|post|page|article|link)\b", lowered):
+            return site
+    return ""
 
 
 def _rank_from_text(text: str) -> int:
@@ -96,7 +117,11 @@ def _rank_from_text(text: str) -> int:
 
 
 def _target_from_click_request(text: str) -> str:
+    if site := _site_followup_target(text):
+        return site
     cleaned = re.sub(r"\b(open|click|select|choose|maybe|the|that|this|one|first|top|second|third|fourth|fifth|result|video|thread|post|page|article|link|title)\b", " ", text, flags=re.I)
+    cleaned = re.sub(r"\b(can|could|would)\s+you\b", " ", cleaned, flags=re.I)
+    cleaned = re.sub(r"\b(please|maya)\b", " ", cleaned, flags=re.I)
     cleaned = re.sub(r"[^\w\s.-]", " ", cleaned)
     cleaned = re.sub(r"^(?:about|for|on|of|regarding)\s+", "", " ".join(cleaned.strip(" .").split()), flags=re.I)
     return cleaned if len(cleaned) >= 3 else ""
@@ -112,12 +137,21 @@ def _options_match_target(options: list[str], target: str) -> bool:
 
 def _looks_like_posting_or_account_action(text: str) -> bool:
     lowered = text.lower()
-    return any(word in lowered for word in ("post", "comment", "upvote", "downvote", "subscribe", "join subreddit", "message ", "send message", "upload"))
+    patterns = (
+        r"\b(?:write|leave|add|make|create|submit|send)\s+(?:a\s+)?comment\b",
+        r"\b(?:write|make|create|submit)\s+(?:a\s+)?post\b",
+        r"\b(?:upvote|downvote|subscribe|upload)\b",
+        r"\bjoin\s+subreddit\b",
+        r"\bsend\s+(?:a\s+)?message\b",
+    )
+    return any(re.search(pattern, lowered) for pattern in patterns)
 
 
 def _sensitive_browser_action(text: str) -> bool:
     lowered = text.lower()
-    return any(word in lowered for word in ("pay", "payment", "checkout", "login", "password", "otp", "card", "passport", "private key", "api key", "submit"))
+    if any(word in lowered for word in ("pay", "payment", "checkout", "login", "password", "otp", "card", "passport", "private key", "api key", "submit")):
+        return True
+    return _looks_like_posting_or_account_action(text)
 
 
 _SENSITIVE_URL_RE = re.compile(r"/(checkout|payments?|login|signin|sign-in|account/auth)\b|[?&](checkout|login|auth)=", re.I)
@@ -170,3 +204,117 @@ def _gcp_url_for_request(text: str) -> tuple[str, str]:
     if "billing" in lowered:
         return "https://console.cloud.google.com/billing", "billing overview"
     return "https://console.cloud.google.com", "console home"
+
+
+async def _remember_result_context(db_path: str, spec, query: str, page, options: list[str]) -> None:
+    merged_options: list[str] = []
+    for item in [*options, *_extract_visible_options(page.text, limit=10)]:
+        clean = " ".join(str(item).split()).strip()
+        if clean and clean not in merged_options:
+            merged_options.append(clean)
+        if len(merged_options) >= 10:
+            break
+    payload = {
+        "created_at": time.time(),
+        "provider": spec.workflow_prefix,
+        "query": query,
+        "page_title": page.title,
+        "page_url": page.url,
+        "options": merged_options,
+    }
+    await upsert_preference(db_path, RESULT_CONTEXT_KEY, json.dumps(payload, ensure_ascii=True), source="skill")
+
+
+async def _load_result_context(db_path: str) -> dict:
+    raw = await get_preference(db_path, RESULT_CONTEXT_KEY)
+    if not raw:
+        return {}
+    try:
+        data = json.loads(raw)
+        age = time.time() - float(data.get("created_at", 0))
+    except (json.JSONDecodeError, TypeError, ValueError):
+        return {}
+    return data if age <= RESULT_CONTEXT_TTL_SECONDS else {}
+
+
+def _context_query_for_site(context: dict, site: str) -> str:
+    if not site or not context:
+        return ""
+    domain = _site_domain(site)
+    options = [str(item).lower() for item in context.get("options", [])]
+    if domain and any(site in item or domain in item for item in options):
+        return str(context.get("query", "")).strip()
+    return ""
+
+
+def _missing_context_reply(skill_name: str, site: str) -> str:
+    return (
+        f"{skill_name} skill has no active search result context for the {site.title()} result. "
+        "Tell me the topic to search first, then I can open the matching result."
+    )
+
+
+def _verify_contextual_open(page, context: dict, site: str) -> tuple[bool, str]:
+    if not _url_matches_site(page.url, site):
+        return False, f"opened URL is not on {site}"
+    if _is_literal_site_search(page.url, site):
+        return False, "opened a site search page instead of a result page"
+    query = str(context.get("query", "")).strip()
+    terms = _topic_terms(query)
+    if not terms:
+        return True, ""
+    haystack = f"{page.title}\n{page.url}\n{page.text[:2000]}".lower()
+    if any(term in haystack for term in terms):
+        return True, ""
+    return False, f"opened page does not mention the active topic '{query}'"
+
+
+def _site_domain(site: str) -> str:
+    return {
+        "reddit": "reddit.com",
+        "youtube": "youtube.com",
+        "github": "github.com",
+        "stackoverflow": "stackoverflow.com",
+        "wikipedia": "wikipedia.org",
+        "gamespot": "gamespot.com",
+        "polygon": "polygon.com",
+        "imdb": "imdb.com",
+        "medium": "medium.com",
+        "tripadvisor": "tripadvisor",
+    }.get(site, "")
+
+
+def _url_matches_site(url: str, site: str) -> bool:
+    domain = _site_domain(site)
+    if not domain:
+        return False
+    host = urlparse(url).netloc.lower()
+    if site == "tripadvisor":
+        return host == "tripadvisor.com" or host.endswith(".tripadvisor.com") or ".tripadvisor." in host
+    return host == domain or host.endswith("." + domain)
+
+
+def _is_literal_site_search(url: str, site: str) -> bool:
+    parsed = urlparse(url)
+    if "search" not in parsed.path.lower():
+        return False
+    query = " ".join(value for values in parse_qs(parsed.query).values() for value in values).lower()
+    return site in query and any(marker in query for marker in ("open", "click", "can i", "can you"))
+
+
+def _topic_terms(query: str) -> list[str]:
+    stop = {
+        "google",
+        "search",
+        "find",
+        "online",
+        "review",
+        "reviews",
+        "reddit",
+        "youtube",
+        "video",
+        "videos",
+        "thread",
+        "threads",
+    }
+    return [token for token in re.split(r"\W+", query.lower()) if len(token) >= 4 and token not in stop][:6]

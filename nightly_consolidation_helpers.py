@@ -16,7 +16,7 @@ from canonical_memory import subject_key_from_text
 from cost_tracker import record_usage
 from memory_audit import record_memory_audit_event
 from memory_links import add_memory_link
-from permission_policy import contains_sensitive_info
+from permission_policy import contains_sensitive_info, contains_sensitive_phrase_cue
 from weekly_memory_live import ProviderCall, _clean, _json_blob
 
 MAX_EPISODE_ROWS = 400
@@ -149,7 +149,7 @@ async def gather_episodes(db_path: str, watermark: str) -> tuple[list[dict[str, 
     for role, content, timestamp in rows:
         new_watermark = max(new_watermark or "", str(timestamp or ""))
         text = " ".join(str(content or "").split())[:MAX_EPISODE_CHARS]
-        if not text or contains_sensitive_info(text):
+        if not text or contains_sensitive_info(text) or contains_sensitive_phrase_cue(text):
             continue
         episodes.append({"role": str(role or ""), "text": text, "at": str(timestamp or "")})
     return episodes, new_watermark

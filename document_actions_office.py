@@ -19,6 +19,8 @@ from deck_species import deck_species_prompt_context, detect_deck_species
 from document_actions_content_helpers import _attach, _quick_request, _strip_quality_words
 from document_actions_excel_mixin import DocumentExcelMixin
 from document_actions_office_sessions import _office_session_edit_topic
+from maya_voice.work_runtime import set_current_voice_work_phase
+from maya_documents.delivery_policy import pptx_quality_hard_block
 from office_edit_helpers import (
     backup_office_file,
     edited_office_topic,
@@ -52,6 +54,16 @@ class DocumentOfficeMixin(DocumentExcelMixin):
             slides = reviewed
         qa = await create_powerpoint_with_qa(self.db_path, target, topic.title(), slides, DIRECT_DOC_RUN_ID, LAST_DOC_KEY)
         if not qa.passed:
+            if channel == "imac" and not pptx_quality_hard_block(qa):
+                await self._remember(target, f"Edited PowerPoint draft: {qa.summary()}", False, channel, "pptx", topic)
+                if session:
+                    await update_artifact_session_after_edit(self.db_path, session, channel, target, instruction)
+                return await self._attach_powerpoint(
+                    f"I updated the PowerPoint draft, but {qa.summary()} I’m not calling it final.",
+                    target,
+                    channel,
+                    include_deck=True,
+                )
             await self._restore_failed_edit(path, target, backup, save_copy)
             self.last_model_lane += " + PowerPoint edit restore"
             return f"I tried to update the latest PowerPoint, but QA failed: {qa.summary()} I kept the original unchanged."
@@ -126,24 +138,28 @@ class DocumentOfficeMixin(DocumentExcelMixin):
         if channel == "telegram":
             return await self._attach_powerpoint(f"Done. I created a {label}.", path, channel)
         summary = await asyncio.to_thread(created_file_content_summary, path)
+        if not await set_current_voice_work_phase("opening", f"opening {path.name}"):
+            return f"I cancelled that PowerPoint before opening it. It is saved in the Maya documents folder as {path.name}."
         try:
             opened_app = await asyncio.to_thread(open_created_file, path, self.bridge, "Microsoft PowerPoint")
         except Exception as exc:
             return f"Done. I created a {label} at {path}. I saved it here: {path}. I could not open it: {exc}. {summary}"
-        suffix = f" in {opened_app}" if opened_app else ""
-        return f"Done. I created a {label} at {path}. I opened it on the iMac{suffix}. {summary}"
+        opened = opened_app or "Microsoft PowerPoint"
+        return f"Done. I created a {label} at {path}. I asked {opened} to open it on the iMac. {summary}"
 
     async def _attach_powerpoint(self, message: str, path: Path, channel: str, *, include_deck: bool = True) -> str:
         if channel != "telegram":
             if not include_deck:
                 return f"{message} Draft saved at {path}."
             summary = await asyncio.to_thread(created_file_content_summary, path)
+            if not await set_current_voice_work_phase("opening", f"opening {path.name}"):
+                return f"I cancelled that PowerPoint draft before opening it. It is saved in the Maya documents folder as {path.name}."
             try:
                 opened_app = await asyncio.to_thread(open_created_file, path, self.bridge, "Microsoft PowerPoint")
             except Exception as exc:
                 return f"{message} Draft saved at {path}. I could not open it: {exc}. {summary}"
-            suffix = f" in {opened_app}" if opened_app else ""
-            return f"{message} Draft saved at {path}. I opened it on the iMac{suffix}. {summary}"
+            opened = opened_app or "Microsoft PowerPoint"
+            return f"{message} Draft saved at {path}. I asked {opened} to open it on the iMac. {summary}"
         markers = []
         if include_deck:
             markers.append(f"[file:{path}]")

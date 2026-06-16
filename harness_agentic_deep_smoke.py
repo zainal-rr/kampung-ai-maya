@@ -262,7 +262,7 @@ async def _browser_workflow_accepts_url_start(root: Path) -> None:
     fake = _FakeBrowserController()
     router._browser = fake
     reply = await router.handle("https://www.google.com/search?q=current+EPF+dividend+rate", "imac")
-    _require(reply and "I opened Chrome" in reply, f"url start reply: {reply}")
+    _require(reply and "requested the browser page" in reply, f"url start reply: {reply}")
     _require(fake.urls == ["https://www.google.com/search?q=current+EPF+dividend+rate"], f"urls: {fake.urls}")
     _require(fake.searches == [], f"should not re-search raw URL: {fake.searches}")
     print("  browser workflow URL start: ok")

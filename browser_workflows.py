@@ -78,12 +78,23 @@ class HumanBrowserWorkflowRouter:
             if task_type == "flight_search":
                 return "I queued the flight search. I can compare options on the iMac browser when it is safe to take over Chrome, and I will stop before booking or payment."
             return "I queued the browser search. I can open and inspect Chrome when it is safe to take over the iMac browser."
-        state.steps.append("opened url" if _is_url(state.query) else "opened search")
-        await asyncio.to_thread(_open_browser_target_new_tab, self.browser, state.query)
+        page = await asyncio.to_thread(_open_browser_target_new_tab, self.browser, state.query)
+        if page:
+            state.current_url = page.url
+            state.page_title = page.title
+            state.last_observation_id = observation_id(page.title, page.url, page.text_hash)
+            state.confidence = 0.75 if page.url or page.title else 0.35
+            state.steps.append("verified url" if _is_url(state.query) else "verified search")
+        else:
+            state.steps.append("requested url" if _is_url(state.query) else "requested search")
         await self._save(state)
         if task_type == "flight_search":
-            return "I opened Chrome with flight options. I can compare, change filters, and shortlist, but I will stop before booking or payment."
-        return "I opened Chrome for that. I can inspect the page, click visible results, fill simple fields, and verify what changed."
+            if page:
+                return "I verified the browser is on the flight search. I can compare, change filters, and shortlist, but I will stop before booking or payment."
+            return "I requested the flight search in the browser, but I could not verify the page yet. I will stop before booking or payment."
+        if page:
+            return "I verified the browser page for that. I can inspect the page, click visible results, fill simple fields, and verify what changed."
+        return "I requested the browser page, but I could not verify it yet."
 
     async def _status(self, text: str) -> str | None:
         if _clean(text) not in {
@@ -177,9 +188,16 @@ class HumanBrowserWorkflowRouter:
         task.filters.append(text)
         task.retry_count += 1
         task.steps.append(f"searched follow-up: {text}")
-        await asyncio.to_thread(_open_browser_target_new_tab, self.browser, task.query)
+        page = await asyncio.to_thread(_open_browser_target_new_tab, self.browser, task.query)
+        if page:
+            task.current_url = page.url
+            task.page_title = page.title
+            task.last_observation_id = observation_id(page.title, page.url, page.text_hash)
+            task.confidence = 0.75 if page.url or page.title else 0.35
         await self._save(task)
-        return "I am continuing the browser task with the updated search and kept it active."
+        if page:
+            return "I verified the updated browser search and kept it active."
+        return "I requested the updated browser search, but I could not verify the page yet."
 
     async def _fill(self, text: str) -> str | None:
         match = re.match(r"^(?:fill|enter|type)\s+(.+?)\s+(?:with|as|into)\s+(.+)$", text, re.IGNORECASE)
@@ -231,13 +249,13 @@ class HumanBrowserWorkflowRouter:
             return f"I could not find `{target}` as a visible clickable item in Chrome."
         await self._add_step(f"clicked {target}")
         if result.verified:
-            state = "I verified a visible change after the click."
+            state = f"I clicked {target} in Chrome and verified a visible change after the click."
         elif result.clicked:
-            state = "I clicked it, but I cannot confirm the result yet."
+            state = f"I clicked {target} in Chrome, but I cannot confirm the result yet."
         else:
-            state = "The page stayed on the same visible result."
+            state = f"I clicked {target} in Chrome, but the page stayed on the same visible result."
         suffix = " I will still stop before booking, payment, submission, or private details." if sensitive else ""
-        return f"I clicked {target} in Chrome and verified the result. {state}{suffix}"
+        return f"{state}{suffix}"
 
     async def _click_search_result_fallback(self, target: str) -> str | None:
         click_search_result = getattr(self.browser, "click_search_result", None)
@@ -252,7 +270,7 @@ class HumanBrowserWorkflowRouter:
                 continue
             await asyncio.sleep(1.0)
             await self._add_step(f"clicked search result {candidate}")
-            return f"I clicked the matching search result for {candidate} in Chrome and kept the page open for verification."
+            return f"I clicked the matching search result for {candidate} in Chrome, but I cannot confirm the result yet."
         return None
 
     async def _task(self) -> BrowserAgentState | None:

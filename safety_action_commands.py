@@ -68,7 +68,20 @@ def _looks_like_private_exposure(text: str) -> bool:
 
 
 def _looks_like_sensitive_data_use(text: str) -> bool:
-    if not contains_sensitive_info(text):
+    phrase_cue = any(
+        marker in text
+        for marker in (
+            "bank details",
+            "bank account",
+            "private key",
+            "api key",
+            "api token",
+            "access token",
+            "my password is",
+            "password is",
+        )
+    )
+    if not contains_sensitive_info(text) and not phrase_cue:
         return False
     if _looks_like_safe_sensitive_guidance(text):
         return False

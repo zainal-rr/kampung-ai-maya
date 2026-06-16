@@ -46,9 +46,13 @@ def main() -> None:
         result = audio.resolve_first_output()
         _require(result.device == 1, "PortAudio refresh did not recover configured output")
         _require(not result.used_default_fallback, "recovered output should not be marked as fallback")
+        audio.sd = RecoveringFakeSd()
+        os.environ["IMAC_AUDIO_INPUT_NAMES"] = "Zainal’s Headphone"
+        _require(audio.resolve_sounddevice_input_after_refresh() == 0, "PortAudio refresh did not recover configured input")
     finally:
         audio.sd = old
         os.environ.pop("IMAC_AUDIO_OUTPUT_NAMES", None)
+        os.environ.pop("IMAC_AUDIO_INPUT_NAMES", None)
         os.environ.pop("IMAC_AUDIO_ALLOW_DEFAULT_OUTPUT_FALLBACK", None)
     print("sounddevice_audio_resolution_smoke: ok")
 

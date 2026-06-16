@@ -6,7 +6,7 @@ from xai_realtime_tools import voice_tools
 
 
 def session_update_payload(instructions: str, sample_rate: int) -> dict:
-    silence_ms = int(os.getenv("XAI_VOICE_TURN_SILENCE_MS", "1800"))
+    silence_ms = int(os.getenv("XAI_VOICE_TURN_SILENCE_MS", "2200"))
     return {
         "type": "session.update",
         "session": {

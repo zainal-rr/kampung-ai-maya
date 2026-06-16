@@ -33,7 +33,7 @@ def main() -> None:
 def _assert_docx_passes(path: Path, title: str, topic: str, markdown: str) -> None:
     sections = strengthen_word_sections(topic, word_sections_from_markdown(markdown, topic))
     create_docx(path, title, sections)
-    quality = validate_docx_path(path, topic)
+    quality = validate_docx_path(path, topic, doc_kind="technical_guide")
     if not quality.passed:
         raise AssertionError(f"{topic} failed local QA: {quality.short_issue_text()}")
 

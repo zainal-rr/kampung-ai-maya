@@ -5,6 +5,7 @@ from dataclasses import dataclass
 
 from browser_control import note_browser_route
 from browser_driver import make_browser_controller
+from browser_site_skill_helpers import _site_followup_target
 from browser_site_skills import (
     run_google_cloud_console_skill,
     run_google_search_skill,
@@ -18,6 +19,8 @@ from frequent_sites import (
     frequent_site_catalog,
     should_use_specialized_site_skill,
 )
+from maya_browser.intent_normalizer import normalize_browser_request
+from maya_browser.pending_actions import pending_browser_voice_request
 from permission_policy import action_permission
 from stay_booking_skill import run_airbnb_skill, run_booking_com_skill
 from storage import upsert_preference
@@ -36,6 +39,10 @@ class BrowserCapabilityRoute:
 
 
 async def run_browser_capability(db_path: str, request: str, *, bridge: OSBridge | None = None) -> str:
+    pending_request, _pending_kind = await pending_browser_voice_request(db_path, request)
+    if pending_request:
+        request = pending_request
+    request = normalize_browser_request(request)
     route = route_browser_capability(request)
     note_browser_route(route.child_skill, route.reason)
     if route.child_skill == "google_images":
@@ -60,11 +67,16 @@ async def run_browser_capability(db_path: str, request: str, *, bridge: OSBridge
 
 
 def route_browser_capability(request: str) -> BrowserCapabilityRoute:
+    request = normalize_browser_request(request)
     lowered = request.lower()
+    if _direct_url_open_request(request):
+        return BrowserCapabilityRoute("general_browser", "direct URL open marker")
     if any(marker in lowered for marker in ("google image", "google images", "image search", "search images", "find images")):
         return BrowserCapabilityRoute("google_images", "image search marker")
     if _google_cloud_request(lowered):
         return BrowserCapabilityRoute("google_cloud_console", "Google Cloud Console marker")
+    if _explicit_google_search_request(lowered):
+        return BrowserCapabilityRoute("google_search", "explicit Google search marker")
     if _youtube_request(lowered):
         return BrowserCapabilityRoute("youtube_research", "YouTube marker")
     if _site_result_followup_request(lowered):
@@ -103,6 +115,8 @@ def route_browser_capability(request: str) -> BrowserCapabilityRoute:
         return BrowserCapabilityRoute("airbnb_stay_search", "Airbnb keyword")
     if any(word in lowered for word in ("booking.com", "hotel", "hotels", "room", "rooms", "accommodation")):
         return BrowserCapabilityRoute("booking_com_hotel_search", "hotel or accommodation keyword")
+    if _named_page_open_request(lowered):
+        return BrowserCapabilityRoute("google_search", "named page open marker")
     return BrowserCapabilityRoute("general_browser", "general browser request")
 
 
@@ -111,7 +125,27 @@ def _google_search_request(lowered: str) -> bool:
         return False
     if re_match := re.search(r"^\s*(google|search|search for|look up|find online|check online)\s+\S+", lowered):
         return bool(re_match)
+    if re.search(r"\bgoogle\s+(?:search|say)\b", lowered):
+        return True
     return "google search" in lowered
+
+
+def _explicit_google_search_request(lowered: str) -> bool:
+    if any(phrase in lowered for phrase in ("open google", "go to google", "visit google")):
+        return False
+    return bool(
+        re.search(r"^\s*(?:google|google\s+search|search\s+google|search\s+on\s+google|open\s+google\s+search\s+for)\s+\S+", lowered)
+        or re.search(r"\bgoogle\s+(?:search|say)\b", lowered)
+    )
+
+
+def _direct_url_open_request(request: str) -> bool:
+    match = re.search(r"\bhttps?://[^\s]+|\bwww\.[^\s]+", request, re.I)
+    if not match:
+        return False
+    if request.strip().strip(" .") == match.group(0).strip(" ."):
+        return True
+    return bool(re.search(r"\b(open|go to|visit|show|pull up|bring up)\b", request, re.I))
 
 
 def _search_result_open_request(lowered: str) -> bool:
@@ -121,6 +155,8 @@ def _search_result_open_request(lowered: str) -> bool:
 
 
 def _site_result_followup_request(lowered: str) -> bool:
+    if _site_followup_target(lowered):
+        return True
     if not re.search(r"\b(one|result|link|post|page|thread|article)\b", lowered):
         return False
     return any(
@@ -135,6 +171,7 @@ def _site_result_followup_request(lowered: str) -> bool:
             "github",
             "stackoverflow",
             "medium",
+            "tripadvisor",
         )
     )
 
@@ -153,6 +190,14 @@ def _reddit_request(lowered: str) -> bool:
 
 def _google_cloud_request(lowered: str) -> bool:
     return any(marker in lowered for marker in ("google cloud", "gcp", "cloud console", "console.cloud.google.com"))
+
+
+def _named_page_open_request(lowered: str) -> bool:
+    if any(marker in lowered for marker in ("open browser", "open chrome", "show browser", "show chrome")):
+        return False
+    if not re.search(r"\b(open|pull up|bring up|show me|show|go to|visit)\b", lowered):
+        return False
+    return any(marker in lowered for marker in (" page", " review", " article", " site", " website", " metacritic", " ign", " gamespot"))
 
 
 def _frequent_site_open_intent(request: str, domain: str) -> bool:

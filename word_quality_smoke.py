@@ -6,7 +6,7 @@ from pathlib import Path
 from artifact_quality import validate_docx_path
 from office_drafter import word_sections_from_markdown
 from office_modern_files import create_docx
-from word_quality import detect_word_intent, word_quality_spec
+from word_quality import detect_word_intent, word_prompt_context, word_quality_spec
 
 
 SCENARIOS = (
@@ -85,7 +85,7 @@ def main() -> None:
             for heading in headings:
                 _require(heading in spec.required_headings, f"{heading} missing from spec")
             path = create_docx(root / f"{intent}.docx", topic, _router_sections(headings) if intent == "technical_guide" else _good_sections(intent, headings))
-            qa = validate_docx_path(path, topic)
+            qa = validate_docx_path(path, topic, doc_kind=intent)
             _require(qa.passed, f"{intent} docx should pass: {qa.issues}")
 
         markdown = (
@@ -127,7 +127,7 @@ def main() -> None:
                 ("Recommendations", ["Keep the first version compact unless the user asks for a longer trip."]),
             ],
         )
-        mismatch_qa = validate_docx_path(mismatch, "make me a Seoul food trip doc")
+        mismatch_qa = validate_docx_path(mismatch, "make me a Seoul food trip doc", doc_kind="travel_itinerary")
         _require(not mismatch_qa.passed, "short food trip should reject mismatched 5-day/Daily Plan output")
         _require(any("missing day-level" in issue or "declares 5 days" in issue for issue in mismatch_qa.issues), "mismatch QA reason missing")
 
@@ -144,7 +144,7 @@ def main() -> None:
                 ("Next Steps", ["Review the manufacturer documentation."]),
             ],
         )
-        weak_router_qa = validate_docx_path(weak_router, "make router setup guide in Word")
+        weak_router_qa = validate_docx_path(weak_router, "make router setup guide in Word", doc_kind="technical_guide")
         _require(not weak_router_qa.passed, "router guide should fail when it only covers cabling")
         _require(any("router technical guide missing" in issue for issue in weak_router_qa.issues), "router QA reason missing")
 
@@ -161,16 +161,36 @@ def main() -> None:
                 ("Next Steps", ["Review connected devices and document final settings."]),
             ],
         )
-        weak_putty_qa = validate_docx_path(weak_putty, "router setup guide with PuTTY config")
+        weak_putty_qa = validate_docx_path(weak_putty, "router setup guide with PuTTY config", doc_kind="technical_guide")
         _require(not weak_putty_qa.passed, "PuTTY guide should fail without actual config commands")
         _require(any("PuTTY/CLI" in issue for issue in weak_putty_qa.issues), "PuTTY QA reason missing")
+
+        meraki_context = word_prompt_context("make a Word document about Cisco Meraki MX firewall config")
+        _require("Dashboard" in meraki_context, "Meraki prompt context missing Dashboard grounding")
+        _require("organization" in meraki_context.lower(), "Meraki prompt context missing organization grounding")
+        _require("claim device" in meraki_context.lower(), "Meraki prompt context missing claim-device grounding")
+        generic_meraki = create_docx(
+            root / "weak-meraki.docx",
+            "Cisco Meraki MX Firewall Config",
+            [
+                ("Purpose", ["This explains a router setup where exact menu names vary by router brand."]),
+                ("Prerequisites", ["Have admin access and change the admin password before continuing."]),
+                ("Configuration Steps", ["Configure internet, WiFi, and firewall settings in the router interface."]),
+                ("Verification", ["Confirm internet access."]),
+                ("Troubleshooting", ["Restart the router if needed."]),
+                ("Safety Notes", ["Do not share credentials."]),
+                ("Next Steps", ["Document the setup."]),
+            ],
+        )
+        weak_meraki_qa = validate_docx_path(generic_meraki, "make a Word document about Cisco Meraki MX firewall config", doc_kind="technical_guide")
+        _require(any("Meraki" in issue for issue in weak_meraki_qa.issues), "Meraki generic-router QA reason missing")
 
         good_putty = create_docx(
             root / "good-putty.docx",
             "Router Setup Guide With PuTTY Config",
             _putty_router_sections(),
         )
-        good_putty_qa = validate_docx_path(good_putty, "router setup guide with PuTTY config")
+        good_putty_qa = validate_docx_path(good_putty, "router setup guide with PuTTY config", doc_kind="technical_guide")
         _require(good_putty_qa.passed, f"PuTTY router guide should pass: {good_putty_qa.issues}")
 
         weak_proposal = create_docx(
@@ -187,7 +207,7 @@ def main() -> None:
                 ("Next Steps", ["Approve the repair policy.", "***"]),
             ],
         )
-        weak_proposal_qa = validate_docx_path(weak_proposal, "make proposal doc for Kampung AI document quality")
+        weak_proposal_qa = validate_docx_path(weak_proposal, "make proposal doc for Kampung AI document quality", doc_kind="proposal")
         _require(not weak_proposal_qa.passed, "proposal should fail empty Out of Scope and missing Tier 3")
         _require(any("Out of Scope" in issue or "three-tier" in issue for issue in weak_proposal_qa.issues), "proposal QA reason missing")
 
@@ -200,9 +220,50 @@ def main() -> None:
                 ("Plan", ["Add a specific point later."]),
             ],
         )
-        bad_qa = validate_docx_path(bad, "Write a proposal for Kampung AI Telegram features")
+        bad_qa = validate_docx_path(bad, "Write a proposal for Kampung AI Telegram features", doc_kind="proposal")
         _require(not bad_qa.passed, "boilerplate proposal should fail")
         _require(any("boilerplate heading" in issue or "missing scenario headings" in issue for issue in bad_qa.issues), "bad QA reason missing")
+
+        generic_network = create_docx(
+            root / "generic-network.docx",
+            "Network Troubleshooting Notes",
+            [
+                ("Summary", ["This diagnostic note records a short network check and avoids pretending to be a configuration guide."]),
+                ("Checks Run", ["Route, DNS, and ping checks were inspected with basic status notes."]),
+                ("Next Steps", ["Review the router, ISP, DNS resolver, or local link depending on which check failed."]),
+            ],
+        )
+        generic_network_qa = validate_docx_path(generic_network, "network troubleshooting notes")
+        _require(
+            not any("Purpose" in issue or "Prerequisites" in issue or "Configuration Steps" in issue for issue in generic_network_qa.issues),
+            f"missing doc_kind must not infer technical-guide headings: {generic_network_qa.issues}",
+        )
+
+        diagnostic = create_docx(
+            root / "diagnostic.docx",
+            "Network Troubleshooting Notes",
+            [
+                ("Summary", ["The route, DNS, and ping checks provide a basic picture of connectivity and whether local routing or name resolution needs attention."]),
+                ("Checks Run", ["Default route returned a gateway, DNS configuration listed a resolver, and ping checks verified both numeric and domain reachability."]),
+                ("Findings", ["No failed basic checks were observed, so the first pass points away from immediate local route, DNS, or link failure."]),
+                ("Next Steps", ["If symptoms continue, test another device, restart the router, review ISP status, and repeat DNS plus ping checks after the restart."]),
+            ],
+        )
+        diagnostic_qa = validate_docx_path(diagnostic, "network troubleshooting notes", doc_kind="diagnostic_report")
+        _require(diagnostic_qa.passed, f"diagnostic report should pass declared diagnostic QA: {diagnostic_qa.issues}")
+
+        missing_findings = create_docx(
+            root / "diagnostic-missing-findings.docx",
+            "Network Troubleshooting Notes",
+            [
+                ("Summary", ["The route, DNS, and ping checks provide a basic picture of current connectivity."]),
+                ("Checks Run", ["Default route, DNS configuration, and ping checks were inspected."]),
+                ("Next Steps", ["Repeat checks after restarting the router and testing another device."]),
+            ],
+        )
+        missing_findings_qa = validate_docx_path(missing_findings, "network troubleshooting notes", doc_kind="diagnostic_report")
+        _require(not missing_findings_qa.passed, "diagnostic report should require Findings")
+        _require(any("Findings" in issue for issue in missing_findings_qa.issues), "diagnostic missing-Findings reason absent")
     print("word_quality_smoke: ok")
 
 

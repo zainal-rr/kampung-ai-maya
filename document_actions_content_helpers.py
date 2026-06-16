@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from document_actions_context import *
+from artifact_file_state import record_artifact_fingerprint
 from document_actions_excel_rows import _budget_rows, _saas_tracker_rows, _task_tracker_rows, _travel_budget_topic
 
 
@@ -14,6 +15,32 @@ def _should_defer_html_app_to_artisan(text: str) -> bool:
     if any(marker in lowered for marker in ("html file", "single html", "one html", "self contained html", "self-contained html")):
         return False
     return any(marker in lowered for marker in (" app", "web app", "planner", "tracker", "dashboard", "ui"))
+
+
+def _draft_delivery_request(text: str) -> bool:
+    lowered = " ".join(str(text).lower().split())
+    if "draft" not in lowered:
+        return False
+    return any(
+        marker in lowered
+        for marker in (
+            "give me the draft",
+            "give me draft",
+            "just give me the draft",
+            "open the draft",
+            "show me the draft",
+            "send me the draft",
+        )
+    )
+
+
+async def _remember_draft_artifact(db_path: str, path: Path, channel: str, label: str, topic: str = "") -> None:
+    artifact_type = path.suffix.lower().lstrip(".")
+    draft_topic = topic or re.sub(r"[-_]+", " ", path.stem).strip() or label
+    await upsert_preference(db_path, LAST_DOC_KEY, str(path), source="document")
+    await upsert_preference(db_path, LAST_DRAFT_DOC_KEY, str(path), source="document")
+    await record_artifact_fingerprint(db_path, path)
+    await record_artifact_session(db_path, channel, artifact_type, path, draft_topic)
 
 
 def _strip_quality_words(topic: str) -> str:

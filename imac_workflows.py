@@ -8,6 +8,7 @@ from assistant_command_helpers import confirmation_decision
 from artifact_builder import ArtifactBuilder
 from browser_control import page_summary
 from browser_driver import make_browser_controller
+from browser_workflow_helpers import open_browser_target_new_tab as _open_browser_target_new_tab
 from browser_workflows import HumanBrowserWorkflowRouter
 from document_actions import DocumentActionRouter
 from network_tools import network_doc_sections, run_network_diagnostics, summarize_network
@@ -26,6 +27,7 @@ class ImacWorkflowRouter:
         self.db_path = db_path
         browser_bridge = bridge
         self.bridge = bridge or OSBridge()
+        self.browser_bridge = browser_bridge
         self._browser = None
         self.human_browser = HumanBrowserWorkflowRouter(db_path, browser_bridge)
         self.workspace = workspace or workspace_dir("")
@@ -34,7 +36,7 @@ class ImacWorkflowRouter:
     @property
     def browser(self):
         if self._browser is None:
-            self._browser = make_browser_controller(self.bridge)
+            self._browser = make_browser_controller(self.browser_bridge)
         return self._browser
 
     async def handle(self, text: str, channel: str) -> str | None:
@@ -68,11 +70,16 @@ class ImacWorkflowRouter:
         if not ("flight" in lowered and any(word in lowered for word in ("check", "find", "search", "book"))):
             return None
         query = re.sub(r"\s+in\s+(?:my\s+)?i?mac$", "", text, flags=re.IGNORECASE).strip()
-        await self._open_search(query)
+        page = await self._open_search(query)
         await upsert_preference(self.db_path, "maya_active_workflow", f"flight:{query}", source="workflow")
+        if page:
+            return (
+                "I verified the browser is on the flight search. Tell me if you want a different date, "
+                "cheaper option, better timing, or baggage comparison. I will stop before booking or payment."
+            )
         return (
-            "I opened Chrome with flight options. Tell me if you want a different date, "
-            "cheaper option, better timing, or baggage comparison. I will stop before booking or payment."
+            "I requested the flight search in the browser, but I could not verify the page yet. "
+            "I will stop before booking or payment."
         )
 
     async def _flight_followup(self, text: str) -> str | None:
@@ -91,9 +98,11 @@ class ImacWorkflowRouter:
             return None
         base = active.split(":", 1)[1]
         query = f"{base} {text}"
-        await self._open_search(query)
+        page = await self._open_search(query)
         await upsert_preference(self.db_path, "maya_active_workflow", f"flight:{query}", source="workflow")
-        return "I updated the flight search in Chrome."
+        if page:
+            return "I verified the updated flight search in the browser."
+        return "I requested the updated flight search, but I could not verify the page yet."
 
     async def _browser_inspect(self, text: str) -> str | None:
         lowered = _clean(text)
@@ -153,18 +162,19 @@ class ImacWorkflowRouter:
             channel,
             run_id="network_troubleshooting",
             source_tool="imac_workflows",
-            success_message=f"{summarize_network(results)} I opened the troubleshooting document in Word: {path}",
+            success_message=f"{summarize_network(results)} The troubleshooting document is ready in the Maya documents folder: {path.name}",
             draft_message=(
-                f"{summarize_network(results)} I opened the troubleshooting draft in Word, "
-                f"but QA found issues. {path}"
+                f"{summarize_network(results)} The troubleshooting draft is ready in the Maya documents folder, "
+                f"but QA found issues. {path.name}"
             ),
             open_file=True,
+            doc_kind="diagnostic_report",
         )
         await upsert_preference(self.db_path, "maya_active_workflow", f"network:{path}", source="workflow")
         return artifact.reply
 
-    async def _open_search(self, query: str) -> None:
-        await asyncio.to_thread(self.browser.open_search_new_tab, query)
+    async def _open_search(self, query: str):
+        return await asyncio.to_thread(_open_browser_target_new_tab, self.browser, query)
 
 
 def _clean(text: str) -> str:

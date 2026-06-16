@@ -20,6 +20,8 @@ from document_actions_content_helpers import (
     _artifact_kind,
     _attach,
     _budget_rows,
+    _draft_delivery_request,
+    _remember_draft_artifact,
     _should_defer_html_app_to_artisan,
 )
 from document_actions_word_helpers import _document_edit_request
@@ -29,6 +31,7 @@ from artifact_discourse_context import resolve_referenced_artifact_topic
 from artifact_semantic_enrichment import enrich_artifact_topic
 from artifact_semantic_resolver import resolve_semantic_artifact_intent
 from artifact_file_state import record_artifact_fingerprint
+from maya_voice.work_runtime import set_current_voice_work_phase
 from document_actions_html import DocumentHtmlMixin
 from document_actions_office import DocumentOfficeMixin
 from document_actions_word import DocumentWordMixin
@@ -84,6 +87,8 @@ class DocumentActionRouter(DocumentHtmlMixin, DocumentWordMixin, DocumentOfficeM
             self.last_model_lane = "Local visual workflow renderer"
             self.last_cost_recorded = False
             return visual
+        if _draft_delivery_request(text):
+            return await self._open_latest_draft(channel)
         update = markdown_update(text)
         if update:
             return await self._update_markdown(update, channel)
@@ -266,29 +271,33 @@ class DocumentActionRouter(DocumentHtmlMixin, DocumentWordMixin, DocumentOfficeM
             return await draft_markdown_with_gemini(self.db_path, topic, context)
         return await draft_markdown_with_gemini(self.db_path, topic)
 
-    async def _draft_with_issues(self, label: str, path: Path, channel: str, app_name: str | None, issues: str, attempts: int | None = None) -> str:
-        await upsert_preference(self.db_path, LAST_DRAFT_DOC_KEY, str(path), source="document")
+    async def _draft_with_issues(self, label: str, path: Path, channel: str, app_name: str | None, issues: str, attempts: int | None = None, topic: str = "") -> str:
+        await _remember_draft_artifact(self.db_path, path, channel, label, topic)
         suffix = path.suffix.lower().lstrip(".") or label
         message = qa_retry_exhausted_message(label, attempts or artifact_qa_max_attempts(suffix))
         if channel == "telegram":
             return _attach(f"{message} I saved the draft at {path}.", path, channel)
         summary = await asyncio.to_thread(created_file_content_summary, path)
+        if not await set_current_voice_work_phase("opening", f"opening draft {path.name}"):
+            return f"I cancelled that draft before opening it. It is saved in the Maya documents folder as {path.name}."
         try:
             opened_app = await asyncio.to_thread(open_created_file, path, self.bridge, app_name)
         except Exception as exc:
             return f"{message} I saved the draft at {path}. I could not open it: {exc}. {summary}"
-        suffix_text = f" in {opened_app}" if opened_app else ""
-        return f"{message} I saved the draft at {path}. I opened it on the iMac{suffix_text}. {summary}"
+        opened = opened_app or app_name or "the associated app"
+        return f"{message} I saved the draft at {path}. I asked {opened} to open it on the iMac. {summary}"
 
     async def _done(self, label: str, path: Path, channel: str, app_name: str | None) -> str:
         article = "an" if label.lower().startswith("excel") else "a"
         message = f"Done. I created {article} {label} at {path}."
         if channel == "imac":
             summary = await asyncio.to_thread(created_file_content_summary, path)
+            if not await set_current_voice_work_phase("opening", f"opening {path.name}"):
+                return f"I cancelled that work before opening it. The file is saved in the Maya documents folder as {path.name}."
             try:
                 opened_app = await asyncio.to_thread(open_created_file, path, self.bridge, app_name)
-                suffix = f" in {opened_app}" if opened_app else ""
-                return f"{message} I opened it on the iMac{suffix}. {summary}"
+                opened = opened_app or app_name or "the associated app"
+                return f"{message} I asked {opened} to open it on the iMac. {summary}"
             except Exception as exc:
                 return f"{message} I saved it here: {path}. I could not open it: {exc}. {summary}"
         return _attach(f"Done. I created {article} {label}.", path, channel)
@@ -296,3 +305,27 @@ class DocumentActionRouter(DocumentHtmlMixin, DocumentWordMixin, DocumentOfficeM
     async def _markdown_target(self) -> Path | None:
         raw = await get_preference(self.db_path, LAST_DOC_KEY)
         return Path(raw) if raw else None
+
+    async def _open_latest_draft(self, channel: str) -> str:
+        raw = await get_preference(self.db_path, LAST_DRAFT_DOC_KEY)
+        if not raw:
+            return "I do not have a saved draft from the last QA failure yet."
+        path = Path(raw)
+        if not path.exists():
+            return f"I had a draft recorded, but I cannot find it now: {path}."
+        if channel == "telegram":
+            return _attach("Here is the latest draft. I am not calling it final because QA had issues.", path, channel)
+        summary = await asyncio.to_thread(created_file_content_summary, path)
+        app_name = {
+            ".docx": "Microsoft Word",
+            ".xlsx": "Microsoft Excel",
+            ".pptx": "Microsoft PowerPoint",
+        }.get(path.suffix.lower())
+        try:
+            if not await set_current_voice_work_phase("opening", f"opening draft {path.name}"):
+                return f"I cancelled that draft before opening it. It is saved in the Maya documents folder as {path.name}."
+            opened_app = await asyncio.to_thread(open_created_file, path, self.bridge, app_name)
+        except Exception as exc:
+            return f"I saved the draft at {path}, but I could not open it: {exc}. {summary}"
+        opened = opened_app or app_name or "the associated app"
+        return f"I asked {opened} to open the latest draft from the Maya documents folder. I am not calling it final because QA had issues. {summary}"

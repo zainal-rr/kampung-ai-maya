@@ -19,6 +19,7 @@ from hardware_event_store import init_hardware_event_db
 from lesson_store import init_lesson_db
 from logging_setup import configure_logging
 from local_voice_channel import LocalVoiceChannel
+from maya_browser.bridge_runtime import BrowserBridgeMonitor, warm_browser_bridge_once
 from maya_engine_lock import acquire_engine_lock
 from mudra_adapter import MudraAdapter
 from routine_store import init_routine_db
@@ -88,6 +89,10 @@ async def main():
 
         assistant = KampungAssistant(db_path=db_path)
         tasks = [asyncio.create_task(HealthReporter(db_path=db_path).run())]
+
+        if os.getenv("MAYA_BROWSER_BRIDGE_WARMUP", "1") != "0":
+            await warm_browser_bridge_once()
+            tasks.append(asyncio.create_task(_supervise("browser_bridge", lambda: BrowserBridgeMonitor().run())))
 
         if os.getenv("ENABLE_AGENT_RUNTIME", "1") == "1":
             tasks.append(asyncio.create_task(_supervise("agent_runtime", lambda: AgentRuntime(db_path=db_path).run())))

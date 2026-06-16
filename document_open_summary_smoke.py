@@ -13,11 +13,17 @@ class FakeBridge:
     def __init__(self, *, fail: bool = False):
         self.fail = fail
         self.opened: list[tuple[str, str | None]] = []
+        self.scripts: list[str] = []
+        self.unsaved_word = False
 
     def open_file(self, path: str, app_name: str | None = None) -> None:
         if self.fail:
             raise RuntimeError("open blocked in smoke")
         self.opened.append((path, app_name))
+
+    def _run_applescript(self, script: str) -> str:
+        self.scripts.append(script)
+        return "unsaved_open_copy" if self.unsaved_word else "opened"
 
 
 def _require(condition: bool, message: str) -> None:
@@ -76,7 +82,7 @@ async def main() -> None:
             encoding="utf-8",
         )
         md_reply = await router._done("Markdown draft", md, "imac", None)
-        _require("opened it on the iMac" in md_reply, "Markdown iMac reply did not open")
+        _require("asked" in md_reply and "to open it on the iMac" in md_reply, "Markdown iMac reply did not open")
         _require("identity, consent, payment safety" in md_reply, "Markdown summary did not use file content")
         md_summary = md_reply.split("Content summary:", 1)[-1].lower()
         _require("agentic commerce lets software agents" in md_summary, "Markdown summary read title instead of body")
@@ -84,20 +90,29 @@ async def main() -> None:
         docx = root / "kazakhstan-hiking-v1.docx"
         _make_docx(docx)
         docx_reply = await router._done("Word draft", docx, "imac", "Microsoft Word")
-        _require("opened it on the iMac in Microsoft Word" in docx_reply, "Word iMac reply did not open Word")
+        _require("asked Microsoft Word to open it on the iMac" in docx_reply, "Word iMac reply did not open Word")
         _require("mountain hiking near Almaty" in docx_reply, "Word summary did not use document body")
+        word_script = "\n".join(bridge.scripts)
+        _require("close d saving no" in word_script, "Word opener should refresh saved open copies from disk")
+        _require("unsaved_open_copy" in word_script, "Word opener should detect unsaved open copies")
+
+        unsaved_bridge = FakeBridge()
+        unsaved_bridge.unsaved_word = True
+        unsaved_router = DocumentActionRouter(db_path, workspace=root / "Maya", bridge=unsaved_bridge)
+        unsaved_reply = await unsaved_router._done("Word draft", docx, "imac", "Microsoft Word")
+        _require("could not open it" in unsaved_reply.lower(), "unsaved Word copy should not be force-reloaded")
 
         xlsx = root / "travel-budget-v1.xlsx"
         _make_xlsx(xlsx)
         xlsx_reply = await router._done("Excel draft", xlsx, "imac", "Microsoft Excel")
-        _require("opened it on the iMac in Microsoft Excel" in xlsx_reply, "Excel iMac reply did not open Excel")
+        _require("asked Microsoft Excel to open it on the iMac" in xlsx_reply, "Excel iMac reply did not open Excel")
         _require("Category, Item, Estimated MYR" in xlsx_reply, "Excel summary did not include workbook columns")
         _require("Kuala Lumpur to Almaty" in xlsx_reply, "Excel summary did not include workbook row content")
 
         pptx = root / "agriculture-concerns-v1.pptx"
         _make_pptx(pptx)
         pptx_reply = await router._done_powerpoint("PowerPoint draft", pptx, "imac", "agriculture concerns in Malaysia")
-        _require("opened it on the iMac in Microsoft PowerPoint" in pptx_reply, "PowerPoint reply did not open PowerPoint")
+        _require("asked Microsoft PowerPoint to open it on the iMac" in pptx_reply, "PowerPoint reply did not open PowerPoint")
         _require("Food security" in pptx_reply and "Modernize irrigation" in pptx_reply, "PowerPoint summary did not use slide content")
 
         failing = DocumentActionRouter(db_path, workspace=root / "Maya", bridge=FakeBridge(fail=True))
@@ -108,7 +123,7 @@ async def main() -> None:
 
         builder = ArtifactBuilder(db_path, bridge)
         builder_reply = await builder.deliver("Done. I created an editable travel budget template.", xlsx, "imac", "Microsoft Excel")
-        _require("opened it on the iMac in Microsoft Excel" in builder_reply, "ArtifactBuilder did not open iMac file")
+        _require("asked Microsoft Excel to open it on the iMac" in builder_reply, "ArtifactBuilder did not open iMac file")
         _require("Kuala Lumpur to Almaty" in builder_reply, "ArtifactBuilder did not include content summary")
 
         telegram_reply = await router._done("Markdown draft", md, "telegram", None)

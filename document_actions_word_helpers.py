@@ -272,6 +272,47 @@ def _word_document_title(topic: str) -> str:
     return title or "Maya Word Document"
 
 
+def _draft_override_requested(instruction: str) -> bool:
+    lowered = " ".join(str(instruction).lower().split())
+    return any(
+        marker in lowered
+        for marker in (
+            "give me the draft",
+            "give me draft",
+            "just give me",
+            "even if qa fails",
+            "even though qa failed",
+            "even if it fails",
+            "i will review",
+            "i'll review",
+            "i have permission",
+            "i have all the permission",
+            "open the draft",
+            "send the draft",
+        )
+    )
+
+
+def _word_quality_hard_blocks(quality: ArtifactQualityResult) -> bool:
+    for issue in getattr(quality, "issue_details", []) or []:
+        rule_id = str(getattr(issue, "rule_id", "") or "")
+        message = str(getattr(issue, "message", "") or "").lower()
+        if rule_id in {"docx.open", "docx.visual_layout"}:
+            return True
+        if "could not be opened" in message or "corrupt" in message:
+            return True
+    return False
+
+
+async def _preserve_failed_word_draft(db_path: str, target: Path) -> Path | None:
+    if not target.exists():
+        return None
+    draft_path = versioned_path(target.parent / f"{target.stem}-draft-v1{target.suffix}")
+    await asyncio.to_thread(shutil.copy2, target, draft_path)
+    await upsert_preference(db_path, LAST_DRAFT_DOC_KEY, str(draft_path), source="document")
+    return draft_path
+
+
 def _router_putty_topic(topic: str) -> bool:
     lowered = str(topic).lower()
     return "router" in lowered and any(marker in lowered for marker in ("putty", "ssh", "serial", "console", "cli", "command"))

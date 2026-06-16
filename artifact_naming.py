@@ -64,9 +64,13 @@ def _remove_parameters(text: str) -> str:
 
 def _subject_word(text: str) -> list[str]:
     lowered = text.lower()
+    if re.search(r"\bshawarma\b", lowered) and re.search(r"\bnasi\s+lemak\b", lowered):
+        return ["shawarma", "nasi", "lemak"]
     if re.search(r"\bmeraki\b", lowered):
         return ["router", "meraki"] if re.search(r"\brouter\b", lowered) else ["meraki"]
     known_subjects = (
+        ("nasi lemak", ["nasi", "lemak"]),
+        ("shawarma", ["shawarma"]),
         ("kampung ai", ["kampung", "ai"]),
         ("kuala lumpur", ["kuala", "lumpur"]),
         ("hong kong", ["hong", "kong"]),
@@ -88,6 +92,8 @@ def _subject_word(text: str) -> list[str]:
     for marker, words in known_subjects:
         if re.search(rf"\b{re.escape(marker)}\b", lowered):
             return words
+    if any(word in lowered for word in ("recipe", "recipes", "ingredient", "ingredients")):
+        return ["recipes"]
     tokens = [token for token in re.findall(r"[a-z0-9]+", lowered) if token not in _FILENAME_STOP_WORDS]
     return tokens[:1]
 
@@ -104,6 +110,8 @@ def _purpose_words(text: str, suffix: str) -> list[str]:
         return ["app"]
     if suffix.endswith("docx") and any(word in lowered for word in ("itinerary", "food trip", "trip", "travel", "holiday", "vacation", "hiking")):
         return ["itinerary"]
+    if suffix.endswith("docx") and any(word in lowered for word in ("recipe", "recipes", "ingredient", "ingredients")):
+        return ["recipes"]
     if suffix.endswith("xlsx") and any(word in lowered for word in ("budget", "expense", "expenses", "cost", "spend", "spending")):
         return ["budget", "tracker"]
     if any(word in lowered for word in ("config", "configuration")):
@@ -128,7 +136,7 @@ def _purpose_words(text: str, suffix: str) -> list[str]:
 
 
 _FILENAME_STOP_WORDS = {
-    "a", "an", "the", "for", "to", "in", "on", "about", "of", "with", "and", "or", "my", "our",
+    "a", "an", "the", "for", "to", "in", "on", "about", "of", "with", "and", "or", "my", "our", "all", "both",
     "file", "real", "editable", "proper", "complete", "short", "quick", "simple",
 }
 
