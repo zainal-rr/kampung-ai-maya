@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from dependency_manifest import dependency_statuses
+from maya_core.repo_paths import repo_root
 
 
 @dataclass(frozen=True)
@@ -15,13 +16,13 @@ class RegressionCheck:
 
 def june8_regression_checks() -> list[RegressionCheck]:
     return [
-        _file_check("shared assistant router", "assistant_routes.py"),
-        _file_check("document action router", "document_actions.py"),
-        _file_check("Word/Excel/PPT edit workflow", "document_actions_word.py"),
-        _file_check("workflow desk", "workflow_desk.py"),
-        _file_check("weekly memory", "weekly_memory.py"),
-        _file_check("voice handoff store", "xai_voice_handoff.py"),
-        _file_check("hotkey voice channel", "hotkey_voice_channel.py"),
+        _file_check("shared assistant router", "maya_core/assistant_routes.py"),
+        _file_check("document action router", "maya_documents/document_actions.py"),
+        _file_check("Word/Excel/PPT edit workflow", "maya_documents/document_actions_word.py"),
+        _file_check("workflow desk", "maya_core/workflow_desk.py"),
+        _file_check("weekly memory", "maya_core/weekly_memory.py"),
+        _file_check("voice handoff store", "maya_voice/xai_voice_handoff.py"),
+        _file_check("hotkey voice channel", "maya_core/hotkey_voice_channel.py"),
         _dependency_check("Microsoft Word", "app.word"),
         _dependency_check("Microsoft Excel", "app.excel"),
         _dependency_check("Microsoft PowerPoint", "app.powerpoint"),
@@ -87,7 +88,7 @@ def _evidence_items() -> list[str]:
 
 
 def _file_check(name: str, relative: str) -> RegressionCheck:
-    path = Path(relative)
+    path = repo_root(__file__) / relative
     return RegressionCheck(name, "pass" if path.exists() else "missing", relative)
 
 
