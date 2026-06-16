@@ -453,6 +453,7 @@ def plan_batches(wave: int, bs: int = 15) -> list[dict]:
     elif wave == 2:
         imp_ns = {d for d, ms in importers.items() if any(not is_smoke(m) for m in ms)}
         leaves = [s for s in names if not is_smoke(s) and s not in KEEP_AT_ROOT and not is_cli_wrapper(s)
+                  and not is_shim(s)
                   and s not in HUBS and s not in imp_ns]
         out += [{**b, "kind": "move", "wrap": "shim",
                  "moves": [(s, dest_pkg(s)) for s in b["items"]]} for b in chunks(leaves, bs)]
