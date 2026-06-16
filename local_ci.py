@@ -69,7 +69,7 @@ def run_local_ci(*, live_providers: bool = False) -> list[CheckResult]:
         _command_check("OSBridge test mode", ("tests/smokes/osbridge_test_mode_smoke.py",)),
         _command_check("telegram conversation contract", ("tests/smokes/telegram_conversation_contract_smoke.py",)),
         _command_check("telegram text alias", ("tests/smokes/telegram_text_alias_smoke.py",)),
-        _command_check("telegram voice input", ("telegram_voice_input_smoke.py",)),
+        _command_check("telegram voice input", ("tests/smokes/telegram_voice_input_smoke.py",)),
         _command_check("telegram photo input", ("tests/smokes/telegram_photo_input_smoke.py",)),
         _command_check("browser semantic scrape 500", ("tests/replays/browser_semantic_scrape_500.py",)),
         _command_check("browser run evidence", ("tests/smokes/browser_run_evidence_smoke.py",)),

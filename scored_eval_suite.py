@@ -48,7 +48,7 @@ EVAL_CASES = (
     EvalCase("documents", "Office edit workflow", ("tests/smokes/document_edit_office_smoke.py",)),
     EvalCase("imac", "June 8 iMac regression", ("tests/smokes/imac_june8_regression_smoke.py",)),
     EvalCase("self_heal", "self-heal loop", ("tests/smokes/self_heal_loop_smoke.py",)),
-    EvalCase("travel", "travel booking safety", ("travel_booking_safety_smoke.py",)),
+    EvalCase("travel", "travel booking safety", ("tests/smokes/travel_booking_safety_smoke.py",)),
     EvalCase("quantum", "quantum leaf boundary", ("tests/smokes/quantum_leaf_smoke.py",)),
     EvalCase("artisan", "artisan runner", ("tests/smokes/artisan_runner_smoke.py",)),
     EvalCase("blender_maker", "maker template", ("tests/smokes/artisan_maker_template_smoke.py",)),
