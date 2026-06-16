@@ -215,15 +215,38 @@ def gen_wrapper_candidates() -> list[str]:
     return cand
 
 
-def gen_grandfather_baseline() -> list[str]:
+def _baseline_package_dirs() -> list[Path]:
+    exact = {
+        "telegram_helpers",
+        "office_drafter_helpers",
+        "office_pptx_helpers",
+        "pptx_helpers",
+        "word_helpers",
+        "harness_helpers",
+    }
+    return [
+        d for d in ROOT.iterdir()
+        if d.is_dir()
+        and (d / "__init__.py").exists()
+        and d.name not in {"tests", "venv", ".venv"}
+        and (d.name.startswith("maya_") or d.name in exact)
+    ]
+
+
+def gen_grandfather_baseline(*, force: bool = False) -> list[str]:
     """Capture every CURRENT package file >300 logical lines (package-aware code_health)."""
+    if GRANDFATHER_FILE.exists() and not force:
+        existing = [
+            line.strip()
+            for line in GRANDFATHER_FILE.read_text(errors="ignore").splitlines()
+            if line.strip() and not line.strip().startswith("#")
+        ]
+        log(f"Step0: reusing {len(existing)} grandfathered package violations -> {GRANDFATHER_FILE}")
+        return existing
     import code_health
     excl = FIXTURE_EXCLUDE
-    pkgs = [d for d in ROOT.iterdir()
-            if d.is_dir() and (d / "tests/smokes/__init__.py").exists()
-            and d.name not in {"tests", "venv", ".venv"}]
     over = []
-    for d in pkgs:
+    for d in _baseline_package_dirs():
         for f in d.rglob("*.py"):
             nm = f.name
             if "__pycache__" in f.parts or nm.startswith("live_") or any(s in nm for s in excl):
@@ -588,7 +611,7 @@ def main() -> int:
     a = ap.parse_args()
 
     if a.step0:
-        gen_wrapper_candidates(); gen_grandfather_baseline(); return 0
+        gen_wrapper_candidates(); gen_grandfather_baseline(force=True); return 0
     if a.plan_only:
         for w in [int(x) for x in a.waves.split(",") if x.strip().isdigit()]:
             bs = plan_batches(w, a.batch_size)
