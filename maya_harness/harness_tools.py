@@ -12,10 +12,10 @@ from maya_harness.harness_browser_observation import browser_observation as _bro
 from maya_harness.harness_models import GroundedObservation, HarnessArtifact, local_artifact
 from maya_core.imac_workflows import ImacWorkflowRouter
 from maya_core.local_actions import LocalActionRouter
-from project_actions import ProjectActionRouter
-from screen_responder import ScreenResponder
-from self_heal_execution import execute_checkpointed_self_heal
-from self_healing import self_heal_from_complex_plan, self_heal_text
+from maya_core.project_actions import ProjectActionRouter
+from maya_core.screen_responder import ScreenResponder
+from maya_core.self_heal_execution import execute_checkpointed_self_heal
+from maya_core.self_healing import self_heal_from_complex_plan, self_heal_text
 from skill_factory import SkillFactory
 from untrusted_input_boundary import assess_untrusted_context
 from workspace_actions import WorkspaceActionRouter

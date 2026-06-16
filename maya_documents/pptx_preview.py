@@ -7,7 +7,7 @@ from pathlib import Path
 from PIL import Image, ImageDraw
 
 from maya_documents.office_files import safe_slug
-from pptx_slide_renderer import render_pptx_slides
+from maya_documents.pptx_slide_renderer import render_pptx_slides
 
 
 def powerpoint_contact_sheet(path: Path, *, max_slides: int = 8) -> Path | None:

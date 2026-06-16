@@ -4,7 +4,7 @@ import json
 
 import aiosqlite
 
-from security_manifest import SecurityManifest, get_manifest, manifest_summary, upsert_manifest
+from maya_core.security_manifest import SecurityManifest, get_manifest, manifest_summary, upsert_manifest
 
 
 async def init_mcp_registry(db_path: str) -> None:

@@ -19,9 +19,9 @@ from dotenv import load_dotenv
 load_dotenv()
 
 from maya_core.lesson_store import init_lesson_db
-from routine_store import init_routine_db
-from screen_responder import ScreenResponder
-from screen_session import activate_screen_sight
+from maya_core.routine_store import init_routine_db
+from maya_core.screen_responder import ScreenResponder
+from maya_core.screen_session import activate_screen_sight
 from skill_store import init_skill_db
 from storage import init_db
 from utils import OSBridge

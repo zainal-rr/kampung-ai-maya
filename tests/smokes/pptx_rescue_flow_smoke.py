@@ -16,9 +16,9 @@ from pathlib import Path
 from PIL import Image
 from pptx import Presentation
 
-import pptx_document_flow
-import pptx_visual_assets
-from pptx_document_flow import create_powerpoint_with_qa
+import maya_documents.pptx_document_flow as pptx_document_flow
+import maya_documents.pptx_visual_assets as pptx_visual_assets
+from maya_documents.pptx_document_flow import create_powerpoint_with_qa
 from storage import init_db
 
 

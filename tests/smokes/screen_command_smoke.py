@@ -14,9 +14,9 @@ from pathlib import Path
 
 from maya_core.assistant import KampungAssistant
 from maya_core.lesson_store import init_lesson_db
-from routine_store import init_routine_db
-from screen_responder import ScreenResponder
-from screen_service import ScreenSnapshot
+from maya_core.routine_store import init_routine_db
+from maya_core.screen_responder import ScreenResponder
+from maya_core.screen_service import ScreenSnapshot
 from skill_store import init_skill_db
 from storage import get_preference, init_db
 from telegram_commands import command_to_text, parse_command
@@ -135,7 +135,7 @@ class _FailingSenses:
 
 class _FakeContext:
     async def prepare(self, request: str):
-        from screen_context import ScreenContext
+        from maya_core.screen_context import ScreenContext
 
         if "safari" in request.lower():
             return ScreenContext(
@@ -157,7 +157,7 @@ class _FakeContext:
 
 class _FakeClosedSafari:
     async def prepare(self, request: str):
-        from screen_context import ScreenContext
+        from maya_core.screen_context import ScreenContext
 
         return ScreenContext(frontmost="Codex", running_apps=("Codex", "Telegram"), requested_app="Safari")
 

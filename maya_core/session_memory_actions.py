@@ -11,7 +11,7 @@ from maya_core.curated_memory import (
     curated_memory_status,
     scope_summary,
 )
-from permission_policy import contains_sensitive_info
+from maya_core.permission_policy import contains_sensitive_info
 from session_memory_store import save_session_summary
 from session_search import format_session_search_results, index_session_message, search_sessions
 

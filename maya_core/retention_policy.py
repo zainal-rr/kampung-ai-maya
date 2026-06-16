@@ -5,7 +5,7 @@ from pathlib import Path
 
 import aiosqlite
 
-from retention_delete import delete_project_records, delete_task_records
+from maya_core.retention_delete import delete_project_records, delete_task_records
 
 
 RETENTION_DAYS = 90

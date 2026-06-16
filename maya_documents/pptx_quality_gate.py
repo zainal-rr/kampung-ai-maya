@@ -10,8 +10,8 @@ from io import BytesIO
 from PIL import Image
 from pptx import Presentation
 
-from presentation_visual_builder import build_visual_reviewed_deck
-from pptx_slide_renderer import PptxRenderTimeout, _render_deadline_seconds, render_pptx_slides
+from maya_core.presentation_visual_builder import build_visual_reviewed_deck
+from maya_documents.pptx_slide_renderer import PptxRenderTimeout, _render_deadline_seconds, render_pptx_slides
 from workspace_paths import workspace_dir
 
 

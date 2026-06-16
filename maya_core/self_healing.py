@@ -3,7 +3,7 @@ from __future__ import annotations
 from pathlib import Path
 
 from code_health import collect_code_health, format_code_health
-from self_heal_store import create_self_heal_report, record_self_heal_stage
+from maya_core.self_heal_store import create_self_heal_report, record_self_heal_stage
 from self_heal_memory import guardrails_text
 from storage import create_task
 from storage_tasks import update_task_status

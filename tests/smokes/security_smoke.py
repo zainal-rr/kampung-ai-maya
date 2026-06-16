@@ -15,7 +15,7 @@ from pathlib import Path
 
 import service_install
 import telegram_bridge
-from permission_policy import path_needs_confirmation
+from maya_core.permission_policy import path_needs_confirmation
 from telegram_delivery import split_file_markers
 
 

@@ -4,7 +4,7 @@ import asyncio
 import re
 from urllib.parse import quote_plus
 
-from permission_policy import action_permission
+from maya_core.permission_policy import action_permission
 from utils import OSBridge
 
 

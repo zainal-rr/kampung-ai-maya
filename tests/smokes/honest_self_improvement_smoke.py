@@ -8,7 +8,7 @@ if str(_w4_root) not in _w4_sys.path:
 del _w4_Path, _w4_root, _w4_sys
 
 
-from self_improvement_policy import approval_needed_message, blocks_vague_claim, enforce_honest_claims, failure_notice, verified_learning_message
+from maya_core.self_improvement_policy import approval_needed_message, blocks_vague_claim, enforce_honest_claims, failure_notice, verified_learning_message
 
 
 def main() -> None:

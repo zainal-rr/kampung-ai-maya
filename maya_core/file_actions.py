@@ -4,8 +4,8 @@ import asyncio
 import re
 from pathlib import Path
 
-from permission_policy import action_permission, hard_no_private_exposure_text
-from safe_paths import resolve_safe_path
+from maya_core.permission_policy import action_permission, hard_no_private_exposure_text
+from maya_core.safe_paths import resolve_safe_path
 from workspace_paths import workspace_dir
 
 

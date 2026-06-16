@@ -4,7 +4,7 @@ import re
 
 import aiosqlite
 
-from permission_policy import contains_sensitive_info
+from maya_core.permission_policy import contains_sensitive_info
 
 MAYA_CORE_CAP = 2477
 ZAINAL_PROFILE_CAP = 1499

@@ -16,8 +16,8 @@ from pathlib import Path
 from maya_core.assistant import KampungAssistant
 from maya_core.assistant_model_lanes import ModelLanes
 from maya_core.lesson_store import init_lesson_db
-from routine_store import init_routine_db
-from route_tracker import last_route_text
+from maya_core.routine_store import init_routine_db
+from maya_core.route_tracker import last_route_text
 from skill_store import init_skill_db
 from storage import create_task, init_db, list_tasks
 from storage_tasks import update_task_status

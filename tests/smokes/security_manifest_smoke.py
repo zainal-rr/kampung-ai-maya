@@ -11,7 +11,7 @@ del _w4_Path, _w4_root, _w4_sys
 import asyncio
 import tempfile
 
-from security_manifest import SecurityManifest, get_manifest, list_manifests, manifest_summary, upsert_manifest
+from maya_core.security_manifest import SecurityManifest, get_manifest, list_manifests, manifest_summary, upsert_manifest
 from skill_registry import ensure_builtin_skill_manifests
 
 

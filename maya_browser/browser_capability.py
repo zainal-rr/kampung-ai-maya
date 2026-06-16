@@ -21,7 +21,7 @@ from maya_core.frequent_sites import (
 )
 from maya_browser.intent_normalizer import normalize_browser_request
 from maya_browser.pending_actions import pending_browser_voice_request
-from permission_policy import action_permission
+from maya_core.permission_policy import action_permission
 from stay_booking_skill import run_airbnb_skill, run_booking_com_skill
 from storage import upsert_preference
 from utils import OSBridge

@@ -20,10 +20,10 @@ from maya_core.artisan_maker import complete_blender_maker_output, select_maker_
 from maya_browser.browser_capability import route_browser_capability
 from maya_memory.canonical_memory import forget_canonical_memory, search_canonical_direct_fact, upsert_canonical_memory
 from maya_documents.office_modern_files import choose_pptx_theme, create_docx, create_pptx, create_xlsx
-from permission_policy import action_permission
-from pptx_quality_gate import inspect_pptx_quality
-from reliability_scorecard import reliability_scorecard
-from safety_action_commands import safety_action_reply
+from maya_core.permission_policy import action_permission
+from maya_documents.pptx_quality_gate import inspect_pptx_quality
+from maya_core.reliability_scorecard import reliability_scorecard
+from maya_core.safety_action_commands import safety_action_reply
 from source_aware_research import should_use_source_research
 from storage import init_db
 from travel_booking_safety import travel_booking_boundary_reply

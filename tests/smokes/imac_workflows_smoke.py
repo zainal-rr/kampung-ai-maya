@@ -20,7 +20,7 @@ from maya_browser.browser_control import BrowserClickResult, BrowserPage
 from maya_core.imac_workflows import ImacWorkflowRouter
 from maya_core.lesson_store import init_lesson_db
 from maya_core.markdown_drafter import MarkdownDraft
-from routine_store import init_routine_db
+from maya_core.routine_store import init_routine_db
 from skill_store import init_skill_db
 from storage import init_db
 from telegram_delivery import split_file_markers
@@ -76,7 +76,7 @@ class FakeBrowser:
 
 class FakeScreen:
     def capture_once(self):
-        from screen_service import ScreenSnapshot
+        from maya_core.screen_service import ScreenSnapshot
         return ScreenSnapshot(True, "screen visible", b"fake")
 
 

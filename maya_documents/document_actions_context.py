@@ -42,8 +42,8 @@ from maya_documents.office_drafter import (
     word_sections_from_markdown,
 )
 from maya_documents.office_modern_files import create_docx, create_xlsx
-from pptx_document_flow import create_powerpoint_with_qa
-from presentation_reviewer import review_presentation_slides
+from maya_documents.pptx_document_flow import create_powerpoint_with_qa
+from maya_core.presentation_reviewer import review_presentation_slides
 from word_quality import word_prompt_context
 from word_section_repair import strengthen_word_sections
 from maya_harness.harness_artifact_store import record_structured_artifact
@@ -56,8 +56,8 @@ from maya_core.markdown_drafter import (
     html_builder_lane,
     should_use_model_draft,
 )
-from permission_policy import action_permission, contains_sensitive_info, hard_no_private_exposure_text, path_allowed
-from project_store import active_project, remember_project_note
+from maya_core.permission_policy import action_permission, contains_sensitive_info, hard_no_private_exposure_text, path_allowed
+from maya_core.project_store import active_project, remember_project_note
 from storage import get_preference, upsert_preference
 from testing_spreadsheet import is_kampung_ai_testing_comparison, kampung_ai_testing_rows
 from utils import OSBridge

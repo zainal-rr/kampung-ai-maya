@@ -18,7 +18,7 @@ _ROOT = _Path(__file__).resolve().parents[2]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from secret_provider import (
+from maya_core.secret_provider import (
     get_secret,
     migrate_env_to_keychain,
     redact_secret_value,

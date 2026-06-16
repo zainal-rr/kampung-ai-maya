@@ -5,7 +5,7 @@ from collections import Counter
 import aiosqlite
 
 from browser_benchmark import format_browser_benchmark
-from reliability_scorecard import format_reliability_scorecard
+from maya_core.reliability_scorecard import format_reliability_scorecard
 
 
 async def trace_metric_items(db_path: str) -> list[str]:

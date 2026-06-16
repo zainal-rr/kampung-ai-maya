@@ -9,7 +9,7 @@ from maya_core.active_context_models import ActiveContext
 from maya_browser.browser_control import note_browser_intent
 from maya_browser.browser_driver import make_browser_controller
 from maya_browser.browser_understanding import extract_browser_options_with_gemini, grounded_browser_options
-from permission_policy import action_permission
+from maya_core.permission_policy import action_permission
 from storage import upsert_preference
 from stay_booking_parsing import (  # noqa: F401 - re-exported for existing callers
     StayDetails,

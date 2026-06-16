@@ -17,7 +17,7 @@ from maya_documents.artifact_preflight import ArtifactPreflight
 from maya_documents.document_actions import DocumentActionRouter
 from maya_core.markdown_drafter import MarkdownDraft
 from maya_documents.office_modern_files import create_pptx
-from pptx_quality_gate import PptxQualityResult
+from maya_documents.pptx_quality_gate import PptxQualityResult
 from storage import init_db
 from telegram_delivery import split_file_markers
 

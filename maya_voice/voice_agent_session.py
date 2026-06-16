@@ -5,7 +5,7 @@ import time
 from collections.abc import Callable
 
 from maya_core.cost_tracker import record_usage
-from route_tracker import record_route
+from maya_core.route_tracker import record_route
 from xai_voice_agent import XaiRealtimeVoiceAgentTransport
 
 

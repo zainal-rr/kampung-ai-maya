@@ -13,8 +13,8 @@ from maya_browser.browser_workflow_helpers import browser_options_from_text as _
 from maya_browser.browser_workflow_helpers import click_search_result_candidates as _search_result_candidates
 from maya_browser.browser_workflow_helpers import is_url as _is_url
 from maya_browser.browser_workflow_helpers import open_browser_target_new_tab as _open_browser_target_new_tab
-from permission_policy import action_permission, contains_sensitive_info, hard_no_private_exposure_text, safe_sensitive_guidance
-from screen_service import MacScreenService
+from maya_core.permission_policy import action_permission, contains_sensitive_info, hard_no_private_exposure_text, safe_sensitive_guidance
+from maya_core.screen_service import MacScreenService
 from storage import delete_preference, get_preference, upsert_preference
 from utils import OSBridge
 

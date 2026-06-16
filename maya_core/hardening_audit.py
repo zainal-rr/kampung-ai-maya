@@ -6,8 +6,8 @@ from pathlib import Path
 from dependency_manifest import readiness_summary
 from demo_evidence import load_latest, validate_latest_demo_evidence
 from maya_core.repo_paths import repo_root
-from permission_policy import SECRET_PATTERNS
-from route_tracker import _model_for_lane
+from maya_core.permission_policy import SECRET_PATTERNS
+from maya_core.route_tracker import _model_for_lane
 from self_heal_memory import guardrails_text
 
 

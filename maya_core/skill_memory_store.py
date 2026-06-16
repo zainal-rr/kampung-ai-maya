@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import aiosqlite
 
-from permission_policy import contains_sensitive_info
+from maya_core.permission_policy import contains_sensitive_info
 
 
 KINDS = {

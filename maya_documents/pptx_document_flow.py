@@ -20,14 +20,14 @@ from pathlib import Path
 from maya_documents.artifact_review_store import record_artifact_review
 from maya_harness.harness_artifact_store import record_structured_artifact
 from maya_harness.harness_models import local_artifact
-from pptx_polish_review import claude_polish_grade, local_polish_issues
+from maya_documents.pptx_polish_review import claude_polish_grade, local_polish_issues
 from maya_documents.office_modern_files import create_pptx
 from pptx import Presentation
-from pptx_quality_gate import inspect_pptx_quality, PptxQualityResult
-from pptx_topic_reviser import rebuild_topic_safe
-from pptx_visual_assets import add_gemini_visual_asset, required_visual_image_count, topic_benefits_from_visuals
-from pptx_slide_repair import attempt_slides, max_pptx_attempts
-from provider_capabilities import CAPABILITIES
+from maya_documents.pptx_quality_gate import inspect_pptx_quality, PptxQualityResult
+from maya_documents.pptx_topic_reviser import rebuild_topic_safe
+from maya_documents.pptx_visual_assets import add_gemini_visual_asset, required_visual_image_count, topic_benefits_from_visuals
+from maya_documents.pptx_slide_repair import attempt_slides, max_pptx_attempts
+from maya_core.provider_capabilities import CAPABILITIES
 from storage import upsert_preference
 
 

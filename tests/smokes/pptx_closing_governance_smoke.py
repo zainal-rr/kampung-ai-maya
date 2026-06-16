@@ -33,9 +33,9 @@ from pptx import Presentation as ReadPresentation
 
 from maya_documents.office_drafter import slides_from_markdown
 from maya_documents.office_modern_files import create_pptx
-from pptx_quality_gate import inspect_pptx_quality
-from pptx_slide_repair import rescue_slides
-from presentation_design_review import wants_presentation_review
+from maya_documents.pptx_quality_gate import inspect_pptx_quality
+from maya_documents.pptx_slide_repair import rescue_slides
+from maya_core.presentation_design_review import wants_presentation_review
 
 BANNED_CLOSING = "make the recommendation clear"
 
@@ -124,8 +124,8 @@ def _render_timeout_checks(root: Path) -> None:
     ]
     path = create_pptx(root / "timeout.pptx", "robotics workshop outcomes deck", clean_slides)
     # Force the timeout path deterministically via a microscopic deadline.
-    import pptx_quality_gate as gate
-    from pptx_slide_renderer import render_pptx_slides
+    import maya_documents.pptx_quality_gate as gate
+    from maya_documents.pptx_slide_renderer import render_pptx_slides
 
     original = gate.render_pptx_slides
     gate.render_pptx_slides = lambda p, d, limit=80, deadline_seconds=None: render_pptx_slides(
@@ -148,7 +148,7 @@ def _render_timeout_checks(root: Path) -> None:
 def _storage_stall_checks(root: Path) -> None:
     """Live P5 failure shape: OSError [Errno 60] inside image.save() on a
     syncing volume. Must classify as warning, not blocker."""
-    import pptx_quality_gate as gate
+    import maya_documents.pptx_quality_gate as gate
 
     clean_slides = [
         ("Workshop Outcomes Set The Day", ["Participants build one robot.", "Teams demo at the end."]),
@@ -183,7 +183,7 @@ def _visual_availability_checks(root: Path) -> None:
     import asyncio
     import tempfile as _tempfile
 
-    import pptx_document_flow as flow
+    import maya_documents.pptx_document_flow as flow
     from storage import init_db
     from maya_harness.harness_artifact_store import init_harness_artifact_db
 
@@ -235,7 +235,7 @@ def _fragment_cap_checks() -> None:
     _require(not cut.lower().split()[-1] in {"is", "still", "done", "of", "by", "to", "the"}, f"layout cut ends dangling: {cut!r}")
     manual = _title_words("Eliminate Weeks Of Manual Inspection Backlog Within One Quarter", 5)
     _require(not manual.lower().endswith(" of") and not manual.lower().endswith(" manual"), f"dangling tail kept: {manual!r}")
-    from pptx_polish_review import local_polish_issues
+    from maya_documents.pptx_polish_review import local_polish_issues
     with tempfile.TemporaryDirectory(prefix="maya-label-polish-") as tmp:
         label_path = create_pptx(
             Path(tmp) / "label.pptx",
@@ -254,7 +254,7 @@ def _visual_budget_checks(root: Path) -> None:
     budget that lands in the availability-note path."""
     import asyncio
 
-    import pptx_document_flow as flow
+    import maya_documents.pptx_document_flow as flow
     from storage import init_db
     from maya_harness.harness_artifact_store import init_harness_artifact_db
 
@@ -301,9 +301,9 @@ def _visual_budget_checks(root: Path) -> None:
 
 
 def _scratch_and_honesty_checks() -> None:
-    from pptx_visual_assets import _image_scratch_dir
+    from maya_documents.pptx_visual_assets import _image_scratch_dir
     from maya_documents.deck_species import deck_species_prompt_context, deck_species_review_contract
-    from pptx_slide_repair import rescue_slides
+    from maya_documents.pptx_slide_repair import rescue_slides
     from maya_documents.office_drafter_deck_scenarios import _issue_deck, _pitch_deck
 
     scratch = str(_image_scratch_dir())
@@ -330,8 +330,8 @@ def _scratch_and_honesty_checks() -> None:
 
 
 def _image_policy_checks() -> None:
-    from pptx_polish_review import image_policy_line, _parse_polish
-    from pptx_document_flow import _append_sentence
+    from maya_documents.pptx_polish_review import image_policy_line, _parse_polish
+    from maya_documents.pptx_document_flow import _append_sentence
 
     plain = image_policy_line("make a plain text only presentation about internal notes")
     _require("does not use generated images" in plain, f"plain policy wrong: {plain}")

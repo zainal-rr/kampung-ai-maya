@@ -12,7 +12,7 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-from route_tracker import last_route_text, record_route
+from maya_core.route_tracker import last_route_text, record_route
 from storage import init_db
 
 

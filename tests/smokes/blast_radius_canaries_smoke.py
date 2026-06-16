@@ -24,7 +24,7 @@ _ROOT = Path(__file__).resolve().parents[2]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from safe_paths import (  # noqa: E402
+from maya_core.safe_paths import (  # noqa: E402
     HONEST_LIMIT,
     resolve_safe_path,
     scrubbed_subprocess_env,

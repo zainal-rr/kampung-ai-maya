@@ -30,7 +30,7 @@ from telegram_turn_log import finalize_telegram_turn, record_telegram_turn_recei
 from telegram_delivery import send_document_file, send_photo_file, send_speech, send_text, split_file_markers
 from telegram_photo_input import describe_telegram_photo
 from telegram_voice_input import transcribe_telegram_voice
-from route_tracker import record_route
+from maya_core.route_tracker import record_route
 from maya_core.maya_runtime_config import runtime_config
 
 

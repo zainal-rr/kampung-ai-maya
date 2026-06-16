@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from response_style import apply_reply_preferences
+from maya_core.response_style import apply_reply_preferences
 
 
 async def style_document_text(db_path: str, text: str) -> str:

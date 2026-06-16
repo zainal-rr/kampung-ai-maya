@@ -3,7 +3,7 @@ from __future__ import annotations
 from maya_browser.browser_control import element_summary, page_summary
 from maya_browser.browser_driver import make_browser_controller
 from maya_harness.harness_models import GroundedObservation
-from screen_service import MacScreenService
+from maya_core.screen_service import MacScreenService
 from utils import OSBridge
 
 

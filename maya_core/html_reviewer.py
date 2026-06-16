@@ -8,7 +8,7 @@ import re
 from maya_core.cost_tracker import record_usage
 from maya_documents.artifact_quality import artifact_skill_context
 from maya_core.models import TheSteward
-from provider_capabilities import CAPABILITIES
+from maya_core.provider_capabilities import CAPABILITIES
 
 
 logger = logging.getLogger(__name__)

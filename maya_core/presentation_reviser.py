@@ -6,10 +6,10 @@ from pathlib import Path
 from pptx import Presentation
 
 from maya_documents.office_modern_files import safe_slug
-from pptx_quality_gate import ensure_pptx_quality, inspect_pptx_quality
-from pptx_slide_renderer import render_pptx_slides
-from pptx_topic_reviser import rebuild_topic_safe
-from presentation_visual_builder import build_visual_reviewed_deck
+from maya_documents.pptx_quality_gate import ensure_pptx_quality, inspect_pptx_quality
+from maya_documents.pptx_slide_renderer import render_pptx_slides
+from maya_documents.pptx_topic_reviser import rebuild_topic_safe
+from maya_core.presentation_visual_builder import build_visual_reviewed_deck
 from workspace_paths import workspace_dir
 
 

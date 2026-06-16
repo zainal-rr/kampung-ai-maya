@@ -10,7 +10,7 @@ import sounddevice as sd
 import websockets
 
 from maya_core.cost_tracker import record_usage
-from route_tracker import record_route
+from maya_core.route_tracker import record_route
 from session_memory_actions import save_voice_session_summary
 from sounddevice_audio import (
     output_device_snapshot,

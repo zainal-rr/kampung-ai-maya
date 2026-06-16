@@ -11,7 +11,7 @@ from maya_core.cost_tracker import record_usage
 from maya_core.language_policy import language_instruction
 from maya_core.models import TheMind, TheNews, TheSenses, TheSteward
 from maya_core.lane_prompts import MIND_ESCALATION_PROMPT
-from provider_capabilities import CAPABILITIES, review_triggers
+from maya_core.provider_capabilities import CAPABILITIES, review_triggers
 from source_aware_research import format_source_research, should_use_source_research, source_aware_research
 from weather_lookup import current_weather_summary, is_weather_question
 

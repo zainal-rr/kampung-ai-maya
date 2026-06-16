@@ -5,9 +5,9 @@ import re
 from pathlib import Path
 
 from maya_documents.office_files import safe_slug
-from permission_policy import action_permission, path_allowed
-from retention_policy import touch_project_activity
-from project_store import (
+from maya_core.permission_policy import action_permission, path_allowed
+from maya_core.retention_policy import touch_project_activity
+from maya_core.project_store import (
     ProjectMatch,
     active_project,
     clear_active_project,

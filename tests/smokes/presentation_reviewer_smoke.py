@@ -13,8 +13,8 @@ import os
 import tempfile
 from pathlib import Path
 
-import presentation_reviewer
-from presentation_reviewer import review_presentation_slides
+import maya_core.presentation_reviewer as presentation_reviewer
+from maya_core.presentation_reviewer import review_presentation_slides
 from storage import init_db
 
 

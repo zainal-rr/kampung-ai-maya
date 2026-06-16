@@ -20,8 +20,8 @@ from maya_core.maya_event_store import MayaEventStore
 from maya_memory.memory_audit import format_recent_memory_audit
 from maya_memory.memory_canaries import format_memory_leak_report
 from maya_core.mcp_registry import recent_mcp_usage
-from route_tracker import last_route_text
-from self_heal_store import latest_self_heal_report
+from maya_core.route_tracker import last_route_text
+from maya_core.self_heal_store import latest_self_heal_report
 from skill_outcome_store import recent_skill_outcomes
 from skill_store import list_custom_skills, list_skill_proposals
 from user_model_store import list_user_model_items

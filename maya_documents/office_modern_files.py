@@ -112,7 +112,7 @@ def choose_pptx_theme(topic: str) -> str:
 
 
 def _pptx_visual_topic(topic: str) -> bool:
-    from pptx_visual_assets import topic_benefits_from_visuals
+    from maya_documents.pptx_visual_assets import topic_benefits_from_visuals
 
     return topic_benefits_from_visuals(topic)
 

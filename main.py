@@ -22,11 +22,11 @@ from maya_core.local_voice_channel import LocalVoiceChannel
 from maya_browser.bridge_runtime import BrowserBridgeMonitor, warm_browser_bridge_once
 from maya_core.maya_engine_lock import acquire_engine_lock
 from maya_core.mudra_adapter import MudraAdapter
-from routine_store import init_routine_db
-from route_tracker import init_route_db
+from maya_core.routine_store import init_routine_db
+from maya_core.route_tracker import init_route_db
 from session_memory_store import init_session_memory_db
 from session_search import init_session_search_db
-from self_heal_store import init_self_heal_db
+from maya_core.self_heal_store import init_self_heal_db
 from sieve import SieveNode
 from skill_store import init_skill_db
 from skill_learning_store import init_skill_learning_db

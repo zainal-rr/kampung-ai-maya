@@ -8,7 +8,7 @@ if str(_w4_root) not in _w4_sys.path:
 del _w4_Path, _w4_root, _w4_sys
 
 
-from provider_readiness import provider_readiness_text
+from maya_core.provider_readiness import provider_readiness_text
 from telegram_channel import TelegramChannel
 from telegram_commands import command_help, parse_command
 

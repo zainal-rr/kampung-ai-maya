@@ -7,7 +7,7 @@ from typing import Any
 
 from maya_harness.harness_store import get_run, latest_events, list_active_runs, record_event
 from maya_core.maya_harness_sdk import MayaHarnessSDK
-from project_store import active_project
+from maya_core.project_store import active_project
 
 
 @dataclass(frozen=True)

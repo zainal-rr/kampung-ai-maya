@@ -10,7 +10,7 @@ import aiosqlite
 from maya_memory.canonical_memory import is_temporary_memory, subject_key_from_text, upsert_canonical_memory
 from maya_core.cost_tracker import record_usage
 from maya_memory.memory_audit import record_memory_audit_event
-from permission_policy import contains_sensitive_info
+from maya_core.permission_policy import contains_sensitive_info
 
 ProviderCall = Callable[[str], Awaitable[str]]
 

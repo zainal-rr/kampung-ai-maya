@@ -14,7 +14,7 @@ from pathlib import Path
 from PIL import Image
 
 from maya_documents.office_modern_files import create_pptx
-from pptx_preview import powerpoint_contact_sheet
+from maya_documents.pptx_preview import powerpoint_contact_sheet
 
 
 def main() -> None:

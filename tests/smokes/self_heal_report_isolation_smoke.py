@@ -11,8 +11,8 @@ del _w4_Path, _w4_root, _w4_sys
 import asyncio
 import tempfile
 
-from self_heal_commands import handle_self_heal_status
-from self_heal_store import create_self_heal_report, init_self_heal_db, record_self_heal_stage
+from maya_core.self_heal_commands import handle_self_heal_status
+from maya_core.self_heal_store import create_self_heal_report, init_self_heal_db, record_self_heal_stage
 
 
 async def main() -> None:

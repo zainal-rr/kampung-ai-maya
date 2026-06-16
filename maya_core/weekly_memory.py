@@ -19,7 +19,7 @@ from weekly_memory_helpers import (
 )
 from maya_memory.canonical_memory_backfill import backfill_canonical_memory
 from maya_core.lesson_store import init_lesson_db
-from retention_policy import run_retention_cleanup
+from maya_core.retention_policy import run_retention_cleanup
 from storage import init_db
 from time_parser import local_now
 from weekly_memory_live import ProviderCall, live_weekly_canonical_distillation

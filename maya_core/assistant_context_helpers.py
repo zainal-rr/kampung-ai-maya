@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from maya_core.assistant_command_helpers import direct_key
-from session_compactor import inspect_session_context
+from maya_core.session_compactor import inspect_session_context
 
 
 CONTEXT_KEYS = {

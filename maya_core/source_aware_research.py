@@ -9,7 +9,7 @@ from maya_core.cost_tracker import record_usage
 from google import genai
 from google.genai import types
 from maya_core.markdown_drafter import _sources_from_response
-from permission_policy import contains_sensitive_info, hard_no_private_exposure_text
+from maya_core.permission_policy import contains_sensitive_info, hard_no_private_exposure_text
 
 ResearchProvider = Callable[[str], Awaitable[tuple[str, list[tuple[str, str]]]]]
 

@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from permission_policy import action_permission
+from maya_core.permission_policy import action_permission
 
 
 @dataclass(frozen=True)

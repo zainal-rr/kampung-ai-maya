@@ -15,7 +15,7 @@ from pathlib import Path
 from maya_browser.browser_cost_policy import escalation_decision, local_decision
 from maya_browser.browser_control import BrowserController
 from maya_browser.browser_workflows import HumanBrowserWorkflowRouter
-from screen_service import ScreenSnapshot
+from maya_core.screen_service import ScreenSnapshot
 from storage import init_db
 
 

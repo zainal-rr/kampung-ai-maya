@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from maya_documents.document_actions_word_helpers import _document_edit_request
 from maya_documents.document_actions import DocumentActionRouter
-from route_tracker import record_route
+from maya_core.route_tracker import record_route
 
 
 DESKTOP_FILE_TOOL_NAME = "create_desktop_maya_file"

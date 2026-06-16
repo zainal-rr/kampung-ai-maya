@@ -10,8 +10,8 @@ from pptx import Presentation
 from maya_core.cost_tracker import record_usage
 from maya_documents.deck_species import deck_species_review_contract, detect_deck_species
 from maya_core.models import TheSteward
-from powerpoint_quality_context import powerpoint_quality_context
-from provider_capabilities import CAPABILITIES
+from maya_core.powerpoint_quality_context import powerpoint_quality_context
+from maya_core.provider_capabilities import CAPABILITIES
 
 
 def local_polish_issues(path: Path) -> list[str]:
@@ -98,7 +98,7 @@ def image_policy_line(topic: str) -> str:
     for a visual topic" as draft-level — every such deck shipped draft-only.
     Image AVAILABILITY is governed by code (topic class + generation
     pipeline health), never by the reviewer."""
-    from pptx_visual_assets import topic_benefits_from_visuals
+    from maya_documents.pptx_visual_assets import topic_benefits_from_visuals
 
     if topic and not topic_benefits_from_visuals(topic):
         return (

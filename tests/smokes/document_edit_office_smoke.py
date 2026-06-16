@@ -20,7 +20,7 @@ from maya_documents.office_edit_helpers import apply_simple_xlsx_edit
 from maya_documents.office_modern_files import create_pptx, create_xlsx
 from openpyxl import load_workbook
 from pptx import Presentation
-from pptx_quality_gate import PptxQualityResult
+from maya_documents.pptx_quality_gate import PptxQualityResult
 from storage import get_preference, init_db, upsert_preference
 
 LAST_DOC_KEY = "maya_last_document_path"

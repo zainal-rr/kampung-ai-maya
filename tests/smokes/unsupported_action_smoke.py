@@ -20,7 +20,7 @@ os.environ.setdefault("MPLCONFIGDIR", "/tmp/kampung-ai-mpl")
 from maya_core.assistant import KampungAssistant
 from maya_core.imac_workflows import ImacWorkflowRouter
 from maya_core.lesson_store import init_lesson_db
-from routine_store import init_routine_db
+from maya_core.routine_store import init_routine_db
 from skill_store import init_skill_db
 from skill_factory import SkillFactory
 from storage import init_db

@@ -13,7 +13,7 @@ import tempfile
 from pathlib import Path
 
 from maya_documents.office_modern_files import create_pptx
-from presentation_reviser import revise_latest_presentation, wants_presentation_revision
+from maya_core.presentation_reviser import revise_latest_presentation, wants_presentation_revision
 
 
 def main() -> None:

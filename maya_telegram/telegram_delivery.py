@@ -9,7 +9,7 @@ from contextlib import suppress
 from pathlib import Path
 
 from maya_core.audio_devices import bin_path
-from safe_paths import resolve_safe_path
+from maya_core.safe_paths import resolve_safe_path
 from telegram import Bot
 from telegram.error import NetworkError, RetryAfter, TimedOut
 

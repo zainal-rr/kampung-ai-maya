@@ -17,7 +17,7 @@ from maya_core.assistant import KampungAssistant
 from maya_core.briefing_service import BriefingBuilder
 from maya_memory.canonical_memory_inspector import inspect_canonical_memory
 from maya_core.lesson_store import add_lesson, init_lesson_db
-from routine_store import init_routine_db
+from maya_core.routine_store import init_routine_db
 from skill_store import init_skill_db
 from storage import create_task, init_db, save_history_message, upsert_preference
 from storage import update_task_status

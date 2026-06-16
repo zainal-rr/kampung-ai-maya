@@ -5,7 +5,7 @@ from collections import Counter
 
 import aiosqlite
 
-from permission_policy import contains_sensitive_info
+from maya_core.permission_policy import contains_sensitive_info
 
 FACT_CUES = (
     "remember",

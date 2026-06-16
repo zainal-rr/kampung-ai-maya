@@ -2,9 +2,9 @@ from __future__ import annotations
 
 from maya_core.context_window import assemble_recent_context, resolve_route
 from maya_core.curated_memory import curated_memory_prompt
-from project_store import build_project_context
-from quantum_advisory import quantum_context_hint
-from session_compactor import build_session_context
+from maya_core.project_store import build_project_context
+from maya_core.quantum_advisory import quantum_context_hint
+from maya_core.session_compactor import build_session_context
 from telegram_context_policy import should_use_full_context
 
 

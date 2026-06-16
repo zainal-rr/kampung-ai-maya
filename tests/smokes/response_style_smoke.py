@@ -12,7 +12,7 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-from response_style import apply_reply_preferences, format_grouped_answers, split_telegram_segments
+from maya_core.response_style import apply_reply_preferences, format_grouped_answers, split_telegram_segments
 from storage import init_db, upsert_preference
 
 

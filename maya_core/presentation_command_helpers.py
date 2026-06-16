@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from presentation_design_review import review_presentation_design, wants_presentation_review
-from presentation_reviser import revise_latest_presentation, wants_presentation_revision
+from maya_core.presentation_design_review import review_presentation_design, wants_presentation_review
+from maya_core.presentation_reviser import revise_latest_presentation, wants_presentation_revision
 
 
 async def handle_presentation_command(db_path: str, text: str, channel: str) -> tuple[str, str, str, bool] | None:

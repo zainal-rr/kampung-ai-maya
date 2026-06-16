@@ -16,9 +16,9 @@ from pathlib import Path
 from PIL import Image
 from pptx import Presentation
 
-import pptx_visual_assets
+import maya_documents.pptx_visual_assets as pptx_visual_assets
 from maya_documents.office_modern_files import create_pptx
-from pptx_visual_assets import add_gemini_visual_asset, topic_benefits_from_visuals, visual_image_cap
+from maya_documents.pptx_visual_assets import add_gemini_visual_asset, topic_benefits_from_visuals, visual_image_cap
 
 
 async def main() -> None:

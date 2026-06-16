@@ -16,7 +16,7 @@ from maya_core.active_context_document_parsers import parse_markdown_context, pa
 from maya_core.active_context_models import ActiveContext, log_context
 from maya_core.active_context_parsers import infer_markdown_path, is_sensitive_browser_context, parse_excel_context
 from maya_core.active_context_powerpoint import verify_powerpoint_visible_context
-from screen_responder import ScreenResponder
+from maya_core.screen_responder import ScreenResponder
 from untrusted_input_boundary import assess_untrusted_context
 from utils import OSBridge
 

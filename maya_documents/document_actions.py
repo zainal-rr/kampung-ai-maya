@@ -14,7 +14,7 @@ from __future__ import annotations
 
 from maya_documents.document_actions_context import *
 from maya_documents.artifact_retry_policy import artifact_qa_max_attempts, qa_retry_exhausted_message
-from safe_paths import resolve_safe_path
+from maya_core.safe_paths import resolve_safe_path
 from maya_documents.document_actions_content_helpers import (
     _append_text,
     _artifact_kind,
@@ -35,7 +35,7 @@ from maya_voice.work_runtime import set_current_voice_work_phase
 from maya_documents.document_actions_html import DocumentHtmlMixin
 from maya_documents.document_actions_office import DocumentOfficeMixin
 from maya_documents.document_actions_word import DocumentWordMixin
-from recent_questions_document import recent_questions_requested, requested_recent_question_count
+from maya_core.recent_questions_document import recent_questions_requested, requested_recent_question_count
 
 
 _PATCHABLE_SYMBOLS = (

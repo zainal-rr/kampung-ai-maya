@@ -17,9 +17,9 @@ from maya_core.assistant import KampungAssistant
 from maya_core.context_layers import init_context_layers_db
 from maya_core.lesson_store import init_lesson_db
 from maya_core.markdown_drafter import MarkdownDraft
-from project_store import active_project, project_notes
-from route_tracker import init_route_db
-from routine_store import init_routine_db
+from maya_core.project_store import active_project, project_notes
+from maya_core.route_tracker import init_route_db
+from maya_core.routine_store import init_routine_db
 from session_memory_store import init_session_memory_db
 from skill_store import find_skill, init_skill_db, list_skill_proposals
 from storage import init_db

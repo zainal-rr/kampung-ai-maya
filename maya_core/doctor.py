@@ -7,7 +7,7 @@ from pathlib import Path
 from code_health import collect_code_health, format_code_health
 from dependency_manifest import dependency_readiness_text
 from dotenv import load_dotenv
-from provider_readiness import provider_readiness_text
+from maya_core.provider_readiness import provider_readiness_text
 from speech_input import detect_avfoundation_audio_devices
 from weekly_memory_store import latest_weekly_summary
 from maya_core.repo_paths import repo_root

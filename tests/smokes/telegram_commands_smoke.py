@@ -15,11 +15,11 @@ from pathlib import Path
 
 from maya_core.lesson_store import init_lesson_db
 from maya_documents.artifact_review_store import record_artifact_review
-from routine_store import init_routine_db
+from maya_core.routine_store import init_routine_db
 from skill_store import init_skill_db
-from route_tracker import record_route
+from maya_core.route_tracker import record_route
 from session_memory_store import init_session_memory_db, save_session_summary
-from self_heal_store import init_self_heal_db
+from maya_core.self_heal_store import init_self_heal_db
 from storage import init_db, upsert_preference
 from telegram_commands import bot_commands, command_to_text, parse_command, voice_enabled
 from telegram_channel import TelegramChannel

@@ -19,8 +19,8 @@ from maya_memory.memory_extraction import (
     live_extraction_enabled,
 )
 from maya_memory.memory_perspective import normalize_user_perspective_memory
-from permission_policy import contains_sensitive_info, hard_no_private_exposure_text
-from self_improvement_policy import verified_learning_message
+from maya_core.permission_policy import contains_sensitive_info, hard_no_private_exposure_text
+from maya_core.self_improvement_policy import verified_learning_message
 from storage import get_preference, upsert_preference
 from storage import list_preferences
 

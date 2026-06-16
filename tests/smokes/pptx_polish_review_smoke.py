@@ -13,9 +13,9 @@ import os
 import tempfile
 from pathlib import Path
 
-import pptx_polish_review
+import maya_documents.pptx_polish_review as pptx_polish_review
 from maya_documents.office_modern_files import create_pptx
-from pptx_polish_review import claude_polish_grade
+from maya_documents.pptx_polish_review import claude_polish_grade
 from storage import init_db
 
 

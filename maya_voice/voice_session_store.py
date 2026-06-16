@@ -4,7 +4,7 @@ import json
 
 import aiosqlite
 
-from permission_policy import contains_sensitive_info
+from maya_core.permission_policy import contains_sensitive_info
 
 
 MAX_TURN_CHARS = 4000

@@ -8,7 +8,7 @@ if str(_w4_root) not in _w4_sys.path:
 del _w4_Path, _w4_root, _w4_sys
 
 
-from screen_service import MacScreenService
+from maya_core.screen_service import MacScreenService
 
 
 def main() -> None:

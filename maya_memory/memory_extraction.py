@@ -6,7 +6,7 @@ from dataclasses import dataclass
 from typing import Awaitable, Callable
 
 from maya_memory.canonical_memory_text import is_temporary_memory, memory_tokens, subject_key_from_text, value_from_text
-from permission_policy import contains_sensitive_info
+from maya_core.permission_policy import contains_sensitive_info
 
 ProviderCall = Callable[[str], Awaitable[str]]
 

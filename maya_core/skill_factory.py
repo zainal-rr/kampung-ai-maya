@@ -8,7 +8,7 @@ from pathlib import Path
 from skill_library import ensure_skill_library, proposed_path, test_path
 from skill_store import create_skill_proposal, upsert_skill
 from skill_learning_store import upsert_skill_metadata
-from security_manifest import SecurityManifest, upsert_manifest
+from maya_core.security_manifest import SecurityManifest, upsert_manifest
 
 
 class SkillFactory:

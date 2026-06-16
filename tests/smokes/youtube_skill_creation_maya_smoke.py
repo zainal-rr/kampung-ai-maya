@@ -16,7 +16,7 @@ from pathlib import Path
 from maya_core.assistant import KampungAssistant
 from maya_core.context_layers import init_context_layers_db
 from maya_core.lesson_store import init_lesson_db
-from routine_store import init_routine_db
+from maya_core.routine_store import init_routine_db
 from session_memory_store import init_session_memory_db
 from skill_store import find_skill, init_skill_db
 from storage import init_db

@@ -15,7 +15,7 @@ if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
 from maya_core.maya_permission_kernel import MayaPermissionKernel
-from permission_policy import action_permission
+from maya_core.permission_policy import action_permission
 from tool_sandbox_policy import (
     BROWSER_AUTOMATION,
     EXTERNAL,

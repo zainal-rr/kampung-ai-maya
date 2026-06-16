@@ -12,7 +12,7 @@ import asyncio
 from pathlib import Path
 
 from maya_core.local_actions import LocalActionRouter
-from permission_policy import path_allowed
+from maya_core.permission_policy import path_allowed
 
 
 async def main() -> None:

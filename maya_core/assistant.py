@@ -24,14 +24,14 @@ from maya_core.cost_tracker import record_usage
 from maya_harness.harness_router import HarnessRouter
 from maya_memory.memory_service import MemoryService
 from maya_core.models import TheSenses
-from response_policy import ResponsePolicy
-from response_style import apply_reply_preferences
-from route_tracker import record_route
-from safety_action_commands import safety_action_reply
-from screen_responder import ScreenResponder
-from session_compactor import compact_if_needed
+from maya_core.response_policy import ResponsePolicy
+from maya_core.response_style import apply_reply_preferences
+from maya_core.route_tracker import record_route
+from maya_core.safety_action_commands import safety_action_reply
+from maya_core.screen_responder import ScreenResponder
+from maya_core.session_compactor import compact_if_needed
 from skill_registry import SkillRegistry
-from self_improvement_policy import enforce_honest_claims
+from maya_core.self_improvement_policy import enforce_honest_claims
 from storage import get_history, save_history_message
 from telegram_commands import PASSTHROUGH_COMMANDS, command_to_text, parse_command
 from telegram_conversation_contract import enforce_telegram_truth_contract, strong_artifact_request, telegram_document_failure_reply, telegram_greeting_reply, telegram_short_followup_context

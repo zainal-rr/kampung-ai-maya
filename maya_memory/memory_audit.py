@@ -5,7 +5,7 @@ from dataclasses import dataclass
 
 import aiosqlite
 
-from permission_policy import contains_sensitive_info
+from maya_core.permission_policy import contains_sensitive_info
 
 AUDIT_EVENT_TYPES = {
     "canonical_write",

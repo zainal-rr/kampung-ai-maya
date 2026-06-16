@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from permission_policy import contains_sensitive_info, hard_no_private_exposure_text
+from maya_core.permission_policy import contains_sensitive_info, hard_no_private_exposure_text
 
 
 FINAL_ACTION_RE = re.compile(r"\b(book|reserve|purchase|pay|checkout|submit|confirm booking|complete booking)\b", re.I)

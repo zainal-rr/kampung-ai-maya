@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 
-from permission_policy import action_permission
+from maya_core.permission_policy import action_permission
 
 
 class AutonomyPolicy:

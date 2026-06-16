@@ -14,8 +14,8 @@ import tempfile
 from pathlib import Path
 
 from maya_documents.office_modern_files import create_pptx
-from presentation_design_review import review_presentation_design, wants_presentation_review
-from pptx_slide_renderer import render_pptx_slides
+from maya_core.presentation_design_review import review_presentation_design, wants_presentation_review
+from maya_documents.pptx_slide_renderer import render_pptx_slides
 
 
 async def main() -> None:

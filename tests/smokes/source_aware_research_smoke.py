@@ -15,8 +15,8 @@ from pathlib import Path
 
 from maya_core.assistant import KampungAssistant
 from maya_core.lesson_store import init_lesson_db
-from routine_store import init_routine_db
-from route_tracker import last_route_text
+from maya_core.routine_store import init_routine_db
+from maya_core.route_tracker import last_route_text
 from source_aware_research import (
     format_source_research,
     should_use_source_research,

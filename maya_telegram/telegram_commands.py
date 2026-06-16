@@ -12,11 +12,11 @@ from maya_memory.canonical_memory_inspector import inspect_canonical_memory
 from maya_memory.canonical_memory_migration import migrate_memory_to_canonical
 from maya_memory.canonical_memory_pin import set_canonical_memory_pin
 from maya_memory.memory_control import cleanup_stale_memory, forget_memory, memory_sources_text
-from provider_readiness import provider_readiness_text
-from route_tracker import last_route_text
-from screen_session import activate_screen_sight, deactivate_screen_sight, screen_sight_status, toggle_screen_sight
-from session_compactor import inspect_session_context
-from self_healing import self_heal_text
+from maya_core.provider_readiness import provider_readiness_text
+from maya_core.route_tracker import last_route_text
+from maya_core.screen_session import activate_screen_sight, deactivate_screen_sight, screen_sight_status, toggle_screen_sight
+from maya_core.session_compactor import inspect_session_context
+from maya_core.self_healing import self_heal_text
 from self_heal_memory import handle_memory_self_heal_command
 from telegram_status import command_help, status_text
 from telegram_delivery_log import latest_telegram_delivery_text

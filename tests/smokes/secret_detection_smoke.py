@@ -8,7 +8,7 @@ if str(_w4_root) not in _w4_sys.path:
 del _w4_Path, _w4_root, _w4_sys
 
 
-from permission_policy import action_permission, contains_sensitive_info, is_private_exposure
+from maya_core.permission_policy import action_permission, contains_sensitive_info, is_private_exposure
 
 
 def main() -> None:

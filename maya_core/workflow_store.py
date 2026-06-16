@@ -4,7 +4,7 @@ import json
 
 import aiosqlite
 
-from retention_policy import touch_task_activity
+from maya_core.retention_policy import touch_task_activity
 from storage_tasks import task_dict
 
 

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from maya_core.assistant_command_helpers import direct_key
-from self_heal_store import latest_self_heal_report, latest_self_heal_stages
+from maya_core.self_heal_store import latest_self_heal_report, latest_self_heal_stages
 
 
 async def handle_self_heal_status(db_path: str, text: str) -> str | None:

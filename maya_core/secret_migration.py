@@ -9,7 +9,7 @@ from pathlib import Path
 from dotenv import dotenv_values, load_dotenv
 
 from maya_core.repo_paths import repo_root
-from secret_provider import SECRET_ENV_NAMES, get_secret, migrate_env_to_keychain, redact_secrets_in_text
+from maya_core.secret_provider import SECRET_ENV_NAMES, get_secret, migrate_env_to_keychain, redact_secrets_in_text
 
 
 ROOT = repo_root(__file__)

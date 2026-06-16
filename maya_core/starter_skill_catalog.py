@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from security_manifest import SecurityManifest, upsert_manifest
+from maya_core.security_manifest import SecurityManifest, upsert_manifest
 from skill_learning_store import upsert_skill_metadata
 from skill_library import proposed_path
 from skill_store import init_skill_db, upsert_skill

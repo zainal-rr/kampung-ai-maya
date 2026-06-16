@@ -18,7 +18,7 @@ _ROOT = _Path(__file__).resolve().parents[2]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-import secret_migration
+import maya_core.secret_migration as secret_migration
 
 
 def _require(condition: bool, message: str) -> None:

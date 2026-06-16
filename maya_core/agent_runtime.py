@@ -8,7 +8,7 @@ from maya_core.agent_actions import AgentActionExecutor
 from maya_core.agent_planner import AgentPlanner
 from maya_core.autonomy import AutonomyPolicy
 from maya_harness.harness_graph import HarnessGraphRunner
-from routine_store import claim_due_routines
+from maya_core.routine_store import claim_due_routines
 from storage import (
     create_task,
     claim_due_tasks,

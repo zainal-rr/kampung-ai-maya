@@ -8,7 +8,7 @@ if str(_w4_root) not in _w4_sys.path:
 del _w4_Path, _w4_root, _w4_sys
 
 
-from safety_action_commands import safety_action_reply
+from maya_core.safety_action_commands import safety_action_reply
 
 
 def main() -> None:

@@ -12,7 +12,7 @@ import json
 import tempfile
 from pathlib import Path
 
-from omi_adapter import load_omi_transcript
+from maya_core.omi_adapter import load_omi_transcript
 
 
 def _require(condition: bool, message: str) -> None:

@@ -14,7 +14,7 @@ from maya_core.context_layers import (
 )
 from maya_core.context_prompt import format_context_blocks
 from maya_core.context_tokens import estimate_row_tokens, split_older_rows_by_token_budget
-from permission_policy import contains_sensitive_info
+from maya_core.permission_policy import contains_sensitive_info
 from session_memory_store import (
     init_session_memory_db,
     latest_session_summary,

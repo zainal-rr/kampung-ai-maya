@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from maya_core.artisan_runner_context import *
 from maya_core.artisan_runner_postprocess import _result, _write_transcript
-from safe_paths import scrubbed_subprocess_env
+from maya_core.safe_paths import scrubbed_subprocess_env
 
 
 def build_codex_command(target: ArtisanTarget, final_path: Path, prompt: str) -> list[str]:

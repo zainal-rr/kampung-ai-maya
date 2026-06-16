@@ -17,7 +17,7 @@ from pptx import Presentation
 from pptx.util import Inches
 
 from maya_documents.office_modern_files import create_pptx
-from pptx_quality_gate import ensure_pptx_quality, inspect_pptx_quality
+from maya_documents.pptx_quality_gate import ensure_pptx_quality, inspect_pptx_quality
 
 
 def main() -> None:

@@ -12,7 +12,7 @@ import asyncio
 import tempfile
 
 from maya_core.mcp_registry import audit_mcp_server, list_mcp_servers, propose_mcp_server, set_mcp_status
-from security_manifest import get_manifest
+from maya_core.security_manifest import get_manifest
 
 
 async def main() -> None:

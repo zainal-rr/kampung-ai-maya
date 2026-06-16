@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import aiosqlite
 
-from retention_policy import touch_task_activity
+from maya_core.retention_policy import touch_task_activity
 
 
 TASK_COLUMNS = (

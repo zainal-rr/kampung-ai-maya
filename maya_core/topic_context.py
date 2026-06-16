@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from response_policy import ResponsePolicy
+from maya_core.response_policy import ResponsePolicy
 
 
 TOPIC_CONTEXT_LIMIT = 6

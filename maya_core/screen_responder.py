@@ -7,9 +7,9 @@ import logging
 from maya_core.cost_tracker import record_usage
 from maya_core.language_policy import language_instruction
 from maya_core.models import TheSenses
-from screen_context import ScreenContext, ScreenContextProvider
-from screen_service import MacScreenService, ScreenSnapshot
-from screen_session import screen_sight_active
+from maya_core.screen_context import ScreenContext, ScreenContextProvider
+from maya_core.screen_service import MacScreenService, ScreenSnapshot
+from maya_core.screen_session import screen_sight_active
 from storage import upsert_preference
 from untrusted_input_boundary import assess_untrusted_context
 

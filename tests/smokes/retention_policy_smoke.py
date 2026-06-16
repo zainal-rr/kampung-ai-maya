@@ -20,7 +20,7 @@ from maya_harness.harness_observation_store import record_observation
 from maya_harness.harness_models import GroundedObservation
 from maya_harness.harness_store import init_harness_db, record_artifact, record_event, upsert_run
 from maya_core.lesson_store import init_lesson_db
-from retention_policy import (
+from maya_core.retention_policy import (
     DELETION_PENDING,
     delete_expired_retention_candidates,
     mark_retention_candidates,

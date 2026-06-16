@@ -8,7 +8,7 @@ from maya_core.domain_knowledge import domain_knowledge_context, domain_knowledg
 from skill_learning_store import get_skill_learning_metadata, increment_skill_usage
 from skill_outcome_store import record_skill_outcome
 from skill_store import latest_skill_usage, list_custom_skills, record_skill_usage
-from security_manifest import SecurityManifest, get_manifest, upsert_manifest
+from maya_core.security_manifest import SecurityManifest, get_manifest, upsert_manifest
 
 
 @dataclass(frozen=True)

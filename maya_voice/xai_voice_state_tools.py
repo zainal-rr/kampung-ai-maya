@@ -27,7 +27,7 @@ async def read_maya_state(db_path: str, question: str) -> str:
         from maya_core.cost_tracker import usage_summary_text
         return await usage_summary_text(db_path)
     if "route" in lowered:
-        from route_tracker import last_route_text
+        from maya_core.route_tracker import last_route_text
         return await last_route_text(db_path)
     if "status" in lowered:
         from telegram_status import status_text

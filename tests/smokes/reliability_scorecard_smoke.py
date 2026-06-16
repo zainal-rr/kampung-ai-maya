@@ -9,7 +9,7 @@ del _w4_Path, _w4_root, _w4_sys
 
 
 from maya_harness.live_reliability_soak import SoakDay
-from reliability_scorecard import format_reliability_scorecard, reliability_scorecard
+from maya_core.reliability_scorecard import format_reliability_scorecard, reliability_scorecard
 
 
 def main() -> None:

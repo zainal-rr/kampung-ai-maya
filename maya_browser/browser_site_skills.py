@@ -36,7 +36,7 @@ from maya_core.repo_paths import repo_root
 from maya_browser.site_runtime import safe_inspect as _safe_inspect
 from maya_browser.site_runtime import safe_result_options as _safe_result_options
 from maya_browser.site_runtime import search_reply as _search_reply
-from permission_policy import action_permission
+from maya_core.permission_policy import action_permission
 from skill_store import init_skill_db, record_skill_usage, upsert_skill
 from storage import get_preference, upsert_preference
 from utils import OSBridge
