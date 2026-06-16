@@ -1,20 +1,4 @@
-from __future__ import annotations
-
-COMPLEX_ROUTE_PREFIX = "[complex]"
-SIGHT_ROUTE_PREFIX = "[sight]"
-
-
-def is_complex_route(text: str) -> bool:
-    return text.lower().startswith(COMPLEX_ROUTE_PREFIX)
-
-
-def is_sight_route(text: str) -> bool:
-    return text.lower().startswith(SIGHT_ROUTE_PREFIX)
-
-
-def complex_payload(text: str) -> str:
-    return text[len(COMPLEX_ROUTE_PREFIX):].strip()
-
-
-def sight_payload(text: str) -> str:
-    return text[len(SIGHT_ROUTE_PREFIX):].strip()
+# W4 compatibility shim — re-exports the relocated module (removed/converted in Wave 5).
+from maya_core import assistant_route_prefixes as _m
+import sys as _sys
+_sys.modules[__name__] = _m
