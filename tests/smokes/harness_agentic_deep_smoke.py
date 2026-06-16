@@ -30,7 +30,7 @@ from maya_harness.harness_tools import HarnessToolResult, HarnessTools, _artifac
 from maya_browser.browser_workflows import HumanBrowserWorkflowRouter
 from maya_harness.harness_state import initial_harness_state
 from maya_harness.harness_store import init_harness_db, latest_events
-from storage import init_db
+from maya_core.storage import init_db
 
 
 def _require(condition: bool, message: str) -> None:

@@ -25,7 +25,7 @@ from maya_documents.document_actions_smoke_fakes import _fake_artifact_quality_r
 from maya_documents.document_actions_smoke_helpers import FakeBridge, _init
 from maya_core.markdown_drafter import MarkdownDraft
 from maya_core.route_tracker import last_route_text
-from storage import get_preference
+from maya_core.storage import get_preference
 from maya_core.grok_voice_replay_fakes import FastReplayDocuments
 from voice_transcript_policy import should_park_voice_for_worker, transcript_quality_notes
 from xai_realtime_tools import HANDOFF_TOOL_NAME, execute_voice_tool
@@ -75,7 +75,7 @@ async def _fake_artisan(self, text: str, memory: str, skills: str, channel: str)
 async def _fake_pptx_qa(db_path: str, path: Path, title: str, slides, run_id: str, last_doc_key: str, auto_improve: bool = True):
     from maya_documents.artifact_review_store import record_artifact_review
     from maya_documents.pptx_quality_gate import PptxQualityResult
-    from storage import upsert_preference
+    from maya_core.storage import upsert_preference
 
     path.parent.mkdir(parents=True, exist_ok=True)
     deck = Presentation()

@@ -21,8 +21,8 @@ os.environ["ENABLE_VISION_CAMERA"] = "1"
 from maya_core.activation import handle_activation_command
 from maya_core.lesson_store import init_lesson_db
 from maya_core.routine_store import init_routine_db
-from skill_store import init_skill_db
-from storage import init_db
+from maya_core.skill_store import init_skill_db
+from maya_core.storage import init_db
 from vision_responder import VisionResponder
 
 

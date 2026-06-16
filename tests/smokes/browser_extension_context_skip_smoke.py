@@ -25,8 +25,8 @@ from maya_browser.browser_control_js import _text_hash
 from maya_travel.flight_search_skill import FlightSearchSkill
 from flight_search_skill_smoke import FakeBridge
 from flight_deeplink_smoke import RESULTS_PAGE
-from stay_booking_skill import BookingComHotelSkill
-from storage import init_db
+from maya_travel.stay_booking_skill import BookingComHotelSkill
+from maya_core.storage import init_db
 
 
 class RaisingInspector:

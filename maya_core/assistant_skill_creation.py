@@ -15,7 +15,7 @@ from __future__ import annotations
 import re
 
 from maya_core.assistant_skill_helpers import queue_skill_scaffold
-from skill_factory import SkillFactory
+from maya_core.skill_factory import SkillFactory
 
 
 async def handle_skill_creation_request(db_path: str, text: str, channel: str) -> str | None:

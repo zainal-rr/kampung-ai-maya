@@ -7,7 +7,7 @@ from typing import Awaitable, Callable
 
 from maya_memory.canonical_memory import upsert_canonical_memory
 from maya_core.permission_policy import contains_sensitive_info, contains_sensitive_phrase_cue
-from storage import add_knowledge_chunk
+from maya_core.storage import add_knowledge_chunk
 
 OmiProvider = Callable[[str], Awaitable[str]]
 

@@ -7,8 +7,8 @@ from maya_core.assistant_prompts import (
     delivery_instruction,
 )
 from maya_core.language_policy import language_instruction
-from telegram_context_policy import silent_context_guard
-from telegram_rewrite_context import is_rewrite_followup
+from maya_telegram.telegram_context_policy import silent_context_guard
+from maya_telegram.telegram_rewrite_context import is_rewrite_followup
 
 
 def prepare_input(

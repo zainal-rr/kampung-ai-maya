@@ -184,7 +184,7 @@ def _visual_availability_checks(root: Path) -> None:
     import tempfile as _tempfile
 
     import maya_documents.pptx_document_flow as flow
-    from storage import init_db
+    from maya_core.storage import init_db
     from maya_harness.harness_artifact_store import init_harness_artifact_db
 
     async def _case() -> None:
@@ -255,7 +255,7 @@ def _visual_budget_checks(root: Path) -> None:
     import asyncio
 
     import maya_documents.pptx_document_flow as flow
-    from storage import init_db
+    from maya_core.storage import init_db
     from maya_harness.harness_artifact_store import init_harness_artifact_db
 
     async def _case() -> None:

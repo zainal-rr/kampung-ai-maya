@@ -18,9 +18,9 @@ from maya_harness.harness_models import local_artifact
 from maya_harness.harness_store import list_active_runs, upsert_run
 from maya_core.lesson_store import init_lesson_db
 from maya_core.routine_store import init_routine_db
-from session_memory_store import init_session_memory_db
-from skill_store import init_skill_db
-from storage import init_db
+from maya_core.session_memory_store import init_session_memory_db
+from maya_core.skill_store import init_skill_db
+from maya_core.storage import init_db
 from workflow_desk import background_tasks_text, close_matching_workflow, workflow_desk_text
 
 

@@ -7,9 +7,9 @@ from telegram import Bot
 
 from maya_core.briefing_service import BriefingBuilder
 from maya_core.delivery_redaction import redact_for_delivery
-from skill_factory import SkillFactory
-from storage import get_history, get_preference, list_tasks
-from telegram_delivery import send_speech, send_text
+from maya_core.skill_factory import SkillFactory
+from maya_core.storage import get_history, get_preference, list_tasks
+from maya_telegram.telegram_delivery import send_speech, send_text
 from utils import OSBridge
 from voice import VoiceNode
 

@@ -1,7 +1,7 @@
 import asyncio
 import os
 from dotenv import load_dotenv
-from sieve import SieveNode
+from maya_core.sieve import SieveNode
 
 async def test_sieve():
     load_dotenv()

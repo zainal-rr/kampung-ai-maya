@@ -18,7 +18,7 @@ async def powerpoint_quality_context(db_path: str) -> str:
 
 async def _active_design_skill_text(db_path: str) -> str:
     try:
-        from skill_store import find_skill
+        from maya_core.skill_store import find_skill
 
         skill = await find_skill(db_path, "Design Engineering")
         if skill and str(skill.get("status", "")).lower() == "active":

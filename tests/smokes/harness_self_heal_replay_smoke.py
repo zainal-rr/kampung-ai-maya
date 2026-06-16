@@ -19,7 +19,7 @@ from maya_harness.harness_graph import HarnessGraphRunner
 from maya_harness.harness_state import initial_harness_state
 from maya_harness.harness_store import init_harness_db
 from maya_core.self_heal_store import create_self_heal_report, init_self_heal_db, record_self_heal_stage
-from storage import create_task, init_db
+from maya_core.storage import create_task, init_db
 
 
 async def main() -> None:

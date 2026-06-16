@@ -10,7 +10,7 @@ from maya_core.language_policy import language_instruction
 from maya_core.maya_eye_overlay import clear_preview_target, set_preview_targets
 from maya_core.maya_eye_preview import start_preview
 from maya_core.models import TheSenses
-from storage import get_preference, list_preferences, upsert_preference
+from maya_core.storage import get_preference, list_preferences, upsert_preference
 from vision_markup import draw_visual_marks, image_marker, parse_targets, remove_target_line
 from vision_service import CiscoVisionService, VisionSnapshot
 from vision_session import guided_sight_active

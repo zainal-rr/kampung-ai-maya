@@ -21,8 +21,8 @@ from maya_documents.artifact_steering import (
 )
 from maya_voice.work_control import revise_maya_work
 import maya_voice.work_resolution as work_resolution
-from storage import get_preference
-from storage import init_db
+from maya_core.storage import get_preference
+from maya_core.storage import init_db
 from xai_voice_work import complete_voice_work, create_voice_work
 
 

@@ -13,7 +13,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from telegram_delivery import MAX_TELEGRAM_TEXT, send_text, split_file_markers
+from maya_telegram.telegram_delivery import MAX_TELEGRAM_TEXT, send_text, split_file_markers
 
 
 class FakeBot:

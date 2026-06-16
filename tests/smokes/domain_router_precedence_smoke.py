@@ -33,7 +33,7 @@ from maya_documents.artifact_semantic_resolver import (
     domain_question_precedence,
     resolve_semantic_artifact_intent,
 )
-from skill_registry import _followup_phrasing, _latest_domain_skill_id
+from maya_core.skill_registry import _followup_phrasing, _latest_domain_skill_id
 
 _PACKS = ("network_engineering.md", "finance_credit_analysis.md", "cloud_solution_architecture.md")
 

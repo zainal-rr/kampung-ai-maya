@@ -21,9 +21,9 @@ from maya_harness.harness_artifact_store import record_structured_artifact
 from maya_harness.harness_models import local_artifact
 from maya_core.route_tracker import last_route_text
 from maya_core.routine_store import init_routine_db
-from session_memory_store import init_session_memory_db
-from skill_store import init_skill_db
-from storage import init_db, upsert_preference
+from maya_core.session_memory_store import init_session_memory_db
+from maya_core.skill_store import init_skill_db
+from maya_core.storage import init_db, upsert_preference
 
 
 class FakeBridge:

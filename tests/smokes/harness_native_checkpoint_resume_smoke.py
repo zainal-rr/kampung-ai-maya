@@ -15,7 +15,7 @@ import tempfile
 import maya_harness.harness_tools as harness_tools
 from maya_harness.harness_router import HarnessRouter
 from maya_harness.harness_store import get_active_run, init_harness_db
-from storage import init_db
+from maya_core.storage import init_db
 
 
 async def fake_screen(self, text: str, channel: str):

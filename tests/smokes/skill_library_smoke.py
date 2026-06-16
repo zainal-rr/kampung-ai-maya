@@ -14,9 +14,9 @@ import tempfile
 from pathlib import Path
 
 from maya_core.assistant_skill_commands import handle_skill_lifecycle
-from skill_factory import SkillFactory
-from skill_learning_store import init_skill_learning_db
-from skill_store import find_skill, init_skill_db
+from maya_core.skill_factory import SkillFactory
+from maya_core.skill_learning_store import init_skill_learning_db
+from maya_core.skill_store import find_skill, init_skill_db
 
 
 async def main() -> None:

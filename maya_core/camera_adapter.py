@@ -7,7 +7,7 @@ import os
 from dataclasses import dataclass
 from pathlib import Path
 
-from storage import upsert_preference
+from maya_core.storage import upsert_preference
 
 
 logger = logging.getLogger("maya.camera")

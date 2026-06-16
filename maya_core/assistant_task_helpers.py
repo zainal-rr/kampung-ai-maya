@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import re
 
-from time_parser import format_due_text
-from storage import create_task, record_task_event, update_task_status
+from maya_core.time_parser import format_due_text
+from maya_core.storage import create_task, record_task_event, update_task_status
 
 
 def parse_task_delete_request(text: str) -> tuple[int | None, str] | None:

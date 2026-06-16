@@ -18,7 +18,7 @@ from maya_core.curated_memory import (
     init_curated_memory_db,
     scope_summary,
 )
-from storage import get_preference
+from maya_core.storage import get_preference
 
 TARGET_PERCENT = 80
 SNAPSHOT_DIR = repo_root(__file__) / "backups" / "self_heal_memory"

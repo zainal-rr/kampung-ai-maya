@@ -12,8 +12,8 @@ from maya_core.retention_policy import retention_status_summary
 from maya_core.route_tracker import last_route_text
 from maya_core.screen_session import screen_sight_status
 from maya_core.self_heal_store import latest_self_heal_report
-from storage import get_preference
-from telegram_voice_state import voice_enabled
+from maya_core.storage import get_preference
+from maya_telegram.telegram_voice_state import voice_enabled
 from vision_session import guided_sight_status
 
 

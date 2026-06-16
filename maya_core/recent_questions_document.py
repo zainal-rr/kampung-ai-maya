@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from storage import get_history
+from maya_core.storage import get_history
 
 
 _COUNT_WORDS = {

@@ -17,7 +17,7 @@ from pathlib import Path
 import maya_voice.browser_runtime as browser_runtime
 import xai_realtime_tools
 from browser_extension_bridge import remember_extension_open_result
-from storage import init_db
+from maya_core.storage import init_db
 from xai_realtime_events import XaiRealtimeEventMixin
 from xai_realtime_tools import BROWSER_TOOL_NAME
 from maya_voice.tool_specs import voice_tools

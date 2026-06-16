@@ -16,7 +16,7 @@ from xai_realtime_stream_helpers import append_audio_message
 from xai_realtime_tools import BROWSER_TOOL_NAME, HANDOFF_TOOL_NAME, MAYA_WORK_TOOL_NAME, execute_voice_tool
 from xai_voice_state_tools import read_maya_state
 from xai_voice_work import voice_work_status_text
-from storage import init_db
+from maya_core.storage import init_db
 
 
 class FakeAssistant:

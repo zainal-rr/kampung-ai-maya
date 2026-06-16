@@ -4,7 +4,7 @@ from maya_harness.harness_artifact_store import latest_artifacts
 from maya_harness.harness_store import finish_run, list_active_runs
 from maya_core.project_store import active_project
 from maya_core.retention_policy import retention_status_summary
-from storage import get_preference, upsert_preference
+from maya_core.storage import get_preference, upsert_preference
 
 
 IMAC_BODY_WORKFLOWS = {"browser", "screen", "app"}

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from storage import create_task, record_task_event, update_task_status
+from maya_core.storage import create_task, record_task_event, update_task_status
 
 
 async def queue_skill_scaffold(db_path: str, subject: str, channel: str, prompt: str) -> str:

@@ -74,7 +74,7 @@ async def fake_review(db_path: str, topic: str, slides):
 
 async def fake_powerpoint_qa(db_path, path, title, slides, run_id, last_doc_key, auto_improve=True, **_kwargs):
     from maya_documents.office_modern_files import create_pptx
-    from storage import upsert_preference
+    from maya_core.storage import upsert_preference
 
     await asyncio.to_thread(create_pptx, path, title, slides)
     await upsert_preference(db_path, last_doc_key, str(path), source="document")

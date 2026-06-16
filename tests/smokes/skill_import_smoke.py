@@ -15,8 +15,8 @@ from pathlib import Path
 
 from maya_core.assistant_skill_commands import handle_skill_lifecycle
 from maya_core.security_manifest import get_manifest
-from skill_importer import import_installed_skills, import_local_skill, import_npx_skill
-from skill_store import find_skill
+from maya_core.skill_importer import import_installed_skills, import_local_skill, import_npx_skill
+from maya_core.skill_store import find_skill
 
 
 async def main() -> None:

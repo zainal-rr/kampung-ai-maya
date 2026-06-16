@@ -18,10 +18,10 @@ from maya_core.screen_session import activate_screen_sight, deactivate_screen_si
 from maya_core.session_compactor import inspect_session_context
 from maya_core.self_healing import self_heal_text
 from self_heal_memory import handle_memory_self_heal_command
-from telegram_status import command_help, status_text
-from telegram_delivery_log import latest_telegram_delivery_text
-from telegram_turn_log import latest_telegram_turn_text
-from telegram_voice_state import voice_enabled, voice_text
+from maya_telegram.telegram_status import command_help, status_text
+from maya_telegram.telegram_delivery_log import latest_telegram_delivery_text
+from maya_telegram.telegram_turn_log import latest_telegram_turn_text
+from maya_telegram.telegram_voice_state import voice_enabled, voice_text
 from vision_session import guided_sight_status, toggle_guided_sight
 from weekly_memory_status import run_weekly_memory_now_text, weekly_memory_status_text
 from maya_core.repo_paths import repo_root

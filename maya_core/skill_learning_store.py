@@ -4,7 +4,7 @@ import json
 
 import aiosqlite
 
-from skill_store import init_skill_db
+from maya_core.skill_store import init_skill_db
 
 REQUIRED_SKILL_TESTS = {"trigger", "non_trigger", "safety", "happy_path", "failure_path", "regression", "approval"}
 EVALUATION_TESTS = REQUIRED_SKILL_TESTS - {"approval"}

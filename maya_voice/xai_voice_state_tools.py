@@ -30,13 +30,13 @@ async def read_maya_state(db_path: str, question: str) -> str:
         from maya_core.route_tracker import last_route_text
         return await last_route_text(db_path)
     if "status" in lowered:
-        from telegram_status import status_text
+        from maya_telegram.telegram_status import status_text
         from xai_voice_work import voice_work_status_text
 
         status = await status_text(db_path)
         work = await voice_work_status_text(db_path)
         return status if "No active Maya work" in work else f"{status}\n\n{work}"
-    from telegram_status import status_text
+    from maya_telegram.telegram_status import status_text
     return await status_text(db_path)
 
 
@@ -72,6 +72,6 @@ async def _artifact_text(db_path: str) -> str:
 
 async def _task_text(db_path: str) -> str:
     from maya_core.assistant_task_helpers import format_open_tasks
-    from storage import list_tasks
+    from maya_core.storage import list_tasks
 
     return format_open_tasks(await list_tasks(db_path, limit=8))

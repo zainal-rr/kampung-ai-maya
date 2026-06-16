@@ -58,8 +58,8 @@ from maya_core.markdown_drafter import (
 )
 from maya_core.permission_policy import action_permission, contains_sensitive_info, hard_no_private_exposure_text, path_allowed
 from maya_core.project_store import active_project, remember_project_note
-from storage import get_preference, upsert_preference
-from testing_spreadsheet import is_kampung_ai_testing_comparison, kampung_ai_testing_rows
+from maya_core.storage import get_preference, upsert_preference
+from maya_core.testing_spreadsheet import is_kampung_ai_testing_comparison, kampung_ai_testing_rows
 from utils import OSBridge
 from visual_workflow import VisualWorkflowRenderer
 from workspace_paths import workspace_dir

@@ -14,7 +14,7 @@ import subprocess
 from dotenv import load_dotenv
 
 from maya_core.audio_devices import bin_path, resolve_audio_input
-from speech_input import detect_avfoundation_audio_devices
+from maya_core.speech_input import detect_avfoundation_audio_devices
 
 load_dotenv()
 

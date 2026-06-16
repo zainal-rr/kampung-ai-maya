@@ -4,7 +4,7 @@ import json
 import re
 import time
 
-from storage import delete_preference, get_preference, upsert_preference
+from maya_core.storage import delete_preference, get_preference, upsert_preference
 from maya_browser.query_guard import browser_query_is_incomplete, browser_query_topic
 
 

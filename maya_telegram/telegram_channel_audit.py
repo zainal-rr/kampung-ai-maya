@@ -5,8 +5,8 @@ import time
 
 from telegram import Update
 
-from telegram_delivery_log import record_telegram_delivery
-from telegram_turn_log import record_telegram_turn
+from maya_telegram.telegram_delivery_log import record_telegram_delivery
+from maya_telegram.telegram_turn_log import record_telegram_turn
 
 logger = logging.getLogger(__name__)
 

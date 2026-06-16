@@ -14,7 +14,7 @@ from maya_core.assistant_text import strip_wake_prefix
 from maya_documents.document_actions_word_helpers import _document_edit_request
 from maya_documents.document_natural_artifact_parser import artifact_intent_clarification
 from maya_documents.document_request_parser import document_request
-from telegram_commands import parse_command
+from maya_telegram.telegram_commands import parse_command
 from voice_command_aliases import spoken_command_alias
 from voice_telegram_transcript_cases import FORBIDDEN_TOPIC_NOISE, ReplayCase, build_cases
 from voice_transcript_policy import clean_voice_transcript_for_intent, should_park_voice_for_worker

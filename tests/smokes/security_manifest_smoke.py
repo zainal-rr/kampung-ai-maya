@@ -12,7 +12,7 @@ import asyncio
 import tempfile
 
 from maya_core.security_manifest import SecurityManifest, get_manifest, list_manifests, manifest_summary, upsert_manifest
-from skill_registry import ensure_builtin_skill_manifests
+from maya_core.skill_registry import ensure_builtin_skill_manifests
 
 
 async def main() -> None:

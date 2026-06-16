@@ -5,8 +5,8 @@ from pathlib import Path
 from code_health import collect_code_health, format_code_health
 from maya_core.self_heal_store import create_self_heal_report, record_self_heal_stage
 from self_heal_memory import guardrails_text
-from storage import create_task
-from storage_tasks import update_task_status
+from maya_core.storage import create_task
+from maya_core.storage_tasks import update_task_status
 
 
 def detect_bug_signals(root: str | Path = ".") -> list[str]:

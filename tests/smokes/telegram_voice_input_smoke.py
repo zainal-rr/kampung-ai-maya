@@ -12,9 +12,9 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-import telegram_voice_input as voice_input
+import maya_telegram.telegram_voice_input as voice_input
 from maya_core.cost_tracker import usage_summary_text
-from storage import init_db
+from maya_core.storage import init_db
 
 
 class FakeAttachment:

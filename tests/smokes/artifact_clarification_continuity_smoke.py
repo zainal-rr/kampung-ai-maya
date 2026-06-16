@@ -21,9 +21,9 @@ from maya_core.lesson_store import init_lesson_db
 from maya_core.route_tracker import last_route_text
 from maya_core.routine_store import init_routine_db
 from maya_core.semantic_telegram_fresh_fakes import fake_draft, fake_powerpoint_qa, fake_preflight, fake_review
-from session_memory_store import init_session_memory_db
-from skill_store import init_skill_db
-from storage import init_db, save_history_message
+from maya_core.session_memory_store import init_session_memory_db
+from maya_core.skill_store import init_skill_db
+from maya_core.storage import init_db, save_history_message
 
 
 async def main() -> None:
@@ -34,7 +34,7 @@ async def main() -> None:
         await _init(db_path)
 
         import maya_documents.document_actions as da
-        import travel_budget
+        import maya_travel.travel_budget as travel_budget
 
         old_preflight = da.artifact_preflight_with_gemini
         old_draft = da.draft_markdown_with_gemini

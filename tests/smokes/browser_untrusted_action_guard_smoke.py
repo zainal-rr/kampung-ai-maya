@@ -20,7 +20,7 @@ if str(_ROOT) not in sys.path:
 from maya_browser.browser_control_models import BrowserPage
 from maya_browser.browser_skill import BrowserSkill
 from maya_browser.browser_workflows import HumanBrowserWorkflowRouter
-from storage import init_db
+from maya_core.storage import init_db
 
 
 INJECTED_PAGE = BrowserPage(

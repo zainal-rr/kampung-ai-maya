@@ -16,7 +16,7 @@ if str(_ROOT) not in sys.path:
 
 from maya_core.maya_permission_kernel import MayaPermissionKernel
 from maya_core.permission_policy import action_permission
-from tool_sandbox_policy import (
+from maya_core.tool_sandbox_policy import (
     BROWSER_AUTOMATION,
     EXTERNAL,
     FILE_WRITE,

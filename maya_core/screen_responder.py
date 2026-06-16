@@ -10,7 +10,7 @@ from maya_core.models import TheSenses
 from maya_core.screen_context import ScreenContext, ScreenContextProvider
 from maya_core.screen_service import MacScreenService, ScreenSnapshot
 from maya_core.screen_session import screen_sight_active
-from storage import upsert_preference
+from maya_core.storage import upsert_preference
 from untrusted_input_boundary import assess_untrusted_context
 
 

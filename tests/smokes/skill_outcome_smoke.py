@@ -12,9 +12,9 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-from skill_outcome_store import recent_skill_outcomes, record_skill_outcome
-from skill_performance_analyzer import analyze_skill_performance
-from skill_store import init_skill_db, list_skill_proposals, upsert_skill
+from maya_core.skill_outcome_store import recent_skill_outcomes, record_skill_outcome
+from maya_core.skill_performance_analyzer import analyze_skill_performance
+from maya_core.skill_store import init_skill_db, list_skill_proposals, upsert_skill
 
 
 async def main() -> None:

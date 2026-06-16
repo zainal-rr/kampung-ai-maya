@@ -12,8 +12,8 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-from storage import init_db
-from telegram_photo_input import describe_telegram_photo
+from maya_core.storage import init_db
+from maya_telegram.telegram_photo_input import describe_telegram_photo
 
 
 class FakePhoto:

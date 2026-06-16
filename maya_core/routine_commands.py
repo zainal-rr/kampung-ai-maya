@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 
 from maya_core.routine_store import create_or_update_routine, deactivate_routine, list_routines
-from time_parser import format_local_time, parse_clock_text, weekday_name, weekday_number
+from maya_core.time_parser import format_local_time, parse_clock_text, weekday_name, weekday_number
 
 
 ROUTINES = {

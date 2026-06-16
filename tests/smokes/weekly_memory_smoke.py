@@ -18,10 +18,10 @@ from maya_core.briefing_service import BriefingBuilder
 from maya_memory.canonical_memory_inspector import inspect_canonical_memory
 from maya_core.lesson_store import add_lesson, init_lesson_db
 from maya_core.routine_store import init_routine_db
-from skill_store import init_skill_db
-from storage import create_task, init_db, save_history_message, upsert_preference
-from storage import update_task_status
-from telegram_commands import ParsedCommand, command_to_text
+from maya_core.skill_store import init_skill_db
+from maya_core.storage import create_task, init_db, save_history_message, upsert_preference
+from maya_core.storage import update_task_status
+from maya_telegram.telegram_commands import ParsedCommand, command_to_text
 from weekly_memory import WeeklyMemoryDistiller
 from weekly_memory_store import init_weekly_memory_db, latest_weekly_memory_runs, latest_weekly_summary
 

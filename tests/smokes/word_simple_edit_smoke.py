@@ -19,8 +19,8 @@ from maya_documents.document_actions import DocumentActionRouter
 from maya_documents.document_actions_context import LAST_DOC_KEY
 from maya_documents.document_actions_smoke_helpers import _init, _require
 from maya_documents.office_modern_files import create_docx
-from storage import upsert_preference
-from telegram_delivery import split_file_markers
+from maya_core.storage import upsert_preference
+from maya_telegram.telegram_delivery import split_file_markers
 
 
 async def _fake_preflight(db_path: str, artifact_type: str, topic: str) -> ArtifactPreflight:

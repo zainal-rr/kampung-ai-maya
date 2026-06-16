@@ -16,9 +16,9 @@ from pathlib import Path
 from openpyxl import load_workbook
 
 from maya_core.markdown_drafter import MarkdownDraft
-from storage import init_db
-import travel_budget
-from travel_budget import create_travel_budget_excel, save_travel_plan_fields, update_travel_plan
+from maya_core.storage import init_db
+import maya_travel.travel_budget as travel_budget
+from maya_travel.travel_budget import create_travel_budget_excel, save_travel_plan_fields, update_travel_plan
 
 
 class FakeBridge:

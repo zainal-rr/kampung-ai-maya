@@ -13,10 +13,10 @@ import tempfile
 from pathlib import Path
 
 from maya_core.assistant_skill_commands import handle_skill_lifecycle
-from skill_factory import SkillFactory
-from skill_learning_store import get_skill_learning_metadata, init_skill_learning_db, record_skill_test
-from skill_registry import SkillRegistry
-from skill_store import find_skill, init_skill_db, update_skill_status, upsert_skill
+from maya_core.skill_factory import SkillFactory
+from maya_core.skill_learning_store import get_skill_learning_metadata, init_skill_learning_db, record_skill_test
+from maya_core.skill_registry import SkillRegistry
+from maya_core.skill_store import find_skill, init_skill_db, update_skill_status, upsert_skill
 
 
 async def main() -> None:

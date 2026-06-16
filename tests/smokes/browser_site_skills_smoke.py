@@ -15,7 +15,7 @@ from pathlib import Path
 
 from maya_browser.browser_capability import route_browser_capability, run_browser_capability
 from maya_browser.browser_site_skill_helpers import _is_result_open_request, _target_from_click_request
-from storage import init_db
+from maya_core.storage import init_db
 
 
 class FakeBridge:

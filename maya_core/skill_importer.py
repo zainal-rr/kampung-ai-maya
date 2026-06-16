@@ -7,9 +7,9 @@ import tempfile
 from pathlib import Path
 
 from maya_core.security_manifest import SecurityManifest, upsert_manifest
-from skill_learning_store import upsert_skill_metadata
-from skill_library import proposed_path
-from skill_store import create_skill_proposal, init_skill_db, upsert_skill
+from maya_core.skill_learning_store import upsert_skill_metadata
+from maya_core.skill_library import proposed_path
+from maya_core.skill_store import create_skill_proposal, init_skill_db, upsert_skill
 
 
 NPX_SKILL_PATTERN = re.compile(r"^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$")

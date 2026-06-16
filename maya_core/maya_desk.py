@@ -22,8 +22,8 @@ from maya_memory.memory_canaries import format_memory_leak_report
 from maya_core.mcp_registry import recent_mcp_usage
 from maya_core.route_tracker import last_route_text
 from maya_core.self_heal_store import latest_self_heal_report
-from skill_outcome_store import recent_skill_outcomes
-from skill_store import list_custom_skills, list_skill_proposals
+from maya_core.skill_outcome_store import recent_skill_outcomes
+from maya_core.skill_store import list_custom_skills, list_skill_proposals
 from user_model_store import list_user_model_items
 from weekly_memory_status import weekly_memory_status_text
 from workflow_desk import workflow_desk_text

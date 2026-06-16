@@ -11,8 +11,8 @@ import websockets
 
 from maya_core.cost_tracker import record_usage
 from maya_core.route_tracker import record_route
-from session_memory_actions import save_voice_session_summary
-from sounddevice_audio import (
+from maya_core.session_memory_actions import save_voice_session_summary
+from maya_core.sounddevice_audio import (
     output_device_snapshot,
     refresh_sounddevice_hostapi,
     resolve_first_output,

@@ -4,7 +4,7 @@ import uuid
 
 import aiosqlite
 
-from storage import delete_preference, get_preference, upsert_preference
+from maya_core.storage import delete_preference, get_preference, upsert_preference
 
 
 VOICE_HANDOFF_KEY = "maya_voice_handoff_request"

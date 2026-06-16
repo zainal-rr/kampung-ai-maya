@@ -205,7 +205,7 @@ async def _c7_full_flow_regression(root: Path) -> None:
     db = str(root / "c7.db")
     with _env(MAYA_CONTEXT_WINDOW="1", MAYA_CONTEXT_TELEGRAM_BUDGET="4000"):
         from maya_memory.canonical_memory import forget_canonical_memory, upsert_canonical_memory
-        from storage import init_db, save_history_message
+        from maya_core.storage import init_db, save_history_message
 
         await init_db(db)
         await save_history_message(db, 1, "user", "remember that my favorite airline is AirAsia", "telegram")

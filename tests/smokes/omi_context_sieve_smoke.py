@@ -15,8 +15,8 @@ from pathlib import Path
 
 from maya_memory.canonical_memory import search_relevant_canonical_memories
 from maya_core.omi_context_sieve import ingest_omi_decision, sieve_omi_transcript
-from sieve import SieveNode
-from storage import init_db
+from maya_core.sieve import SieveNode
+from maya_core.storage import init_db
 
 
 async def main() -> None:

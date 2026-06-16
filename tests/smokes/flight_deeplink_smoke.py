@@ -26,7 +26,7 @@ from maya_travel.flight_search_deeplink import flights_deep_link
 from maya_travel.flight_search_models import FlightDetails
 from maya_travel.flight_search_skill import FlightSearchSkill
 from flight_search_skill_smoke import FakeBridge
-from storage import init_db
+from maya_core.storage import init_db
 
 
 RESULTS_PAGE = (

@@ -10,7 +10,7 @@ del _w4_Path, _w4_root, _w4_sys
 
 import os
 
-import sounddevice_audio as audio
+import maya_core.sounddevice_audio as audio
 
 
 class FakeSd:

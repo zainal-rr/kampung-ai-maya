@@ -3,8 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 
 from maya_core.repo_paths import repo_root
-from skill_store import init_skill_db, record_skill_usage, upsert_skill
-from travel_booking_safety import travel_booking_safety_footer
+from maya_core.skill_store import init_skill_db, record_skill_usage, upsert_skill
+from maya_travel.travel_booking_safety import travel_booking_safety_footer
 
 
 async def record_stay_skill(db_path: str, skill_id: str, name: str, description: str, question: str) -> None:

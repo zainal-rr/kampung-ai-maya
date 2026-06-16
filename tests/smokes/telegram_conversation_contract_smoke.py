@@ -24,9 +24,9 @@ from maya_harness.harness_artifact_store import init_harness_artifact_db
 from maya_harness.harness_store import init_harness_db
 from maya_core.lesson_store import init_lesson_db
 from maya_core.routine_store import init_routine_db
-from session_memory_store import init_session_memory_db
-from skill_store import init_skill_db
-from storage import get_preference, init_db, save_history_message, upsert_preference
+from maya_core.session_memory_store import init_session_memory_db
+from maya_core.skill_store import init_skill_db
+from maya_core.storage import get_preference, init_db, save_history_message, upsert_preference
 
 
 async def main() -> None:

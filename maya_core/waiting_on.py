@@ -4,9 +4,9 @@ import re
 
 import aiosqlite
 
-from storage import create_task, record_task_event, update_task_status
-from storage_tasks import TASK_COLUMNS, task_dict
-from time_parser import extract_due_from_text, format_due_text
+from maya_core.storage import create_task, record_task_event, update_task_status
+from maya_core.storage_tasks import TASK_COLUMNS, task_dict
+from maya_core.time_parser import extract_due_from_text, format_due_text
 
 
 async def handle_waiting_on(db_path: str, text: str, channel: str) -> str | None:

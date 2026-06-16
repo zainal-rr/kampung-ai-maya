@@ -13,7 +13,7 @@ import tempfile
 
 from maya_harness.harness_router import HarnessRouter
 from maya_harness.harness_store import get_active_run, init_harness_db
-from storage import init_db
+from maya_core.storage import init_db
 
 
 def _require(condition: bool, message: str) -> None:

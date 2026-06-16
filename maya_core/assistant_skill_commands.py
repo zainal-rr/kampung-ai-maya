@@ -3,19 +3,19 @@ from __future__ import annotations
 import re
 
 from maya_core.assistant_command_helpers import direct_key
-from skill_evaluator import evaluate_skill_scaffold
-from skill_importer import adapt_imported_skill_for_maya, import_local_skill, import_npx_skill
-from skill_library import mirror_skill
-from skill_memory_store import add_skill_memory, disable_skill_memory, list_skill_memory
-from skill_registry import BUILT_IN_SKILLS, SkillRegistry
-from skill_learning_store import mark_skill_disabled, missing_required_tests, record_skill_test, skill_has_required_tests
+from maya_core.skill_evaluator import evaluate_skill_scaffold
+from maya_core.skill_importer import adapt_imported_skill_for_maya, import_local_skill, import_npx_skill
+from maya_core.skill_library import mirror_skill
+from maya_core.skill_memory_store import add_skill_memory, disable_skill_memory, list_skill_memory
+from maya_core.skill_registry import BUILT_IN_SKILLS, SkillRegistry
+from maya_core.skill_learning_store import mark_skill_disabled, missing_required_tests, record_skill_test, skill_has_required_tests
 from weekly_skill_review import latest_skill_review
 from user_model_store import list_user_model_items
-from skill_store import find_skill, latest_skill_usage, list_custom_skills, list_skill_proposals, update_skill_status
+from maya_core.skill_store import find_skill, latest_skill_usage, list_custom_skills, list_skill_proposals, update_skill_status
 from maya_core.mcp_registry import audit_mcp_server, list_mcp_servers, propose_mcp_server, set_mcp_status
 from maya_core.security_manifest import get_manifest, list_manifests, manifest_summary
-from skill_performance_analyzer import skill_performance_text
-from starter_skill_catalog import catalog_summary, install_starter_catalog
+from maya_core.skill_performance_analyzer import skill_performance_text
+from maya_core.starter_skill_catalog import catalog_summary, install_starter_catalog
 
 
 async def handle_skill_listing(db_path: str, skills: SkillRegistry, text: str) -> str | None:

@@ -17,9 +17,9 @@ from maya_core.lesson_store import init_lesson_db
 from maya_core.routine_store import init_routine_db
 from maya_core.screen_responder import ScreenResponder
 from maya_core.screen_service import ScreenSnapshot
-from skill_store import init_skill_db
-from storage import get_preference, init_db
-from telegram_commands import command_to_text, parse_command
+from maya_core.skill_store import init_skill_db
+from maya_core.storage import get_preference, init_db
+from maya_telegram.telegram_commands import command_to_text, parse_command
 
 
 async def main() -> None:

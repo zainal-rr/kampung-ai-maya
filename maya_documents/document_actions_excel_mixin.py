@@ -136,7 +136,7 @@ class DocumentExcelMixin:
 
     async def _create_budget_workbook(self, topic: str, project_scoped: bool, channel: str, preflight) -> str:
         if _travel_budget_topic(topic):
-            from travel_budget import create_travel_budget_excel
+            from maya_travel.travel_budget import create_travel_budget_excel
 
             self.last_model_lane = _prefixed_lane("Gemini Flash role-based travel budget notes + Local travel budget workbook", preflight)
             self.last_cost_recorded = True

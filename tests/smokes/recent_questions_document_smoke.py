@@ -20,7 +20,7 @@ if str(ROOT) not in sys.path:
 
 from maya_documents.artifact_quality import extract_docx_text
 from maya_documents.document_actions import DocumentActionRouter
-from storage import init_db, save_history_message
+from maya_core.storage import init_db, save_history_message
 
 
 async def main() -> None:

@@ -14,11 +14,11 @@ import tempfile
 from pathlib import Path
 
 from maya_core.assistant import KampungAssistant
-import telegram_channel
-from storage import init_db
-from telegram_delivery_state import save_last_voice_message_id
-from telegram_channel import TelegramChannel
-import telegram_delivery
+import maya_telegram.telegram_channel as telegram_channel
+from maya_core.storage import init_db
+from maya_telegram.telegram_delivery_state import save_last_voice_message_id
+from maya_telegram.telegram_channel import TelegramChannel
+import maya_telegram.telegram_delivery as telegram_delivery
 
 
 class FakeBot:

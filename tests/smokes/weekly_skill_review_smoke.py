@@ -12,8 +12,8 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-from skill_outcome_store import record_skill_outcome
-from skill_store import init_skill_db, upsert_skill
+from maya_core.skill_outcome_store import record_skill_outcome
+from maya_core.skill_store import init_skill_db, upsert_skill
 from weekly_skill_review import WeeklySkillReviewer, latest_skill_review
 
 

@@ -15,7 +15,7 @@ from pathlib import Path
 from maya_memory.canonical_memory import search_relevant_canonical_memories, upsert_canonical_memory
 from maya_memory.canonical_memory_embeddings import RERANK_CONFIDENCE, rerank_with_embeddings
 from maya_core.lesson_store import init_lesson_db
-from storage import init_db
+from maya_core.storage import init_db
 
 # Fake semantic space: "snack food munch kuih" cluster vs "wifi network" cluster.
 VECTORS = {

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 
-from storage import get_preference, upsert_preference
+from maya_core.storage import get_preference, upsert_preference
 
 VOICE_KEY = "telegram_voice_replies"
 

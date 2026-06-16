@@ -13,7 +13,7 @@ import tempfile
 from pathlib import Path
 
 from maya_browser.browser_workflows import HumanBrowserWorkflowRouter
-from storage import get_preference, init_db
+from maya_core.storage import get_preference, init_db
 
 
 async def main() -> None:

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from maya_core.channel_adapters import adapter_for
-from storage import upsert_preference
+from maya_core.storage import upsert_preference
 
 
 async def remember_channel_identity(db_path: str, channel_id: str, external_id: str) -> None:

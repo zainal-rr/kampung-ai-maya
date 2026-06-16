@@ -14,7 +14,7 @@ from pathlib import Path
 
 from maya_core.self_heal_store import init_self_heal_db, latest_self_heal_report
 from maya_core.self_healing import self_heal_text
-from storage import init_db, list_tasks
+from maya_core.storage import init_db, list_tasks
 
 
 async def main() -> None:

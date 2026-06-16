@@ -11,9 +11,9 @@ del _w4_Path, _w4_root, _w4_sys
 import asyncio
 import tempfile
 
-from skill_outcome_store import record_skill_outcome
-from skill_performance_analyzer import analyze_skill_performance, skill_performance_text
-from skill_store import init_skill_db, list_skill_proposals, upsert_skill
+from maya_core.skill_outcome_store import record_skill_outcome
+from maya_core.skill_performance_analyzer import analyze_skill_performance, skill_performance_text
+from maya_core.skill_store import init_skill_db, list_skill_proposals, upsert_skill
 
 
 async def main() -> None:

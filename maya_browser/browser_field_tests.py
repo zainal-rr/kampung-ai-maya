@@ -4,8 +4,8 @@ from dataclasses import dataclass
 
 from maya_browser.browser_capability import route_browser_capability
 from maya_core.safety_action_commands import safety_action_reply
-from source_aware_research import should_use_source_research
-from travel_booking_safety import travel_booking_boundary_reply
+from maya_core.source_aware_research import should_use_source_research
+from maya_travel.travel_booking_safety import travel_booking_boundary_reply
 
 
 @dataclass(frozen=True)

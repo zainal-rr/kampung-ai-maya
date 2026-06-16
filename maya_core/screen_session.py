@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 from datetime import datetime, timedelta, timezone
 
-from storage import get_preference, upsert_preference
+from maya_core.storage import get_preference, upsert_preference
 
 
 SESSION_KEY = "maya_screen_session_until"

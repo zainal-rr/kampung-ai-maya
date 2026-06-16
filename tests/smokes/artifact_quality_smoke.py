@@ -17,7 +17,7 @@ from maya_documents.artifact_quality_extractors import topic_needs_formula
 from maya_documents.document_actions_content_helpers import _task_tracker_rows
 from maya_documents.office_modern_files import create_docx, create_xlsx
 from maya_core.powerpoint_quality_context import powerpoint_quality_context
-from skill_evaluator import evaluate_skill_scaffold
+from maya_core.skill_evaluator import evaluate_skill_scaffold
 
 
 SKILLS = (

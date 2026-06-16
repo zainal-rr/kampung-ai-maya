@@ -5,9 +5,9 @@ import os
 import re
 from pathlib import Path
 
-from skill_library import ensure_skill_library, proposed_path, test_path
-from skill_store import create_skill_proposal, upsert_skill
-from skill_learning_store import upsert_skill_metadata
+from maya_core.skill_library import ensure_skill_library, proposed_path, test_path
+from maya_core.skill_store import create_skill_proposal, upsert_skill
+from maya_core.skill_learning_store import upsert_skill_metadata
 from maya_core.security_manifest import SecurityManifest, upsert_manifest
 
 

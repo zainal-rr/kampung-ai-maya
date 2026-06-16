@@ -18,7 +18,7 @@ from pptx import Presentation
 
 import maya_documents.pptx_visual_assets as pptx_visual_assets
 from maya_documents.pptx_document_flow import create_powerpoint_with_qa
-from storage import init_db
+from maya_core.storage import init_db
 
 
 async def main() -> None:

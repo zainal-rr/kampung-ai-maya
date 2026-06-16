@@ -6,8 +6,8 @@ from dataclasses import dataclass
 
 import aiosqlite
 
-from skill_outcome_store import init_skill_outcome_db, recent_skill_outcomes
-from skill_store import init_skill_db, list_custom_skills, list_skill_proposals, latest_skill_usage
+from maya_core.skill_outcome_store import init_skill_outcome_db, recent_skill_outcomes
+from maya_core.skill_store import init_skill_db, list_custom_skills, list_skill_proposals, latest_skill_usage
 
 
 @dataclass(frozen=True)

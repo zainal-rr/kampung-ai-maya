@@ -24,7 +24,7 @@ from maya_core.artisan_runner import (
     latest_artisan_summary_text,
 )
 from maya_harness.harness_store import get_run, init_harness_db
-from storage import init_db, upsert_preference
+from maya_core.storage import init_db, upsert_preference
 
 
 async def main() -> None:

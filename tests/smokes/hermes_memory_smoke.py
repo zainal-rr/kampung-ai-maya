@@ -20,9 +20,9 @@ from maya_core.curated_memory import (
     scope_summary,
 )
 from maya_core.assistant import KampungAssistant
-from session_memory_actions import handle_session_memory_command, save_voice_session_summary
-from session_search import init_session_search_db, search_sessions
-from storage import init_db, save_history_message
+from maya_core.session_memory_actions import handle_session_memory_command, save_voice_session_summary
+from maya_core.session_search import init_session_search_db, search_sessions
+from maya_core.storage import init_db, save_history_message
 
 
 def _require(condition: bool, message: str) -> None:

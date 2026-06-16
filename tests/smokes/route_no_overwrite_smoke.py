@@ -18,9 +18,9 @@ from maya_core.assistant import KampungAssistant
 from maya_core.lesson_store import init_lesson_db
 from maya_core.route_tracker import last_route_text, record_route
 from maya_core.routine_store import init_routine_db
-from skill_store import init_skill_db
-from storage import init_db
-from telegram_channel import TelegramChannel
+from maya_core.skill_store import init_skill_db
+from maya_core.storage import init_db
+from maya_telegram.telegram_channel import TelegramChannel
 
 
 class FakeBot:

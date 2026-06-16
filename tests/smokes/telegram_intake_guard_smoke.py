@@ -29,9 +29,9 @@ from types import SimpleNamespace
 
 os.environ.setdefault("TELEGRAM_ALLOWED_CHAT_IDS", "123")
 
-from telegram_channel import TelegramChannel
-from telegram_poller_lock import acquire_poller_lock
-from telegram_turn_log import count_orphaned_received_turns, init_telegram_turn_log_db
+from maya_telegram.telegram_channel import TelegramChannel
+from maya_telegram.telegram_poller_lock import acquire_poller_lock
+from maya_telegram.telegram_turn_log import count_orphaned_received_turns, init_telegram_turn_log_db
 
 import aiosqlite
 

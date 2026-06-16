@@ -10,7 +10,7 @@ from maya_core.assistant_command_helpers import (
 )
 from maya_memory.memory_control import forget_memory
 from maya_memory.memory_service import MemoryService
-from session_search import format_session_search_results, search_sessions
+from maya_core.session_search import format_session_search_results, search_sessions
 
 
 async def handle_memory_forget(db_path: str, text: str) -> str | None:

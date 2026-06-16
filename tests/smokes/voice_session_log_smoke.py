@@ -13,8 +13,8 @@ from pathlib import Path
 
 from maya_core.assistant_commands import AssistantCommandRouter
 from maya_memory.memory_service import MemoryService
-from skill_registry import SkillRegistry
-from storage import init_db
+from maya_core.skill_registry import SkillRegistry
+from maya_core.storage import init_db
 from voice_session_log import (
     finish_voice_session,
     record_voice_turn,

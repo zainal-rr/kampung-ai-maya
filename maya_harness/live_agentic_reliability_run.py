@@ -54,7 +54,7 @@ async def run_agentic_night(
     if not dry_run:
         night_dir.mkdir(parents=True, exist_ok=True)
         from maya_harness.harness_store import init_harness_db
-        from storage import init_db
+        from maya_core.storage import init_db
 
         await init_db(db_path)
         await init_harness_db(db_path)

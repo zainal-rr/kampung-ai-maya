@@ -24,7 +24,7 @@ from maya_travel.flight_search_reply import (
     extract_date_grid_price,
     extract_flight_options,
 )
-from storage import upsert_preference
+from maya_core.storage import upsert_preference
 
 
 def is_extension_driver(browser) -> bool:

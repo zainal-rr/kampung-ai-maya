@@ -10,8 +10,8 @@ from maya_memory.memory_audit import format_recent_memory_audit
 from maya_memory.memory_canaries import format_memory_leak_report
 from maya_memory.memory_display import canonical_lines, lesson_lines, preference_lines, summary_lines
 from maya_core.retention_policy import run_retention_cleanup
-from session_memory_store import list_session_summaries
-from storage import list_preferences
+from maya_core.session_memory_store import list_session_summaries
+from maya_core.storage import list_preferences
 
 # Report order is part of the user-facing contract; execution order lives in
 # the registry (fuzzy runs early so it can capture related tokens first).

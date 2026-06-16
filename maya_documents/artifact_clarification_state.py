@@ -6,7 +6,7 @@ from datetime import datetime, timedelta, timezone
 
 from maya_documents.document_natural_artifact_parser import clean_topic, clean_topic_part, normalize_artifact_command_text, strip_creation_prefix
 from maya_documents.artifact_discourse_context import resolve_referenced_artifact_topic
-from storage import delete_preference, get_preference, upsert_preference
+from maya_core.storage import delete_preference, get_preference, upsert_preference
 
 
 PENDING_PREFIX = "maya_pending_artifact_request:"

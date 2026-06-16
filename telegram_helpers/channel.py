@@ -20,16 +20,16 @@ from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filte
 
 from maya_core.assistant import KampungAssistant
 from maya_core.channel_gateway import channel_envelope
-from telegram_audit import record_telegram_command
-from telegram_channel_audit import record_delivery_event, record_turn_event
-from telegram_command_direct import is_direct_command_reply
-from telegram_commands import bot_commands, command_to_text, parse_command, voice_enabled
-from telegram_delivery_state import last_voice_message_id, save_last_voice_message_id
-from telegram_poller_lock import acquire_poller_lock
-from telegram_turn_log import finalize_telegram_turn, record_telegram_turn_received
-from telegram_delivery import send_document_file, send_photo_file, send_speech, send_text, split_file_markers
-from telegram_photo_input import describe_telegram_photo
-from telegram_voice_input import transcribe_telegram_voice
+from maya_telegram.telegram_audit import record_telegram_command
+from maya_telegram.telegram_channel_audit import record_delivery_event, record_turn_event
+from maya_telegram.telegram_command_direct import is_direct_command_reply
+from maya_telegram.telegram_commands import bot_commands, command_to_text, parse_command, voice_enabled
+from maya_telegram.telegram_delivery_state import last_voice_message_id, save_last_voice_message_id
+from maya_telegram.telegram_poller_lock import acquire_poller_lock
+from maya_telegram.telegram_turn_log import finalize_telegram_turn, record_telegram_turn_received
+from maya_telegram.telegram_delivery import send_document_file, send_photo_file, send_speech, send_text, split_file_markers
+from maya_telegram.telegram_photo_input import describe_telegram_photo
+from maya_telegram.telegram_voice_input import transcribe_telegram_voice
 from maya_core.route_tracker import record_route
 from maya_core.maya_runtime_config import runtime_config
 

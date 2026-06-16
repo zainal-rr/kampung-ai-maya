@@ -26,8 +26,8 @@ from pathlib import Path
 from openpyxl import Workbook, load_workbook
 
 from maya_browser.browser_control import BrowserController, BrowserPage
-from stay_booking_skill import StayDetails, airbnb_url, booking_url, extract_stay_options
-from travel_booking_safety import travel_booking_boundary_reply
+from maya_travel.stay_booking_skill import StayDetails, airbnb_url, booking_url, extract_stay_options
+from maya_travel.travel_booking_safety import travel_booking_boundary_reply
 from utils import OSBridge
 
 

@@ -8,7 +8,7 @@ if str(_w4_root) not in _w4_sys.path:
 del _w4_Path, _w4_root, _w4_sys
 
 
-from telegram_context_policy import should_use_full_context, silent_context_guard
+from maya_telegram.telegram_context_policy import should_use_full_context, silent_context_guard
 
 
 def main() -> None:

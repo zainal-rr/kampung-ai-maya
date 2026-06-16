@@ -15,7 +15,7 @@ from pathlib import Path
 
 import maya_core.presentation_reviewer as presentation_reviewer
 from maya_core.presentation_reviewer import review_presentation_slides
-from storage import init_db
+from maya_core.storage import init_db
 
 
 class FailingSteward:

@@ -16,10 +16,10 @@ from pathlib import Path
 
 from maya_core.lesson_store import init_lesson_db
 from maya_core.routine_store import init_routine_db
-from skill_store import init_skill_db
-from storage import init_db, upsert_preference
+from maya_core.skill_store import init_skill_db
+from maya_core.storage import init_db, upsert_preference
 from maya_core.route_tracker import last_route_text
-from telegram_commands import command_to_text, parse_command
+from maya_telegram.telegram_commands import command_to_text, parse_command
 from maya_core.assistant import KampungAssistant
 from vision_responder import VisionResponder
 from vision_service import VisionSnapshot

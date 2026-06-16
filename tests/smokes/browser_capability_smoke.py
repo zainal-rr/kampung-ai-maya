@@ -16,7 +16,7 @@ from pathlib import Path
 import maya_browser.browser_skill as browser_skill
 import maya_browser.site_runtime as browser_site_runtime
 from maya_browser.browser_capability import browser_child_skill_catalog, route_browser_capability, run_browser_capability
-from storage import init_db
+from maya_core.storage import init_db
 
 
 class FakeBridge:

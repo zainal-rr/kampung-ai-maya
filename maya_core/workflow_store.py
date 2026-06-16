@@ -5,7 +5,7 @@ import json
 import aiosqlite
 
 from maya_core.retention_policy import touch_task_activity
-from storage_tasks import task_dict
+from maya_core.storage_tasks import task_dict
 
 
 TASK_SELECT = (

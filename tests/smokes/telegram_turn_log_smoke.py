@@ -12,8 +12,8 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-from storage import init_db
-from telegram_turn_log import latest_telegram_turn_text, record_telegram_turn
+from maya_core.storage import init_db
+from maya_telegram.telegram_turn_log import latest_telegram_turn_text, record_telegram_turn
 
 
 async def main() -> None:

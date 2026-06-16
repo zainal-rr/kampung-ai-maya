@@ -10,7 +10,7 @@ del _w4_Path, _w4_root, _w4_sys
 
 import os
 
-from sounddevice_audio import configured_output_names, resolve_first_output_name
+from maya_core.sounddevice_audio import configured_output_names, resolve_first_output_name
 
 
 def main() -> None:

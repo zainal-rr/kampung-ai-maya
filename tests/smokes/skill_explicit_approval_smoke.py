@@ -19,10 +19,10 @@ from maya_harness.harness_store import init_harness_db
 from maya_core.lesson_store import init_lesson_db
 from maya_memory.memory_service import MemoryService
 from maya_core.routine_store import init_routine_db
-from session_memory_store import init_session_memory_db
-from skill_registry import SkillRegistry
-from skill_store import find_skill, init_skill_db
-from storage import create_task, init_db, update_task_status
+from maya_core.session_memory_store import init_session_memory_db
+from maya_core.skill_registry import SkillRegistry
+from maya_core.skill_store import find_skill, init_skill_db
+from maya_core.storage import create_task, init_db, update_task_status
 
 
 async def main() -> None:

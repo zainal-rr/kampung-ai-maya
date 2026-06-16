@@ -18,7 +18,7 @@ from maya_harness.harness_models import local_artifact
 from maya_harness.harness_state import initial_harness_state
 from maya_harness.harness_store import init_harness_db
 from maya_harness.harness_graph import HarnessGraphRunner
-from storage import init_db
+from maya_core.storage import init_db
 
 
 CALLS = 0

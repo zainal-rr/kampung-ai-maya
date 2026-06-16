@@ -12,8 +12,8 @@ from maya_core.curated_memory import (
     scope_summary,
 )
 from maya_core.permission_policy import contains_sensitive_info
-from session_memory_store import save_session_summary
-from session_search import format_session_search_results, index_session_message, search_sessions
+from maya_core.session_memory_store import save_session_summary
+from maya_core.session_search import format_session_search_results, index_session_message, search_sessions
 
 
 async def handle_session_memory_command(db_path: str, text: str) -> str | None:

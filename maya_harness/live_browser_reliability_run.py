@@ -33,9 +33,9 @@ from maya_browser.browser_site_skill_helpers import _clean_site_query, _is_resul
 from maya_browser.browser_skill import parse_browser_intent
 from maya_travel.flight_search_parsing import extract_flight_details
 from maya_core.safety_action_commands import safety_action_reply
-from stay_booking_skill import extract_stay_details
-from storage import init_db
-from travel_booking_safety import travel_booking_boundary_reply
+from maya_travel.stay_booking_skill import extract_stay_details
+from maya_core.storage import init_db
+from maya_travel.travel_booking_safety import travel_booking_boundary_reply
 
 
 async def run_night(

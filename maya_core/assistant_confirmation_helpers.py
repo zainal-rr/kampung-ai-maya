@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from maya_core.assistant_command_helpers import confirmation_decision
 from maya_core.confirmations import approve_task, decline_task, get_pending_confirmation
-from skill_factory import SkillFactory
-from storage import complete_task, record_task_event
+from maya_core.skill_factory import SkillFactory
+from maya_core.storage import complete_task, record_task_event
 
 
 async def resolve_pending_confirmation(db_path: str, text: str, channel: str) -> str | None:

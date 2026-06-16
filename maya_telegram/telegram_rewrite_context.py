@@ -3,7 +3,7 @@ from __future__ import annotations
 import json
 import re
 
-from storage import get_preference, upsert_preference
+from maya_core.storage import get_preference, upsert_preference
 
 REWRITE_KEY_PREFIX = "telegram_last_rewrite_candidate"
 MAX_CANDIDATE_CHARS = 1600

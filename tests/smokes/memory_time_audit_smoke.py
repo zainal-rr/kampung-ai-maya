@@ -17,7 +17,7 @@ import aiosqlite
 from maya_memory.canonical_memory import forget_canonical_memory, search_canonical_direct_fact, search_relevant_canonical_memories, upsert_canonical_memory
 from maya_memory.memory_audit import record_memory_audit_event, recent_memory_audit_events
 from maya_memory.memory_canaries import check_memory_canaries, seed_memory_canaries
-from storage import init_db
+from maya_core.storage import init_db
 from weekly_memory_live import live_weekly_canonical_distillation
 
 

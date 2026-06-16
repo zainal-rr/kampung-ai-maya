@@ -12,8 +12,8 @@ from datetime import date
 
 from maya_travel.flight_search_models import FieldAttempt, FlightDetails
 from maya_travel.flight_search_reply import _filled_reply
-from stay_booking_runtime import stay_reply
-from travel_booking_safety import travel_booking_boundary_reply, travel_booking_safety_footer
+from maya_travel.stay_booking_runtime import stay_reply
+from maya_travel.travel_booking_safety import travel_booking_boundary_reply, travel_booking_safety_footer
 
 
 class FakeDetails:

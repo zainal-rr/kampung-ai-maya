@@ -5,9 +5,9 @@ import re
 from dataclasses import dataclass
 
 from maya_core.domain_knowledge import domain_knowledge_context, domain_knowledge_context_for_skill
-from skill_learning_store import get_skill_learning_metadata, increment_skill_usage
-from skill_outcome_store import record_skill_outcome
-from skill_store import latest_skill_usage, list_custom_skills, record_skill_usage
+from maya_core.skill_learning_store import get_skill_learning_metadata, increment_skill_usage
+from maya_core.skill_outcome_store import record_skill_outcome
+from maya_core.skill_store import latest_skill_usage, list_custom_skills, record_skill_usage
 from maya_core.security_manifest import SecurityManifest, get_manifest, upsert_manifest
 
 

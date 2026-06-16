@@ -16,8 +16,8 @@ from maya_browser.pending_actions import clear_pending_browser_clarification, re
 from maya_browser.query_guard import browser_query_is_incomplete
 from maya_core.repo_paths import repo_root
 from maya_core.permission_policy import action_permission, contains_sensitive_info, hard_no_private_exposure_text
-from skill_store import init_skill_db, record_skill_usage, upsert_skill
-from storage import upsert_preference
+from maya_core.skill_store import init_skill_db, record_skill_usage, upsert_skill
+from maya_core.storage import upsert_preference
 from utils import OSBridge
 
 

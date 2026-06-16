@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from storage import get_history
+from maya_core.storage import get_history
 from travel_parameters import extract_destination, normalize
 from word_quality import detect_word_intent
 

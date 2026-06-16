@@ -3,8 +3,8 @@ from __future__ import annotations
 import aiosqlite
 
 from maya_harness.harness_store import init_harness_db
-from skill_store import init_skill_db
-from storage import list_tasks
+from maya_core.skill_store import init_skill_db
+from maya_core.storage import list_tasks
 
 
 async def approval_inbox_text(db_path: str) -> str:

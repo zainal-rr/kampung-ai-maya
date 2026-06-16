@@ -25,10 +25,10 @@ async def main() -> None:
         from maya_core.context_layers import init_context_layers_db
         from maya_core.lesson_store import init_lesson_db
         from maya_core.routine_store import init_routine_db
-        from session_memory_store import init_session_memory_db
-        from skill_store import init_skill_db
-        from storage import init_db
-        from telegram_delivery import split_file_markers
+        from maya_core.session_memory_store import init_session_memory_db
+        from maya_core.skill_store import init_skill_db
+        from maya_core.storage import init_db
+        from maya_telegram.telegram_delivery import split_file_markers
         from workspace_paths import ensure_workspace_tree, workspace_dir
         from maya_harness.harness_artifact_store import latest_artifacts
         import maya_documents.document_actions as document_actions

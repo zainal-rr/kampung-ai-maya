@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from collections import defaultdict
 
-from skill_outcome_store import recent_skill_outcomes
-from skill_store import create_skill_proposal, list_custom_skills
+from maya_core.skill_outcome_store import recent_skill_outcomes
+from maya_core.skill_store import create_skill_proposal, list_custom_skills
 
 
 async def analyze_skill_performance(db_path: str, threshold: int = 2) -> dict[str, list[str]]:

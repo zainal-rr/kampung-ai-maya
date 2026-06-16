@@ -12,9 +12,9 @@ from maya_travel.flight_search_deeplink import is_extension_driver, note_flight_
 from maya_browser.browser_understanding import extract_browser_options_with_gemini, grounded_browser_options
 from maya_core.repo_paths import repo_root
 from maya_core.permission_policy import action_permission, contains_sensitive_info, hard_no_private_exposure_text
-from skill_store import init_skill_db, record_skill_usage, upsert_skill
-from storage import upsert_preference
-from travel_budget import save_travel_plan_fields
+from maya_core.skill_store import init_skill_db, record_skill_usage, upsert_skill
+from maya_core.storage import upsert_preference
+from maya_travel.travel_budget import save_travel_plan_fields
 from utils import OSBridge
 from maya_travel.flight_search_models import FieldAttempt, FlightDetails
 from maya_travel.flight_search_parsing import extract_flight_details, flight_request_needs_active_context

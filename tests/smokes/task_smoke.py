@@ -20,9 +20,9 @@ from maya_core.assistant_commands import AssistantCommandRouter
 from maya_core.lesson_store import init_lesson_db
 from maya_memory.memory_service import MemoryService
 from maya_core.routine_store import init_routine_db
-from skill_registry import SkillRegistry
-from skill_store import init_skill_db
-from storage import init_db
+from maya_core.skill_registry import SkillRegistry
+from maya_core.skill_store import init_skill_db
+from maya_core.storage import init_db
 
 
 async def main() -> None:

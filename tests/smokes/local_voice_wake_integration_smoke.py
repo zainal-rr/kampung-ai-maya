@@ -11,7 +11,7 @@ import os
 import tempfile
 
 from maya_core.local_voice_channel import LocalVoiceChannel
-from storage import init_db
+from maya_core.storage import init_db
 
 
 class FakeSource:

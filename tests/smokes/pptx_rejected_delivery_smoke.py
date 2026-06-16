@@ -18,8 +18,8 @@ from maya_documents.document_actions import DocumentActionRouter
 from maya_core.markdown_drafter import MarkdownDraft
 from maya_documents.office_modern_files import create_pptx
 from maya_documents.pptx_quality_gate import PptxQualityResult
-from storage import init_db
-from telegram_delivery import split_file_markers
+from maya_core.storage import init_db
+from maya_telegram.telegram_delivery import split_file_markers
 
 
 async def main() -> None:

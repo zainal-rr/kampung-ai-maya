@@ -9,7 +9,7 @@ from pathlib import Path
 import aiosqlite
 
 from maya_core.retention_policy import touch_project_activity
-from storage import delete_preference, get_preference, upsert_preference
+from maya_core.storage import delete_preference, get_preference, upsert_preference
 from workspace_paths import project_roots as default_project_roots
 
 

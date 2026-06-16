@@ -15,7 +15,7 @@ from pathlib import Path
 
 import maya_documents.artifact_quality as artifact_quality
 from maya_documents.artifact_quality import review_artifact_quality
-from storage import init_db
+from maya_core.storage import init_db
 
 
 class FailingSteward:

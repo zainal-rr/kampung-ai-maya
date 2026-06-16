@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from storage import list_preferences
+from maya_core.storage import list_preferences
 
 
 async def apply_reply_preferences(db_path: str, text: str) -> str:

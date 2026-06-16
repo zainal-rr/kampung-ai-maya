@@ -16,9 +16,9 @@ from pathlib import Path
 from maya_core.assistant import KampungAssistant
 from maya_core.lesson_store import init_lesson_db
 from maya_core.routine_store import init_routine_db
-from skill_store import init_skill_db
-from storage import init_db
-from telegram_rewrite_context import latest_rewrite_candidate, remember_rewrite_candidate
+from maya_core.skill_store import init_skill_db
+from maya_core.storage import init_db
+from maya_telegram.telegram_rewrite_context import latest_rewrite_candidate, remember_rewrite_candidate
 
 
 class FakeResponder:

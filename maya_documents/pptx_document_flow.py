@@ -28,7 +28,7 @@ from maya_documents.pptx_topic_reviser import rebuild_topic_safe
 from maya_documents.pptx_visual_assets import add_gemini_visual_asset, required_visual_image_count, topic_benefits_from_visuals
 from maya_documents.pptx_slide_repair import attempt_slides, max_pptx_attempts
 from maya_core.provider_capabilities import CAPABILITIES
-from storage import upsert_preference
+from maya_core.storage import upsert_preference
 
 
 async def create_powerpoint_with_qa(

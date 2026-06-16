@@ -17,13 +17,13 @@ from maya_core.assistant import KampungAssistant
 from maya_core.lesson_store import init_lesson_db
 from maya_core.routine_store import init_routine_db
 from maya_core.route_tracker import last_route_text
-from source_aware_research import (
+from maya_core.source_aware_research import (
     format_source_research,
     should_use_source_research,
     source_aware_research,
 )
-from skill_store import init_skill_db
-from storage import init_db
+from maya_core.skill_store import init_skill_db
+from maya_core.storage import init_db
 
 
 async def main() -> None:

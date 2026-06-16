@@ -19,7 +19,7 @@ from maya_harness.harness_store import (
     resolve_approval,
 )
 from maya_harness.harness_workflows import classify_workflow
-from storage import delete_preference, get_preference, upsert_preference
+from maya_core.storage import delete_preference, get_preference, upsert_preference
 
 
 # Bare command verbs only count when the message *starts* with them, so chat like

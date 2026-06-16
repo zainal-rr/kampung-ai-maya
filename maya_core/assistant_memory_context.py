@@ -5,7 +5,7 @@ from maya_core.curated_memory import curated_memory_prompt
 from maya_core.project_store import build_project_context
 from maya_core.quantum_advisory import quantum_context_hint
 from maya_core.session_compactor import build_session_context
-from telegram_context_policy import should_use_full_context
+from maya_telegram.telegram_context_policy import should_use_full_context
 
 
 async def build_assistant_memory_context(

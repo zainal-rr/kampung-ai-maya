@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 
 from maya_core.permission_policy import contains_sensitive_info, hard_no_private_exposure_text, is_private_exposure
-from travel_booking_safety import travel_booking_boundary_reply
+from maya_travel.travel_booking_safety import travel_booking_boundary_reply
 
 
 def safety_action_reply(text: str) -> str | None:

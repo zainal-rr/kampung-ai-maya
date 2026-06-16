@@ -8,7 +8,7 @@ from maya_documents.document_natural_artifact_parser import (
     normalize_artifact_command_text,
     strip_creation_prefix,
 )
-from storage import get_history
+from maya_core.storage import get_history
 
 
 _REFERENCE_WORDS = {

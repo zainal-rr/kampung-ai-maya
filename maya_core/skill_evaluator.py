@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from skill_learning_store import EVALUATION_TESTS
+from maya_core.skill_learning_store import EVALUATION_TESTS
 
 
 def evaluate_skill_scaffold(scaffold_path: str) -> dict[str, tuple[str, str]]:

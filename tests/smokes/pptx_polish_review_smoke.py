@@ -16,7 +16,7 @@ from pathlib import Path
 import maya_documents.pptx_polish_review as pptx_polish_review
 from maya_documents.office_modern_files import create_pptx
 from maya_documents.pptx_polish_review import claude_polish_grade
-from storage import init_db
+from maya_core.storage import init_db
 
 
 class FailingSteward:

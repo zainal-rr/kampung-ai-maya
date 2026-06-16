@@ -12,8 +12,8 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-from skill_registry import SkillRegistry
-from skill_store import init_skill_db, latest_skill_usage, upsert_skill
+from maya_core.skill_registry import SkillRegistry
+from maya_core.skill_store import init_skill_db, latest_skill_usage, upsert_skill
 
 
 async def main() -> None:

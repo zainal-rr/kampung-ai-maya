@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import re
 
-from storage import create_task
-from time_parser import extract_due_from_text, format_due_text
+from maya_core.storage import create_task
+from maya_core.time_parser import extract_due_from_text, format_due_text
 
 
 async def handle_reminder_command(db_path: str, text: str, channel: str) -> str | None:

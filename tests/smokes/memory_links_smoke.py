@@ -35,7 +35,7 @@ from maya_memory.canonical_memory import search_relevant_canonical_memories, ups
 from maya_memory.canonical_memory_dedup import find_semantic_duplicate
 from maya_core.lesson_store import init_lesson_db
 from maya_memory.memory_links import add_memory_link, expand_with_neighbors
-from storage import init_db
+from maya_core.storage import init_db
 
 
 async def _seed(db_path: str, content: str, **kwargs) -> str:

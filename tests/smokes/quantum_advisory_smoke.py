@@ -14,8 +14,8 @@ import tempfile
 from pathlib import Path
 
 from maya_core.quantum_advisory import quantum_context_hint
-from session_memory_store import init_session_memory_db, save_session_summary
-from storage import init_db
+from maya_core.session_memory_store import init_session_memory_db, save_session_summary
+from maya_core.storage import init_db
 
 
 async def main() -> None:

@@ -14,7 +14,7 @@ from pathlib import Path
 
 from maya_documents.artifact_builder import ArtifactBuilder
 from maya_documents.document_actions import DocumentActionRouter
-from storage import init_db
+from maya_core.storage import init_db
 
 
 class FakeBridge:

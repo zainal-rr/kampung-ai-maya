@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 
 from maya_travel.flight_search_models import FieldAttempt, FlightDetails, MONTHS, destination_match_tokens
-from travel_booking_safety import travel_booking_safety_footer
+from maya_travel.travel_booking_safety import travel_booking_safety_footer
 
 
 def _labels_contain(labels: list[str], value: str) -> bool:

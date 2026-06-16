@@ -14,7 +14,7 @@ import tempfile
 from pathlib import Path
 
 from maya_browser.browser_task_opener import BrowserTaskOpener
-from storage import get_preference, init_db
+from maya_core.storage import get_preference, init_db
 
 
 class FakeBridge:

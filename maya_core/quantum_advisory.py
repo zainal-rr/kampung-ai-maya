@@ -4,7 +4,7 @@ import os
 import re
 from collections import Counter
 
-from session_memory_store import latest_session_summary
+from maya_core.session_memory_store import latest_session_summary
 
 
 def quantum_advisory_enabled() -> bool:

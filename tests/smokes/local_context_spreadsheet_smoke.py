@@ -16,8 +16,8 @@ from pathlib import Path
 from openpyxl import load_workbook
 
 from maya_documents.document_actions import DocumentActionRouter
-from storage import init_db
-from telegram_delivery import split_file_markers
+from maya_core.storage import init_db
+from maya_telegram.telegram_delivery import split_file_markers
 
 
 async def main() -> None:

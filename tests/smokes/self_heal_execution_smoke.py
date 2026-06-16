@@ -20,7 +20,7 @@ from maya_core.assistant_model_lanes import ModelLanes
 from maya_harness.harness_router import HarnessRouter
 from maya_harness.harness_store import get_run, init_harness_db, latest_events
 from maya_core.self_heal_store import latest_self_heal_report
-from storage import init_db
+from maya_core.storage import init_db
 
 
 class FakeMind:

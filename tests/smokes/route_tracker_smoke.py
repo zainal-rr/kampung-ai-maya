@@ -13,7 +13,7 @@ import tempfile
 from pathlib import Path
 
 from maya_core.route_tracker import last_route_text, record_route
-from storage import init_db
+from maya_core.storage import init_db
 
 
 async def main() -> None:

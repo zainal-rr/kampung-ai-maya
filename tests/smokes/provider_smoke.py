@@ -141,7 +141,7 @@ async def check_xai_stt() -> str:
         return "skipped (missing XAI_API_KEY)"
     sample_path = await asyncio.to_thread(_make_sample_wav)
     try:
-        from speech_input import xai_transcribe_file
+        from maya_core.speech_input import xai_transcribe_file
         transcript = await asyncio.to_thread(xai_transcribe_file, api_key, sample_path, "en")
         return _ok_any(transcript, ("maya speech check", "my speech check", "speech check"))
     except Exception as exc:

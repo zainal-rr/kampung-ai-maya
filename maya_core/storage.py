@@ -7,9 +7,9 @@ from maya_memory.canonical_memory import init_canonical_memory_db
 from maya_memory.memory_audit import init_memory_audit_db
 from maya_memory.memory_canaries import init_memory_canary_db
 from maya_core.retention_policy import init_retention_db
-from telegram_delivery_log import init_telegram_delivery_log_db
-from telegram_turn_log import init_telegram_turn_log_db
-from storage_tasks import (
+from maya_telegram.telegram_delivery_log import init_telegram_delivery_log_db
+from maya_telegram.telegram_turn_log import init_telegram_turn_log_db
+from maya_core.storage_tasks import (
     cancel_matching_tasks,
     claim_due_tasks,
     complete_task,

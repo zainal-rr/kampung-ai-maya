@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import aiosqlite
 
-from skill_store import init_skill_db
+from maya_core.skill_store import init_skill_db
 
 
 OUTCOMES = {"success", "failure", "partial", "user_corrected", "blocked", "cancelled"}

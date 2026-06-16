@@ -24,10 +24,10 @@ from maya_core.permission_policy import action_permission
 from maya_documents.pptx_quality_gate import inspect_pptx_quality
 from maya_core.reliability_scorecard import reliability_scorecard
 from maya_core.safety_action_commands import safety_action_reply
-from source_aware_research import should_use_source_research
-from storage import init_db
-from travel_booking_safety import travel_booking_boundary_reply
-from travel_budget import TravelParty
+from maya_core.source_aware_research import should_use_source_research
+from maya_core.storage import init_db
+from maya_travel.travel_booking_safety import travel_booking_boundary_reply
+from maya_travel.travel_budget import TravelParty
 from travel_budget_workbook import _build_workbook
 from voice_session_log import finish_voice_session, start_voice_session
 from voice_transcript_policy import clean_voice_transcript_for_intent, should_park_voice_for_worker

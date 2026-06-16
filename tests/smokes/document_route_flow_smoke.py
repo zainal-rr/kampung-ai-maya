@@ -23,10 +23,10 @@ from maya_documents.artifact_preflight import ArtifactPreflight
 from maya_core.markdown_drafter import MarkdownDraft
 from maya_core.route_tracker import last_route_text
 from maya_core.routine_store import init_routine_db
-from session_memory_store import init_session_memory_db
-from skill_store import init_skill_db
-from storage import get_preference
-from storage import init_db
+from maya_core.session_memory_store import init_session_memory_db
+from maya_core.skill_store import init_skill_db
+from maya_core.storage import get_preference
+from maya_core.storage import init_db
 from xai_realtime_document_tools import execute_desktop_file_tool
 
 
@@ -39,7 +39,7 @@ async def main() -> None:
 
         import maya_documents.document_actions as da
         import maya_documents.artifact_semantic_resolver as semantic_resolver
-        import travel_budget
+        import maya_travel.travel_budget as travel_budget
 
         old_draft = da.draft_markdown_with_gemini
         old_review = da.review_presentation_slides

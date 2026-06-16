@@ -40,10 +40,10 @@ from maya_core.project_actions import ProjectActionRouter
 from maya_core.routine_commands import RoutineCommandRouter
 from maya_core.safety_action_commands import safety_action_reply
 from maya_core.self_heal_commands import handle_self_heal_status
-from session_memory_actions import handle_session_memory_command
-from skill_registry import SkillRegistry
+from maya_core.session_memory_actions import handle_session_memory_command
+from maya_core.skill_registry import SkillRegistry
 from maya_core.assistant_skill_commands import handle_skill_lifecycle, handle_skill_listing, handle_skill_proposals
-from storage import cancel_matching_tasks, list_preferences, list_tasks
+from maya_core.storage import cancel_matching_tasks, list_preferences, list_tasks
 from unsupported_actions import unsupported_action_subject
 from voice_session_commands import handle_voice_session_command
 from web_actions import WebActionRouter

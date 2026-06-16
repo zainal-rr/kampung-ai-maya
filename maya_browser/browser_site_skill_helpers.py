@@ -5,7 +5,7 @@ import re
 import time
 from urllib.parse import parse_qs, urlparse
 
-from storage import get_preference, upsert_preference
+from maya_core.storage import get_preference, upsert_preference
 
 
 GOOGLE_SEARCH_SKILL_ID = "google_search"

@@ -29,7 +29,7 @@ from maya_voice.confirmation import confirm_action, create_pending_confirmation
 from maya_voice.tool_guard import empty_request_reason
 from maya_voice.work_control import revise_maya_work
 from maya_voice.work_runtime import voice_work_context
-from storage import init_db
+from maya_core.storage import init_db
 from xai_realtime_tools import MAYA_WORK_TOOL_NAME, execute_voice_tool
 from xai_realtime_work_supervisor_smoke import FakeAssistant, FakeRealtimeSession
 from xai_voice_work import complete_voice_work, create_voice_work, get_voice_work

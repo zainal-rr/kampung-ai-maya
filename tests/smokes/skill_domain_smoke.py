@@ -203,7 +203,7 @@ def _finance_checks() -> None:
         _require(sk is not None and sk.skill_id == "finance_credit_analysis", f"{prompt!r} should route to finance, got {sk}")
         _require(recipe_stub in ctx, f"{prompt!r} should retrieve {recipe_stub}, got: {ctx[:120]}")
 
-    from skill_evaluator import evaluate_skill_scaffold
+    from maya_core.skill_evaluator import evaluate_skill_scaffold
 
     results = evaluate_skill_scaffold("maya_skills/proposed/finance_credit_analysis.md")
     failed = [name for name, (status, _) in results.items() if status != "passed"]
@@ -259,7 +259,7 @@ def _cloud_checks() -> None:
         silent, none_skill = domain_knowledge_context(prompt, skill_dir=PROPOSED_SKILL.parent)
         _require(silent == "" and none_skill is None, f"should stay silent: {prompt!r}")
 
-    from skill_evaluator import evaluate_skill_scaffold
+    from maya_core.skill_evaluator import evaluate_skill_scaffold
 
     results = evaluate_skill_scaffold("maya_skills/proposed/cloud_solution_architecture.md")
     failed = [name for name, (status, _) in results.items() if status != "passed"]

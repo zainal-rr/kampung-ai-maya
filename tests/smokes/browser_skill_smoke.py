@@ -14,7 +14,7 @@ from pathlib import Path
 
 from maya_browser.browser_skill import parse_browser_intent, run_browser_skill
 from maya_browser.browser_task_step import BrowserTaskStepper
-from storage import init_db
+from maya_core.storage import init_db
 
 
 class FakeBridge:

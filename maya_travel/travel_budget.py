@@ -23,7 +23,7 @@ from maya_documents.artifact_builder import ArtifactBuilder
 from maya_documents.artifact_sessions import active_artifact_session
 
 from maya_core.markdown_drafter import draft_markdown_with_gemini
-from storage import get_preference, upsert_preference
+from maya_core.storage import get_preference, upsert_preference
 from utils import OSBridge
 from workspace_paths import workspace_dir
 from travel_budget_workbook import _build_workbook

@@ -12,7 +12,7 @@ import asyncio
 import tempfile
 
 from maya_documents.artifact_parameter_resolver import resolve_artifact_parameters
-from storage import init_db, save_history_message
+from maya_core.storage import init_db, save_history_message
 
 
 async def main_async() -> None:

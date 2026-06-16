@@ -13,7 +13,7 @@ import time
 from pathlib import Path
 
 import xai_realtime_events
-from storage import init_db
+from maya_core.storage import init_db
 from xai_realtime_events import XaiRealtimeEventMixin
 
 

@@ -10,8 +10,8 @@ from maya_browser.browser_control import note_browser_intent
 from maya_browser.browser_driver import make_browser_controller
 from maya_browser.browser_understanding import extract_browser_options_with_gemini, grounded_browser_options
 from maya_core.permission_policy import action_permission
-from storage import upsert_preference
-from stay_booking_parsing import (  # noqa: F401 - re-exported for existing callers
+from maya_core.storage import upsert_preference
+from maya_travel.stay_booking_parsing import (  # noqa: F401 - re-exported for existing callers
     StayDetails,
     airbnb_url,
     booking_url,
@@ -19,8 +19,8 @@ from stay_booking_parsing import (  # noqa: F401 - re-exported for existing call
     extract_stay_options,
     stay_request_needs_active_context,
 )
-from stay_booking_runtime import record_stay_skill, stay_reply, stay_workflow_value
-from travel_budget import save_travel_plan_fields
+from maya_travel.stay_booking_runtime import record_stay_skill, stay_reply, stay_workflow_value
+from maya_travel.travel_budget import save_travel_plan_fields
 from utils import OSBridge
 
 

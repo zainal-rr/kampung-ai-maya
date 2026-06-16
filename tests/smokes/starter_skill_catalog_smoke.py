@@ -13,8 +13,8 @@ import os
 import tempfile
 from pathlib import Path
 
-from starter_skill_catalog import CATALOG, install_starter_catalog
-from skill_store import list_custom_skills
+from maya_core.starter_skill_catalog import CATALOG, install_starter_catalog
+from maya_core.skill_store import list_custom_skills
 
 
 async def main() -> None:

@@ -8,7 +8,7 @@ from maya_core.daily_cockpit import daily_cockpit_text, focus_text, project_cock
 from maya_core.desktop_file_opener import DesktopFileOpener
 from maya_harness.harness_artifact_store import latest_artifacts
 from maya_core.maya_desk import maya_desk_text
-from storage import get_preference
+from maya_core.storage import get_preference
 from utils import OSBridge
 from waiting_on import handle_waiting_on
 from workflow_desk import background_tasks_text, close_matching_workflow, quiet_mode_text, workflow_desk_text
