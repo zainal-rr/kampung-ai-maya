@@ -79,7 +79,7 @@ def run_local_ci(*, live_providers: bool = False) -> list[CheckResult]:
         _command_check("browser driver mode", ("tests/smokes/browser_driver_mode_smoke.py",)),
         _command_check("workflow document bypass", ("tests/smokes/workflow_document_bypass_smoke.py",)),
         _command_check("recent questions document", ("tests/smokes/recent_questions_document_smoke.py",)),
-        _command_check("agentic verifier deep", ("harness_agentic_deep_smoke.py",)),
+        _command_check("agentic verifier deep", ("tests/smokes/harness_agentic_deep_smoke.py",)),
         _command_check("agentic reliability harness", ("live_agentic_reliability_smoke.py",)),
         _command_check("flight deep link", ("tests/smokes/flight_deeplink_smoke.py",)),
         _command_check("legacy architecture removed", ("legacy_architecture_removed_smoke.py",)),
