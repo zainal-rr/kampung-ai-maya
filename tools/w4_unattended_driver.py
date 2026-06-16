@@ -307,7 +307,13 @@ def rewrite_imports(stem: str, pkg: str) -> int:
 
 # --- gates -----------------------------------------------------------------
 def fast_gate(moved: list[str]) -> tuple[bool, str]:
-    r = sh(sys.executable, "-m", "compileall", "-q", ".", check=False)
+    excluded = {".git", ".venv", "venv", "__pycache__", ".claude", "backups"}
+    files = [
+        str(path.relative_to(ROOT))
+        for path in all_py_files()
+        if not any(part in excluded for part in path.parts)
+    ]
+    r = sh(sys.executable, "-m", "py_compile", *files, check=False)
     if r.returncode != 0:
         return False, "compileall failed:\n" + r.stdout + r.stderr
     for stem in moved:
