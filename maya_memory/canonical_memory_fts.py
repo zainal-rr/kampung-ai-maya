@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import aiosqlite
 
-from canonical_memory_text import memory_tokens
+from maya_memory.canonical_memory_text import memory_tokens
 
 # BM25 rank bonus for the best FTS hit; decays by rank. Kept comparable to
 # activation_score units (overlap token = 10, pinned = 30).

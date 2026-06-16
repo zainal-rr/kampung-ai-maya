@@ -19,7 +19,7 @@ from pathlib import Path
 
 from maya_documents.artifact_retry_policy import artifact_qa_max_attempts, qa_retry_exhausted_message
 from maya_documents.artifact_sessions import record_artifact_session
-from created_file_summary import created_file_content_summary
+from maya_core.created_file_summary import created_file_content_summary
 from maya_documents.artifact_quality import (
     ArtifactQualityResult,
     extract_docx_text,
@@ -29,7 +29,7 @@ from maya_documents.artifact_quality import (
     validate_docx_path,
     validate_xlsx_path,
 )
-from created_file_opener import open_created_file
+from maya_core.created_file_opener import open_created_file
 from harness_artifact_store import record_structured_artifact
 from harness_models import local_artifact
 from maya_voice.work_runtime import set_current_voice_work_phase

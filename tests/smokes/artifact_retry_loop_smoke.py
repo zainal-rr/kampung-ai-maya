@@ -17,8 +17,8 @@ from openpyxl import Workbook
 
 from maya_documents.artifact_builder import ArtifactBuilder
 from maya_documents.artifact_quality import ArtifactQualityResult
-from context_layers import init_context_layers_db
-from document_actions import DocumentActionRouter
+from maya_core.context_layers import init_context_layers_db
+from maya_documents.document_actions import DocumentActionRouter
 from harness_artifact_store import init_harness_artifact_db
 from harness_store import init_harness_db
 from lesson_store import init_lesson_db
@@ -51,7 +51,7 @@ async def main() -> None:
 
 
 async def _word_retries_until_pass(db_path: str, workspace: Path) -> None:
-    import document_actions as da
+    import maya_documents.document_actions as da
 
     old_draft = da.draft_markdown_with_gemini
     old_preflight = da.artifact_preflight_with_gemini
@@ -114,7 +114,7 @@ async def _builder_retries_until_pass(db_path: str, path: Path) -> None:
 
 
 async def _word_default_retry_cap_exhausts_at_three(db_path: str, workspace: Path) -> None:
-    import document_actions as da
+    import maya_documents.document_actions as da
 
     old_draft = da.draft_markdown_with_gemini
     old_preflight = da.artifact_preflight_with_gemini

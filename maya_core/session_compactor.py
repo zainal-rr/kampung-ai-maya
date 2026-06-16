@@ -7,13 +7,13 @@ from dataclasses import dataclass
 import aiosqlite
 
 from maya_core.assistant_text import clean_model_text, extract_user_text
-from context_layers import (
+from maya_core.context_layers import (
     preserve_context_layers,
     relevant_context_facts,
     relevant_context_vibes,
 )
-from context_prompt import format_context_blocks
-from context_tokens import estimate_row_tokens, split_older_rows_by_token_budget
+from maya_core.context_prompt import format_context_blocks
+from maya_core.context_tokens import estimate_row_tokens, split_older_rows_by_token_budget
 from permission_policy import contains_sensitive_info
 from session_memory_store import (
     init_session_memory_db,

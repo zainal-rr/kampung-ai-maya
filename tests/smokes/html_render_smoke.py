@@ -13,7 +13,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from context_layers import init_context_layers_db
+from maya_core.context_layers import init_context_layers_db
 from lesson_store import init_lesson_db
 from markdown_drafter import MarkdownDraft
 from routine_store import init_routine_db
@@ -103,7 +103,7 @@ def main() -> int:
 
 
 async def _generated_html_path(root: Path) -> Path:
-    import document_actions as da
+    import maya_documents.document_actions as da
 
     db_path = str(root / "smoke.db")
     await _init(db_path)

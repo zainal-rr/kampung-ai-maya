@@ -29,11 +29,11 @@ from maya_documents.artifact_quality import (
     validate_html_content,
     validate_xlsx_path,
 )
-from created_file_opener import open_created_file
-from document_failures import document_generation_failed
-from document_natural_artifact_parser import artifact_intent_clarification
-from document_request_parser import document_request, markdown_update
-from document_style import style_document_text, style_sections, style_table
+from maya_core.created_file_opener import open_created_file
+from maya_documents.document_failures import document_generation_failed
+from maya_documents.document_natural_artifact_parser import artifact_intent_clarification
+from maya_documents.document_request_parser import document_request, markdown_update
+from maya_documents.document_style import style_document_text, style_sections, style_table
 from html_reviewer import review_html_app
 from office_drafter import (
     sections_from_markdown,

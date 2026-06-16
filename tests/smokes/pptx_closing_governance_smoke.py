@@ -302,7 +302,7 @@ def _visual_budget_checks(root: Path) -> None:
 
 def _scratch_and_honesty_checks() -> None:
     from pptx_visual_assets import _image_scratch_dir
-    from deck_species import deck_species_prompt_context, deck_species_review_contract
+    from maya_documents.deck_species import deck_species_prompt_context, deck_species_review_contract
     from pptx_slide_repair import rescue_slides
     from office_drafter_deck_scenarios import _issue_deck, _pitch_deck
 

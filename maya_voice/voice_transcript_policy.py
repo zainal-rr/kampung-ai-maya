@@ -99,9 +99,9 @@ def _ambiguous_document_request(normalized: str) -> bool:
     if "document" not in normalized:
         return False
     try:
-        from document_actions_word_helpers import _document_edit_request
-        from document_natural_artifact_parser import artifact_intent_clarification
-        from document_request_parser import document_request
+        from maya_documents.document_actions_word_helpers import _document_edit_request
+        from maya_documents.document_natural_artifact_parser import artifact_intent_clarification
+        from maya_documents.document_request_parser import document_request
 
         return (
             _document_edit_request(normalized) is None

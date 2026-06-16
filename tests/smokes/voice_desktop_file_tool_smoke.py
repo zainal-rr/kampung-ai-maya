@@ -13,7 +13,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from context_layers import init_context_layers_db
+from maya_core.context_layers import init_context_layers_db
 from harness_artifact_store import init_harness_artifact_db
 from harness_store import init_harness_db
 from lesson_store import init_lesson_db
@@ -32,7 +32,7 @@ async def main() -> None:
         db_path = str(Path(tmp) / "smoke.db")
         await _init(db_path)
 
-        import document_actions as da
+        import maya_documents.document_actions as da
 
         old_draft = da.draft_markdown_with_gemini
         old_should = da.should_use_model_draft

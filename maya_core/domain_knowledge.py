@@ -25,8 +25,8 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from canonical_memory_text import memory_tokens
-from domain_knowledge_chunks import directory_boosts, kb_chunks
+from maya_memory.canonical_memory_text import memory_tokens
+from maya_core.domain_knowledge_chunks import directory_boosts, kb_chunks
 from domain_knowledge_context_builder import build_domain_context
 from domain_knowledge_models import DomainSkill, KnowledgeChunk
 from domain_knowledge_parse import parse_domain_skill, word_match

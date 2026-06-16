@@ -13,7 +13,7 @@ import tempfile
 from pathlib import Path
 
 from maya_core.assistant import KampungAssistant
-from context_layers import init_context_layers_db
+from maya_core.context_layers import init_context_layers_db
 from lesson_store import init_lesson_db
 from route_tracker import last_route_text
 from routine_store import init_routine_db

@@ -4,8 +4,8 @@ import json
 import os
 import re
 
-from cost_tracker import record_usage
-from deck_species import deck_species_review_contract, detect_deck_species
+from maya_core.cost_tracker import record_usage
+from maya_documents.deck_species import deck_species_review_contract, detect_deck_species
 from office_drafter_powerpoint import MAX_POWERPOINT_SLIDES
 from models import TheSteward
 from powerpoint_quality_context import powerpoint_quality_context

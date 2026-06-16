@@ -6,8 +6,8 @@ from html import escape
 from pathlib import Path
 
 from maya_core.approval_inbox import approval_items
-from cost_tracker import usage_summary_text
-from curated_memory import curated_memory_status
+from maya_core.cost_tracker import usage_summary_text
+from maya_core.curated_memory import curated_memory_status
 from demo_evidence import load_latest
 from dependency_manifest import dependency_statuses, readiness_summary
 from hardening_audit import hardening_audit_summary, route_cost_audit

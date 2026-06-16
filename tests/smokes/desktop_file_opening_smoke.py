@@ -13,7 +13,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from desktop_file_opener import DesktopFileOpener
+from maya_core.desktop_file_opener import DesktopFileOpener
 
 
 class FakeBridge:

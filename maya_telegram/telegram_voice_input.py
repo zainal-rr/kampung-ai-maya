@@ -7,7 +7,7 @@ import tempfile
 from pathlib import Path
 
 from maya_core.audio_devices import bin_path
-from cost_tracker import record_usage
+from maya_core.cost_tracker import record_usage
 from xai_stt import xai_transcribe_file
 
 

@@ -14,7 +14,7 @@ import tempfile
 from pathlib import Path
 
 from maya_core.assistant import KampungAssistant
-from context_layers import init_context_layers_db
+from maya_core.context_layers import init_context_layers_db
 from lesson_store import init_lesson_db
 from markdown_drafter import MarkdownDraft
 from project_store import active_project, project_notes
@@ -43,7 +43,7 @@ async def main() -> None:
         os.environ["MAYA_PROJECT_ROOTS"] = str(project_root)
         db_path = str(tmp_path / "smoke.db")
         await _init(db_path)
-        import document_actions as da
+        import maya_documents.document_actions as da
         old_draft = da.draft_markdown_with_gemini
         da.draft_markdown_with_gemini = _fake_draft
 

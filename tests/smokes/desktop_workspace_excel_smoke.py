@@ -22,7 +22,7 @@ async def main() -> None:
     with tempfile.TemporaryDirectory(prefix="maya-desktop-workspace-") as tmp:
         os.environ["MAYA_WORKSPACE_ROOT"] = str(Path(tmp) / "Maya")
         from maya_core.assistant import KampungAssistant
-        from context_layers import init_context_layers_db
+        from maya_core.context_layers import init_context_layers_db
         from lesson_store import init_lesson_db
         from routine_store import init_routine_db
         from session_memory_store import init_session_memory_db
@@ -31,7 +31,7 @@ async def main() -> None:
         from telegram_delivery import split_file_markers
         from workspace_paths import ensure_workspace_tree, workspace_dir
         from harness_artifact_store import latest_artifacts
-        import document_actions
+        import maya_documents.document_actions as document_actions
 
         db_path = str(Path(tmp) / "smoke.db")
         await _init(db_path, init_db, init_lesson_db, init_skill_db, init_routine_db, init_session_memory_db, init_context_layers_db)

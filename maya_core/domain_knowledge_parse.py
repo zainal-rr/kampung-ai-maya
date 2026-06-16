@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from canonical_memory_text import memory_tokens
+from maya_memory.canonical_memory_text import memory_tokens
 from domain_knowledge_models import DomainSkill
 
 

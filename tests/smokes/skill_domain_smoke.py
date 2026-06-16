@@ -22,7 +22,7 @@ import shutil
 import tempfile
 from pathlib import Path
 
-from domain_knowledge import (
+from maya_core.domain_knowledge import (
     DEFAULT_SKILL_DIR,
     detect_domain_skill,
     domain_knowledge_context,

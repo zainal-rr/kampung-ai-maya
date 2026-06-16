@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from document_actions_context import apply_artifact_edit_delta, topic_from_state
+from maya_documents.document_actions_context import apply_artifact_edit_delta, topic_from_state
 
 
 def _office_session_edit_topic(session, artifact_type: str, instruction: str) -> str:

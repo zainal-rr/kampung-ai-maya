@@ -7,7 +7,7 @@ from docx import Document
 from openpyxl import Workbook
 from pptx import Presentation
 
-from document_request_parser import document_request
+from maya_documents.document_request_parser import document_request
 from storage import upsert_preference
 from travel_budget_plan import _parse_plan_updates
 

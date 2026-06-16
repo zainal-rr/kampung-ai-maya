@@ -4,7 +4,7 @@ import os
 import re
 import logging
 
-from cost_tracker import record_usage
+from maya_core.cost_tracker import record_usage
 from language_policy import language_instruction
 from models import TheSenses
 from screen_context import ScreenContext, ScreenContextProvider

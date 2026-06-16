@@ -19,8 +19,8 @@ from maya_core.assistant_route_prefixes import (
     sight_payload,
 )
 from maya_core.assistant_routes import AssistantRouter, RouteResult
-from channel_gateway import remember_channel_identity
-from cost_tracker import record_usage
+from maya_core.channel_gateway import remember_channel_identity
+from maya_core.cost_tracker import record_usage
 from harness_router import HarnessRouter
 from memory_service import MemoryService
 from models import TheSenses

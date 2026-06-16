@@ -25,8 +25,8 @@ import re
 
 import aiosqlite
 
-from canonical_memory_embeddings import EmbedCall, _cosine
-from canonical_memory_text import memory_tokens, value_from_text
+from maya_memory.canonical_memory_embeddings import EmbedCall, _cosine
+from maya_memory.canonical_memory_text import memory_tokens, value_from_text
 
 TOKEN_CONTAINMENT_THRESHOLD = 0.8
 EMBED_DUPLICATE_COSINE = 0.86

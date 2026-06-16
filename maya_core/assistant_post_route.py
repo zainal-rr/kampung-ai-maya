@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import logging
 
-from curated_memory import add_curated_memory
+from maya_core.curated_memory import add_curated_memory
 
 
 def route_metadata(input_type: str, lane: str, reason: str, cost_recorded: bool) -> tuple[str, str, bool]:

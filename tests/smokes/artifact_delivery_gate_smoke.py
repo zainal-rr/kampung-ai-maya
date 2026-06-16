@@ -19,8 +19,8 @@ from maya_documents.artifact_builder import ArtifactBuilder
 from maya_documents.artifact_quality_core import ArtifactQualityResult
 from maya_documents.artifact_qa_governance import SEMANTIC, blocker
 from maya_documents.artifact_sessions import active_artifact_session
-from context_layers import init_context_layers_db
-from document_actions import DocumentActionRouter
+from maya_core.context_layers import init_context_layers_db
+from maya_documents.document_actions import DocumentActionRouter
 from everyday_commands import EverydayCommandRouter
 from harness_artifact_store import init_harness_artifact_db
 from harness_store import init_harness_db

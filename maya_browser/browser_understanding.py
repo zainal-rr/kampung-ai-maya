@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import re
 
-from cost_tracker import record_usage
+from maya_core.cost_tracker import record_usage
 from models import TheSenses
 
 

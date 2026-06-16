@@ -28,7 +28,7 @@ import shutil
 import tempfile
 from pathlib import Path
 
-import domain_knowledge
+import maya_core.domain_knowledge as domain_knowledge
 from maya_documents.artifact_semantic_resolver import (
     domain_question_precedence,
     resolve_semantic_artifact_intent,

@@ -4,7 +4,7 @@ import re
 from dataclasses import dataclass, field
 
 from maya_browser.browser_workflows import HumanBrowserWorkflowRouter
-from document_actions import DocumentActionRouter
+from maya_documents.document_actions import DocumentActionRouter
 from drawing_actions import DrawingActionRouter
 from file_actions import FileActionRouter
 from harness_browser_observation import agentic_browser_message as _agentic_browser_message

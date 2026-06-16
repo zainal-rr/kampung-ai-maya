@@ -8,7 +8,7 @@ if str(_w4_root) not in _w4_sys.path:
 del _w4_Path, _w4_root, _w4_sys
 
 
-from delivery_redaction import redact_for_delivery, requires_external_redaction
+from maya_core.delivery_redaction import redact_for_delivery, requires_external_redaction
 from models import BaseAgent
 
 

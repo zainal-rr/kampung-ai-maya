@@ -177,7 +177,7 @@ async def save_history_message(
     # save_history_message is the single funnel every turn already flows
     # through, so the window's turn store extends it rather than creating a
     # parallel write path. No-op while MAYA_CONTEXT_WINDOW=0 (default).
-    from context_window import record_context_turn
+    from maya_core.context_window import record_context_turn
 
     await record_context_turn(
         db_path,

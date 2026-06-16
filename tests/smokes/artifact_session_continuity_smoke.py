@@ -18,8 +18,8 @@ from openpyxl import load_workbook
 
 from maya_documents.artifact_preflight import ArtifactPreflight
 from maya_documents.artifact_quality import extract_docx_text, validate_docx_path
-from context_layers import init_context_layers_db
-from document_actions import DocumentActionRouter
+from maya_core.context_layers import init_context_layers_db
+from maya_documents.document_actions import DocumentActionRouter
 from harness_artifact_store import init_harness_artifact_db
 from harness_store import init_harness_db
 from lesson_store import init_lesson_db
@@ -45,7 +45,7 @@ async def main() -> None:
         db_path = str(Path(tmp) / "smoke.db")
         workspace = Path(tmp) / "Maya"
         await _init(db_path)
-        import document_actions as da
+        import maya_documents.document_actions as da
 
         old_draft = da.draft_markdown_with_gemini
         old_preflight = da.artifact_preflight_with_gemini

@@ -17,7 +17,7 @@ from openpyxl import Workbook, load_workbook
 
 from maya_documents.artifact_builder import ArtifactBuilder
 from maya_core.assistant import KampungAssistant
-from context_layers import init_context_layers_db
+from maya_core.context_layers import init_context_layers_db
 from harness_artifact_store import init_harness_artifact_db
 from harness_store import init_harness_db
 from lesson_store import init_lesson_db
@@ -46,7 +46,7 @@ async def main() -> None:
         _set_test_env(workspace)
 
         import maya_documents.artifact_semantic_resolver as semantic_resolver
-        import document_actions as da
+        import maya_documents.document_actions as da
         import travel_budget
 
         old_news = semantic_resolver.TheNews

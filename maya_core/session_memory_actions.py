@@ -4,7 +4,7 @@ import re
 
 import aiosqlite
 
-from curated_memory import (
+from maya_core.curated_memory import (
     CORE_SCOPE,
     PROFILE_SCOPE,
     add_curated_memory,

@@ -9,7 +9,7 @@ try:
 except ImportError:
     aiohttp = None
 
-from cost_tracker import record_usage
+from maya_core.cost_tracker import record_usage
 from maya_core.repo_paths import repo_root
 
 

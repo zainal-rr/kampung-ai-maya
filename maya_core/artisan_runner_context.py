@@ -13,7 +13,7 @@ import aiosqlite
 from dotenv import load_dotenv
 
 from maya_core.repo_paths import repo_root
-from cost_tracker import record_usage
+from maya_core.cost_tracker import record_usage
 from harness_artifact_store import record_structured_artifact
 from harness_models import local_artifact
 from harness_store import create_approval, init_harness_db, new_run_id, record_event, upsert_run

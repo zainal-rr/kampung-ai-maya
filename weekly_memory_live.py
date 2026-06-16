@@ -8,7 +8,7 @@ from typing import Awaitable, Callable
 import aiosqlite
 
 from maya_memory.canonical_memory import is_temporary_memory, subject_key_from_text, upsert_canonical_memory
-from cost_tracker import record_usage
+from maya_core.cost_tracker import record_usage
 from memory_audit import record_memory_audit_event
 from permission_policy import contains_sensitive_info
 

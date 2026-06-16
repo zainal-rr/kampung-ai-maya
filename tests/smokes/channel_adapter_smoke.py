@@ -12,8 +12,8 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-from channel_adapters import adapter_for, all_adapters
-from channel_gateway import channel_envelope, remember_channel_identity
+from maya_core.channel_adapters import adapter_for, all_adapters
+from maya_core.channel_gateway import channel_envelope, remember_channel_identity
 from storage import get_preference, init_db
 
 

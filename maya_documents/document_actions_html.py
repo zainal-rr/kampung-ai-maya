@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from document_actions_context import *
-from document_actions_content_helpers import _html_content, _looks_like_html_app
+from maya_documents.document_actions_context import *
+from maya_documents.document_actions_content_helpers import _html_content, _looks_like_html_app
 
 
 class DocumentHtmlMixin:

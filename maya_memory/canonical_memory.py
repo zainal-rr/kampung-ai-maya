@@ -5,7 +5,7 @@ from datetime import datetime, timedelta, timezone
 
 import aiosqlite
 
-from canonical_memory_embeddings import (
+from maya_memory.canonical_memory_embeddings import (
     COSINE_WEIGHT,
     EmbedCall,
     RERANK_CONFIDENCE,
@@ -14,8 +14,8 @@ from canonical_memory_embeddings import (
     default_embedding_model_name,
     rerank_with_embeddings,
 )
-from canonical_memory_fts import ensure_canonical_memory_fts, fts_rank_bonuses
-from canonical_memory_supersede import (
+from maya_memory.canonical_memory_fts import ensure_canonical_memory_fts, fts_rank_bonuses
+from maya_memory.canonical_memory_supersede import (
     archive_superseded_value,
     ensure_supersede_schema,
     load_existing_for_upsert,
@@ -23,9 +23,9 @@ from canonical_memory_supersede import (
     should_supersede,
     write_active_memory_row,
 )
-from canonical_memory_scoring import activation_score
-from canonical_memory_text import is_temporary_memory, memory_tokens, subject_key_from_text, value_from_text
-from canonical_memory_usage import mark_canonical_used
+from maya_memory.canonical_memory_scoring import activation_score
+from maya_memory.canonical_memory_text import is_temporary_memory, memory_tokens, subject_key_from_text, value_from_text
+from maya_memory.canonical_memory_usage import mark_canonical_used
 from memory_audit import record_memory_audit_event
 from memory_links import expand_with_neighbors
 
@@ -380,7 +380,7 @@ async def forget_canonical_memory(db_path: str, query: str) -> int:
         # working memory (docs/context_window_design_2026-06-12.md, C1/C5).
         # A no-match forget does NOT watermark — it would erase working memory
         # for nothing.
-        from context_window import on_canonical_forget
+        from maya_core.context_window import on_canonical_forget
 
         await on_canonical_forget(db_path)
     return len(matches)

@@ -126,7 +126,7 @@ def _hash(content: str) -> str:
 
 
 def embedding_rerank_enabled() -> bool:
-    from config import get_env
+    from maya_core.config import get_env
 
     return get_env("MEMORY_EMBED_RERANK_LIVE", "0") == "1" and bool(get_env("GOOGLE_API_KEY"))
 
@@ -138,7 +138,7 @@ def default_embedding_agent() -> EmbedCall | None:
     Malay query -> English fact. Lazy imports keep no-key environments free
     of provider SDKs.
     """
-    from config import get_env
+    from maya_core.config import get_env
 
     if not embedding_rerank_enabled():
         return None
@@ -159,6 +159,6 @@ def default_embedding_agent() -> EmbedCall | None:
 
 
 def default_embedding_model_name() -> str:
-    from config import get_env
+    from maya_core.config import get_env
 
     return get_env("GEMINI_EMBED_MODEL", "gemini-embedding-001")

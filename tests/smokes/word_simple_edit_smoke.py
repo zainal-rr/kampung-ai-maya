@@ -15,9 +15,9 @@ from pathlib import Path
 
 from maya_documents.artifact_preflight import ArtifactPreflight
 from maya_documents.artifact_quality import ArtifactQualityResult
-from document_actions import DocumentActionRouter
-from document_actions_context import LAST_DOC_KEY
-from document_actions_smoke_helpers import _init, _require
+from maya_documents.document_actions import DocumentActionRouter
+from maya_documents.document_actions_context import LAST_DOC_KEY
+from maya_documents.document_actions_smoke_helpers import _init, _require
 from office_modern_files import create_docx
 from storage import upsert_preference
 from telegram_delivery import split_file_markers
@@ -45,7 +45,7 @@ async def main() -> None:
         db_path = str(Path(tmp) / "smoke.db")
         await _init(db_path)
 
-        import document_actions as da
+        import maya_documents.document_actions as da
 
         old_preflight = da.artifact_preflight_with_gemini
         old_review = da.review_artifact_quality

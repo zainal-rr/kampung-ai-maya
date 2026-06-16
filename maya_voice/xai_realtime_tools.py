@@ -3,7 +3,7 @@ from __future__ import annotations
 import asyncio
 import os
 
-from cost_tracker import record_usage
+from maya_core.cost_tracker import record_usage
 from language_policy import language_instruction
 from models import TheSenses
 from xai_realtime_visual_context_tools import execute_visual_context_tool

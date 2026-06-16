@@ -14,7 +14,7 @@ import tempfile
 from pathlib import Path
 
 from maya_documents.artifact_preflight import ArtifactPreflight
-from document_actions import DocumentActionRouter
+from maya_documents.document_actions import DocumentActionRouter
 from markdown_drafter import MarkdownDraft
 from office_modern_files import create_pptx
 from pptx_quality_gate import PptxQualityResult
@@ -28,7 +28,7 @@ async def main() -> None:
         os.environ["MAYA_WORKSPACE_ROOT"] = str(Path(tmp) / "Maya")
         db_path = str(Path(tmp) / "test.db")
         await init_db(db_path)
-        import document_actions as da
+        import maya_documents.document_actions as da
 
         old_draft = da.draft_markdown_with_gemini
         old_should = da.should_use_model_draft

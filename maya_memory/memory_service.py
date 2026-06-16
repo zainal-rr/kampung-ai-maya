@@ -6,7 +6,7 @@ import re
 import aiosqlite
 
 from maya_memory.canonical_memory import search_canonical_direct_fact, search_relevant_canonical_memories
-from canonical_memory_text import subject_key_from_text
+from maya_memory.canonical_memory_text import subject_key_from_text
 from lesson_store import search_lessons
 from language_policy import is_language_topic, uses_malay_or_manglish, wants_malay_or_manglish
 from routine_store import list_routines

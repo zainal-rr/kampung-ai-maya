@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from config import get_env
+from maya_core.config import get_env
 from models import TheSenses, TheSteward
 from weekly_memory_live import ProviderCall
 

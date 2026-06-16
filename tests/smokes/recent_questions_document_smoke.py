@@ -19,7 +19,7 @@ if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
 from maya_documents.artifact_quality import extract_docx_text
-from document_actions import DocumentActionRouter
+from maya_documents.document_actions import DocumentActionRouter
 from storage import init_db, save_history_message
 
 

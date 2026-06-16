@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 
 from maya_core.active_context import active_context_instruction
 from maya_core.assistant import KampungAssistant
-from curated_memory import curated_memory_prompt
+from maya_core.curated_memory import curated_memory_prompt
 
 
 async def build_imac_voice_context(assistant: KampungAssistant) -> str:

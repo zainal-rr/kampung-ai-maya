@@ -21,7 +21,7 @@ import re
 import tempfile
 from pathlib import Path
 
-from context_window import (
+from maya_core.context_window import (
     assemble_recent_context,
     context_window_enabled,
     on_canonical_forget,

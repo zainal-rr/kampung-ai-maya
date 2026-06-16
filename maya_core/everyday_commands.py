@@ -4,8 +4,8 @@ from pathlib import Path
 
 from maya_core.approval_inbox import approval_inbox_text
 from maya_core.artisan_runner import latest_artisan_delivery_text
-from daily_cockpit import daily_cockpit_text, focus_text, project_cockpit_text
-from desktop_file_opener import DesktopFileOpener
+from maya_core.daily_cockpit import daily_cockpit_text, focus_text, project_cockpit_text
+from maya_core.desktop_file_opener import DesktopFileOpener
 from harness_artifact_store import latest_artifacts
 from maya_desk import maya_desk_text
 from storage import get_preference

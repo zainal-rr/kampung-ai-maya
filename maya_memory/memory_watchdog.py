@@ -5,7 +5,7 @@ import asyncio
 
 import aiosqlite
 
-from curated_memory import CORE_SCOPE, PROFILE_SCOPE
+from maya_core.curated_memory import CORE_SCOPE, PROFILE_SCOPE
 from memory_canaries import check_memory_canaries, seed_memory_canaries
 
 AUDIT_SILENCE_HOURS = 24

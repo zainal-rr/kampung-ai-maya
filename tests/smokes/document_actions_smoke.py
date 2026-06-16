@@ -15,7 +15,7 @@ import zipfile
 from pathlib import Path
 
 from maya_core.assistant import KampungAssistant
-from context_layers import init_context_layers_db
+from maya_core.context_layers import init_context_layers_db
 from lesson_store import init_lesson_db
 from project_store import active_project
 from route_tracker import last_route_text
@@ -27,7 +27,7 @@ from telegram_delivery import split_file_markers
 from maya_documents.artifact_preflight import ArtifactPreflight
 from markdown_drafter import MarkdownDraft, _apply_source_quality, should_ground_topic
 from openpyxl import load_workbook
-from document_actions_smoke_helpers import (
+from maya_documents.document_actions_smoke_helpers import (
     FakeBridge,
     _failure_smoke,
     _fake_artifact_quality_review,
@@ -65,7 +65,7 @@ async def main() -> None:
         os.environ["MAYA_PROJECT_ROOTS"] = str(root)
         await _init(db_path)
         await upsert_preference(db_path, "pref_no_dash", "no dash symbols in answers", source="smoke")
-        import document_actions as da
+        import maya_documents.document_actions as da
         old_draft = da.draft_markdown_with_gemini
         old_html = da.draft_html_with_artisan
         old_html_fallback = da.draft_html_with_gemini

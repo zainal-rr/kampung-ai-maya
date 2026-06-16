@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from document_actions_context import *
-from document_actions_word_repair_templates import _router_putty_repair_markdown
+from maya_documents.document_actions_context import *
+from maya_documents.document_actions_word_repair_templates import _router_putty_repair_markdown
 
 
 def _word_repair_request(topic: str, issues: str, current: str) -> str:

@@ -21,8 +21,8 @@ from dataclasses import dataclass, field
 
 from maya_documents.artifact_clarification_state import pending_topic_from_request
 from maya_documents.artifact_semantic_enrichment import confidence, infer_domain, merged_parameters, semantic_topic
-from cost_tracker import record_usage
-from domain_knowledge import strong_domain_skill_id
+from maya_core.cost_tracker import record_usage
+from maya_core.domain_knowledge import strong_domain_skill_id
 from models import TheNews
 
 

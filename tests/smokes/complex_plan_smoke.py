@@ -14,7 +14,7 @@ import tempfile
 from pathlib import Path
 
 from maya_core.assistant_model_lanes import ModelLanes
-from complex_workflow import complex_workflow_status
+from maya_core.complex_workflow import complex_workflow_status
 
 
 class FakeMind:

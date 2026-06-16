@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from document_natural_artifact_parser import (
+from maya_documents.document_natural_artifact_parser import (
     clean_topic,
     clean_topic_part,
     normalize_artifact_command_text,

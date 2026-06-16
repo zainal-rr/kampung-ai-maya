@@ -12,7 +12,7 @@ import asyncio
 from pathlib import Path
 import tempfile
 
-from context_layers import init_context_layers_db
+from maya_core.context_layers import init_context_layers_db
 from lesson_store import init_lesson_db
 from routine_store import init_routine_db
 from session_memory_store import init_session_memory_db

@@ -5,7 +5,7 @@ import re
 from dataclasses import dataclass
 from typing import Awaitable, Callable
 
-from canonical_memory_text import is_temporary_memory, memory_tokens, subject_key_from_text, value_from_text
+from maya_memory.canonical_memory_text import is_temporary_memory, memory_tokens, subject_key_from_text, value_from_text
 from permission_policy import contains_sensitive_info
 
 ProviderCall = Callable[[str], Awaitable[str]]
@@ -196,13 +196,13 @@ def _validate(data: dict[str, object], text: str, fallback: ExtractionResult) ->
 
 
 def live_extraction_enabled() -> bool:
-    from config import get_env
+    from maya_core.config import get_env
 
     return get_env("MEMORY_EXTRACTION_LIVE", "0") == "1"
 
 
 def shadow_extraction_enabled() -> bool:
-    from config import get_env
+    from maya_core.config import get_env
 
     return get_env("MEMORY_EXTRACTION_SHADOW", "0") == "1"
 
@@ -214,7 +214,7 @@ def default_extraction_agent() -> ProviderCall | None:
     deterministic result is saved). Both require GOOGLE_API_KEY. Heavy
     imports stay lazy so no-key environments never load provider SDKs.
     """
-    from config import get_env
+    from maya_core.config import get_env
 
     if not (live_extraction_enabled() or shadow_extraction_enabled()):
         return None

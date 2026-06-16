@@ -15,7 +15,7 @@ from pathlib import Path
 
 from openpyxl import load_workbook
 
-from context_layers import init_context_layers_db
+from maya_core.context_layers import init_context_layers_db
 from harness_artifact_store import init_harness_artifact_db
 from harness_store import init_harness_db
 from lesson_store import init_lesson_db
@@ -37,7 +37,7 @@ async def main() -> None:
         db_path = str(Path(tmp) / "smoke.db")
         await _init(db_path)
 
-        import document_actions as da
+        import maya_documents.document_actions as da
         import maya_documents.artifact_semantic_resolver as semantic_resolver
         import travel_budget
 

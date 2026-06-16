@@ -14,7 +14,7 @@ import tempfile
 from pathlib import Path
 
 from maya_core.assistant import KampungAssistant
-from cost_tracker import usage_summary_text
+from maya_core.cost_tracker import usage_summary_text
 from lesson_store import init_lesson_db
 from routine_store import init_routine_db
 from route_tracker import last_route_text

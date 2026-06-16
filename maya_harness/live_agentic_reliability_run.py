@@ -115,7 +115,7 @@ def _dry_run_scenario(scenario: AgenticScenario, night_id: str):
 async def _seed_complex_workflow(db_path: str, request: str) -> str:
     """Create the /complex execution workflow exactly as the complex lane does,
     with a canned plan so the approval-gate machinery is tested without LLMs."""
-    from complex_agentic_bridge import create_agentic_workflow_from_complex_plan, format_agentic_workflow_notice
+    from maya_core.complex_agentic_bridge import create_agentic_workflow_from_complex_plan, format_agentic_workflow_notice
 
     workflow = await create_agentic_workflow_from_complex_plan(
         db_path,

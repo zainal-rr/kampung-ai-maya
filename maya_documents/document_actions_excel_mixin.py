@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from document_actions_context import *
+from maya_documents.document_actions_context import *
 from maya_documents.artifact_retry_policy import artifact_qa_max_attempts
-from document_actions_content_helpers import (
+from maya_documents.document_actions_content_helpers import (
     _attach,
     _budget_filename_topic,
     _budget_rows,
@@ -18,7 +18,7 @@ from document_actions_content_helpers import (
     _task_tracker_topic,
     _travel_budget_topic,
 )
-from document_actions_office_sessions import _office_session_edit_topic
+from maya_documents.document_actions_office_sessions import _office_session_edit_topic
 from excel_species import detect_excel_species
 from excel_species_draft import excel_species_prompt_context
 from maya_documents.delivery_policy import excel_quality_hard_block

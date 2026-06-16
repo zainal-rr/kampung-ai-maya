@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from document_natural_artifact_parser import artifact_intent_clarification
-from document_request_parser import document_request
+from maya_documents.document_natural_artifact_parser import artifact_intent_clarification
+from maya_documents.document_request_parser import document_request
 
 
 def is_fresh_artifact_request(text: str) -> bool:

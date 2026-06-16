@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from channel_adapters import adapter_for
+from maya_core.channel_adapters import adapter_for
 from storage import upsert_preference
 
 

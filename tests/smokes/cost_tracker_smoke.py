@@ -12,7 +12,7 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-from cost_tracker import record_usage, usage_summary_text
+from maya_core.cost_tracker import record_usage, usage_summary_text
 from storage import init_db
 
 

@@ -12,10 +12,10 @@ when attaching a Telegram file versus opening/focusing a native iMac app.
 
 from __future__ import annotations
 
-from document_actions_context import *
+from maya_documents.document_actions_context import *
 from maya_documents.artifact_retry_policy import artifact_qa_max_attempts, qa_retry_exhausted_message
 from safe_paths import resolve_safe_path
-from document_actions_content_helpers import (
+from maya_documents.document_actions_content_helpers import (
     _append_text,
     _artifact_kind,
     _attach,
@@ -24,17 +24,17 @@ from document_actions_content_helpers import (
     _remember_draft_artifact,
     _should_defer_html_app_to_artisan,
 )
-from document_actions_word_helpers import _document_edit_request
-from created_file_summary import created_file_content_summary
+from maya_documents.document_actions_word_helpers import _document_edit_request
+from maya_core.created_file_summary import created_file_content_summary
 from maya_documents.artifact_clarification_state import consume_pending_artifact_request, save_pending_artifact_request
 from maya_documents.artifact_discourse_context import resolve_referenced_artifact_topic
 from maya_documents.artifact_semantic_enrichment import enrich_artifact_topic
 from maya_documents.artifact_semantic_resolver import resolve_semantic_artifact_intent
 from maya_documents.artifact_file_state import record_artifact_fingerprint
 from maya_voice.work_runtime import set_current_voice_work_phase
-from document_actions_html import DocumentHtmlMixin
-from document_actions_office import DocumentOfficeMixin
-from document_actions_word import DocumentWordMixin
+from maya_documents.document_actions_html import DocumentHtmlMixin
+from maya_documents.document_actions_office import DocumentOfficeMixin
+from maya_documents.document_actions_word import DocumentWordMixin
 from recent_questions_document import recent_questions_requested, requested_recent_question_count
 
 
@@ -56,10 +56,10 @@ _PATCHABLE_SYMBOLS = (
 
 def _sync_patchable_symbols() -> None:
     import sys
-    import document_actions_context
-    import document_actions_html
-    import document_actions_office
-    import document_actions_word
+    import maya_documents.document_actions_context as document_actions_context
+    import maya_documents.document_actions_html as document_actions_html
+    import maya_documents.document_actions_office as document_actions_office
+    import maya_documents.document_actions_word as document_actions_word
 
     current = sys.modules[__name__]
     modules = (document_actions_context, document_actions_html, document_actions_office, document_actions_word)

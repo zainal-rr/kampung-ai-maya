@@ -15,8 +15,8 @@ from pathlib import Path
 import aiosqlite
 
 from maya_memory.canonical_memory import search_canonical_direct_fact, search_relevant_canonical_memories, upsert_canonical_memory
-from canonical_memory_inspector import inspect_canonical_memory
-from canonical_memory_pin import set_canonical_memory_pin
+from maya_memory.canonical_memory_inspector import inspect_canonical_memory
+from maya_memory.canonical_memory_pin import set_canonical_memory_pin
 from learning_pipeline import LearningPipeline
 from lesson_store import init_lesson_db
 from memory_control import forget_memory
@@ -64,7 +64,7 @@ async def main() -> None:
                 """
             )
             await db.commit()
-        from canonical_memory_migration import migrate_memory_to_canonical
+        from maya_memory.canonical_memory_migration import migrate_memory_to_canonical
 
         report = await migrate_memory_to_canonical(db_path)
         _require("Canonical memory migration:" in report, "migration report missing")

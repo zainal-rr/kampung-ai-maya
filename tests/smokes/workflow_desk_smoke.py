@@ -12,7 +12,7 @@ import asyncio
 from pathlib import Path
 import tempfile
 
-from context_layers import init_context_layers_db
+from maya_core.context_layers import init_context_layers_db
 from harness_artifact_store import record_structured_artifact
 from harness_models import local_artifact
 from harness_store import list_active_runs, upsert_run

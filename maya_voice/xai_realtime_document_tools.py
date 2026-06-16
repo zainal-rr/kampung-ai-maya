@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from document_actions_word_helpers import _document_edit_request
-from document_actions import DocumentActionRouter
+from maya_documents.document_actions_word_helpers import _document_edit_request
+from maya_documents.document_actions import DocumentActionRouter
 from route_tracker import record_route
 
 

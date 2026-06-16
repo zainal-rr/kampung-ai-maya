@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import os
 
-from complex_agentic_bridge import (
+from maya_core.complex_agentic_bridge import (
     create_agentic_workflow_from_complex_plan,
     format_agentic_workflow_notice,
 )
-from complex_workflow import run_complex_plan_workflow
-from cost_tracker import record_usage
+from maya_core.complex_workflow import run_complex_plan_workflow
+from maya_core.cost_tracker import record_usage
 from lane_prompts import MIND_ESCALATION_PROMPT
 
 
@@ -134,7 +134,7 @@ def _compact_block(text: str, limit: int) -> str:
 
 
 def _wants_agentic_workflow(text: str) -> bool:
-    from complex_agentic_bridge import should_create_agentic_workflow
+    from maya_core.complex_agentic_bridge import should_create_agentic_workflow
 
     return should_create_agentic_workflow(text)
 

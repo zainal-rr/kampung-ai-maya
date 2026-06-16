@@ -13,7 +13,7 @@ import tempfile
 from pathlib import Path
 
 import telegram_voice_input as voice_input
-from cost_tracker import usage_summary_text
+from maya_core.cost_tracker import usage_summary_text
 from storage import init_db
 
 

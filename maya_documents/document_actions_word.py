@@ -1,10 +1,10 @@
 from __future__ import annotations
 
-from document_actions_context import *
+from maya_documents.document_actions_context import *
 from maya_documents.artifact_file_state import artifact_changed_since_recorded
 from maya_documents.artifact_retry_policy import artifact_qa_max_attempts
-from document_actions_content_helpers import _attach
-from document_actions_word_helpers import (
+from maya_documents.document_actions_content_helpers import _attach
+from maya_documents.document_actions_word_helpers import (
     _backup_word_file,
     _draft_override_requested,
     _edited_word_topic,

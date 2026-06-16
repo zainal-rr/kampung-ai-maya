@@ -10,7 +10,7 @@ from pathlib import Path
 import aiosqlite
 
 from maya_core.repo_paths import repo_root
-from curated_memory import (
+from maya_core.curated_memory import (
     CORE_SCOPE,
     MAYA_CORE_CAP,
     PROFILE_SCOPE,

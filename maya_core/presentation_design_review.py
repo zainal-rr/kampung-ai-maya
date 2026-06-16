@@ -4,7 +4,7 @@ import os
 import re
 from pathlib import Path
 
-from cost_tracker import record_usage
+from maya_core.cost_tracker import record_usage
 from maya_documents.artifact_quality import artifact_skill_context
 from models import TheSenses, TheSteward
 from pptx_slide_renderer import render_pptx_slides

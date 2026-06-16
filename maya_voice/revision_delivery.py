@@ -4,7 +4,7 @@ import asyncio
 from pathlib import Path
 from typing import Any
 
-from created_file_opener import open_created_file
+from maya_core.created_file_opener import open_created_file
 from maya_voice.artifact_manifest import get_manifest, record_render_report
 from maya_voice.word_revision import (
     apply_docx_postcondition,

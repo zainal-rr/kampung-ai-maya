@@ -15,7 +15,7 @@ from pathlib import Path
 
 from openpyxl import load_workbook
 
-from document_actions import DocumentActionRouter
+from maya_documents.document_actions import DocumentActionRouter
 from storage import init_db
 from telegram_delivery import split_file_markers
 

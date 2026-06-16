@@ -14,7 +14,7 @@ import zipfile
 from pathlib import Path
 
 import imac_workflows
-import document_actions
+import maya_documents.document_actions as document_actions
 from maya_core.assistant import KampungAssistant
 from maya_browser.browser_control import BrowserClickResult, BrowserPage
 from imac_workflows import ImacWorkflowRouter

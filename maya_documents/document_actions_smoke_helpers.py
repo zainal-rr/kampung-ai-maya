@@ -6,7 +6,7 @@ import zipfile
 from pathlib import Path
 
 from maya_core.assistant import KampungAssistant
-from context_layers import init_context_layers_db
+from maya_core.context_layers import init_context_layers_db
 from lesson_store import init_lesson_db
 from project_store import active_project
 from routine_store import init_routine_db
@@ -18,7 +18,7 @@ from maya_documents.artifact_quality import ArtifactQualityResult
 from markdown_drafter import MarkdownDraft, _apply_source_quality
 from openpyxl import load_workbook
 from telegram_delivery import split_file_markers
-from document_actions_smoke_fakes import (
+from maya_documents.document_actions_smoke_fakes import (
     _fake_artifact_quality_review,
     _fake_bad_word_edit,
     _fake_draft,
@@ -89,7 +89,7 @@ def _require(condition: bool, message: str) -> None:
 
 
 async def _model_draft_smoke(db_path: str) -> None:
-    import document_actions as da
+    import maya_documents.document_actions as da
     from route_tracker import last_route_text
 
     old_draft = da.draft_markdown_with_gemini
@@ -124,7 +124,7 @@ async def _model_draft_smoke(db_path: str) -> None:
 
 
 async def _failure_smoke(db_path: str) -> None:
-    import document_actions as da
+    import maya_documents.document_actions as da
 
     old_draft = da.draft_markdown_with_gemini
     old_html = da.draft_html_with_artisan

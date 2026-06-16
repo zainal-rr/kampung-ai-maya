@@ -21,8 +21,8 @@ from pptx import Presentation
 
 from maya_documents.artifact_preflight import ArtifactPreflight
 from maya_documents.artifact_quality import ArtifactQualityResult
-from document_actions_smoke_fakes import _fake_artifact_quality_review, _fake_draft, _fake_html_draft
-from document_actions_smoke_helpers import FakeBridge, _init
+from maya_documents.document_actions_smoke_fakes import _fake_artifact_quality_review, _fake_draft, _fake_html_draft
+from maya_documents.document_actions_smoke_helpers import FakeBridge, _init
 from markdown_drafter import MarkdownDraft
 from route_tracker import last_route_text
 from storage import get_preference
@@ -113,7 +113,7 @@ def _patched_environment(root: Path):
 def _patched_models():
     import maya_documents.artifact_builder as artifact_builder
     import maya_core.assistant_routes as assistant_routes
-    import document_actions as da
+    import maya_documents.document_actions as da
 
     old = {
         "preflight": da.artifact_preflight_with_gemini,

@@ -9,8 +9,8 @@ del _w4_Path, _w4_root, _w4_sys
 
 
 from maya_core.assistant_text import strip_wake_prefix
-from document_natural_artifact_parser import artifact_intent_clarification
-from document_request_parser import document_request
+from maya_documents.document_natural_artifact_parser import artifact_intent_clarification
+from maya_documents.document_request_parser import document_request
 
 
 POSITIVE_CASES = (

@@ -11,7 +11,7 @@ del _w4_Path, _w4_root, _w4_sys
 import asyncio
 import tempfile
 
-from curated_memory import (
+from maya_core.curated_memory import (
     CORE_SCOPE,
     PROFILE_SCOPE,
     add_curated_memory,

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from typing import Awaitable, Callable
 from urllib.parse import urlparse
 
-from cost_tracker import record_usage
+from maya_core.cost_tracker import record_usage
 from google import genai
 from google.genai import types
 from markdown_drafter import _sources_from_response

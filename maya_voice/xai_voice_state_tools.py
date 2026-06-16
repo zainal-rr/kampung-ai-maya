@@ -15,16 +15,16 @@ async def read_maya_state(db_path: str, question: str) -> str:
     if "task" in lowered:
         return await _task_text(db_path)
     if "project" in lowered:
-        from daily_cockpit import project_cockpit_text
+        from maya_core.daily_cockpit import project_cockpit_text
         return await project_cockpit_text(db_path)
     if "focus" in lowered:
-        from daily_cockpit import focus_text
+        from maya_core.daily_cockpit import focus_text
         return await focus_text(db_path)
     if "today" in lowered or "morning" in lowered:
-        from daily_cockpit import daily_cockpit_text
+        from maya_core.daily_cockpit import daily_cockpit_text
         return await daily_cockpit_text(db_path, "imac")
     if "cost" in lowered or "usage" in lowered:
-        from cost_tracker import usage_summary_text
+        from maya_core.cost_tracker import usage_summary_text
         return await usage_summary_text(db_path)
     if "route" in lowered:
         from route_tracker import last_route_text

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from context_window import assemble_recent_context, resolve_route
-from curated_memory import curated_memory_prompt
+from maya_core.context_window import assemble_recent_context, resolve_route
+from maya_core.curated_memory import curated_memory_prompt
 from project_store import build_project_context
 from quantum_advisory import quantum_context_hint
 from session_compactor import build_session_context

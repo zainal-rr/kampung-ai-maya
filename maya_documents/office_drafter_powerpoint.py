@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from deck_species import detect_deck_species
+from maya_documents.deck_species import detect_deck_species
 from office_text_utils import _complete, _plain
 from office_drafter_deck_scenarios import (
     _browser_deck,

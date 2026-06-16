@@ -6,7 +6,7 @@ import asyncio
 from dataclasses import dataclass
 from urllib.parse import urlparse
 
-from cost_tracker import record_usage
+from maya_core.cost_tracker import record_usage
 from models import TheSenses
 from google import genai
 from google.genai import types

@@ -30,9 +30,9 @@ from dataclasses import dataclass
 from datetime import datetime, timezone
 
 from maya_memory.canonical_memory import init_canonical_memory_db, upsert_canonical_memory
-from canonical_memory_dedup import find_semantic_duplicate
-from canonical_memory_embeddings import default_embedding_agent
-from canonical_memory_usage import mark_canonical_used
+from maya_memory.canonical_memory_dedup import find_semantic_duplicate
+from maya_memory.canonical_memory_embeddings import default_embedding_agent
+from maya_memory.canonical_memory_usage import mark_canonical_used
 from memory_links import init_memory_links_db
 from nightly_consolidation_helpers import (
     audit_nightly,

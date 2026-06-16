@@ -19,7 +19,7 @@ from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filters
 
 from maya_core.assistant import KampungAssistant
-from channel_gateway import channel_envelope
+from maya_core.channel_gateway import channel_envelope
 from telegram_audit import record_telegram_command
 from telegram_channel_audit import record_delivery_event, record_turn_event
 from telegram_command_direct import is_direct_command_reply

@@ -13,12 +13,12 @@ asks for a copy or new version.
 
 from __future__ import annotations
 
-from document_actions_context import *
-from created_file_summary import created_file_content_summary
-from deck_species import deck_species_prompt_context, detect_deck_species
-from document_actions_content_helpers import _attach, _quick_request, _strip_quality_words
-from document_actions_excel_mixin import DocumentExcelMixin
-from document_actions_office_sessions import _office_session_edit_topic
+from maya_documents.document_actions_context import *
+from maya_core.created_file_summary import created_file_content_summary
+from maya_documents.deck_species import deck_species_prompt_context, detect_deck_species
+from maya_documents.document_actions_content_helpers import _attach, _quick_request, _strip_quality_words
+from maya_documents.document_actions_excel_mixin import DocumentExcelMixin
+from maya_documents.document_actions_office_sessions import _office_session_edit_topic
 from maya_voice.work_runtime import set_current_voice_work_phase
 from maya_documents.delivery_policy import pptx_quality_hard_block
 from office_edit_helpers import (

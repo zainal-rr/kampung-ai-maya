@@ -12,9 +12,9 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-import document_actions as da
+import maya_documents.document_actions as da
 from maya_documents.artifact_preflight import ArtifactPreflight
-from document_actions_word_helpers import _document_edit_request
+from maya_documents.document_actions_word_helpers import _document_edit_request
 from markdown_drafter import MarkdownDraft
 from office_edit_helpers import apply_simple_xlsx_edit
 from office_modern_files import create_pptx, create_xlsx

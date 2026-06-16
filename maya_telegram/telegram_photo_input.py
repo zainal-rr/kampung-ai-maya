@@ -4,7 +4,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from cost_tracker import record_usage
+from maya_core.cost_tracker import record_usage
 from language_policy import language_instruction
 from models import TheSenses
 
