@@ -468,7 +468,7 @@ def plan_batches(wave: int, bs: int = 15) -> list[dict]:
                  "moves": [(s, dest_pkg(s)) for s in b["items"]]} for b in chunks(mov, max(3, min(6, bs)))]
     elif wave == 5:
         shims = [s for s in names if is_shim(s)]
-        out += [{**b, "kind": "deshim", "full_gate_each": True} for b in chunks(shims, 10)]
+        out += [{**b, "kind": "deshim", "full_gate_each": True} for b in chunks(shims, bs)]
     elif wave == 6:
         out += [{"wave": 6, "kind": "app_verify", "items": ["kampung_ai_app"]}]
     return out
