@@ -1,45 +1,4 @@
-from __future__ import annotations
-
-DIRECT_COMMAND_PREFIXES = (
-    "Telegram shortcuts:",
-    "Maya shortcuts:",
-    "/",
-    "Telegram voice replies",
-    "Use /remember",
-    "Use /forget",
-    "Use /createskill",
-    "Use /complex",
-    "Usage estimate,",
-    "Last route:",
-    "Last Telegram delivery:",
-    "No Telegram delivery event",
-    "Last Telegram turn:",
-    "No Telegram turn event",
-    "Last artifact review:",
-    "No artifact review",
-    "Context window:",
-    "No route recorded yet.",
-    "Maya status:",
-    "Memory sources:",
-    "Forget result:",
-    "Memory cleanup:",
-    "Weekly memory status:",
-    "Weekly memory run completed.",
-    "Self heal check:",
-    "Memory self-heal",
-    "Memory self heal",
-    "Self-heal aborted.",
-    "Rejected. /selfheal force",
-    "Provider readiness:",
-    "I can see now.",
-    "I stopped seeing.",
-    "I can see your screen now.",
-    "I stopped looking at your screen.",
-    "Use /screen to toggle",
-    "I could not open the local camera preview.",
-    "Local camera preview is disabled.",
-)
-
-
-def is_direct_command_reply(text: str) -> bool:
-    return text.startswith(DIRECT_COMMAND_PREFIXES)
+# W4 compatibility shim — re-exports the relocated module (removed/converted in Wave 5).
+from maya_telegram import telegram_command_direct as _m
+import sys as _sys
+_sys.modules[__name__] = _m
