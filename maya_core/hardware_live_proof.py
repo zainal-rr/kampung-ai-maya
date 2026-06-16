@@ -4,6 +4,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from dependency_manifest import dependency_statuses
+from maya_core.repo_paths import repo_root
 
 
 @dataclass(frozen=True)
@@ -15,11 +16,11 @@ class ProofItem:
 
 def hardware_live_proof_items() -> list[ProofItem]:
     return [
-        _file_item("Mudra adapter prepared", "mudra_adapter.py"),
-        _file_item("Omi adapter prepared", "omi_adapter.py"),
-        _file_item("Omi context sieve prepared", "omi_context_sieve.py"),
-        _file_item("hardware event store prepared", "hardware_event_store.py"),
-        _file_item("voice handoff prepared", "xai_voice_handoff.py"),
+        _file_item("Mudra adapter prepared", "maya_core/mudra_adapter.py"),
+        _file_item("Omi adapter prepared", "maya_core/omi_adapter.py"),
+        _file_item("Omi context sieve prepared", "maya_core/omi_context_sieve.py"),
+        _file_item("hardware event store prepared", "maya_core/hardware_event_store.py"),
+        _file_item("voice handoff prepared", "maya_voice/xai_voice_handoff.py"),
         _provider_item("xAI/Ara key readiness", "env.xai"),
         _provider_item("Gemini readiness", "env.gemini"),
         ProofItem(
@@ -50,7 +51,7 @@ def format_hardware_live_proof() -> str:
 
 
 def _file_item(name: str, relative: str) -> ProofItem:
-    path = Path(relative)
+    path = repo_root(__file__) / relative
     return ProofItem(name, "pass" if path.exists() else "missing", relative)
 
 
