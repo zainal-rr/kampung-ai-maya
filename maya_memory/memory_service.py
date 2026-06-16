@@ -7,8 +7,8 @@ import aiosqlite
 
 from maya_memory.canonical_memory import search_canonical_direct_fact, search_relevant_canonical_memories
 from maya_memory.canonical_memory_text import subject_key_from_text
-from lesson_store import search_lessons
-from language_policy import is_language_topic, uses_malay_or_manglish, wants_malay_or_manglish
+from maya_core.lesson_store import search_lessons
+from maya_core.language_policy import is_language_topic, uses_malay_or_manglish, wants_malay_or_manglish
 from routine_store import list_routines
 from time_parser import format_local_time, weekday_name
 

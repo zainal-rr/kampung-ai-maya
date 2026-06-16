@@ -4,7 +4,7 @@ import re
 from datetime import datetime
 
 from maya_core.active_context_models import ActiveContext
-from flight_search_models import FlightDetails, KNOWN_DESTINATIONS, MONTHS
+from maya_travel.flight_search_models import FlightDetails, KNOWN_DESTINATIONS, MONTHS
 
 
 def extract_flight_details(question: str, context: ActiveContext) -> FlightDetails:

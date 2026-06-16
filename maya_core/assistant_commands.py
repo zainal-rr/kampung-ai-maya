@@ -28,10 +28,10 @@ from maya_core.artisan_runner import latest_artisan_summary_text, latest_artisan
 from maya_documents.artifact_review_store import resolve_review_activity_text
 from maya_core.assistant_task_helpers import create_sensitive_send_task, format_open_tasks, parse_task_delete_request
 from maya_documents.document_actions import DocumentActionRouter
-from everyday_commands import EverydayCommandRouter
-from file_actions import FileActionRouter
-from drawing_actions import DrawingActionRouter
-from imac_workflows import ImacWorkflowRouter
+from maya_core.everyday_commands import EverydayCommandRouter
+from maya_core.file_actions import FileActionRouter
+from maya_core.drawing_actions import DrawingActionRouter
+from maya_core.imac_workflows import ImacWorkflowRouter
 from local_actions import LocalActionRouter
 from memory_service import MemoryService
 from permission_policy import contains_sensitive_info, hard_no_private_exposure_text, is_private_exposure

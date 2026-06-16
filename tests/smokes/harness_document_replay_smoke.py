@@ -12,12 +12,12 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-import harness_tools
-from harness_artifact_store import latest_artifacts
-from harness_models import local_artifact
-from harness_state import initial_harness_state
-from harness_store import init_harness_db
-from harness_graph import HarnessGraphRunner
+import maya_harness.harness_tools as harness_tools
+from maya_harness.harness_artifact_store import latest_artifacts
+from maya_harness.harness_models import local_artifact
+from maya_harness.harness_state import initial_harness_state
+from maya_harness.harness_store import init_harness_db
+from maya_harness.harness_graph import HarnessGraphRunner
 from storage import init_db
 
 

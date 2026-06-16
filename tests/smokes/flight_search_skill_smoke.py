@@ -14,7 +14,7 @@ import re
 import tempfile
 from pathlib import Path
 
-from flight_search_skill import FlightSearchSkill
+from maya_travel.flight_search_skill import FlightSearchSkill
 from storage import init_db
 
 

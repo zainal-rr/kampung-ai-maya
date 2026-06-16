@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from frequent_sites_catalog import FREQUENT_SITES, FrequentSite, FrequentSiteMatch
+from maya_core.frequent_sites_catalog import FREQUENT_SITES, FrequentSite, FrequentSiteMatch
 
 
 def find_frequent_site_request(text: str) -> FrequentSiteMatch | None:

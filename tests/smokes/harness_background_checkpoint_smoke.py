@@ -12,9 +12,9 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-import harness_tools
-from harness_graph import HarnessGraphRunner
-from harness_store import init_harness_db
+import maya_harness.harness_tools as harness_tools
+from maya_harness.harness_graph import HarnessGraphRunner
+from maya_harness.harness_store import init_harness_db
 from storage import init_db
 
 

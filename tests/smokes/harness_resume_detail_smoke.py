@@ -11,9 +11,9 @@ del _w4_Path, _w4_root, _w4_sys
 import asyncio
 import tempfile
 
-from harness_resume import build_resume_summary
-from harness_state import initial_harness_state
-from harness_store import init_harness_db, upsert_run
+from maya_harness.harness_resume import build_resume_summary
+from maya_harness.harness_state import initial_harness_state
+from maya_harness.harness_store import init_harness_db, upsert_run
 from storage import init_db
 
 

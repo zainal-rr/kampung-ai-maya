@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import aiosqlite
 
-from harness_store import init_harness_db
+from maya_harness.harness_store import init_harness_db
 from skill_store import init_skill_db
 from storage import list_tasks
 

@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import re
 
-from excel_species import detect_excel_species, species_rows_structured
-from excel_species_draft import rows_from_species_draft, seed_rows
+from maya_documents.excel_species import detect_excel_species, species_rows_structured
+from maya_documents.excel_species_draft import rows_from_species_draft, seed_rows
 from word_quality import canonicalize_word_sections
 from office_drafter_powerpoint import _clean_slides, _general_powerpoint_slides, _scenario_powerpoint_slides
 from office_text_utils import _plain

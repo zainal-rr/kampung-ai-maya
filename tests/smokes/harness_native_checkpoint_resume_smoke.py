@@ -12,9 +12,9 @@ import asyncio
 import json
 import tempfile
 
-import harness_tools
-from harness_router import HarnessRouter
-from harness_store import get_active_run, init_harness_db
+import maya_harness.harness_tools as harness_tools
+from maya_harness.harness_router import HarnessRouter
+from maya_harness.harness_store import get_active_run, init_harness_db
 from storage import init_db
 
 

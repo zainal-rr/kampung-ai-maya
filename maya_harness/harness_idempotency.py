@@ -5,8 +5,8 @@ import json
 
 import aiosqlite
 
-from harness_store import init_harness_db
-from harness_tools import HarnessToolResult
+from maya_harness.harness_store import init_harness_db
+from maya_harness.harness_tools import HarnessToolResult
 
 
 UNSAFE_REPLAY_ACTIONS = ("browser:click", "browser:fill", "app:", "send", "payment", "booking", "external_image")

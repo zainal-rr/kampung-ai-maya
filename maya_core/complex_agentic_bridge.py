@@ -3,9 +3,9 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from harness_state import initial_harness_state
-from harness_store import create_approval, new_run_id, record_event, upsert_run
-from harness_workflows import classify_workflow
+from maya_harness.harness_state import initial_harness_state
+from maya_harness.harness_store import create_approval, new_run_id, record_event, upsert_run
+from maya_harness.harness_workflows import classify_workflow
 
 
 @dataclass(frozen=True)

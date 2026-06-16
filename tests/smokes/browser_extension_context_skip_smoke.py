@@ -22,7 +22,7 @@ from pathlib import Path
 
 from maya_browser.browser_control import BrowserPage
 from maya_browser.browser_control_js import _text_hash
-from flight_search_skill import FlightSearchSkill
+from maya_travel.flight_search_skill import FlightSearchSkill
 from flight_search_skill_smoke import FakeBridge
 from flight_deeplink_smoke import RESULTS_PAGE
 from stay_booking_skill import BookingComHotelSkill

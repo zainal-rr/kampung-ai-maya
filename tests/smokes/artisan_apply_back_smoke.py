@@ -15,7 +15,7 @@ import tempfile
 from pathlib import Path
 
 from maya_core.artisan_apply import apply_latest_artisan_repo_changes
-from harness_store import init_harness_db, upsert_run
+from maya_harness.harness_store import init_harness_db, upsert_run
 from storage import init_db
 
 

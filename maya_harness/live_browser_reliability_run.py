@@ -31,7 +31,7 @@ from maya_browser.browser_run_evidence import (
 )
 from maya_browser.browser_site_skill_helpers import _clean_site_query, _is_result_open_request, _rank_from_text
 from maya_browser.browser_skill import parse_browser_intent
-from flight_search_parsing import extract_flight_details
+from maya_travel.flight_search_parsing import extract_flight_details
 from safety_action_commands import safety_action_reply
 from stay_booking_skill import extract_stay_details
 from storage import init_db

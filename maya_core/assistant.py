@@ -5,7 +5,7 @@ from maya_documents.artifact_sessions import cleanup_expired_artifact_sessions
 from maya_core.assistant_context_helpers import handle_context_command
 from maya_core.assistant_text import clean_model_text, normalize_history, strip_wake_prefix
 from maya_core.assistant_commands import AssistantCommandRouter
-from learning_pipeline import LearningPipeline
+from maya_core.learning_pipeline import LearningPipeline
 from maya_core.assistant_memory_context import build_assistant_memory_context
 from maya_core.assistant_model_lanes import ModelLanes
 from maya_core.assistant_post_route import maybe_curate_memory, route_metadata
@@ -21,7 +21,7 @@ from maya_core.assistant_route_prefixes import (
 from maya_core.assistant_routes import AssistantRouter, RouteResult
 from maya_core.channel_gateway import remember_channel_identity
 from maya_core.cost_tracker import record_usage
-from harness_router import HarnessRouter
+from maya_harness.harness_router import HarnessRouter
 from memory_service import MemoryService
 from models import TheSenses
 from response_policy import ResponsePolicy

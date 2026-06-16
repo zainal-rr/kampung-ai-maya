@@ -11,9 +11,9 @@ del _w4_Path, _w4_root, _w4_sys
 import asyncio
 import tempfile
 
-import harness_tools
-from harness_router import HarnessRouter
-from harness_store import init_harness_db, latest_events
+import maya_harness.harness_tools as harness_tools
+from maya_harness.harness_router import HarnessRouter
+from maya_harness.harness_store import init_harness_db, latest_events
 from storage import init_db
 
 

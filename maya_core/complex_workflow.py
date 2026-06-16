@@ -6,7 +6,7 @@ import re
 from dataclasses import dataclass
 from typing import Awaitable, Callable
 
-from harness_store import finish_run, latest_events, new_run_id, record_event, upsert_run
+from maya_harness.harness_store import finish_run, latest_events, new_run_id, record_event, upsert_run
 
 
 AgentCall = Callable[[], Awaitable[str]]

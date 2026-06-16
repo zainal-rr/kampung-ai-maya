@@ -15,9 +15,9 @@ from pathlib import Path
 
 import aiosqlite
 
-from harness_graph import HarnessGraphRunner
-from harness_state import initial_harness_state
-from harness_store import init_harness_db
+from maya_harness.harness_graph import HarnessGraphRunner
+from maya_harness.harness_state import initial_harness_state
+from maya_harness.harness_store import init_harness_db
 from skill_learning_store import init_skill_learning_db
 from skill_store import init_skill_db
 from storage import init_db

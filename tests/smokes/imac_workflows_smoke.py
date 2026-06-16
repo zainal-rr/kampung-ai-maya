@@ -13,12 +13,12 @@ import tempfile
 import zipfile
 from pathlib import Path
 
-import imac_workflows
+import maya_core.imac_workflows as imac_workflows
 import maya_documents.document_actions as document_actions
 from maya_core.assistant import KampungAssistant
 from maya_browser.browser_control import BrowserClickResult, BrowserPage
-from imac_workflows import ImacWorkflowRouter
-from lesson_store import init_lesson_db
+from maya_core.imac_workflows import ImacWorkflowRouter
+from maya_core.lesson_store import init_lesson_db
 from markdown_drafter import MarkdownDraft
 from routine_store import init_routine_db
 from skill_store import init_skill_db

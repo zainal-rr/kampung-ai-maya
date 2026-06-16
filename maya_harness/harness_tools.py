@@ -5,12 +5,12 @@ from dataclasses import dataclass, field
 
 from maya_browser.browser_workflows import HumanBrowserWorkflowRouter
 from maya_documents.document_actions import DocumentActionRouter
-from drawing_actions import DrawingActionRouter
-from file_actions import FileActionRouter
-from harness_browser_observation import agentic_browser_message as _agentic_browser_message
-from harness_browser_observation import browser_observation as _browser_observation
-from harness_models import GroundedObservation, HarnessArtifact, local_artifact
-from imac_workflows import ImacWorkflowRouter
+from maya_core.drawing_actions import DrawingActionRouter
+from maya_core.file_actions import FileActionRouter
+from maya_harness.harness_browser_observation import agentic_browser_message as _agentic_browser_message
+from maya_harness.harness_browser_observation import browser_observation as _browser_observation
+from maya_harness.harness_models import GroundedObservation, HarnessArtifact, local_artifact
+from maya_core.imac_workflows import ImacWorkflowRouter
 from local_actions import LocalActionRouter
 from project_actions import ProjectActionRouter
 from screen_responder import ScreenResponder

@@ -7,7 +7,7 @@ from pathlib import Path
 
 import aiosqlite
 
-from harness_store import init_harness_db, record_event, upsert_run
+from maya_harness.harness_store import init_harness_db, record_event, upsert_run
 from workspace_paths import workspace_dir
 
 

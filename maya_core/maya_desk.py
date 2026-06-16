@@ -10,10 +10,10 @@ from maya_core.cost_tracker import usage_summary_text
 from maya_core.curated_memory import curated_memory_status
 from demo_evidence import load_latest
 from dependency_manifest import dependency_statuses, readiness_summary
-from hardening_audit import hardening_audit_summary, route_cost_audit
-from harness_artifact_store import latest_artifacts
+from maya_core.hardening_audit import hardening_audit_summary, route_cost_audit
+from maya_harness.harness_artifact_store import latest_artifacts
 from browser_field_tests import browser_field_scenarios
-from live_reliability_soak import format_soak_status
+from maya_harness.live_reliability_soak import format_soak_status
 from live_test_evidence import load_live_evidence
 from maya_desk_metrics import browser_benchmark_text, failure_metric_items, reliability_metric_text, trace_metric_items
 from maya_event_store import MayaEventStore

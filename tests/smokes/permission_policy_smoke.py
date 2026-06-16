@@ -12,7 +12,7 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-from file_actions import FileActionRouter
+from maya_core.file_actions import FileActionRouter
 from permission_policy import action_permission, contains_sensitive_info, is_private_exposure, path_needs_confirmation
 from workspace_paths import workspace_dir
 

@@ -9,14 +9,14 @@ from maya_core.camera_adapter import ExternalCameraAdapter
 from maya_core.config import require_env
 from maya_core.context_layers import init_context_layers_db
 from maya_core.curated_memory import init_curated_memory_db
-from health_monitor import HealthReporter
-from harness_idempotency import init_action_ledger
-from harness_store import init_harness_db
-from harness_artifact_store import init_harness_artifact_db
-from harness_observation_store import init_harness_observation_db
-from hotkey_voice_channel import HotkeyVoiceChannel
-from hardware_event_store import init_hardware_event_db
-from lesson_store import init_lesson_db
+from maya_core.health_monitor import HealthReporter
+from maya_harness.harness_idempotency import init_action_ledger
+from maya_harness.harness_store import init_harness_db
+from maya_harness.harness_artifact_store import init_harness_artifact_db
+from maya_harness.harness_observation_store import init_harness_observation_db
+from maya_core.hotkey_voice_channel import HotkeyVoiceChannel
+from maya_core.hardware_event_store import init_hardware_event_db
+from maya_core.lesson_store import init_lesson_db
 from logging_setup import configure_logging
 from local_voice_channel import LocalVoiceChannel
 from maya_browser.bridge_runtime import BrowserBridgeMonitor, warm_browser_bridge_once

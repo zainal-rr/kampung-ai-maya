@@ -12,7 +12,7 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-from lesson_store import add_lesson, init_lesson_db
+from maya_core.lesson_store import add_lesson, init_lesson_db
 from memory_control import cleanup_stale_memory, forget_memory, memory_sources_text
 from session_search import index_session_message, search_sessions
 from session_memory_store import init_session_memory_db, save_session_summary

@@ -16,9 +16,9 @@ from pathlib import Path
 from openpyxl import load_workbook
 
 from maya_core.context_layers import init_context_layers_db
-from harness_artifact_store import init_harness_artifact_db
-from harness_store import init_harness_db
-from lesson_store import init_lesson_db
+from maya_harness.harness_artifact_store import init_harness_artifact_db
+from maya_harness.harness_store import init_harness_db
+from maya_core.lesson_store import init_lesson_db
 from maya_documents.artifact_preflight import ArtifactPreflight
 from markdown_drafter import MarkdownDraft
 from route_tracker import last_route_text

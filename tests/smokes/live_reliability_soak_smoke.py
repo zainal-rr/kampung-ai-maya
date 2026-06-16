@@ -11,7 +11,7 @@ del _w4_Path, _w4_root, _w4_sys
 import tempfile
 from pathlib import Path
 
-from live_reliability_soak import SoakDay, format_soak_status, load_soak, record_soak_day, soak_summary
+from maya_harness.live_reliability_soak import SoakDay, format_soak_status, load_soak, record_soak_day, soak_summary
 
 
 def main() -> None:

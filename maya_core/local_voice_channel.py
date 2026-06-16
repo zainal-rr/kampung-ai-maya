@@ -3,7 +3,7 @@ import os
 
 from maya_core.activation import WakeWindow
 from maya_core.assistant import KampungAssistant
-from imac_voice_policy import decide_imac_voice_route
+from maya_core.imac_voice_policy import decide_imac_voice_route
 from speech_input import (
     build_transcript_source_from_env,
     build_wake_transcript_source_from_env,

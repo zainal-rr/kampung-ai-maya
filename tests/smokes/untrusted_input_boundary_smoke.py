@@ -95,7 +95,7 @@ def _decision_checks() -> None:
 
 
 def _verifier_failclosed_checks() -> None:
-    from harness_llm_planner import verify_goal
+    from maya_harness.harness_llm_planner import verify_goal
 
     state = {"goal": "do the thing", "final_response": "done", "observations": []}
 

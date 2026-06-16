@@ -14,11 +14,11 @@ from dotenv import load_dotenv
 
 from maya_core.repo_paths import repo_root
 from maya_core.cost_tracker import record_usage
-from harness_artifact_store import record_structured_artifact
-from harness_models import local_artifact
-from harness_store import create_approval, init_harness_db, new_run_id, record_event, upsert_run
+from maya_harness.harness_artifact_store import record_structured_artifact
+from maya_harness.harness_models import local_artifact
+from maya_harness.harness_store import create_approval, init_harness_db, new_run_id, record_event, upsert_run
 from office_files import safe_slug
-from lane_prompts import ARTISAN_SYSTEM_PROMPT
+from maya_core.lane_prompts import ARTISAN_SYSTEM_PROMPT
 from project_store import active_project, remember_project_note
 from storage import get_preference, upsert_preference
 from workspace_paths import is_workspace_path, workspace_dir

@@ -14,7 +14,7 @@ import tempfile
 from pathlib import Path
 
 from maya_core.assistant import KampungAssistant
-from lesson_store import init_lesson_db
+from maya_core.lesson_store import init_lesson_db
 from project_store import active_project, build_project_context
 from routine_store import init_routine_db
 from session_memory_store import init_session_memory_db

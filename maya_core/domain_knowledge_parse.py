@@ -4,7 +4,7 @@ import re
 from pathlib import Path
 
 from maya_memory.canonical_memory_text import memory_tokens
-from domain_knowledge_models import DomainSkill
+from maya_core.domain_knowledge_models import DomainSkill
 
 
 def parse_domain_skill(path: Path, repo_root: Path) -> DomainSkill | None:

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from domain_knowledge_models import KnowledgeChunk
+from maya_core.domain_knowledge_models import KnowledgeChunk
 
 
 def build_domain_context(

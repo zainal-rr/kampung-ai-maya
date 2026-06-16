@@ -6,7 +6,7 @@ from maya_core.assistant_prompts import (
     TELEGRAM_VOICE_SYSTEM_PROMPT,
     delivery_instruction,
 )
-from language_policy import language_instruction
+from maya_core.language_policy import language_instruction
 from telegram_context_policy import silent_context_guard
 from telegram_rewrite_context import is_rewrite_followup
 

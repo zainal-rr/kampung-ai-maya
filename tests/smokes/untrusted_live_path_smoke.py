@@ -27,7 +27,7 @@ if str(_ROOT) not in sys.path:
 
 from maya_core.active_context_models import ActiveContext
 from maya_browser.browser_control import _parse_page, page_summary
-from harness_models import GroundedObservation
+from maya_harness.harness_models import GroundedObservation
 from maya_harness_sdk import MayaHarnessSDK
 
 

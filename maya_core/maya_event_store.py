@@ -6,7 +6,7 @@ from typing import Any
 
 import aiosqlite
 
-from harness_store import init_harness_db, record_event
+from maya_harness.harness_store import init_harness_db, record_event
 
 
 EVENT_TYPES = {

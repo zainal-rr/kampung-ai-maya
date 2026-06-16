@@ -21,10 +21,10 @@ from maya_documents.artifact_qa_governance import SEMANTIC, blocker
 from maya_documents.artifact_sessions import active_artifact_session
 from maya_core.context_layers import init_context_layers_db
 from maya_documents.document_actions import DocumentActionRouter
-from everyday_commands import EverydayCommandRouter
-from harness_artifact_store import init_harness_artifact_db
-from harness_store import init_harness_db
-from lesson_store import init_lesson_db
+from maya_core.everyday_commands import EverydayCommandRouter
+from maya_harness.harness_artifact_store import init_harness_artifact_db
+from maya_harness.harness_store import init_harness_db
+from maya_core.lesson_store import init_lesson_db
 from routine_store import init_routine_db
 from session_memory_store import init_session_memory_db
 from skill_store import init_skill_db

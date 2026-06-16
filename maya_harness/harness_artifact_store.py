@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import aiosqlite
 
-from harness_models import HarnessArtifact
-from harness_store import init_harness_db
+from maya_harness.harness_models import HarnessArtifact
+from maya_harness.harness_store import init_harness_db
 
 
 async def init_harness_artifact_db(db_path: str) -> None:

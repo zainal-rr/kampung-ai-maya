@@ -5,7 +5,7 @@ import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
 
-from harness_store import create_approval, record_artifact, record_event
+from maya_harness.harness_store import create_approval, record_artifact, record_event
 from memory_canaries import check_memory_canaries, format_memory_leak_report, seed_memory_canaries
 from self_heal_memory import create_memory_snapshot, memory_self_heal_dry_run
 from self_heal_store import create_self_heal_report, record_self_heal_stage

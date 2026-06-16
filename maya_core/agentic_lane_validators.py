@@ -11,7 +11,7 @@ honesty (claiming completion while the run failed or was cancelled).
 from dataclasses import dataclass
 
 from maya_core.agentic_reliability_scenarios import AgenticScenario
-from harness_workflows import classify_workflow
+from maya_harness.harness_workflows import classify_workflow
 
 
 CREATION_CLAIMS = ("[file:", "saved", "created", "ready", "done.")

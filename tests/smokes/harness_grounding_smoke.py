@@ -12,9 +12,9 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-from harness_models import GroundedObservation
-from harness_observation_store import latest_observation, record_observation
-from harness_store import init_harness_db
+from maya_harness.harness_models import GroundedObservation
+from maya_harness.harness_observation_store import latest_observation, record_observation
+from maya_harness.harness_store import init_harness_db
 
 
 async def main() -> None:

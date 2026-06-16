@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from harness_idempotency import action_key, begin_action, cached_result, finish_action, mark_unknown, should_pause_unknown
-from harness_tools import HarnessToolResult, HarnessTools
+from maya_harness.harness_idempotency import action_key, begin_action, cached_result, finish_action, mark_unknown, should_pause_unknown
+from maya_harness.harness_tools import HarnessToolResult, HarnessTools
 
 
 async def execute_with_ledger(db_path: str, tools: HarnessTools, state: dict, approved: bool) -> HarnessToolResult:

@@ -9,7 +9,7 @@ from maya_browser.browser_capability import run_browser_capability, route_browse
 from maya_browser.browser_driver import make_browser_controller
 from maya_browser.browser_control import element_summary, page_summary
 from maya_browser.browser_site_skill_helpers import _rank_from_text
-from flight_search_reply import extract_flight_options
+from maya_travel.flight_search_reply import extract_flight_options
 from stay_booking_parsing import extract_stay_options
 from travel_booking_safety import travel_booking_boundary_reply, travel_booking_safety_footer
 from travel_budget import save_travel_plan_fields

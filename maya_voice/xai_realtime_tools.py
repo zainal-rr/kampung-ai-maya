@@ -4,7 +4,7 @@ import asyncio
 import os
 
 from maya_core.cost_tracker import record_usage
-from language_policy import language_instruction
+from maya_core.language_policy import language_instruction
 from models import TheSenses
 from xai_realtime_visual_context_tools import execute_visual_context_tool
 from browser_extension_bridge import extension_last_open_result, reset_extension_last_open_result

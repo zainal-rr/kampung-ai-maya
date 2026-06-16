@@ -14,7 +14,7 @@ import tempfile
 from pathlib import Path
 
 from maya_core.artisan_runner import create_artisan_implementation_request
-from harness_store import get_run, init_harness_db
+from maya_harness.harness_store import get_run, init_harness_db
 from storage import init_db
 
 

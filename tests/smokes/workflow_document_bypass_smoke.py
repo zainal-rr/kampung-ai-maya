@@ -17,9 +17,9 @@ ROOT = Path(__file__).resolve().parents[2]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from harness_router import HarnessRouter
-from harness_state import initial_harness_state
-from harness_store import init_harness_db, upsert_run
+from maya_harness.harness_router import HarnessRouter
+from maya_harness.harness_state import initial_harness_state
+from maya_harness.harness_store import init_harness_db, upsert_run
 from storage import init_db
 
 

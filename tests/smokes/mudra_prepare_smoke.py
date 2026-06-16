@@ -13,7 +13,7 @@ import json
 import tempfile
 from pathlib import Path
 
-from hardware_event_store import init_hardware_event_db, latest_hardware_events
+from maya_core.hardware_event_store import init_hardware_event_db, latest_hardware_events
 from mudra_adapter import MudraAdapter
 
 

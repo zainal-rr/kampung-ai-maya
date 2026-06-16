@@ -13,7 +13,7 @@ import tempfile
 from pathlib import Path
 
 from maya_core.agent_runtime import AgentRuntime
-from lesson_store import init_lesson_db
+from maya_core.lesson_store import init_lesson_db
 from routine_store import init_routine_db
 from route_tracker import init_route_db
 from skill_store import init_skill_db

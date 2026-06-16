@@ -11,10 +11,10 @@ del _w4_Path, _w4_root, _w4_sys
 import asyncio
 import tempfile
 
-import harness_tools
-from harness_graph import HarnessGraphRunner
-from harness_state import initial_harness_state
-from harness_store import init_harness_db
+import maya_harness.harness_tools as harness_tools
+from maya_harness.harness_graph import HarnessGraphRunner
+from maya_harness.harness_state import initial_harness_state
+from maya_harness.harness_store import init_harness_db
 from storage import init_db
 
 

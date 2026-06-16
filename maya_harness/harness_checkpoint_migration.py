@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from harness_store import finish_run, record_event
+from maya_harness.harness_store import finish_run, record_event
 
 
 async def snapshot_or_migrate(db_path: str, graph, config: dict, run: dict) -> dict:

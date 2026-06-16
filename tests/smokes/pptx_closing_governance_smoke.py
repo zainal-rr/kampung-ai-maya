@@ -185,7 +185,7 @@ def _visual_availability_checks(root: Path) -> None:
 
     import pptx_document_flow as flow
     from storage import init_db
-    from harness_artifact_store import init_harness_artifact_db
+    from maya_harness.harness_artifact_store import init_harness_artifact_db
 
     async def _case() -> None:
         with _tempfile.TemporaryDirectory(prefix="maya-visual-avail-") as tmp2:
@@ -256,7 +256,7 @@ def _visual_budget_checks(root: Path) -> None:
 
     import pptx_document_flow as flow
     from storage import init_db
-    from harness_artifact_store import init_harness_artifact_db
+    from maya_harness.harness_artifact_store import init_harness_artifact_db
 
     async def _case() -> None:
         import tempfile as _tempfile

@@ -11,7 +11,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from hotkey_voice_channel import HotkeyVoiceChannel
+from maya_core.hotkey_voice_channel import HotkeyVoiceChannel
 from storage import get_preference, init_db, upsert_preference
 from voice_agent_audio import VoiceAgentAudioCapture, _pcm16_rms
 from xai_voice_handoff import VOICE_HANDOFF_KEY, save_voice_handoff_request

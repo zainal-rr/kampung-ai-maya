@@ -12,7 +12,7 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-from harness_store import latest_events
+from maya_harness.harness_store import latest_events
 from maya_event_store import MayaEventStore
 from maya_thread_manager import MayaThreadManager
 

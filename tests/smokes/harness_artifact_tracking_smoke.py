@@ -12,9 +12,9 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-from harness_artifact_store import latest_artifacts, record_structured_artifact
-from harness_models import local_artifact
-from harness_store import init_harness_db
+from maya_harness.harness_artifact_store import latest_artifacts, record_structured_artifact
+from maya_harness.harness_models import local_artifact
+from maya_harness.harness_store import init_harness_db
 
 
 async def main() -> None:

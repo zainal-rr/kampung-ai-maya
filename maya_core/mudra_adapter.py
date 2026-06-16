@@ -6,7 +6,7 @@ import logging
 from dataclasses import dataclass
 from pathlib import Path
 
-from hardware_event_store import record_hardware_event
+from maya_core.hardware_event_store import record_hardware_event
 
 
 logger = logging.getLogger("maya.mudra")

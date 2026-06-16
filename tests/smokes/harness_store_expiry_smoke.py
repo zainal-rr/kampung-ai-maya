@@ -14,8 +14,8 @@ from pathlib import Path
 
 import aiosqlite
 
-from harness_state import initial_harness_state
-from harness_store import init_harness_db, list_active_runs, upsert_run
+from maya_harness.harness_state import initial_harness_state
+from maya_harness.harness_store import init_harness_db, list_active_runs, upsert_run
 
 
 async def main() -> None:

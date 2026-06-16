@@ -2,8 +2,8 @@ from __future__ import annotations
 
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 
-from harness_checkpoint_migration import snapshot_or_migrate
-from harness_graph import HarnessGraphRunner
+from maya_harness.harness_checkpoint_migration import snapshot_or_migrate
+from maya_harness.harness_graph import HarnessGraphRunner
 
 
 async def snapshot_for_run(db_path: str, run: dict) -> dict:

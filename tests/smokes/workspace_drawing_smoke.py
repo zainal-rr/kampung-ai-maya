@@ -15,8 +15,8 @@ from pathlib import Path
 
 from maya_core.assistant import KampungAssistant
 from maya_core.context_layers import init_context_layers_db
-from drawing_actions import DrawingActionRouter
-from lesson_store import init_lesson_db
+from maya_core.drawing_actions import DrawingActionRouter
+from maya_core.lesson_store import init_lesson_db
 from route_tracker import init_route_db
 from routine_store import init_routine_db
 from session_memory_store import init_session_memory_db

@@ -5,7 +5,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-from harness_store import get_run, latest_events, list_active_runs, record_event
+from maya_harness.harness_store import get_run, latest_events, list_active_runs, record_event
 from maya_harness_sdk import MayaHarnessSDK
 from project_store import active_project
 

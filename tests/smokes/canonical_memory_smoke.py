@@ -17,8 +17,8 @@ import aiosqlite
 from maya_memory.canonical_memory import search_canonical_direct_fact, search_relevant_canonical_memories, upsert_canonical_memory
 from maya_memory.canonical_memory_inspector import inspect_canonical_memory
 from maya_memory.canonical_memory_pin import set_canonical_memory_pin
-from learning_pipeline import LearningPipeline
-from lesson_store import init_lesson_db
+from maya_core.learning_pipeline import LearningPipeline
+from maya_core.lesson_store import init_lesson_db
 from memory_control import forget_memory
 from memory_links import add_memory_link
 from memory_service import MemoryService

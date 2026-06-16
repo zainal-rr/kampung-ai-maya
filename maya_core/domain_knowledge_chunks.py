@@ -3,8 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 
 from maya_memory.canonical_memory_text import memory_tokens
-from domain_knowledge_models import DomainSkill, KnowledgeChunk
-from domain_knowledge_parse import markdown_sections, word_match
+from maya_core.domain_knowledge_models import DomainSkill, KnowledgeChunk
+from maya_core.domain_knowledge_parse import markdown_sections, word_match
 
 CONFIG_WORDS = ("configure", "config", "create", "set up", "setup", "enable", "command", "cli", "deploy", "provision")
 DESIGN_WORDS = ("design", "topology", "architecture", "choose", "compare", "plan the", "layout")

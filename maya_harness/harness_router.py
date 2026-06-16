@@ -4,12 +4,12 @@ import os
 import re
 
 from maya_core.assistant_command_helpers import confirmation_decision
-from harness_command_bypass import is_fresh_artifact_request
-from harness_graph import HarnessGraphRunner
-from harness_artifact_store import latest_artifacts
-from harness_resume import build_resume_summary
-from harness_state import initial_harness_state
-from harness_store import (
+from maya_harness.harness_command_bypass import is_fresh_artifact_request
+from maya_harness.harness_graph import HarnessGraphRunner
+from maya_harness.harness_artifact_store import latest_artifacts
+from maya_harness.harness_resume import build_resume_summary
+from maya_harness.harness_state import initial_harness_state
+from maya_harness.harness_store import (
     finish_run,
     get_active_run,
     latest_events,
@@ -18,7 +18,7 @@ from harness_store import (
     record_event,
     resolve_approval,
 )
-from harness_workflows import classify_workflow
+from maya_harness.harness_workflows import classify_workflow
 from storage import delete_preference, get_preference, upsert_preference
 
 
@@ -275,7 +275,7 @@ class HarnessRouter:
         await delete_preference(self.db_path, f"maya_harness_choices:{channel}")
         if index < 0 or index >= len(run_ids):
             return "That workflow choice is not available anymore."
-        from harness_store import get_run
+        from maya_harness.harness_store import get_run
 
         run = await get_run(self.db_path, run_ids[index])
         if not run:

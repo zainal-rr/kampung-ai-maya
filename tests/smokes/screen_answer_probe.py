@@ -18,7 +18,7 @@ from dotenv import load_dotenv
 
 load_dotenv()
 
-from lesson_store import init_lesson_db
+from maya_core.lesson_store import init_lesson_db
 from routine_store import init_routine_db
 from screen_responder import ScreenResponder
 from screen_session import activate_screen_sight

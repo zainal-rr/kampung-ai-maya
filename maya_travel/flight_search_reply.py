@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from flight_search_models import FieldAttempt, FlightDetails, MONTHS, destination_match_tokens
+from maya_travel.flight_search_models import FieldAttempt, FlightDetails, MONTHS, destination_match_tokens
 from travel_booking_safety import travel_booking_safety_footer
 
 

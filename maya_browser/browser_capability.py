@@ -13,8 +13,8 @@ from maya_browser.browser_site_skills import (
     run_youtube_research_skill,
 )
 from maya_browser.browser_skill import run_browser_skill
-from flight_search_skill import run_flight_search_skill
-from frequent_sites import (
+from maya_travel.flight_search_skill import run_flight_search_skill
+from maya_core.frequent_sites import (
     find_frequent_site_request,
     frequent_site_catalog,
     should_use_specialized_site_skill,

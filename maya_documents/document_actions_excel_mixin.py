@@ -19,8 +19,8 @@ from maya_documents.document_actions_content_helpers import (
     _travel_budget_topic,
 )
 from maya_documents.document_actions_office_sessions import _office_session_edit_topic
-from excel_species import detect_excel_species
-from excel_species_draft import excel_species_prompt_context
+from maya_documents.excel_species import detect_excel_species
+from maya_documents.excel_species_draft import excel_species_prompt_context
 from maya_documents.delivery_policy import excel_quality_hard_block
 from office_edit_helpers import (
     apply_simple_xlsx_edit,

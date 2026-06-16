@@ -11,15 +11,15 @@ import asyncio
 from maya_browser.browser_agent_state import task_type_for
 from maya_memory.canonical_memory import upsert_canonical_memory
 from maya_core.domain_knowledge import domain_knowledge_context
-from harness_state import HarnessState
-from harness_artifact_store import record_structured_artifact
-from harness_checkpoint_migration import snapshot_or_migrate
-from harness_execution import execute_with_ledger
-from harness_llm_planner import LlmCall, choose_next_action, plan_with_llm, synthesize_final_answer, verify_goal
-from harness_observation_store import record_observation
-from harness_store import create_approval, finish_run, record_artifact, record_event, upsert_run
-from harness_tools import HarnessTools
-from harness_workflows import classify_workflow, next_step_for, plan_for, workflow_for_action
+from maya_harness.harness_state import HarnessState
+from maya_harness.harness_artifact_store import record_structured_artifact
+from maya_harness.harness_checkpoint_migration import snapshot_or_migrate
+from maya_harness.harness_execution import execute_with_ledger
+from maya_harness.harness_llm_planner import LlmCall, choose_next_action, plan_with_llm, synthesize_final_answer, verify_goal
+from maya_harness.harness_observation_store import record_observation
+from maya_harness.harness_store import create_approval, finish_run, record_artifact, record_event, upsert_run
+from maya_harness.harness_tools import HarnessTools
+from maya_harness.harness_workflows import classify_workflow, next_step_for, plan_for, workflow_for_action
 from maya_permission_kernel import MayaPermissionKernel
 
 # Budget for the opt-in agentic loop: hard ceiling on execute passes per run.
@@ -98,7 +98,7 @@ class HarnessGraphRunner:
         return state
 
     async def run_background_task(self, task: dict[str, str | int | None]) -> HarnessState:
-        from harness_state import initial_harness_state
+        from maya_harness.harness_state import initial_harness_state
 
         task_id = int(task["id"])
         workflow_type = workflow_for_action(str(task["action_type"]))

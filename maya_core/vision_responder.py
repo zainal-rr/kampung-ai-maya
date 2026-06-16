@@ -6,7 +6,7 @@ import re
 from maya_core.activation import current_work_location
 from maya_core.assistant_command_helpers import direct_key
 from maya_core.cost_tracker import record_usage
-from language_policy import language_instruction
+from maya_core.language_policy import language_instruction
 from maya_eye_overlay import clear_preview_target, set_preview_targets
 from maya_eye_preview import start_preview
 from models import TheSenses

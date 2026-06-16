@@ -23,14 +23,14 @@ async def main() -> None:
         os.environ["MAYA_WORKSPACE_ROOT"] = str(Path(tmp) / "Maya")
         from maya_core.assistant import KampungAssistant
         from maya_core.context_layers import init_context_layers_db
-        from lesson_store import init_lesson_db
+        from maya_core.lesson_store import init_lesson_db
         from routine_store import init_routine_db
         from session_memory_store import init_session_memory_db
         from skill_store import init_skill_db
         from storage import init_db
         from telegram_delivery import split_file_markers
         from workspace_paths import ensure_workspace_tree, workspace_dir
-        from harness_artifact_store import latest_artifacts
+        from maya_harness.harness_artifact_store import latest_artifacts
         import maya_documents.document_actions as document_actions
 
         db_path = str(Path(tmp) / "smoke.db")

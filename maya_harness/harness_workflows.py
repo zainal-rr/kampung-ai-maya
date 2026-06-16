@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from harness_state import HarnessState
+from maya_harness.harness_state import HarnessState
 
 
 def classify_workflow(text: str) -> str:

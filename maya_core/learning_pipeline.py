@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from lesson_store import (
+from maya_core.lesson_store import (
     add_lesson,
     add_pending_lesson,
     clear_pending_lesson,

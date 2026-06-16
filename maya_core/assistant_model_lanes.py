@@ -8,9 +8,9 @@ from maya_core.artisan_runner import create_artisan_implementation_request
 from maya_core.complex_agentic_bridge import should_route_complex_plan
 from maya_core.complex_lane import complex_plan_response as run_complex_plan_response
 from maya_core.cost_tracker import record_usage
-from language_policy import language_instruction
+from maya_core.language_policy import language_instruction
 from models import TheMind, TheNews, TheSenses, TheSteward
-from lane_prompts import MIND_ESCALATION_PROMPT
+from maya_core.lane_prompts import MIND_ESCALATION_PROMPT
 from provider_capabilities import CAPABILITIES, review_triggers
 from source_aware_research import format_source_research, should_use_source_research, source_aware_research
 from weather_lookup import current_weather_summary, is_weather_question

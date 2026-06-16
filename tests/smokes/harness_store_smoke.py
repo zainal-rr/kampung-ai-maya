@@ -11,7 +11,7 @@ del _w4_Path, _w4_root, _w4_sys
 import asyncio
 import tempfile
 
-from harness_store import (
+from maya_harness.harness_store import (
     get_active_run,
     init_harness_db,
     latest_events,
@@ -19,7 +19,7 @@ from harness_store import (
     record_event,
     upsert_run,
 )
-from harness_state import initial_harness_state
+from maya_harness.harness_state import initial_harness_state
 
 
 def _require(condition: bool, message: str) -> None:

@@ -4,8 +4,8 @@ import json
 
 import aiosqlite
 
-from harness_models import GroundedObservation
-from harness_store import init_harness_db
+from maya_harness.harness_models import GroundedObservation
+from maya_harness.harness_store import init_harness_db
 
 
 async def init_harness_observation_db(db_path: str) -> None:

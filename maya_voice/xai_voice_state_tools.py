@@ -59,7 +59,7 @@ def _voice_work_question(lowered: str) -> bool:
 
 
 async def _artifact_text(db_path: str) -> str:
-    from harness_artifact_store import latest_artifacts
+    from maya_harness.harness_artifact_store import latest_artifacts
 
     artifacts = await latest_artifacts(db_path, limit=8)
     if not artifacts:

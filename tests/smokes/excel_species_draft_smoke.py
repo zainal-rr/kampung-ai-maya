@@ -16,8 +16,8 @@ if str(_w4_root) not in _w4_sys.path:
 del _w4_Path, _w4_root, _w4_sys
 
 
-from excel_species import _SCHEMAS, species_rows_structured
-from excel_species_draft import (
+from maya_documents.excel_species import _SCHEMAS, species_rows_structured
+from maya_documents.excel_species_draft import (
     FINANCIAL_BUCKETS,
     excel_species_prompt_context,
     rows_from_species_draft,

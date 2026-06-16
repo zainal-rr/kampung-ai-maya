@@ -20,7 +20,7 @@ os.environ.setdefault("MPLCONFIGDIR", "/tmp/kampung-ai-mpl")
 
 from maya_core.activation import WakeWindow, current_work_location, handle_activation_command, mudra_is_near, split_wake_phrase
 from maya_core.camera_adapter import CameraEvent, ExternalCameraAdapter, is_allowed_external_camera, load_camera_event
-from lesson_store import init_lesson_db
+from maya_core.lesson_store import init_lesson_db
 from mudra_adapter import MudraEvent
 from routine_store import init_routine_db
 from skill_store import init_skill_db

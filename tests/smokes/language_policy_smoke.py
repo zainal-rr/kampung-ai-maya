@@ -8,7 +8,7 @@ if str(_w4_root) not in _w4_sys.path:
 del _w4_Path, _w4_root, _w4_sys
 
 
-from language_policy import language_instruction, uses_malay_or_manglish, wants_malay_or_manglish
+from maya_core.language_policy import language_instruction, uses_malay_or_manglish, wants_malay_or_manglish
 
 
 def main() -> None:

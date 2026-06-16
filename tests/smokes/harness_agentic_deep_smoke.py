@@ -22,14 +22,14 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-from harness_graph import HarnessGraphRunner
+from maya_harness.harness_graph import HarnessGraphRunner
 from harness_helpers.graph_runner import _agentic_tool_instruction, _forced_agentic_action
-from harness_idempotency import init_action_ledger
-from harness_llm_planner import _parse_json
-from harness_tools import HarnessToolResult, HarnessTools, _artifact_paths_from_reply
+from maya_harness.harness_idempotency import init_action_ledger
+from maya_harness.harness_llm_planner import _parse_json
+from maya_harness.harness_tools import HarnessToolResult, HarnessTools, _artifact_paths_from_reply
 from maya_browser.browser_workflows import HumanBrowserWorkflowRouter
-from harness_state import initial_harness_state
-from harness_store import init_harness_db, latest_events
+from maya_harness.harness_state import initial_harness_state
+from maya_harness.harness_store import init_harness_db, latest_events
 from storage import init_db
 
 
@@ -283,7 +283,7 @@ async def _agentic_browser_executes_from_telegram(root: Path) -> None:
     fake_browser = _FakeBrowserRouter()
     tools.browser = fake_browser
 
-    import harness_tools as harness_tools_module
+    import maya_harness.harness_tools as harness_tools_module
 
     original_observation = harness_tools_module._browser_observation
     harness_tools_module._browser_observation = lambda **_kwargs: None

@@ -10,8 +10,8 @@ del _w4_Path, _w4_root, _w4_sys
 
 from datetime import date
 
-from flight_search_models import FieldAttempt, FlightDetails
-from flight_search_reply import _filled_reply
+from maya_travel.flight_search_models import FieldAttempt, FlightDetails
+from maya_travel.flight_search_reply import _filled_reply
 from stay_booking_runtime import stay_reply
 from travel_booking_safety import travel_booking_boundary_reply, travel_booking_safety_footer
 

@@ -8,7 +8,7 @@ from pathlib import Path
 
 from maya_core.assistant import KampungAssistant
 from maya_core.briefing_service import BriefingBuilder
-from health_monitor import HealthReporter
+from maya_core.health_monitor import HealthReporter
 from routine_store import claim_due_routines, init_routine_db
 from skill_store import init_skill_db
 from storage import create_task, init_db

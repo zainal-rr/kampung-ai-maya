@@ -34,7 +34,7 @@ from maya_documents.document_failures import document_generation_failed
 from maya_documents.document_natural_artifact_parser import artifact_intent_clarification
 from maya_documents.document_request_parser import document_request, markdown_update
 from maya_documents.document_style import style_document_text, style_sections, style_table
-from html_reviewer import review_html_app
+from maya_core.html_reviewer import review_html_app
 from office_drafter import (
     sections_from_markdown,
     slides_from_markdown,
@@ -46,8 +46,8 @@ from pptx_document_flow import create_powerpoint_with_qa
 from presentation_reviewer import review_presentation_slides
 from word_quality import word_prompt_context
 from word_section_repair import strengthen_word_sections
-from harness_artifact_store import record_structured_artifact
-from harness_models import local_artifact
+from maya_harness.harness_artifact_store import record_structured_artifact
+from maya_harness.harness_models import local_artifact
 from markdown_drafter import (
     MarkdownDraft,
     draft_html_with_gemini,

@@ -4,7 +4,7 @@ import os
 import re
 from dataclasses import dataclass
 
-from language_policy import uses_malay_or_manglish, wants_malay_or_manglish
+from maya_core.language_policy import uses_malay_or_manglish, wants_malay_or_manglish
 
 
 QUALITY_MARKERS = (

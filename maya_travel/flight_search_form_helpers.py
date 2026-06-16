@@ -3,8 +3,8 @@ from __future__ import annotations
 import time
 from typing import Iterable
 
-from flight_search_models import FieldAttempt, FlightDetails
-from flight_search_reply import _current_trip_type, _date_verified, _labels_contain
+from maya_travel.flight_search_models import FieldAttempt, FlightDetails
+from maya_travel.flight_search_reply import _current_trip_type, _date_verified, _labels_contain
 
 
 def field_labels(browser, kinds: set[str] | None = None) -> list[str]:

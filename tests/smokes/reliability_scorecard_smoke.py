@@ -8,7 +8,7 @@ if str(_w4_root) not in _w4_sys.path:
 del _w4_Path, _w4_root, _w4_sys
 
 
-from live_reliability_soak import SoakDay
+from maya_harness.live_reliability_soak import SoakDay
 from reliability_scorecard import format_reliability_scorecard, reliability_scorecard
 
 

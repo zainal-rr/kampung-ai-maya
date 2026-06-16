@@ -12,8 +12,8 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-from learning_pipeline import LearningPipeline
-from lesson_store import init_lesson_db
+from maya_core.learning_pipeline import LearningPipeline
+from maya_core.lesson_store import init_lesson_db
 from memory_extraction import deterministic_extraction, extract_memory_fields
 from memory_service import MemoryService
 from storage import init_db

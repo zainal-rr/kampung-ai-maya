@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 
-from live_reliability_soak import SoakDay, load_soak, soak_summary
+from maya_harness.live_reliability_soak import SoakDay, load_soak, soak_summary
 
 
 @dataclass(frozen=True)

@@ -16,7 +16,7 @@ from pathlib import Path
 
 from maya_core.assistant import KampungAssistant
 from maya_core.context_layers import init_context_layers_db
-from lesson_store import init_lesson_db
+from maya_core.lesson_store import init_lesson_db
 from project_store import active_project
 from route_tracker import last_route_text
 from routine_store import init_routine_db

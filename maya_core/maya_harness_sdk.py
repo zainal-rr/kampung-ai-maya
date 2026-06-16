@@ -9,9 +9,9 @@ from typing import Any
 import aiosqlite
 
 from maya_memory.canonical_memory import upsert_canonical_memory
-from harness_artifact_store import record_structured_artifact
-from harness_models import local_artifact
-from harness_store import (
+from maya_harness.harness_artifact_store import record_structured_artifact
+from maya_harness.harness_models import local_artifact
+from maya_harness.harness_store import (
     create_approval,
     get_run,
     init_harness_db,

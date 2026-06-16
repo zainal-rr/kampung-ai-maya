@@ -30,8 +30,8 @@ from maya_documents.artifact_quality import (
     validate_xlsx_path,
 )
 from maya_core.created_file_opener import open_created_file
-from harness_artifact_store import record_structured_artifact
-from harness_models import local_artifact
+from maya_harness.harness_artifact_store import record_structured_artifact
+from maya_harness.harness_models import local_artifact
 from maya_voice.work_runtime import set_current_voice_work_phase
 from maya_documents.delivery_policy import docx_quality_hard_block, excel_quality_hard_block
 from storage import upsert_preference

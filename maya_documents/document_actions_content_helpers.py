@@ -92,7 +92,7 @@ def _prefixed_lane(lane: str, preflight: ArtifactPreflight | None) -> str:
 
 
 def _budget_topic(topic: str) -> bool:
-    from excel_species import detect_excel_species
+    from maya_documents.excel_species import detect_excel_species
 
     if detect_excel_species(topic):
         # A domain species (content calendar, inventory, research log, ...)
@@ -106,7 +106,7 @@ def _budget_topic(topic: str) -> bool:
 
 
 def _task_tracker_topic(topic: str) -> bool:
-    from excel_species import detect_excel_species
+    from maya_documents.excel_species import detect_excel_species
 
     if detect_excel_species(topic):
         # Domain trackers (YouTube, farm, research, ...) get their own schema

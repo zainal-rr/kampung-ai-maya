@@ -22,9 +22,9 @@ from pathlib import Path
 
 from maya_browser.browser_control import BrowserPage
 from maya_browser.browser_control_js import _text_hash
-from flight_search_deeplink import flights_deep_link
-from flight_search_models import FlightDetails
-from flight_search_skill import FlightSearchSkill
+from maya_travel.flight_search_deeplink import flights_deep_link
+from maya_travel.flight_search_models import FlightDetails
+from maya_travel.flight_search_skill import FlightSearchSkill
 from flight_search_skill_smoke import FakeBridge
 from storage import init_db
 

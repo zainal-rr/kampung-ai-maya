@@ -10,7 +10,7 @@ from pptx import Presentation
 from pptx.util import Inches
 
 from office_files import safe_slug
-from excel_style import sheet_title_for, style_basic_sheet
+from maya_documents.excel_style import sheet_title_for, style_basic_sheet
 from office_pptx_palette import palette_for
 from office_pptx_layout import (
     _content_slide,

@@ -28,7 +28,7 @@ from __future__ import annotations
 
 import re
 
-from excel_species import _SCHEMAS  # single source of truth for columns
+from maya_documents.excel_species import _SCHEMAS  # single source of truth for columns
 
 FINANCIAL_BUCKETS = ("0-1 months", "1-3 months", "3-6 months", "6-12 months", "12+ months")
 

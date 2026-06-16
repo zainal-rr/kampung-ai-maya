@@ -1,8 +1,8 @@
 from __future__ import annotations
 
-from harness_artifact_store import latest_artifacts
-from harness_checkpoint_reader import snapshot_for_run
-from harness_store import latest_events, list_active_runs
+from maya_harness.harness_artifact_store import latest_artifacts
+from maya_harness.harness_checkpoint_reader import snapshot_for_run
+from maya_harness.harness_store import latest_events, list_active_runs
 
 
 async def build_resume_summary(db_path: str, channel: str) -> str:

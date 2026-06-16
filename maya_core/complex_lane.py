@@ -8,7 +8,7 @@ from maya_core.complex_agentic_bridge import (
 )
 from maya_core.complex_workflow import run_complex_plan_workflow
 from maya_core.cost_tracker import record_usage
-from lane_prompts import MIND_ESCALATION_PROMPT
+from maya_core.lane_prompts import MIND_ESCALATION_PROMPT
 
 
 async def complex_plan_response(lanes, text: str, memory_context: str, skill_context: str, channel: str = "telegram") -> str:

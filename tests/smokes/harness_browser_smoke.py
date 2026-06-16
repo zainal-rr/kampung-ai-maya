@@ -12,8 +12,8 @@ import asyncio
 import tempfile
 
 import maya_browser.browser_control as browser_control
-from harness_router import HarnessRouter
-from harness_store import get_active_run, init_harness_db
+from maya_harness.harness_router import HarnessRouter
+from maya_harness.harness_store import get_active_run, init_harness_db
 from storage import init_db
 
 

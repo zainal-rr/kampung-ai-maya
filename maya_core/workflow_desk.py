@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from harness_artifact_store import latest_artifacts
-from harness_store import finish_run, list_active_runs
+from maya_harness.harness_artifact_store import latest_artifacts
+from maya_harness.harness_store import finish_run, list_active_runs
 from project_store import active_project
 from retention_policy import retention_status_summary
 from storage import get_preference, upsert_preference

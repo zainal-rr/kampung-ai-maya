@@ -57,8 +57,8 @@ async def existing_run_ids(db_path: str) -> set[str]:
 
 
 async def collect_scenario_state(record: ScenarioRecord, db_path: str, before: set[str]) -> None:
-    from harness_artifact_store import latest_artifacts
-    from harness_store import get_run, latest_events
+    from maya_harness.harness_artifact_store import latest_artifacts
+    from maya_harness.harness_store import get_run, latest_events
 
     record.run_ids = sorted(await existing_run_ids(db_path) - before)
     for run_id in record.run_ids:

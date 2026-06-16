@@ -14,11 +14,11 @@ from pathlib import Path
 
 from maya_core.assistant import KampungAssistant
 from maya_core.context_layers import init_context_layers_db
-from lesson_store import init_lesson_db
+from maya_core.lesson_store import init_lesson_db
 from office_modern_files import create_docx, create_pptx
-from everyday_commands import EverydayCommandRouter
-from harness_artifact_store import record_structured_artifact
-from harness_models import local_artifact
+from maya_core.everyday_commands import EverydayCommandRouter
+from maya_harness.harness_artifact_store import record_structured_artifact
+from maya_harness.harness_models import local_artifact
 from route_tracker import last_route_text
 from routine_store import init_routine_db
 from session_memory_store import init_session_memory_db

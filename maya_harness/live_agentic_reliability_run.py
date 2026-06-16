@@ -53,7 +53,7 @@ async def run_agentic_night(
     db_path = str(night_dir / "night.db")
     if not dry_run:
         night_dir.mkdir(parents=True, exist_ok=True)
-        from harness_store import init_harness_db
+        from maya_harness.harness_store import init_harness_db
         from storage import init_db
 
         await init_db(db_path)
@@ -79,7 +79,7 @@ async def run_agentic_night(
 
 
 async def _run_scenario(scenario: AgenticScenario, night_id: str, db_path: str):
-    from harness_router import HarnessRouter
+    from maya_harness.harness_router import HarnessRouter
 
     record = new_scenario_record(scenario.id, night_id, scenario.title)
     before = await existing_run_ids(db_path)
@@ -130,7 +130,7 @@ async def _seed_complex_workflow(db_path: str, request: str) -> str:
 
 
 async def _cleanup_leftover_runs(db_path: str) -> None:
-    from harness_store import finish_run, list_active_runs, record_event
+    from maya_harness.harness_store import finish_run, list_active_runs, record_event
 
     for run in await list_active_runs(db_path, CHANNEL):
         await record_event(db_path, run["run_id"], "runner_cleanup", "scenario finished; runner closed leftover run")

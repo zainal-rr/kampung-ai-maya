@@ -8,7 +8,7 @@ if str(_w4_root) not in _w4_sys.path:
 del _w4_Path, _w4_root, _w4_sys
 
 
-from hardening_audit import (
+from maya_core.hardening_audit import (
     capability_readiness_report,
     demo_evidence_items,
     hardening_audit_summary,
