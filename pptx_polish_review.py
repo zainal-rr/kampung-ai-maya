@@ -1,45 +1,4 @@
-from __future__ import annotations
-
-from pptx_helpers.polish_review import (
-    _bad_visible_text,
-    _clip_reason_at_boundary,
-    _incomplete_sentence,
-    _layout_signature,
-    _looks_like_short_label,
-    _notes_text,
-    _parse_polish,
-    _reason_has_blocker,
-    _short_reason,
-    _stale_topic_label,
-    _strip_negated_blocker_lists,
-    _system_prompt,
-    _texts,
-    _title_text,
-    _trim_dangling_reason_tail,
-    _user_prompt,
-    claude_polish_grade,
-    image_policy_line,
-    local_polish_issues,
-)
-
-__all__ = [
-    "_bad_visible_text",
-    "_clip_reason_at_boundary",
-    "_incomplete_sentence",
-    "_layout_signature",
-    "_looks_like_short_label",
-    "_notes_text",
-    "_parse_polish",
-    "_reason_has_blocker",
-    "_short_reason",
-    "_stale_topic_label",
-    "_strip_negated_blocker_lists",
-    "_system_prompt",
-    "_texts",
-    "_title_text",
-    "_trim_dangling_reason_tail",
-    "_user_prompt",
-    "claude_polish_grade",
-    "image_policy_line",
-    "local_polish_issues",
-]
+# W4 compatibility shim — re-exports the relocated module (removed/converted in Wave 5).
+from maya_documents import pptx_polish_review as _m
+import sys as _sys
+_sys.modules[__name__] = _m
