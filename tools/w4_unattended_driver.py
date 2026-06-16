@@ -431,7 +431,15 @@ def plan_batches(wave: int, bs: int = 15) -> list[dict]:
 
     out = []
     if wave == 1:
-        files = [s for s in names if is_smoke(s) and s not in KEEP_AT_ROOT]
+        runtime_imported = {
+            dep
+            for dep, mods in importers.items()
+            if any(not is_smoke(mod) for mod in mods)
+        }
+        files = [
+            s for s in names
+            if is_smoke(s) and s not in KEEP_AT_ROOT and s not in runtime_imported
+        ]
         out += [{**b, "kind": "move", "wrap": "none",
                  "moves": [(s, smoke_dest(s)) for s in b["items"]]} for b in chunks(files, bs)]
     elif wave == 2:
