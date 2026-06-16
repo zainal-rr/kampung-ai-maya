@@ -37,7 +37,7 @@ def run_local_ci(*, live_providers: bool = False) -> list[CheckResult]:
         _command_check("artifact delivery gate", ("tests/smokes/artifact_delivery_gate_smoke.py",)),
         _command_check("artifact retry loop", ("tests/smokes/artifact_retry_loop_smoke.py",)),
         _command_check("office edit workflow", ("tests/smokes/document_edit_office_smoke.py",)),
-        _command_check("household budget", ("household_budget_smoke.py",)),
+        _command_check("household budget", ("tests/smokes/household_budget_smoke.py",)),
         _command_check("word technical repair", ("word_technical_repair_smoke.py",)),
         _command_check("semantic telegram fresh 500", ("semantic_telegram_fresh_500.py",)),
         _command_check("voice document transcript", ("voice_document_transcript_smoke.py",)),
