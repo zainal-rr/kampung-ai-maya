@@ -1,20 +1,4 @@
-from __future__ import annotations
-
-from assistant_command_helpers import direct_key
-from session_compactor import inspect_session_context
-
-
-CONTEXT_KEYS = {
-    "show context",
-    "show context window",
-    "show compacted context",
-    "what is my context",
-    "what context do you have",
-    "what is the context window",
-}
-
-
-async def handle_context_command(db_path: str, text: str) -> str | None:
-    if direct_key(text) not in CONTEXT_KEYS:
-        return None
-    return await inspect_session_context(db_path)
+# W4 compatibility shim — re-exports the relocated module (removed/converted in Wave 5).
+from maya_core import assistant_context_helpers as _m
+import sys as _sys
+_sys.modules[__name__] = _m

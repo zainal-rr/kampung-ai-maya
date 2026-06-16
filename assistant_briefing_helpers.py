@@ -1,20 +1,4 @@
-from __future__ import annotations
-
-from assistant_command_helpers import direct_key
-from briefing_service import BriefingBuilder
-
-
-WEEKLY_REFLECTION_KEYS = {
-    "weekly reflection",
-    "show weekly reflection",
-    "show my weekly reflection",
-    "weekly summary",
-    "what did you learn this week",
-    "what did you learn about me this week",
-}
-
-
-async def handle_weekly_reflection(db_path: str, text: str, channel: str) -> str | None:
-    if direct_key(text) not in WEEKLY_REFLECTION_KEYS:
-        return None
-    return await BriefingBuilder(db_path).build("weekly_reflection", channel)
+# W4 compatibility shim — re-exports the relocated module (removed/converted in Wave 5).
+from maya_core import assistant_briefing_helpers as _m
+import sys as _sys
+_sys.modules[__name__] = _m
