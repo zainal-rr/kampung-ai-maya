@@ -1382,13 +1382,13 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add explicit travel price capture for spoken or typed flight, Airbnb, Booking.com, hotel, accommodation, and stay prices so budget workbooks can preserve those values.
     - [x] Wire visible browser travel selections into budget memory: choosing a Google Flights, Booking.com, or Airbnb priced option saves the selected provider/option/price into `maya_travel_plan`, and the one-sheet travel budget workbook consumes those values. Verified by `browser_task_step_smoke.py`.
     - [x] Fix country-level travel Word QA so "Kazakhstan itinerary" can include in-country cities such as Almaty and Astana without being rejected as destination mismatches. Verified against the live-generated `kazakhstan-itinerary-v3.docx`, `document_species_smoke.py`, `word_quality_smoke.py`, and live Telegram turn 5743.
-    - [x] Add `grok_voice_transcript_replay_500.py` and `grok_voice_replay_fakes.py` for isolated deterministic replay without live provider spend.
+    - [x] Add `tests/replays/grok_voice_transcript_replay_500.py` and `grok_voice_replay_fakes.py` for isolated deterministic replay without live provider spend.
     - [x] Run the 500-case replay. Result: 500 PASS, 0 FAIL. Evidence: `logs/live_tests/grok_voice_transcript_replay_500_2026-06-04.md`.
     - [x] Confirm the replay covered the then-current voice-to-worker routing, memory, documents, `/complex`, safety gates, Grok-not-long-work policy, final response shape, live skills, skill creation/suggestion/approval, healing commands, travel budget price capture, slashless spoken commands, and noisy/cut-off transcripts.
     - [x] Keep real iMac in-session voice work validation under 22.6; deterministic transcript replay is not physical microphone/websocket proof.
 
 - [x] **22.9. Phase 22 Readiness 700 Proof**
-    - [x] Add `phase22_readiness_700.py` as the consolidated software-readiness benchmark for June 8 preparation.
+    - [x] Add `tests/replays/phase22_readiness_700.py` as the consolidated software-readiness benchmark for June 8 preparation.
     - [x] Cover document quality: Word render/visual QA, Excel formulas/format/domain/usefulness checks, PowerPoint render/notes/dark-theme/aspect-ratio checks, and failed-quality boundaries.
     - [x] Cover browser/agent workflow: YouTube, flight search, Booking.com/Airbnb comparison, product/research prompts, safe form filling, source-aware routing, and stop-before-login/payment/upload/submit behavior.
     - [x] Cover `/complex`: plan, approval, checkpoint, rollback, trace, repair/report, and final-report expectations.
@@ -1400,7 +1400,7 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Keep physical proof separate: this does not claim real iMac microphone/websocket/speaker, paid billing, Bambu print execution, Omi, Mudra, or real elapsed 30-day reliability.
 
 - [x] **22.10. Maya Voice Transcript Replay 700 Proof**
-    - [x] Add `maya_voice_transcript_replay_700.py` to send 700 noisy voice-style transcripts through `KampungAssistant.handle_text(..., input_type="voice")`.
+    - [x] Add `tests/replays/maya_voice_transcript_replay_700.py` to send 700 noisy voice-style transcripts through `KampungAssistant.handle_text(..., input_type="voice")`.
     - [x] Ensure long-work transcripts route into Maya's local work path instead of being answered as ordinary voice chat.
     - [x] Cover document creation, memory save/recall/forget, spoken routing commands, `/complex`, safety gates, skill request/approval, browser-safe routing, travel price capture, and daily conversation.
     - [x] Keep replay state isolated in a temporary DB and temporary skill/workspace folders so test memories and skill scaffolds do not pollute Maya's real memory.
@@ -1417,9 +1417,9 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Prepare browser benchmark evidence requirements with deterministic route/safety proof and live-run scoring placeholders.
     - [x] Run `/selfheal dryrun` equivalent locally. Result: no memory/files/cache/services changed; current core/profile 42%/82%; projected 42%/37%; latest document preserved.
     - [x] Run targeted Phase 22 smokes.
-    - [x] Rerun `phase22_readiness_700.py`. Result: 700 PASS, 0 FAIL.
-    - [x] Rerun `maya_voice_transcript_replay_700.py`. Result: 700 PASS, 0 FAIL.
-    - [x] Rerun `grok_voice_transcript_replay_500.py`. Result: 500 PASS, 0 FAIL.
+    - [x] Rerun `tests/replays/phase22_readiness_700.py`. Result: 700 PASS, 0 FAIL.
+    - [x] Rerun `tests/replays/maya_voice_transcript_replay_700.py`. Result: 700 PASS, 0 FAIL.
+    - [x] Rerun `tests/replays/grok_voice_transcript_replay_500.py`. Result: 500 PASS, 0 FAIL.
     - [x] Run `local_ci.py`.
     - [x] Run redaction check on the June 3 Telegram Web 200-test report.
     - [x] Keep live-only work separate: iMac realtime voice, live browser field sessions, Omi/Mudra, physical print, seven-day soak, and 30-day reliability remain pending until actual evidence exists.
@@ -1592,14 +1592,14 @@ operator commands through real CLI wrappers. Do not use `git stash` during W4;
 dirty work must be committed as a checkpoint or explicitly discarded before
 Step 0.
 
-- [ ] **W4.0. Clean Checkpoint And Baselines**
-    - [ ] Start from the clean Phase 7 checkpoint on branch `w4/restructure`.
-    - [ ] Save baseline `local_ci.py` output under `logs/w4/baseline_ci.txt`.
-    - [ ] Generate `logs/w4/cli_wrapper_candidates.txt` from actual `__main__` files and documented `python X.py` references.
-    - [ ] Generate `logs/w4/grandfather_baseline.txt` from current package-aware code-health violations; do not hand-code this list.
-    - [ ] Confirm package-aware `code_health.py` excludes `tests/` and fixture scripts, reports grandfathered debt, and fails only new violations.
+- [x] **W4.0. Clean Checkpoint And Baselines**
+    - [x] Start from the clean Phase 7 checkpoint on branch `w4/restructure`.
+    - [x] Save baseline `local_ci.py` output under `logs/w4/baseline_ci.txt`.
+    - [x] Generate `logs/w4/cli_wrapper_candidates.txt` from actual `__main__` files and documented `python X.py` references.
+    - [x] Generate `logs/w4/grandfather_baseline.txt` from current package-aware code-health violations; do not hand-code this list.
+    - [x] Confirm package-aware `code_health.py` excludes `tests/` and fixture scripts, reports grandfathered debt, and fails only new violations.
 - [ ] **W4.1. Package Move Waves**
-    - [ ] Wave 1: move smoke/replay/eval scripts into `tests/` and update `local_ci.py` paths.
+    - [x] Wave 1: move smoke/replay/eval scripts into `tests/` and update `local_ci.py` paths.
     - [ ] Wave 2: move non-smoke leaves with temporary identity shims.
     - [ ] Wave 3: move clustered modules package-by-package.
     - [ ] Wave 4: move hubs in small supervised batches.

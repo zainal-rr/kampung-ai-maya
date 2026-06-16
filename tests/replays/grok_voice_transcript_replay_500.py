@@ -29,7 +29,7 @@ from storage import get_preference
 from grok_voice_replay_fakes import FastReplayDocuments
 from voice_transcript_policy import should_park_voice_for_worker, transcript_quality_notes
 from xai_realtime_tools import HANDOFF_TOOL_NAME, execute_voice_tool
-from xai_voice_handoff import complete_voice_handoff_request, init_voice_handoff_db, pop_voice_handoff_request
+from xai_voice_handoff import init_voice_handoff_db
 
 
 @dataclass(frozen=True)
@@ -200,14 +200,15 @@ async def _run_case(assistant, db_path: str, case: Case) -> dict:
     park = should_park_voice_for_worker(case.text)
     reply = ""
     if park:
-        parked = await execute_voice_tool(db_path, HANDOFF_TOOL_NAME, {"request": case.text})
-        request = await pop_voice_handoff_request(db_path)
-        if not request:
-            raise AssertionError("handoff request was not parked")
-        reply = await assistant.handle_text(request, "imac", input_type="voice")
-        await complete_voice_handoff_request(db_path, request, result=reply)
-        if "Handoff parked" not in parked:
-            raise AssertionError("paid voice handoff was not acknowledged")
+        reply = await execute_voice_tool(
+            db_path,
+            HANDOFF_TOOL_NAME,
+            {"request": case.text},
+            assistant=assistant,
+            voice_session_id="grok_voice_replay_500",
+        )
+        if "local work engine is not attached" in reply:
+            raise AssertionError("work tool did not receive replay work engine")
     else:
         reply = await assistant.handle_text(case.text, "imac", input_type="voice")
     route = await last_route_text(db_path)
@@ -221,7 +222,7 @@ def _validate(case: Case, reply: str, route: str, parked: bool, latest_path: str
         raise AssertionError("generic failure response")
     if case.kind in {"artifact", "artifact_price"}:
         if not parked:
-            raise AssertionError("long artifact request was not parked from Grok voice")
+            raise AssertionError("long artifact request did not use the voice work tool path")
         if not latest_path or not Path(latest_path).exists():
             raise AssertionError("artifact path was not saved or file does not exist")
     if case.kind == "artifact_price":
@@ -282,7 +283,7 @@ async def _write_report(rows: list[dict], failures: list[dict]) -> None:
     md.append("## Category Counts")
     for key, value in sorted(summary["categories"].items()):
         md.append(f"- {key}: {value}")
-    md.extend(["", "## Coverage", "- voice-to-worker handoff", "- routing and spoken command aliases", "- memory save/recall/forget", "- document creation and edits", "- /complex and self-heal dryrun", "- safety gates", "- parked voice-session behavior", "- skill creation and approval", "- travel budget price capture", "- noisy filler/cut-off transcripts", ""])
+    md.extend(["", "## Coverage", "- voice work tool handoff", "- routing and spoken command aliases", "- memory save/recall/forget", "- document creation and edits", "- /complex and self-heal dryrun", "- safety gates", "- tool-seam voice work behavior", "- skill creation and approval", "- travel budget price capture", "- noisy filler/cut-off transcripts", ""])
     if failures:
         md.append("## Failures")
         md.extend(f"- #{f['id']} {f['category']}/{f['kind']}: {f['error']} | {f['text']}" for f in failures[:40])

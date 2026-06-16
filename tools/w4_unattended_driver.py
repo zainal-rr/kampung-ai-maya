@@ -53,9 +53,9 @@ WRAPPER_CANDIDATES_FILE = LOG_DIR / "cli_wrapper_candidates.txt"
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-SMOKE_SUFFIXES = ("_smoke", "_500", "_10000", "_eval", "_live", "_probe")
+SMOKE_SUFFIXES = ("_smoke", "_500", "_700", "_10000", "_eval", "_live", "_probe")
 SMOKE_DEST = {"_smoke": "tests/smokes", "_500": "tests/replays", "_10000": "tests/replays",
-              "_eval": "tests/evals", "_live": "tests/smokes", "_probe": "tests/smokes"}
+              "_700": "tests/replays", "_eval": "tests/evals", "_live": "tests/smokes", "_probe": "tests/smokes"}
 FIXTURE_EXCLUDE = ("_smoke", "_fakes", "_replay_", "phase22_")  # + startswith("live_")
 
 # Never move (gate/build infra + the .app entrypoint with dynamic imports).
@@ -270,7 +270,7 @@ def ensure_pkg(pkg: str) -> None:
     p = ROOT / pkg
     p.mkdir(parents=True, exist_ok=True)
     if not pkg.startswith("tests"):
-        (p / "tests/smokes/__init__.py").touch(exist_ok=True)
+        (p / "__init__.py").touch(exist_ok=True)
 
 
 def write_shim(stem: str, pkg: str) -> None:

@@ -192,7 +192,7 @@ These browser commands define route, safety, pass criteria, and evidence require
 Run the deterministic Grok transcript replay without live provider spend:
 
 ```bash
-./venv/bin/python grok_voice_transcript_replay_500.py
+./venv/bin/python tests/replays/grok_voice_transcript_replay_500.py
 ```
 
 The June 4, 2026 replay passed 500/500 cases across the then-current voice-to-worker routing, memory, documents, `/complex`, safety, skill creation/approval, healing commands, slashless spoken commands, travel price capture, and noisy/cut-off transcripts. This proves transcript handling and worker routing logic, not the physical microphone, websocket, speaker path, or the newer in-session voice work path.
@@ -200,7 +200,7 @@ The June 4, 2026 replay passed 500/500 cases across the then-current voice-to-wo
 Run the broader Phase 22 software-readiness benchmark:
 
 ```bash
-./venv/bin/python phase22_readiness_700.py
+./venv/bin/python tests/replays/phase22_readiness_700.py
 ```
 
 The June 4, 2026 readiness run passed 700/700 checks across document QA, browser/agent routing and safety, `/complex`, memory time travel, Blender/Maker software export, voice lifecycle simulation, paid-voice safety, park/resume simulation, 30-day reliability simulation, hardware boundaries, and multitasking. It is deterministic software proof, not physical iMac voice, paid billing, Bambu print, Omi, Mudra, or real elapsed 30-day proof.
@@ -208,7 +208,7 @@ The June 4, 2026 readiness run passed 700/700 checks across document QA, browser
 Run the Maya assistant-pipeline voice transcript replay:
 
 ```bash
-./venv/bin/python maya_voice_transcript_replay_700.py
+./venv/bin/python tests/replays/maya_voice_transcript_replay_700.py
 ```
 
 The June 4, 2026 Maya replay passed 700/700 voice-style transcripts by sending them through `KampungAssistant.handle_text(..., input_type="voice")`. That replay proved the then-current transcript-to-work routing path. The live iMac path now uses in-session voice work, so the replay remains useful for transcript cleanup and routing evidence but does not prove physical microphone, xAI websocket, Ara speaker output, live billing, in-session browser work, Telegram upload, Bambu printing, Omi, or Mudra.

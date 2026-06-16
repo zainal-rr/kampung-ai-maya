@@ -147,7 +147,7 @@ def _deck_arc_checks() -> None:
 
 
 def _live_batch_validator_checks() -> None:
-    source = (Path(__file__).parent / "tests/smokes/imac_document_creation_batch_live.py").read_text(encoding="utf-8")
+    source = (Path(__file__).parent / "imac_document_creation_batch_live.py").read_text(encoding="utf-8")
     _require(
         "or len(text.split()) >= 260" not in source,
         "live batch validator must not pass Word docs on word count when QA fails",
