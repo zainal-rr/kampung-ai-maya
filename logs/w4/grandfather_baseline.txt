@@ -1,0 +1,9 @@
+harness_helpers/graph_runner.py
+maya_voice/active_context_inspector.py
+maya_voice/artifact_manifest.py
+office_drafter_helpers/deck_scenarios.py
+office_pptx_helpers/text.py
+pptx_helpers/polish_review.py
+pptx_helpers/visual_assets.py
+telegram_helpers/channel.py
+word_helpers/quality.py

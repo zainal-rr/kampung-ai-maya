@@ -1,0 +1,65 @@
+Kampung AI local CI:
+1) PASS: python compile
+2) PASS: code health
+3) PASS: scored eval suite
+4) PASS: document request parser
+5) PASS: natural artifact parser
+6) PASS: confirmation decision
+7) PASS: semantic artifact resolver
+8) PASS: artifact clarification continuity
+9) PASS: artifact session continuity
+10) PASS: artifact naming
+11) PASS: artifact delivery gate
+12) PASS: artifact retry loop
+13) PASS: office edit workflow
+14) PASS: household budget
+15) PASS: word technical repair
+16) PASS: semantic telegram fresh 500
+17) PASS: voice document transcript
+18) PASS: voice semantic seam manifest
+19) PASS: voice browser steering
+20) PASS: voice artifact transcript replay 500
+21) PASS: voice telegram transcript replay 10000
+22) PASS: artifact parameter resolver
+23) PASS: artifact parameters
+24) PASS: word travel destination
+25) PASS: untrusted input boundary
+26) PASS: untrusted live path
+27) PASS: browser untrusted action guard
+28) PASS: canonical memory
+29) PASS: canonical memory embeddings
+30) PASS: nightly consolidation
+31) PASS: memory time audit
+32) PASS: context window canaries
+33) PASS: memory recall eval
+34) PASS: memory recall compare
+35) PASS: runtime config
+36) PASS: secret provider
+37) PASS: secret migration
+38) PASS: tool sandbox policy
+39) PASS: blast-radius canaries (W5-1)
+40) PASS: memory supersede canaries (W2-A)
+41) PASS: self-heal execution
+42) PASS: voice command aliases
+43) PASS: OSBridge test mode
+44) PASS: telegram conversation contract
+45) PASS: telegram text alias
+46) PASS: telegram voice input
+47) PASS: telegram photo input
+48) PASS: browser semantic scrape 500
+49) PASS: browser run evidence
+50) PASS: browser lane validators
+51) PASS: browser reliability dry night
+52) PASS: browser extension bridge
+53) PASS: browser driver mode
+54) PASS: workflow document bypass
+55) PASS: recent questions document
+56) PASS: agentic verifier deep
+57) PASS: agentic reliability harness
+58) PASS: flight deep link
+59) PASS: legacy architecture removed
+60) PASS: memory perspective
+61) PASS: hardening audit
+62) PASS: latest demo evidence
+63) PASS: maya UI read API
+blocking failures: 0

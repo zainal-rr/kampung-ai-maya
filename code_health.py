@@ -23,6 +23,26 @@ LINE_LIMIT = 300
 WARNING_MIN = 250
 URGENT_MIN = 280
 ROOT_PY_FILE_LIMIT = 724
+GRANDFATHER_BASELINE = Path("logs/w4/grandfather_baseline.txt")
+PACKAGE_PREFIXES = (
+    "maya_",
+    "telegram_helpers",
+    "office_drafter_helpers",
+    "office_pptx_helpers",
+    "pptx_helpers",
+    "word_helpers",
+    "harness_helpers",
+)
+EXCLUDED_DIRS = {
+    ".git",
+    ".venv",
+    "venv",
+    "__pycache__",
+    ".claude",
+    "tests",
+    "backups",
+    "project_documents",
+}
 
 
 @dataclass(frozen=True)
@@ -41,6 +61,7 @@ class CodeHealth:
     warnings: list[FileLineCount]
     urgent: list[FileLineCount]
     violations: list[FileLineCount]
+    grandfathered_violations: list[FileLineCount]
     root_python_files: int
 
     @property
@@ -51,18 +72,22 @@ class CodeHealth:
 def collect_code_health(root: Path | str = ".") -> CodeHealth:
     root_path = Path(root)
     root_python_files = len(list(root_path.glob("*.py")))
+    grandfathered_paths = _grandfathered_paths(root_path)
     files = sorted(
-        (_count_file(path) for path in root_path.glob("*.py") if not _excluded_from_runtime_gate(path)),
-        key=lambda item: item.name,
+        (_count_file(path) for path in _runtime_python_files(root_path)),
+        key=lambda item: str(item.path),
     )
     warnings = [item for item in files if WARNING_MIN <= item.lines < URGENT_MIN]
     urgent = [item for item in files if URGENT_MIN <= item.lines <= LINE_LIMIT]
-    violations = [item for item in files if item.lines > LINE_LIMIT]
+    all_violations = [item for item in files if item.lines > LINE_LIMIT]
+    grandfathered = [item for item in all_violations if _relative_key(root_path, item.path) in grandfathered_paths]
+    violations = [item for item in all_violations if _relative_key(root_path, item.path) not in grandfathered_paths]
     return CodeHealth(
         files=files,
         warnings=warnings,
         urgent=urgent,
         violations=violations,
+        grandfathered_violations=grandfathered,
         root_python_files=root_python_files,
     )
 
@@ -79,6 +104,7 @@ def format_code_health(health: CodeHealth) -> str:
     if (
         health.root_python_files <= ROOT_PY_FILE_LIMIT
         and not health.violations
+        and not health.grandfathered_violations
         and not health.urgent
         and not health.warnings
     ):
@@ -87,11 +113,57 @@ def format_code_health(health: CodeHealth) -> str:
 
     if health.violations:
         lines.append("violations: " + _format_counts(health.violations))
+    if health.grandfathered_violations:
+        lines.append("grandfathered_w4_debt: " + _format_counts(health.grandfathered_violations))
     if health.urgent:
         lines.append("urgent_refactor: " + _format_counts(health.urgent))
     if health.warnings:
         lines.append("watchlist: " + _format_counts(health.warnings))
     return "\n".join(lines)
+
+
+def _runtime_python_files(root: Path) -> list[Path]:
+    files = [path for path in root.glob("*.py") if not _excluded_from_runtime_gate(path)]
+    for package in root.iterdir():
+        if not package.is_dir() or not _scanned_package_dir(package):
+            continue
+        for path in package.rglob("*.py"):
+            if not _excluded_from_runtime_gate(path):
+                files.append(path)
+    return files
+
+
+def _scanned_package_dir(path: Path) -> bool:
+    if path.name in EXCLUDED_DIRS or path.name.startswith("."):
+        return False
+    if not (path / "__init__.py").exists():
+        return False
+    return path.name.startswith(PACKAGE_PREFIXES) or path.name in {
+        "telegram_helpers",
+        "office_drafter_helpers",
+        "office_pptx_helpers",
+        "pptx_helpers",
+        "word_helpers",
+        "harness_helpers",
+    }
+
+
+def _grandfathered_paths(root: Path) -> set[str]:
+    path = root / GRANDFATHER_BASELINE
+    if not path.exists():
+        return set()
+    return {
+        line.strip()
+        for line in path.read_text(encoding="utf-8", errors="ignore").splitlines()
+        if line.strip() and not line.strip().startswith("#")
+    }
+
+
+def _relative_key(root: Path, path: Path) -> str:
+    try:
+        return str(path.relative_to(root))
+    except ValueError:
+        return str(path)
 
 
 def _count_file(path: Path) -> FileLineCount:
@@ -142,6 +214,8 @@ def _docstring_lines(text: str) -> set[int]:
 
 def _excluded_from_runtime_gate(path: Path) -> bool:
     name = path.name
+    if any(part in EXCLUDED_DIRS for part in path.parts):
+        return True
     return (
         name.startswith("live_")
         or name.endswith("_smoke.py")

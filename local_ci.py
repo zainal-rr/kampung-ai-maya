@@ -106,9 +106,11 @@ def format_ci(results: list[CheckResult]) -> str:
 
 
 def _compile_check() -> CheckResult:
+    excluded = {".git", ".venv", "venv", "__pycache__", ".claude", "backups"}
     files = sorted(
         str(path.relative_to(ROOT))
-        for path in (*ROOT.glob("*.py"), *ROOT.joinpath("tests").rglob("*.py"))
+        for path in ROOT.rglob("*.py")
+        if not any(part in excluded for part in path.parts)
     )
     return _command_check("python compile", ("-m", "py_compile", *files))
 
@@ -126,6 +128,8 @@ def _eval_check() -> CheckResult:
 def _command_check(name: str, command: tuple[str, ...], required: bool = True) -> CheckResult:
     env = os.environ.copy()
     env["MAYA_TEST_MODE"] = "1"
+    current_pythonpath = env.get("PYTHONPATH", "")
+    env["PYTHONPATH"] = str(ROOT) if not current_pythonpath else f"{ROOT}{os.pathsep}{current_pythonpath}"
     proc = subprocess.run([sys.executable, *command], cwd=ROOT, env=env, capture_output=True, text=True, timeout=180)
     return CheckResult(name, proc.returncode == 0, (proc.stdout + proc.stderr).strip(), required=required)
 

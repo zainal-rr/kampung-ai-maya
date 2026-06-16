@@ -1585,6 +1585,43 @@ Full detail: `SESSION_CHANGE_REPORT.md`. Validation plan: `KAMPUNG_AI_VALIDATION
     - [ ] One week of field use; collect the disappointment list to drive the next phase.
     - [ ] Decide the wedge question before Phase 25 ends: open-source the governed spine, productize the SEA document agent, or keep Maya personal. This decision gates restructure, installer, and multi-user work.
 
+## W4: Package Boundary Restructure
+
+Goal: replace the flat root with package boundaries while preserving daily
+operator commands through real CLI wrappers. Do not use `git stash` during W4;
+dirty work must be committed as a checkpoint or explicitly discarded before
+Step 0.
+
+- [ ] **W4.0. Clean Checkpoint And Baselines**
+    - [ ] Start from the clean Phase 7 checkpoint on branch `w4/restructure`.
+    - [ ] Save baseline `local_ci.py` output under `logs/w4/baseline_ci.txt`.
+    - [ ] Generate `logs/w4/cli_wrapper_candidates.txt` from actual `__main__` files and documented `python X.py` references.
+    - [ ] Generate `logs/w4/grandfather_baseline.txt` from current package-aware code-health violations; do not hand-code this list.
+    - [ ] Confirm package-aware `code_health.py` excludes `tests/` and fixture scripts, reports grandfathered debt, and fails only new violations.
+- [ ] **W4.1. Package Move Waves**
+    - [ ] Wave 1: move smoke/replay/eval scripts into `tests/` and update `local_ci.py` paths.
+    - [ ] Wave 2: move non-smoke leaves with temporary identity shims.
+    - [ ] Wave 3: move clustered modules package-by-package.
+    - [ ] Wave 4: move hubs in small supervised batches.
+    - [ ] Wave 5: rewrite imports, remove identity shims, and convert allowlisted root commands into real CLI wrappers.
+    - [ ] Wave 6: verify `kampung_ai_app` import and app-entry dynamic paths.
+- [ ] **W4.2. Wrapper Proof**
+    - [ ] Root wrappers execute package entrypoints with `runpy.run_module(..., run_name="__main__")` or `main()`, not plain `sys.modules` shims.
+    - [ ] `./venv/bin/python browser_extension_bridge.py --status` still works from the repo root.
+    - [ ] `./venv/bin/python local_ci.py`, `doctor.py`, `service_install.py`, `run_demo.py`, `weekly_memory.py`, and live reliability run wrappers still execute safe proof modes.
+- [ ] **W4.3. Independent Reviews**
+    - [ ] CLI wrapper reviewer: file/line evidence plus command results.
+    - [ ] Import/de-shim reviewer: no stale bare imports or compatibility shim markers.
+    - [ ] Code-health/root reviewer: package-aware health, grandfather baseline, root count, ratchet.
+    - [ ] Docs/checklist reviewer: runbooks and checklist match moved paths and preserved commands.
+    - [ ] Browser/operational reviewer: browser bridge status, app entrypoints, service-install wrapper behavior.
+- [ ] **W4.4. Final Acceptance**
+    - [ ] `./venv/bin/python local_ci.py` matches the W4 baseline pass set.
+    - [ ] `./venv/bin/python code_health.py` passes with package-aware scanning.
+    - [ ] No `W4 compatibility shim` markers remain outside intentional command wrappers.
+    - [ ] Root contains only approved wrappers/entrypoints.
+    - [ ] Final worktree is clean and committed.
+
 ## Phase 25: Engine Sprint - Trust The Model With More Of The Loop
 
 Goal: close the "strong governance, weak loop" inversion. The permission kernel,
