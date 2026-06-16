@@ -62,7 +62,7 @@ from maya_core.storage import get_preference, upsert_preference
 from maya_core.testing_spreadsheet import is_kampung_ai_testing_comparison, kampung_ai_testing_rows
 from maya_core.utils import OSBridge
 from maya_core.visual_workflow import VisualWorkflowRenderer
-from workspace_paths import workspace_dir
+from maya_core.workspace_paths import workspace_dir
 
 
 logger = logging.getLogger("document_actions")

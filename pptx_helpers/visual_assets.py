@@ -12,7 +12,7 @@ from pptx.util import Inches
 
 from maya_core.gemini_image import generate_gemini_image
 from maya_documents.office_files import safe_slug
-from workspace_paths import workspace_dir
+from maya_core.workspace_paths import workspace_dir
 
 
 VISUAL_TOPIC_MARKERS = (

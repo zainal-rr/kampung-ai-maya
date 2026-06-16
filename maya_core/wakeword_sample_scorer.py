@@ -11,7 +11,7 @@ from sklearn.model_selection import LeaveOneOut, cross_val_predict
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 
-from workspace_paths import workspace_dir
+from maya_core.workspace_paths import workspace_dir
 
 
 SAMPLE_ROOT = workspace_dir("artifacts", create=True) / "wakeword_samples"

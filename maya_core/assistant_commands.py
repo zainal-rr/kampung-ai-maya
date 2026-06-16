@@ -47,7 +47,7 @@ from maya_core.storage import cancel_matching_tasks, list_preferences, list_task
 from maya_core.unsupported_actions import unsupported_action_subject
 from maya_voice.voice_session_commands import handle_voice_session_command
 from maya_core.web_actions import WebActionRouter
-from workspace_actions import WorkspaceActionRouter
+from maya_core.workspace_actions import WorkspaceActionRouter
 
 
 class AssistantCommandRouter:

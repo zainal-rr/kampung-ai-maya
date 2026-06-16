@@ -3,7 +3,7 @@ from __future__ import annotations
 from contextlib import contextmanager
 from contextvars import ContextVar
 
-from xai_voice_work import set_voice_work_phase, voice_work_cancel_requested
+from maya_voice.xai_voice_work import set_voice_work_phase, voice_work_cancel_requested
 
 
 _current_db_path: ContextVar[str] = ContextVar("maya_voice_work_db_path", default="")

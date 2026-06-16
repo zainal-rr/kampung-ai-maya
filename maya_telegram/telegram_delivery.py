@@ -15,7 +15,7 @@ from telegram.error import NetworkError, RetryAfter, TimedOut
 
 from maya_voice.voice import VoiceNode
 from maya_core.vision_markup import split_image_marker
-from workspace_paths import legacy_workspace_root, maya_workspace_root, project_roots
+from maya_core.workspace_paths import legacy_workspace_root, maya_workspace_root, project_roots
 
 
 logger = logging.getLogger(__name__)

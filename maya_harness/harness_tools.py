@@ -18,7 +18,7 @@ from maya_core.self_heal_execution import execute_checkpointed_self_heal
 from maya_core.self_healing import self_heal_from_complex_plan, self_heal_text
 from maya_core.skill_factory import SkillFactory
 from maya_core.untrusted_input_boundary import assess_untrusted_context
-from workspace_actions import WorkspaceActionRouter
+from maya_core.workspace_actions import WorkspaceActionRouter
 
 
 SENSITIVE_WORDS = (

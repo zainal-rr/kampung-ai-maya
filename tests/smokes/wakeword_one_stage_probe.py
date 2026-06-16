@@ -18,7 +18,7 @@ from openwakeword.utils import AudioFeatures
 from scipy.io.wavfile import write as write_wav
 
 from maya_core.wakeword_sample_scorer import clip_features
-from workspace_paths import workspace_dir
+from maya_core.workspace_paths import workspace_dir
 
 
 MODEL_PATH = Path.home() / "Desktop/Maya/artifacts/wakeword_models/maya_wake_scorer.pkl"

@@ -16,7 +16,7 @@ import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
-from workspace_paths import legacy_workspace_root, maya_workspace_root, project_roots
+from maya_core.workspace_paths import legacy_workspace_root, maya_workspace_root, project_roots
 
 HONEST_LIMIT = (
     "resolve_safe_path() is in-process policy, NOT OS containment. It binds "

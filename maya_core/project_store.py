@@ -10,7 +10,7 @@ import aiosqlite
 
 from maya_core.retention_policy import touch_project_activity
 from maya_core.storage import delete_preference, get_preference, upsert_preference
-from workspace_paths import project_roots as default_project_roots
+from maya_core.workspace_paths import project_roots as default_project_roots
 
 
 ACTIVE_PROJECT_PATH = "active_project_path"

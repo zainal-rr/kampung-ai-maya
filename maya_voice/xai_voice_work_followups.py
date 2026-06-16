@@ -3,8 +3,8 @@ from __future__ import annotations
 import json
 import os
 
-from xai_realtime_tools import BROWSER_TOOL_NAME, MAYA_WORK_TOOL_NAME
-from xai_voice_supervisor import SupervisedVoiceWork, classify_supervised_voice_work
+from maya_voice.xai_realtime_tools import BROWSER_TOOL_NAME, MAYA_WORK_TOOL_NAME
+from maya_voice.xai_voice_supervisor import SupervisedVoiceWork, classify_supervised_voice_work
 
 
 def supervised_browser_request(transcript: str) -> str:
@@ -222,7 +222,7 @@ async def apply_late_browser_followups(event_module, session, work: SupervisedVo
 
 async def send_supervised_work_status(session, question: str) -> bool:
     from maya_voice.voice_session_log import record_voice_turn
-    from xai_voice_work import voice_work_status_text
+    from maya_voice.xai_voice_work import voice_work_status_text
 
     status = await voice_work_status_text(session.db_path, limit=3)
     await record_voice_turn(

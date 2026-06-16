@@ -16,7 +16,7 @@ from pathlib import Path
 from maya_documents.document_actions_smoke_helpers import _init
 from tests.replays.grok_voice_transcript_replay_500 import Case, _cases as base_cases
 from tests.replays.grok_voice_transcript_replay_500 import _make_assistant, _patched_environment, _patched_models, _run_case
-from xai_voice_handoff import init_voice_handoff_db
+from maya_voice.xai_voice_handoff import init_voice_handoff_db
 
 
 REPORT_JSON = Path("logs/live_tests/maya_voice_transcript_replay_700_2026-06-04.json")

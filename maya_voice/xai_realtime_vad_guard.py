@@ -6,8 +6,8 @@ import json
 import time
 
 from maya_voice.voice_session_log import record_voice_turn
-from xai_realtime_models import PlaybackCommand, SessionCloseReason
-from xai_realtime_stream_helpers import put_playback
+from maya_voice.xai_realtime_models import PlaybackCommand, SessionCloseReason
+from maya_voice.xai_realtime_stream_helpers import put_playback
 
 
 class XaiRealtimeVadGuardMixin:

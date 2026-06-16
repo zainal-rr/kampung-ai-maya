@@ -14,7 +14,7 @@ from pathlib import Path
 import cv2
 from dotenv import load_dotenv
 
-from workspace_paths import workspace_dir
+from maya_core.workspace_paths import workspace_dir
 
 
 def main() -> None:

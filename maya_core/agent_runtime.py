@@ -17,7 +17,7 @@ from maya_core.storage import (
     record_task_event,
     update_task_status,
 )
-from workflow_store import (
+from maya_core.workflow_store import (
     begin_workflow,
     finish_workflow,
     get_workflow,

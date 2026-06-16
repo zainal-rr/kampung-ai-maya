@@ -25,7 +25,7 @@ from maya_documents.artifact_sessions import active_artifact_session
 from maya_core.markdown_drafter import draft_markdown_with_gemini
 from maya_core.storage import get_preference, upsert_preference
 from maya_core.utils import OSBridge
-from workspace_paths import workspace_dir
+from maya_core.workspace_paths import workspace_dir
 from maya_travel.travel_budget_workbook import _build_workbook
 from maya_travel.travel_budget_plan import (
     _current_trip_reference,

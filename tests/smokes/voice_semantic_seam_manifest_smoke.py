@@ -30,9 +30,9 @@ from maya_voice.tool_guard import empty_request_reason
 from maya_voice.work_control import revise_maya_work
 from maya_voice.work_runtime import voice_work_context
 from maya_core.storage import init_db
-from xai_realtime_tools import MAYA_WORK_TOOL_NAME, execute_voice_tool
+from maya_voice.xai_realtime_tools import MAYA_WORK_TOOL_NAME, execute_voice_tool
 from xai_realtime_work_supervisor_smoke import FakeAssistant, FakeRealtimeSession
-from xai_voice_work import complete_voice_work, create_voice_work, get_voice_work
+from maya_voice.xai_voice_work import complete_voice_work, create_voice_work, get_voice_work
 
 
 async def _test_no_transcript_work_start() -> None:
@@ -313,7 +313,7 @@ async def _test_cross_session_revision_needs_confirmation() -> None:
 
 
 async def _test_browser_strict_fails_closed() -> None:
-    import xai_realtime_tools
+    import maya_voice.xai_realtime_tools as xai_realtime_tools
 
     old_mode = os.environ.get("MAYA_BROWSER_MODE")
     old_wait = os.environ.get("MAYA_BROWSER_EXTENSION_WAIT_SECONDS")
@@ -355,7 +355,7 @@ async def _test_browser_strict_fails_closed() -> None:
 
 
 async def _test_browser_strict_verified_group_facts() -> None:
-    import xai_realtime_tools
+    import maya_voice.xai_realtime_tools as xai_realtime_tools
     import maya_voice.browser_runtime as browser_runtime
     from browser_extension_bridge import remember_extension_open_result
 
@@ -400,7 +400,7 @@ async def _test_browser_strict_verified_group_facts() -> None:
 
 
 async def _test_browser_strict_requires_group_proof() -> None:
-    import xai_realtime_tools
+    import maya_voice.xai_realtime_tools as xai_realtime_tools
     import maya_voice.browser_runtime as browser_runtime
 
     original_runner = xai_realtime_tools.run_browser_capability_isolated

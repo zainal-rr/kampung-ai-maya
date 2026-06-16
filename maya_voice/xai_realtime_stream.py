@@ -20,13 +20,13 @@ from maya_core.sounddevice_audio import (
     resolve_sounddevice_input_after_refresh,
 )
 from maya_voice.voice_session_log import finish_voice_session, start_voice_session
-from xai_realtime_audio_math import pcm_rms
-from xai_realtime_stream_helpers import append_audio_message, put_latest, put_playback
-from xai_voice_agent import realtime_url
-from xai_realtime_events import XaiRealtimeEventMixin
-from xai_realtime_models import PlaybackCommand, SessionCloseReason
-from xai_realtime_playback import XaiRealtimePlaybackMixin
-from xai_realtime_session_update import session_update_payload
+from maya_voice.xai_realtime_audio_math import pcm_rms
+from maya_voice.xai_realtime_stream_helpers import append_audio_message, put_latest, put_playback
+from maya_voice.xai_voice_agent import realtime_url
+from maya_voice.xai_realtime_events import XaiRealtimeEventMixin
+from maya_voice.xai_realtime_models import PlaybackCommand, SessionCloseReason
+from maya_voice.xai_realtime_playback import XaiRealtimePlaybackMixin
+from maya_voice.xai_realtime_session_update import session_update_payload
 
 
 class XaiRealtimeStreamingSession(XaiRealtimeEventMixin, XaiRealtimePlaybackMixin):

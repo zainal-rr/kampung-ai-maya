@@ -12,9 +12,9 @@ import tempfile
 import time
 from pathlib import Path
 
-import xai_realtime_events
+import maya_voice.xai_realtime_events as xai_realtime_events
 from maya_core.storage import init_db
-from xai_realtime_events import XaiRealtimeEventMixin
+from maya_voice.xai_realtime_events import XaiRealtimeEventMixin
 
 
 class FakeWebSocket:

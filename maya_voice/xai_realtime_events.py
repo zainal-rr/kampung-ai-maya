@@ -5,18 +5,18 @@ import json
 import time
 
 from maya_voice.voice_session_log import record_voice_turn
-from xai_realtime_models import PlaybackCommand, SessionCloseReason, _decode_audio_delta
-from xai_realtime_stream_helpers import append_audio_message, event_error, put_playback
+from maya_voice.xai_realtime_models import PlaybackCommand, SessionCloseReason, _decode_audio_delta
+from maya_voice.xai_realtime_stream_helpers import append_audio_message, event_error, put_playback
 from maya_documents.artifact_steering import pending_steer_events_for_work, update_artifact_steer_event
 from maya_voice.tool_results import failed_tool_result_for_maya, tool_result_for_maya
-from xai_realtime_tools import BROWSER_TOOL_NAME, MAYA_WORK_TOOL_NAME, execute_voice_tool
-from xai_realtime_vad_guard import XaiRealtimeVadGuardMixin
-from xai_realtime_voice_work import (
+from maya_voice.xai_realtime_tools import BROWSER_TOOL_NAME, MAYA_WORK_TOOL_NAME, execute_voice_tool
+from maya_voice.xai_realtime_vad_guard import XaiRealtimeVadGuardMixin
+from maya_voice.xai_realtime_voice_work import (
     XaiRealtimeVoiceWorkMixin,
 )
-from xai_voice_supervisor import SupervisedVoiceWork
-from xai_voice_work import complete_voice_work, set_voice_work_phase, voice_work_cancel_requested
-from xai_voice_work_followups import context_grace_seconds
+from maya_voice.xai_voice_supervisor import SupervisedVoiceWork
+from maya_voice.xai_voice_work import complete_voice_work, set_voice_work_phase, voice_work_cancel_requested
+from maya_voice.xai_voice_work_followups import context_grace_seconds
 
 
 class XaiRealtimeEventMixin(XaiRealtimeVoiceWorkMixin, XaiRealtimeVadGuardMixin):

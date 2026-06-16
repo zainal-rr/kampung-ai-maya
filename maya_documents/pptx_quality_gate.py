@@ -12,7 +12,7 @@ from pptx import Presentation
 
 from maya_core.presentation_visual_builder import build_visual_reviewed_deck
 from maya_documents.pptx_slide_renderer import PptxRenderTimeout, _render_deadline_seconds, render_pptx_slides
-from workspace_paths import workspace_dir
+from maya_core.workspace_paths import workspace_dir
 
 
 BAD_PHRASES = (

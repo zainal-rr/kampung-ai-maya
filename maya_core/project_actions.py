@@ -19,7 +19,7 @@ from maya_core.project_store import (
     save_pending_project_choices,
     set_active_project,
 )
-from workspace_paths import workspace_dir
+from maya_core.workspace_paths import workspace_dir
 
 
 class ProjectActionRouter:

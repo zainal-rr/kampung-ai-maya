@@ -22,7 +22,7 @@ from maya_core.routine_store import init_routine_db
 from maya_core.session_memory_store import init_session_memory_db
 from maya_core.skill_store import init_skill_db
 from maya_core.storage import init_db
-from xai_realtime_document_tools import execute_desktop_file_tool
+from maya_voice.xai_realtime_document_tools import execute_desktop_file_tool
 
 
 async def main() -> None:

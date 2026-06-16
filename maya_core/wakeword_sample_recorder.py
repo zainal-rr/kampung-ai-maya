@@ -6,7 +6,7 @@ from pathlib import Path
 import sounddevice as sd
 from scipy.io.wavfile import write as write_wav
 
-from workspace_paths import workspace_dir
+from maya_core.workspace_paths import workspace_dir
 
 
 def main() -> None:

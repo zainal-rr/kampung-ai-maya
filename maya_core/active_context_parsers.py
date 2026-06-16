@@ -7,7 +7,7 @@ from pathlib import Path
 from openpyxl import load_workbook
 from openpyxl.utils.cell import range_boundaries
 
-from workspace_paths import legacy_workspace_root, maya_workspace_root
+from maya_core.workspace_paths import legacy_workspace_root, maya_workspace_root
 
 
 MAX_EXCERPT_CHARS = 5200

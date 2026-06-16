@@ -24,7 +24,7 @@ from maya_core.skill_store import init_skill_db
 from maya_core.storage import init_db
 from maya_telegram.telegram_delivery import split_file_markers
 from maya_core.weekly_memory_store import init_weekly_memory_db
-from workspace_actions import WorkspaceActionRouter
+from maya_core.workspace_actions import WorkspaceActionRouter
 
 
 class FakeBridge:

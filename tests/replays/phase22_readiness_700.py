@@ -33,7 +33,7 @@ from maya_voice.voice_session_log import finish_voice_session, start_voice_sessi
 from maya_voice.voice_transcript_policy import clean_voice_transcript_for_intent, should_park_voice_for_worker
 from maya_documents.word_quality import word_quality_spec
 from maya_documents.word_visual_qa import inspect_word_visual_quality
-from xai_voice_handoff import complete_voice_handoff_request, pop_voice_handoff_request, save_voice_handoff_request
+from maya_voice.xai_voice_handoff import complete_voice_handoff_request, pop_voice_handoff_request, save_voice_handoff_request
 from maya_harness.live_reliability_soak import SoakDay
 REPORT_JSON, REPORT_MD = Path("logs/live_tests/phase22_readiness_700_2026-06-04.json"), Path("logs/live_tests/phase22_readiness_700_2026-06-04.md")
 @dataclass

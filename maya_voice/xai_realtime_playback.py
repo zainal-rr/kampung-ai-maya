@@ -11,8 +11,8 @@ import sounddevice as sd
 
 from maya_core.sounddevice_audio import output_device_snapshot, refresh_sounddevice_hostapi, resolve_first_output
 from maya_voice.voice_session_log import record_voice_turn
-from xai_realtime_models import PlaybackCommand, SessionCloseReason
-from xai_realtime_stream_helpers import put_playback
+from maya_voice.xai_realtime_models import PlaybackCommand, SessionCloseReason
+from maya_voice.xai_realtime_stream_helpers import put_playback
 
 
 class XaiRealtimePlaybackMixin:

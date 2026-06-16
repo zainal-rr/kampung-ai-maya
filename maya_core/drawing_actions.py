@@ -9,7 +9,7 @@ from pathlib import Path
 from maya_core.gemini_image import generate_gemini_image
 from maya_documents.office_files import safe_slug
 from maya_core.utils import OSBridge
-from workspace_paths import workspace_dir
+from maya_core.workspace_paths import workspace_dir
 
 
 class DrawingActionRouter:

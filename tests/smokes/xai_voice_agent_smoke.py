@@ -8,7 +8,7 @@ if str(_w4_root) not in _w4_sys.path:
 del _w4_Path, _w4_root, _w4_sys
 
 
-from xai_voice_agent import (
+from maya_voice.xai_voice_agent import (
     conversation_item_payload,
     input_audio_append_payload,
     input_audio_commit_payload,

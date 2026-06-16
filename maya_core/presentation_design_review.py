@@ -11,7 +11,7 @@ from maya_documents.pptx_slide_renderer import render_pptx_slides
 from maya_documents.office_modern_files import safe_slug
 from maya_core.provider_capabilities import CAPABILITIES
 from maya_core.skill_store import find_skill
-from workspace_paths import workspace_dir
+from maya_core.workspace_paths import workspace_dir
 
 
 _CREATION_VERBS = ("make", "create", "build", "draft", "generate", "prepare")

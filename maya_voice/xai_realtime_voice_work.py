@@ -9,15 +9,15 @@ from maya_voice.voice_session_log import record_voice_turn
 from maya_documents.artifact_steering import apply_late_artifact_steers, update_artifact_steer_event
 from maya_voice.tool_guard import empty_request_reason
 from maya_voice.artifact_manifest import create_or_get_manifest
-from xai_realtime_tools import BROWSER_TOOL_NAME, MAYA_WORK_TOOL_NAME
-from xai_voice_work_followups import (
+from maya_voice.xai_realtime_tools import BROWSER_TOOL_NAME, MAYA_WORK_TOOL_NAME
+from maya_voice.xai_voice_work_followups import (
     context_grace_seconds,
     extract_followup_context,
     looks_like_voice_status_question,
     send_supervised_work_status,
 )
-from xai_voice_work import create_voice_work
-from xai_voice_supervisor import SupervisedVoiceWork
+from maya_voice.xai_voice_work import create_voice_work
+from maya_voice.xai_voice_supervisor import SupervisedVoiceWork
 
 
 class XaiRealtimeVoiceWorkMixin:
@@ -142,7 +142,7 @@ class XaiRealtimeVoiceWorkMixin:
         return await self._cancel_auto_response_for_supervised_voice_work()
 
     async def _run_supervised_voice_work(self, work: SupervisedVoiceWork) -> None:
-        import xai_realtime_events as event_module
+        import maya_voice.xai_realtime_events as event_module
 
         try:
             await asyncio.sleep(context_grace_seconds(work.kind))

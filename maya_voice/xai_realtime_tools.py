@@ -6,7 +6,7 @@ import os
 from maya_core.cost_tracker import record_usage
 from maya_core.language_policy import language_instruction
 from maya_core.models import TheSenses
-from xai_realtime_visual_context_tools import execute_visual_context_tool
+from maya_voice.xai_realtime_visual_context_tools import execute_visual_context_tool
 from browser_extension_bridge import extension_last_open_result, reset_extension_last_open_result
 from maya_voice.browser_runtime import (
     browser_bridge_preflight_isolated,
@@ -43,14 +43,14 @@ from maya_voice.tool_specs import (
     REVISE_WORK_TOOL_NAME,
     voice_tools,
 )
-from xai_voice_work import (
+from maya_voice.xai_voice_work import (
     complete_voice_work,
     create_voice_work,
     mark_voice_work_running,
     set_voice_work_phase,
     voice_work_cancel_requested,
 )
-from xai_voice_state_tools import read_maya_state
+from maya_voice.xai_voice_state_tools import read_maya_state
 
 
 async def execute_voice_tool(

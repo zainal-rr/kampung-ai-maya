@@ -7,7 +7,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from maya_documents.office_files import safe_slug
-from workspace_paths import workspace_dir
+from maya_core.workspace_paths import workspace_dir
 
 
 @dataclass(frozen=True)

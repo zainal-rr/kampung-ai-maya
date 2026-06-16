@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from workspace_paths import legacy_workspace_root, maya_workspace_root, workspace_dir
+from maya_core.workspace_paths import legacy_workspace_root, maya_workspace_root, workspace_dir
 from maya_core.utils import OSBridge
 
 

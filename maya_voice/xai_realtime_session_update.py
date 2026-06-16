@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import os
 
-from xai_realtime_tools import voice_tools
+from maya_voice.xai_realtime_tools import voice_tools
 
 
 def session_update_payload(instructions: str, sample_rate: int) -> dict:

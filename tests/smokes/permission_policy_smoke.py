@@ -14,7 +14,7 @@ from pathlib import Path
 
 from maya_core.file_actions import FileActionRouter
 from maya_core.permission_policy import action_permission, contains_sensitive_info, is_private_exposure, path_needs_confirmation
-from workspace_paths import workspace_dir
+from maya_core.workspace_paths import workspace_dir
 
 
 async def main() -> None:

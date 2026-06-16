@@ -13,7 +13,7 @@ from maya_voice.voice_session_store import (
     voice_session_turns,
     _voice_session_by_id,
 )
-from workspace_paths import workspace_dir
+from maya_core.workspace_paths import workspace_dir
 
 
 async def export_voice_session_markdown(db_path: str, session_id: int) -> str:

@@ -4,7 +4,7 @@ from __future__ import annotations
 async def read_maya_state(db_path: str, question: str) -> str:
     lowered = question.lower()
     if _voice_work_question(lowered):
-        from xai_voice_work import voice_work_status_text
+        from maya_voice.xai_voice_work import voice_work_status_text
 
         return await voice_work_status_text(db_path)
     if "approval" in lowered or "approve" in lowered:
@@ -31,7 +31,7 @@ async def read_maya_state(db_path: str, question: str) -> str:
         return await last_route_text(db_path)
     if "status" in lowered:
         from maya_telegram.telegram_status import status_text
-        from xai_voice_work import voice_work_status_text
+        from maya_voice.xai_voice_work import voice_work_status_text
 
         status = await status_text(db_path)
         work = await voice_work_status_text(db_path)

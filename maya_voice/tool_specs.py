@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from xai_realtime_visual_context_tools import active_context_tool
+from maya_voice.xai_realtime_visual_context_tools import active_context_tool
 
 
 GEMINI_TOOL_NAME = "answer_with_gemini"

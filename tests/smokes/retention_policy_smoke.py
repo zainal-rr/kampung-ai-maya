@@ -30,7 +30,7 @@ from maya_core.retention_policy import (
 from maya_core.session_search import index_session_message, search_sessions
 from maya_core.storage import create_task, init_db, record_task_event
 from weekly_memory import WeeklyMemoryDistiller
-from workflow_store import begin_workflow
+from maya_core.workflow_store import begin_workflow
 
 
 NOW = datetime(2026, 5, 28, 12, 0, 0)

@@ -21,7 +21,7 @@ from maya_documents.office_files import safe_slug
 from maya_core.lane_prompts import ARTISAN_SYSTEM_PROMPT
 from maya_core.project_store import active_project, remember_project_note
 from maya_core.storage import get_preference, upsert_preference
-from workspace_paths import is_workspace_path, workspace_dir
+from maya_core.workspace_paths import is_workspace_path, workspace_dir
 from maya_core.artisan_app_qa import qa_artisan_app_project
 from maya_core.artisan_maker import complete_blender_maker_output, select_maker_template, write_maker_template_source
 from maya_core.artisan_worktree import create_repo_isolation

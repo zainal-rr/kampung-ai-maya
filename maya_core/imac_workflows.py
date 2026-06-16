@@ -16,7 +16,7 @@ from maya_documents.office_modern_files import create_docx
 from maya_core.permission_policy import action_permission
 from maya_core.storage import delete_preference, get_preference, upsert_preference
 from maya_core.utils import OSBridge
-from workspace_paths import workspace_dir
+from maya_core.workspace_paths import workspace_dir
 
 SENSITIVE_BROWSER_WORDS = ("buy", "book", "pay", "checkout", "purchase", "submit", "passport", "card", "confirm")
 MISSING_SKILL_WORDS = ("hotel", "calendar", "shopping", "shop", "account", "design review", "security review")

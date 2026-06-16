@@ -22,7 +22,7 @@ from maya_core.skill_store import init_skill_db
 from maya_core.storage import init_db
 from maya_telegram.telegram_commands import command_to_text, parse_command
 from maya_core.weekly_memory_store import init_weekly_memory_db
-from workflow_store import init_workflow_db
+from maya_core.workflow_store import init_workflow_db
 
 
 async def main() -> None:

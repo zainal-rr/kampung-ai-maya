@@ -10,7 +10,7 @@ from maya_documents.artifact_steering import (
 from maya_voice.artifact_manifest import create_metadata_only_manifest, get_manifest, patch_manifest
 from maya_voice.tool_results import tool_result_for_maya
 from maya_voice.word_revision import has_docx_postcondition, has_scoped_docx_postcondition
-from xai_voice_work import (
+from maya_voice.xai_voice_work import (
     ACTIVE_PHASES,
     increment_voice_work_revision,
     request_voice_work_cancel,

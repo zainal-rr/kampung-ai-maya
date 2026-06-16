@@ -28,8 +28,8 @@ from maya_core.route_tracker import last_route_text
 from maya_core.storage import get_preference
 from maya_core.grok_voice_replay_fakes import FastReplayDocuments
 from maya_voice.voice_transcript_policy import should_park_voice_for_worker, transcript_quality_notes
-from xai_realtime_tools import HANDOFF_TOOL_NAME, execute_voice_tool
-from xai_voice_handoff import init_voice_handoff_db
+from maya_voice.xai_realtime_tools import HANDOFF_TOOL_NAME, execute_voice_tool
+from maya_voice.xai_voice_handoff import init_voice_handoff_db
 
 
 @dataclass(frozen=True)

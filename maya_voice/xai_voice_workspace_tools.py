@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from workspace_paths import maya_workspace_root
+from maya_core.workspace_paths import maya_workspace_root
 
 
 def read_desktop_maya_workspace(question: str) -> str:

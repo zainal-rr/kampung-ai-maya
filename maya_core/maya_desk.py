@@ -27,7 +27,7 @@ from maya_core.skill_store import list_custom_skills, list_skill_proposals
 from maya_core.user_model_store import list_user_model_items
 from maya_core.weekly_memory_status import weekly_memory_status_text
 from maya_core.workflow_desk import workflow_desk_text
-from workspace_paths import workspace_dir
+from maya_core.workspace_paths import workspace_dir
 
 
 async def build_maya_desk(db_path: str) -> str:

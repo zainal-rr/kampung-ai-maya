@@ -8,7 +8,7 @@ from pathlib import Path
 import aiosqlite
 
 from maya_harness.harness_store import init_harness_db, record_event, upsert_run
-from workspace_paths import workspace_dir
+from maya_core.workspace_paths import workspace_dir
 
 
 async def apply_latest_artisan_repo_changes(db_path: str, run_id: str | None = None) -> str:

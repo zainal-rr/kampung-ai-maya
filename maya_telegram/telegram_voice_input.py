@@ -8,7 +8,7 @@ from pathlib import Path
 
 from maya_core.audio_devices import bin_path
 from maya_core.cost_tracker import record_usage
-from xai_stt import xai_transcribe_file
+from maya_voice.xai_stt import xai_transcribe_file
 
 
 async def transcribe_telegram_voice(update, context, db_path: str) -> str:
