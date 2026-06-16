@@ -4,8 +4,8 @@ import aiosqlite
 
 from maya_documents.artifact_sessions import init_artifact_sessions_db
 from maya_memory.canonical_memory import init_canonical_memory_db
-from memory_audit import init_memory_audit_db
-from memory_canaries import init_memory_canary_db
+from maya_memory.memory_audit import init_memory_audit_db
+from maya_memory.memory_canaries import init_memory_canary_db
 from retention_policy import init_retention_db
 from telegram_delivery_log import init_telegram_delivery_log_db
 from telegram_turn_log import init_telegram_turn_log_db

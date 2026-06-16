@@ -12,7 +12,7 @@ import tempfile
 from pathlib import Path
 
 from maya_documents.artifact_quality import extract_docx_text, validate_docx_path
-from office_modern_files import create_docx
+from maya_documents.office_modern_files import create_docx
 
 
 def main() -> None:

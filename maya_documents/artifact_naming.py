@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from pathlib import Path
 
-from office_files import safe_slug
+from maya_documents.office_files import safe_slug
 
 
 DEFAULT_SLUG_LENGTH = 40

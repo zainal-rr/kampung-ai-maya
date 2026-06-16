@@ -4,7 +4,7 @@ import json
 import os
 from pathlib import Path
 
-from maya_eye_tracker import TargetTracker, target_signature
+from maya_core.maya_eye_tracker import TargetTracker, target_signature
 from vision_markup import Target, should_group_targets, target_group_label
 
 

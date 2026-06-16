@@ -12,7 +12,7 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-from maya_thread_manager import MayaThreadManager
+from maya_core.maya_thread_manager import MayaThreadManager
 
 
 async def main() -> None:

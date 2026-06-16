@@ -5,7 +5,7 @@ from pathlib import Path
 
 from pptx import Presentation
 
-from office_modern_files import safe_slug
+from maya_documents.office_modern_files import safe_slug
 from pptx_quality_gate import ensure_pptx_quality, inspect_pptx_quality
 from pptx_slide_renderer import render_pptx_slides
 from pptx_topic_reviser import rebuild_topic_safe

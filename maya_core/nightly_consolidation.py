@@ -33,8 +33,8 @@ from maya_memory.canonical_memory import init_canonical_memory_db, upsert_canoni
 from maya_memory.canonical_memory_dedup import find_semantic_duplicate
 from maya_memory.canonical_memory_embeddings import default_embedding_agent
 from maya_memory.canonical_memory_usage import mark_canonical_used
-from memory_links import init_memory_links_db
-from nightly_consolidation_helpers import (
+from maya_memory.memory_links import init_memory_links_db
+from maya_core.nightly_consolidation_helpers import (
     audit_nightly,
     decay_report,
     distiller_prompt,

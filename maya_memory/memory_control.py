@@ -6,9 +6,9 @@ import re
 from maya_memory.canonical_memory import forget_canonical_memory, search_relevant_canonical_memories
 from maya_core.curated_memory import curated_memory_status, forget_curated_memory
 from maya_core.forget_registry import register_forget_handler, run_forget_handlers
-from memory_audit import format_recent_memory_audit
-from memory_canaries import format_memory_leak_report
-from memory_display import canonical_lines, lesson_lines, preference_lines, summary_lines
+from maya_memory.memory_audit import format_recent_memory_audit
+from maya_memory.memory_canaries import format_memory_leak_report
+from maya_memory.memory_display import canonical_lines, lesson_lines, preference_lines, summary_lines
 from retention_policy import run_retention_cleanup
 from session_memory_store import list_session_summaries
 from storage import list_preferences

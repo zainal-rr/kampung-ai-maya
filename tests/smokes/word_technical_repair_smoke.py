@@ -16,8 +16,8 @@ from maya_documents.document_actions_word_helpers import (
     _generic_technical_troubleshooting_repair_markdown,
     _router_network_repair_markdown,
 )
-from office_drafter import word_sections_from_markdown
-from office_modern_files import create_docx
+from maya_documents.office_drafter import word_sections_from_markdown
+from maya_documents.office_modern_files import create_docx
 from word_section_repair import strengthen_word_sections
 
 

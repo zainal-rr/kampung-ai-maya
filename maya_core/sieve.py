@@ -3,7 +3,7 @@ import os
 import logging
 from pathlib import Path
 
-from models import TheSenses
+from maya_core.models import TheSenses
 from maya_core.hardware_event_store import record_hardware_event
 from omi_adapter import load_omi_transcript
 from omi_context_sieve import ingest_omi_decision, is_omi_noise, sieve_omi_transcript

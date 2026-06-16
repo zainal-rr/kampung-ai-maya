@@ -30,7 +30,7 @@ from maya_memory.canonical_memory import (  # noqa: E402
     upsert_canonical_memory,
 )
 from maya_memory.canonical_memory_supersede import canonical_memory_history  # noqa: E402
-from memory_canaries import check_memory_canaries, seed_memory_canaries  # noqa: E402
+from maya_memory.memory_canaries import check_memory_canaries, seed_memory_canaries  # noqa: E402
 
 
 def _require(cond: bool, msg: str) -> None:

@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from office_modern_files import create_pptx
+from maya_documents.office_modern_files import create_pptx
 from pptx_quality_gate import inspect_pptx_quality, PptxQualityResult
 
 

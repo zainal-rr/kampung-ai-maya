@@ -10,7 +10,7 @@ from pathlib import Path
 
 from maya_harness.harness_artifact_store import record_structured_artifact
 from maya_harness.harness_models import local_artifact
-from office_files import safe_slug
+from maya_documents.office_files import safe_slug
 from utils import OSBridge
 from workspace_paths import maya_workspace_root
 

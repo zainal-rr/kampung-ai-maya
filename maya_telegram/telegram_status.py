@@ -4,7 +4,7 @@ import os
 
 from maya_core.activation import current_work_location
 from maya_core.cost_tracker import usage_summary_text
-from maya_eye_preview import preview_status
+from maya_core.maya_eye_preview import preview_status
 from permission_policy import permission_summary
 from provider_readiness import provider_readiness_text
 from project_actions import project_status

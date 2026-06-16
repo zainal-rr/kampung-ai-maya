@@ -49,10 +49,10 @@ from maya_memory.canonical_memory import (
 )
 from maya_core.learning_pipeline import LearningPipeline
 from maya_core.lesson_store import init_lesson_db
-from memory_control import forget_memory
-from memory_recall_eval_cases import CASES, SEED_FACTS
-from memory_recall_eval_associations import association_failures, association_metrics, seed_association_memories
-from memory_service import MemoryService
+from maya_memory.memory_control import forget_memory
+from maya_memory.memory_recall_eval_cases import CASES, SEED_FACTS
+from maya_memory.memory_recall_eval_associations import association_failures, association_metrics, seed_association_memories
+from maya_memory.memory_service import MemoryService
 from storage import init_db
 
 EXACT_RECALL3_FLOOR = 0.8

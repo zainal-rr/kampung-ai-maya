@@ -31,7 +31,7 @@ from telegram_delivery import send_document_file, send_photo_file, send_speech, 
 from telegram_photo_input import describe_telegram_photo
 from telegram_voice_input import transcribe_telegram_voice
 from route_tracker import record_route
-from maya_runtime_config import runtime_config
+from maya_core.maya_runtime_config import runtime_config
 
 
 logger = logging.getLogger(__name__)

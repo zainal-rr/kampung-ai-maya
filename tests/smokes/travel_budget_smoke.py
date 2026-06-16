@@ -15,7 +15,7 @@ from pathlib import Path
 
 from openpyxl import load_workbook
 
-from markdown_drafter import MarkdownDraft
+from maya_core.markdown_drafter import MarkdownDraft
 from storage import init_db
 import travel_budget
 from travel_budget import create_travel_budget_excel, save_travel_plan_fields, update_travel_plan

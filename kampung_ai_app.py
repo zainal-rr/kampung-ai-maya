@@ -126,7 +126,7 @@ def _run_macos_app_loop(service_install, repo_root: Path) -> bool:
 
 def _start_controller_hotkeys(repo_root: Path):
     try:
-        from mac_hotkey import CarbonHotKeyListener
+        from maya_core.mac_hotkey import CarbonHotKeyListener
     except Exception as exc:
         _controller_log(repo_root, f"{APP_NAME} could not load Carbon hotkeys: {exc}")
         return None

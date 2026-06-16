@@ -15,7 +15,7 @@ from skill_store import init_skill_db
 from storage import init_db, upsert_preference
 from maya_documents.artifact_preflight import ArtifactPreflight
 from maya_documents.artifact_quality import ArtifactQualityResult
-from markdown_drafter import MarkdownDraft, _apply_source_quality
+from maya_core.markdown_drafter import MarkdownDraft, _apply_source_quality
 from openpyxl import load_workbook
 from telegram_delivery import split_file_markers
 from maya_documents.document_actions_smoke_fakes import (

@@ -14,7 +14,7 @@ _ROOT = _Path(__file__).resolve().parents[2]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from maya_permission_kernel import MayaPermissionKernel
+from maya_core.maya_permission_kernel import MayaPermissionKernel
 from permission_policy import action_permission
 from tool_sandbox_policy import (
     BROWSER_AUTOMATION,

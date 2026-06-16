@@ -7,7 +7,7 @@ import sys
 import time
 from pathlib import Path
 
-from maya_eye_overlay import clear_preview_target, draw_preview_targets
+from maya_core.maya_eye_overlay import clear_preview_target, draw_preview_targets
 from vision_blocked import frame_blocked
 
 

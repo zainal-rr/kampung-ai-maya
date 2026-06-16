@@ -14,7 +14,7 @@ from maya_documents.artifact_qa_governance import (
 from maya_documents.artifact_quality_extractors import clip_text
 from maya_documents.artifact_review_store import record_artifact_review, record_qa_disagreement
 from maya_core.cost_tracker import record_usage
-from models import TheSenses, TheSteward
+from maya_core.models import TheSenses, TheSteward
 from provider_capabilities import CAPABILITIES
 
 

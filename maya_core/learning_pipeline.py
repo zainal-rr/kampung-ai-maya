@@ -12,13 +12,13 @@ from maya_core.lesson_store import (
 )
 from maya_core.assistant_command_helpers import is_user_visible_memory
 from maya_memory.canonical_memory import upsert_canonical_memory
-from memory_extraction import (
+from maya_memory.memory_extraction import (
     ProviderCall,
     default_extraction_agent,
     extract_for_save,
     live_extraction_enabled,
 )
-from memory_perspective import normalize_user_perspective_memory
+from maya_memory.memory_perspective import normalize_user_perspective_memory
 from permission_policy import contains_sensitive_info, hard_no_private_exposure_text
 from self_improvement_policy import verified_learning_message
 from storage import get_preference, upsert_preference

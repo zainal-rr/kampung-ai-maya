@@ -6,7 +6,7 @@ from pathlib import Path
 
 from PIL import Image, ImageDraw
 
-from office_files import safe_slug
+from maya_documents.office_files import safe_slug
 from pptx_slide_renderer import render_pptx_slides
 
 

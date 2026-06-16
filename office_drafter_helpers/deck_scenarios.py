@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from office_text_utils import _complete, _plain
+from maya_documents.office_text_utils import _complete, _plain
 
 
 def _travel_food_deck(title: str, sections: list[tuple[str, list[str]]]) -> list[tuple[str, list[str]]]:

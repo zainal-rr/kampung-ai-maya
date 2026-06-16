@@ -8,7 +8,7 @@ if str(_w4_root) not in _w4_sys.path:
 del _w4_Path, _w4_root, _w4_sys
 
 
-from maya_permission_kernel import MayaPermissionKernel
+from maya_core.maya_permission_kernel import MayaPermissionKernel
 
 
 def main() -> None:

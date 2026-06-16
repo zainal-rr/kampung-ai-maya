@@ -10,7 +10,7 @@ import asyncio
 import os
 import tempfile
 
-from local_voice_channel import LocalVoiceChannel
+from maya_core.local_voice_channel import LocalVoiceChannel
 from storage import init_db
 
 

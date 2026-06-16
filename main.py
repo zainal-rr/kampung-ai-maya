@@ -17,11 +17,11 @@ from maya_harness.harness_observation_store import init_harness_observation_db
 from maya_core.hotkey_voice_channel import HotkeyVoiceChannel
 from maya_core.hardware_event_store import init_hardware_event_db
 from maya_core.lesson_store import init_lesson_db
-from logging_setup import configure_logging
-from local_voice_channel import LocalVoiceChannel
+from maya_core.logging_setup import configure_logging
+from maya_core.local_voice_channel import LocalVoiceChannel
 from maya_browser.bridge_runtime import BrowserBridgeMonitor, warm_browser_bridge_once
-from maya_engine_lock import acquire_engine_lock
-from mudra_adapter import MudraAdapter
+from maya_core.maya_engine_lock import acquire_engine_lock
+from maya_core.mudra_adapter import MudraAdapter
 from routine_store import init_routine_db
 from route_tracker import init_route_db
 from session_memory_store import init_session_memory_db

@@ -13,7 +13,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from office_modern_files import create_pptx
+from maya_documents.office_modern_files import create_pptx
 from presentation_design_review import review_presentation_design, wants_presentation_review
 from pptx_slide_renderer import render_pptx_slides
 

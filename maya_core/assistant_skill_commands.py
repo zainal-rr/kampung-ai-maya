@@ -12,7 +12,7 @@ from skill_learning_store import mark_skill_disabled, missing_required_tests, re
 from weekly_skill_review import latest_skill_review
 from user_model_store import list_user_model_items
 from skill_store import find_skill, latest_skill_usage, list_custom_skills, list_skill_proposals, update_skill_status
-from mcp_registry import audit_mcp_server, list_mcp_servers, propose_mcp_server, set_mcp_status
+from maya_core.mcp_registry import audit_mcp_server, list_mcp_servers, propose_mcp_server, set_mcp_status
 from security_manifest import get_manifest, list_manifests, manifest_summary
 from skill_performance_analyzer import skill_performance_text
 from starter_skill_catalog import catalog_summary, install_starter_catalog

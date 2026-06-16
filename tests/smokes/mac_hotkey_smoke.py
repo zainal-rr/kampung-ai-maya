@@ -8,8 +8,8 @@ if str(_w4_root) not in _w4_sys.path:
 del _w4_Path, _w4_root, _w4_sys
 
 
-import mac_hotkey
-from mac_hotkey import OPTION_KEY, CarbonHotKeyListener, parse_hotkey
+import maya_core.mac_hotkey as mac_hotkey
+from maya_core.mac_hotkey import OPTION_KEY, CarbonHotKeyListener, parse_hotkey
 
 
 def main() -> None:

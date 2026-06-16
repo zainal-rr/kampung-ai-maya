@@ -8,7 +8,7 @@ if str(_w4_root) not in _w4_sys.path:
 del _w4_Path, _w4_root, _w4_sys
 
 
-from markdown_drafter import _assumed_role, _prompt
+from maya_core.markdown_drafter import _assumed_role, _prompt
 
 
 def main() -> None:

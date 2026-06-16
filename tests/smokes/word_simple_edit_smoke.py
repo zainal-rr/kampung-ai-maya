@@ -18,7 +18,7 @@ from maya_documents.artifact_quality import ArtifactQualityResult
 from maya_documents.document_actions import DocumentActionRouter
 from maya_documents.document_actions_context import LAST_DOC_KEY
 from maya_documents.document_actions_smoke_helpers import _init, _require
-from office_modern_files import create_docx
+from maya_documents.office_modern_files import create_docx
 from storage import upsert_preference
 from telegram_delivery import split_file_markers
 

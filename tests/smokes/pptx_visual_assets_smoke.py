@@ -17,7 +17,7 @@ from PIL import Image
 from pptx import Presentation
 
 import pptx_visual_assets
-from office_modern_files import create_pptx
+from maya_documents.office_modern_files import create_pptx
 from pptx_visual_assets import add_gemini_visual_asset, topic_benefits_from_visuals, visual_image_cap
 
 

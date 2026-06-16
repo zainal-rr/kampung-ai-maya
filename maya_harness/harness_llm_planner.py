@@ -21,7 +21,7 @@ from collections.abc import Awaitable, Callable
 from typing import Any
 
 from maya_harness.harness_workflows import plan_for
-from maya_tool_registry import default_maya_tool_registry
+from maya_core.maya_tool_registry import default_maya_tool_registry
 
 LlmCall = Callable[[str], Awaitable[str]]
 

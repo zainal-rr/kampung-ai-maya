@@ -13,7 +13,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from maya_desk import build_maya_desk
+from maya_core.maya_desk import build_maya_desk
 from skill_store import init_skill_db, upsert_skill
 from storage import init_db
 

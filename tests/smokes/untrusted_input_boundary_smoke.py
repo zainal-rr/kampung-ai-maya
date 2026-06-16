@@ -141,7 +141,7 @@ def _registry_vocabulary_checks() -> None:
 def _kernel_integration_checks() -> None:
     """End-to-end: an injected page + a real external tool must be DENIED by
     the kernel, while a clean turn passes unchanged (byte-identical default)."""
-    from maya_permission_kernel import MayaPermissionKernel
+    from maya_core.maya_permission_kernel import MayaPermissionKernel
 
     kernel = MayaPermissionKernel()
     page = assess_untrusted_content(INJECTION_SAMPLES[0], source="browser")

@@ -11,7 +11,7 @@ del _w4_Path, _w4_root, _w4_sys
 import tempfile
 from pathlib import Path
 
-from live_test_evidence import (
+from maya_harness.live_test_evidence import (
     format_live_evidence,
     live_evidence_summary,
     load_live_evidence,

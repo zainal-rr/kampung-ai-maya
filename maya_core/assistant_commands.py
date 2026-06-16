@@ -32,8 +32,8 @@ from maya_core.everyday_commands import EverydayCommandRouter
 from maya_core.file_actions import FileActionRouter
 from maya_core.drawing_actions import DrawingActionRouter
 from maya_core.imac_workflows import ImacWorkflowRouter
-from local_actions import LocalActionRouter
-from memory_service import MemoryService
+from maya_core.local_actions import LocalActionRouter
+from maya_memory.memory_service import MemoryService
 from permission_policy import contains_sensitive_info, hard_no_private_exposure_text, is_private_exposure
 from presentation_command_helpers import handle_presentation_command
 from project_actions import ProjectActionRouter

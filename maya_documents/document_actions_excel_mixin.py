@@ -22,7 +22,7 @@ from maya_documents.document_actions_office_sessions import _office_session_edit
 from maya_documents.excel_species import detect_excel_species
 from maya_documents.excel_species_draft import excel_species_prompt_context
 from maya_documents.delivery_policy import excel_quality_hard_block
-from office_edit_helpers import (
+from maya_documents.office_edit_helpers import (
     apply_simple_xlsx_edit,
     backup_office_file,
     edited_office_topic,

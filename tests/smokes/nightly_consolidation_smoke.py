@@ -26,8 +26,8 @@ from pathlib import Path
 import aiosqlite
 
 from maya_memory.canonical_memory import forget_canonical_memory, upsert_canonical_memory
-from memory_links import expand_with_neighbors
-from nightly_consolidation import run_nightly_consolidation
+from maya_memory.memory_links import expand_with_neighbors
+from maya_core.nightly_consolidation import run_nightly_consolidation
 
 FAKE_DISTILLER_REPLY = """
 {

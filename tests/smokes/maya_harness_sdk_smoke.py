@@ -17,7 +17,7 @@ import aiosqlite
 from maya_memory.canonical_memory import search_canonical_direct_fact
 from maya_harness.harness_artifact_store import latest_artifacts
 from maya_harness.harness_store import get_run, latest_events
-from maya_harness_sdk import MayaHarnessSDK
+from maya_core.maya_harness_sdk import MayaHarnessSDK
 
 
 async def _message_handler(message: str, channel: str, thread_id: str, run_id: str) -> str:

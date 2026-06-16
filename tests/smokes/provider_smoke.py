@@ -63,7 +63,7 @@ async def check_gemini() -> str:
     if not api_key:
         return "skipped (missing GOOGLE_API_KEY)"
     try:
-        from models import TheSenses
+        from maya_core.models import TheSenses
         reply = await TheSenses(api_key).chat([{"role": "user", "content": "Reply with exactly: sight ok"}])
         return _ok(reply, "sight ok")
     except Exception as exc:
@@ -75,7 +75,7 @@ async def check_openai() -> str:
     if not api_key:
         return "skipped (missing OPENAI_API_KEY)"
     try:
-        from models import TheMind
+        from maya_core.models import TheMind
         reply = await TheMind(api_key).chat([{"role": "user", "content": "Reply with exactly: mind ok"}])
         return _ok(reply, "mind ok")
     except Exception as exc:
@@ -87,7 +87,7 @@ async def check_claude() -> str:
     if not api_key:
         return "skipped (missing ANTHROPIC_API_KEY)"
     try:
-        from models import TheSteward
+        from maya_core.models import TheSteward
         reply = await TheSteward(api_key).chat([{"role": "user", "content": "Reply with exactly: steward ok"}])
         return _ok(reply, "steward ok")
     except Exception as exc:
@@ -99,7 +99,7 @@ async def check_grok() -> str:
     if not api_key:
         return "skipped (missing XAI_API_KEY)"
     try:
-        from models import TheNews
+        from maya_core.models import TheNews
         reply = await TheNews(api_key).chat([{"role": "user", "content": "Reply with exactly: pulse ok"}])
         return _ok(reply, "pulse ok")
     except Exception as exc:
@@ -127,7 +127,7 @@ async def check_gemini_vision() -> str:
     if not api_key:
         return "skipped (missing GOOGLE_API_KEY)"
     try:
-        from models import TheSenses
+        from maya_core.models import TheSenses
         prompt = "Describe this test image with exactly: vision ok"
         reply = await TheSenses(api_key).describe_image(_tiny_jpeg(), prompt)
         return _ok(reply, "vision ok")

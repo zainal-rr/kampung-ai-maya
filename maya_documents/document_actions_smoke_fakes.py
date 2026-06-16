@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from maya_documents.artifact_quality import ArtifactQualityResult
-from markdown_drafter import MarkdownDraft
+from maya_core.markdown_drafter import MarkdownDraft
 
 
 async def _fake_draft(db_path: str, topic: str, preflight_context: str = "") -> MarkdownDraft:

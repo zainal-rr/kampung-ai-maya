@@ -11,7 +11,7 @@ del _w4_Path, _w4_root, _w4_sys
 import tempfile
 from pathlib import Path
 
-from office_modern_files import create_docx
+from maya_documents.office_modern_files import create_docx
 from word_visual_qa import inspect_word_visual_quality
 
 

@@ -90,7 +90,7 @@ class HotkeyVoiceChannel:
             return _NoopHotkeyListener()
         if backend == "carbon":
             try:
-                from mac_hotkey import CarbonHotKeyListener
+                from maya_core.mac_hotkey import CarbonHotKeyListener
 
                 loop = asyncio.get_running_loop()
 

@@ -14,7 +14,7 @@ from pathlib import Path
 from openpyxl import load_workbook
 from pptx import Presentation
 
-from office_modern_files import choose_pptx_theme, create_pptx, create_xlsx
+from maya_documents.office_modern_files import choose_pptx_theme, create_pptx, create_xlsx
 
 
 def main() -> None:

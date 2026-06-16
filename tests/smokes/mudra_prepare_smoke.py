@@ -14,7 +14,7 @@ import tempfile
 from pathlib import Path
 
 from maya_core.hardware_event_store import init_hardware_event_db, latest_hardware_events
-from mudra_adapter import MudraAdapter
+from maya_core.mudra_adapter import MudraAdapter
 
 
 class FakeAssistant:

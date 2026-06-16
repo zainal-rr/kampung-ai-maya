@@ -10,8 +10,8 @@ import asyncio
 
 import numpy as np
 
-import local_wake_scorer
-from local_wake_scorer import LocalWakeScorerTranscriptSource
+import maya_core.local_wake_scorer as local_wake_scorer
+from maya_core.local_wake_scorer import LocalWakeScorerTranscriptSource
 
 
 def _require(condition: bool, message: str) -> None:

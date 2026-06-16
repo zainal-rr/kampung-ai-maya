@@ -16,7 +16,7 @@ from PIL import Image
 from pptx import Presentation
 from pptx.util import Inches
 
-from office_modern_files import create_pptx
+from maya_documents.office_modern_files import create_pptx
 from pptx_quality_gate import ensure_pptx_quality, inspect_pptx_quality
 
 

@@ -29,7 +29,7 @@ from routine_store import init_routine_db
 from session_memory_store import init_session_memory_db
 from skill_store import init_skill_db
 from storage import get_preference, init_db
-from office_modern_files import create_docx
+from maya_documents.office_modern_files import create_docx
 
 
 class FakeBridge:

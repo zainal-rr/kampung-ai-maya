@@ -5,8 +5,8 @@ import re
 from maya_documents.excel_species import detect_excel_species, species_rows_structured
 from maya_documents.excel_species_draft import rows_from_species_draft, seed_rows
 from word_quality import canonicalize_word_sections
-from office_drafter_powerpoint import _clean_slides, _general_powerpoint_slides, _scenario_powerpoint_slides
-from office_text_utils import _plain
+from maya_documents.office_drafter_powerpoint import _clean_slides, _general_powerpoint_slides, _scenario_powerpoint_slides
+from maya_documents.office_text_utils import _plain
 
 
 def sections_from_markdown(markdown: str, fallback_title: str, limit: int = 8) -> list[tuple[str, list[str]]]:

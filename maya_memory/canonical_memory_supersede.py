@@ -15,7 +15,7 @@ from __future__ import annotations
 import aiosqlite
 
 from maya_memory.canonical_memory_text import memory_tokens, subject_key_from_text
-from memory_audit import record_memory_audit_event
+from maya_memory.memory_audit import record_memory_audit_event
 
 SUPERSEDED_STATUS = "superseded"
 

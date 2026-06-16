@@ -15,7 +15,7 @@ from pathlib import Path
 from maya_documents.artifact_quality import validate_docx_path, validate_html_content, validate_xlsx_path
 from maya_documents.artifact_quality_extractors import topic_needs_formula
 from maya_documents.document_actions_content_helpers import _task_tracker_rows
-from office_modern_files import create_docx, create_xlsx
+from maya_documents.office_modern_files import create_docx, create_xlsx
 from powerpoint_quality_context import powerpoint_quality_context
 from skill_evaluator import evaluate_skill_scaffold
 

@@ -10,7 +10,7 @@ del _w4_Path, _w4_root, _w4_sys
 
 import numpy as np
 
-from maya_eye_tracker import TargetTracker
+from maya_core.maya_eye_tracker import TargetTracker
 
 
 def main() -> None:

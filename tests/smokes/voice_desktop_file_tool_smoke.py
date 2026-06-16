@@ -17,7 +17,7 @@ from maya_core.context_layers import init_context_layers_db
 from maya_harness.harness_artifact_store import init_harness_artifact_db
 from maya_harness.harness_store import init_harness_db
 from maya_core.lesson_store import init_lesson_db
-from markdown_drafter import MarkdownDraft
+from maya_core.markdown_drafter import MarkdownDraft
 from routine_store import init_routine_db
 from session_memory_store import init_session_memory_db
 from skill_store import init_skill_db

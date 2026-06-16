@@ -22,7 +22,7 @@ from maya_documents.artifact_naming import named_artifact_path
 from maya_documents.artifact_builder import ArtifactBuilder
 from maya_documents.artifact_sessions import active_artifact_session
 
-from markdown_drafter import draft_markdown_with_gemini
+from maya_core.markdown_drafter import draft_markdown_with_gemini
 from storage import get_preference, upsert_preference
 from utils import OSBridge
 from workspace_paths import workspace_dir

@@ -108,7 +108,7 @@ async def _record_divergence(
     *,
     live: bool,
 ) -> None:
-    from memory_audit import record_memory_audit_event
+    from maya_memory.memory_audit import record_memory_audit_event
 
     provider_part = (
         f"prov={provider.subject}->{provider.value[:30]}" if provider else "prov=none"
@@ -221,7 +221,7 @@ def default_extraction_agent() -> ProviderCall | None:
     api_key = get_env("GOOGLE_API_KEY")
     if not api_key:
         return None
-    from models import TheSenses
+    from maya_core.models import TheSenses
 
     model = get_env("GEMINI_FLASH_MODEL", "gemini-3.1-flash")
 

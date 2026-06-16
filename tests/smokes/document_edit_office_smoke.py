@@ -15,9 +15,9 @@ from pathlib import Path
 import maya_documents.document_actions as da
 from maya_documents.artifact_preflight import ArtifactPreflight
 from maya_documents.document_actions_word_helpers import _document_edit_request
-from markdown_drafter import MarkdownDraft
-from office_edit_helpers import apply_simple_xlsx_edit
-from office_modern_files import create_pptx, create_xlsx
+from maya_core.markdown_drafter import MarkdownDraft
+from maya_documents.office_edit_helpers import apply_simple_xlsx_edit
+from maya_documents.office_modern_files import create_pptx, create_xlsx
 from openpyxl import load_workbook
 from pptx import Presentation
 from pptx_quality_gate import PptxQualityResult

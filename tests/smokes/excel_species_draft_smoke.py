@@ -23,7 +23,7 @@ from maya_documents.excel_species_draft import (
     rows_from_species_draft,
     seed_rows,
 )
-from office_drafter import spreadsheet_from_markdown
+from maya_documents.office_drafter import spreadsheet_from_markdown
 
 
 def _require(condition: bool, message: str) -> None:

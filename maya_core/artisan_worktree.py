@@ -6,7 +6,7 @@ import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
-from office_files import safe_slug
+from maya_documents.office_files import safe_slug
 from workspace_paths import workspace_dir
 
 

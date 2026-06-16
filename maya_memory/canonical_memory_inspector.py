@@ -3,8 +3,8 @@ from __future__ import annotations
 import aiosqlite
 
 from maya_memory.canonical_memory import init_canonical_memory_db, memory_tokens, subject_key_from_text
-from memory_audit import format_recent_memory_audit
-from memory_canaries import format_memory_leak_report
+from maya_memory.memory_audit import format_recent_memory_audit
+from maya_memory.memory_canaries import format_memory_leak_report
 
 
 async def inspect_canonical_memory(db_path: str, query: str = "", limit: int = 8) -> str:

@@ -4,8 +4,8 @@ import os
 from datetime import datetime, timedelta, timezone
 
 from storage import get_preference, upsert_preference
-from maya_eye_overlay import clear_preview_target
-from maya_eye_preview import start_preview, stop_preview
+from maya_core.maya_eye_overlay import clear_preview_target
+from maya_core.maya_eye_preview import start_preview, stop_preview
 
 
 SESSION_KEY = "maya_eye_session_until"

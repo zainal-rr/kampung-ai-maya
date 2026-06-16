@@ -21,7 +21,7 @@ from maya_documents.document_actions_excel_mixin import DocumentExcelMixin
 from maya_documents.document_actions_office_sessions import _office_session_edit_topic
 from maya_voice.work_runtime import set_current_voice_work_phase
 from maya_documents.delivery_policy import pptx_quality_hard_block
-from office_edit_helpers import (
+from maya_documents.office_edit_helpers import (
     backup_office_file,
     edited_office_topic,
     pptx_edit_request,

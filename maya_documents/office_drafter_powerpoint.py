@@ -3,8 +3,8 @@ from __future__ import annotations
 import re
 
 from maya_documents.deck_species import detect_deck_species
-from office_text_utils import _complete, _plain
-from office_drafter_deck_scenarios import (
+from maya_documents.office_text_utils import _complete, _plain
+from maya_documents.office_drafter_deck_scenarios import (
     _browser_deck,
     _issue_deck,
     _pitch_deck,

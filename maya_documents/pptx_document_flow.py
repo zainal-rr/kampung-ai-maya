@@ -21,7 +21,7 @@ from maya_documents.artifact_review_store import record_artifact_review
 from maya_harness.harness_artifact_store import record_structured_artifact
 from maya_harness.harness_models import local_artifact
 from pptx_polish_review import claude_polish_grade, local_polish_issues
-from office_modern_files import create_pptx
+from maya_documents.office_modern_files import create_pptx
 from pptx import Presentation
 from pptx_quality_gate import inspect_pptx_quality, PptxQualityResult
 from pptx_topic_reviser import rebuild_topic_safe

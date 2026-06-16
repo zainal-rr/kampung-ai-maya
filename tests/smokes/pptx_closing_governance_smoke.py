@@ -31,8 +31,8 @@ from pathlib import Path
 
 from pptx import Presentation as ReadPresentation
 
-from office_drafter import slides_from_markdown
-from office_modern_files import create_pptx
+from maya_documents.office_drafter import slides_from_markdown
+from maya_documents.office_modern_files import create_pptx
 from pptx_quality_gate import inspect_pptx_quality
 from pptx_slide_repair import rescue_slides
 from presentation_design_review import wants_presentation_review
@@ -223,7 +223,7 @@ def _visual_availability_checks(root: Path) -> None:
 def _fragment_cap_checks() -> None:
     """Live polish rejections 2026-06-11 were manufactured by hard word caps.
     The exact live fragments are the fixtures."""
-    from office_pptx_text import _short, _title_words
+    from maya_documents.office_pptx_text import _short, _title_words
 
     # Grace rule: complete claims modestly over the cap survive whole.
     full = _title_words("Inspecting Critical Infrastructure Is Still Done Manually", 7)
@@ -304,7 +304,7 @@ def _scratch_and_honesty_checks() -> None:
     from pptx_visual_assets import _image_scratch_dir
     from maya_documents.deck_species import deck_species_prompt_context, deck_species_review_contract
     from pptx_slide_repair import rescue_slides
-    from office_drafter_deck_scenarios import _issue_deck, _pitch_deck
+    from maya_documents.office_drafter_deck_scenarios import _issue_deck, _pitch_deck
 
     scratch = str(_image_scratch_dir())
     _require("Desktop" not in scratch, f"image scratch must not default to Desktop: {scratch}")

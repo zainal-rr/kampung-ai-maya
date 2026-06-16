@@ -20,7 +20,7 @@ from dataclasses import dataclass
 from pptx.dml.color import RGBColor
 
 from maya_documents.deck_species import detect_deck_species
-from office_pptx_colors import (
+from maya_documents.office_pptx_colors import (
     DARK_ACCENT, DARK_BG, DARK_CARD, DARK_PANEL,
     FOREST, GOLD, PASTEL_BG, PASTEL_CARD, PASTEL_PANEL, SAGE,
 )

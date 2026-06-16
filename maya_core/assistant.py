@@ -22,8 +22,8 @@ from maya_core.assistant_routes import AssistantRouter, RouteResult
 from maya_core.channel_gateway import remember_channel_identity
 from maya_core.cost_tracker import record_usage
 from maya_harness.harness_router import HarnessRouter
-from memory_service import MemoryService
-from models import TheSenses
+from maya_memory.memory_service import MemoryService
+from maya_core.models import TheSenses
 from response_policy import ResponsePolicy
 from response_style import apply_reply_preferences
 from route_tracker import record_route

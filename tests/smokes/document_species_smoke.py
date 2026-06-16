@@ -23,7 +23,7 @@ from pathlib import Path
 
 from maya_documents.document_actions_content_helpers import _budget_topic, _task_tracker_topic
 from maya_documents.excel_species import detect_excel_species, species_rows
-from office_drafter import slides_from_markdown, spreadsheet_from_markdown
+from maya_documents.office_drafter import slides_from_markdown, spreadsheet_from_markdown
 from word_quality import detect_word_intent, word_quality_spec
 from word_quality_travel import travel_consistency_issues
 
@@ -159,8 +159,8 @@ def _deck_visual_checks() -> None:
 
     from pptx import Presentation as ReadPresentation
 
-    from office_modern_files import create_pptx
-    from office_pptx_palette import palette_for
+    from maya_documents.office_modern_files import create_pptx
+    from maya_documents.office_pptx_palette import palette_for
 
     # Species palettes must actually differ, and stay deterministic.
     teaching = palette_for("school robotics workshop deck", "dark")

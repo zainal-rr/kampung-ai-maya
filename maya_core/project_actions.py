@@ -4,7 +4,7 @@ import asyncio
 import re
 from pathlib import Path
 
-from office_files import safe_slug
+from maya_documents.office_files import safe_slug
 from permission_policy import action_permission, path_allowed
 from retention_policy import touch_project_activity
 from project_store import (

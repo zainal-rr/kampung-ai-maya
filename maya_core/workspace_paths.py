@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from pathlib import Path
 
-from maya_runtime_config import runtime_config
+from maya_core.maya_runtime_config import runtime_config
 
 DEFAULT_WORKSPACE_ROOT = Path.home() / "Desktop" / "Maya"
 LEGACY_WORKSPACE_ROOT = Path.home() / "Downloads" / "Kampung AI"

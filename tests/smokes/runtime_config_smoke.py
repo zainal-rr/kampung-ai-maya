@@ -12,7 +12,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from maya_runtime_config import runtime_config
+from maya_core.maya_runtime_config import runtime_config
 from voice_device_policy import local_wake_allowed, voice_intent_label
 from workspace_paths import maya_workspace_root, project_roots
 

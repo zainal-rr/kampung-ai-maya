@@ -6,7 +6,7 @@ from pathlib import Path
 
 from maya_core.cost_tracker import record_usage
 from maya_core.language_policy import language_instruction
-from models import TheSenses
+from maya_core.models import TheSenses
 
 
 async def describe_telegram_photo(update, context, db_path: str, *, senses=None) -> str:

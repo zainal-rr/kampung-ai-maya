@@ -13,8 +13,8 @@ import tempfile
 from pathlib import Path
 
 from maya_harness.harness_store import latest_events
-from maya_event_store import MayaEventStore
-from maya_thread_manager import MayaThreadManager
+from maya_core.maya_event_store import MayaEventStore
+from maya_core.maya_thread_manager import MayaThreadManager
 
 
 async def main() -> None:

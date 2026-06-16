@@ -8,7 +8,7 @@ if str(_w4_root) not in _w4_sys.path:
 del _w4_Path, _w4_root, _w4_sys
 
 
-from maya_tool_registry import MayaToolRegistry, MayaToolSpec, default_maya_tool_registry
+from maya_core.maya_tool_registry import MayaToolRegistry, MayaToolSpec, default_maya_tool_registry
 
 
 def main() -> None:

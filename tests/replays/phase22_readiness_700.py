@@ -19,7 +19,7 @@ from maya_documents.artifact_quality import validate_docx_path, validate_xlsx_pa
 from maya_core.artisan_maker import complete_blender_maker_output, select_maker_template, write_maker_template_source
 from maya_browser.browser_capability import route_browser_capability
 from maya_memory.canonical_memory import forget_canonical_memory, search_canonical_direct_fact, upsert_canonical_memory
-from office_modern_files import choose_pptx_theme, create_docx, create_pptx, create_xlsx
+from maya_documents.office_modern_files import choose_pptx_theme, create_docx, create_pptx, create_xlsx
 from permission_policy import action_permission
 from pptx_quality_gate import inspect_pptx_quality
 from reliability_scorecard import reliability_scorecard

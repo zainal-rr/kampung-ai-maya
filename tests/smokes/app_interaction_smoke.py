@@ -11,7 +11,7 @@ del _w4_Path, _w4_root, _w4_sys
 import asyncio
 from pathlib import Path
 
-from local_actions import LocalActionRouter
+from maya_core.local_actions import LocalActionRouter
 from permission_policy import path_allowed
 
 

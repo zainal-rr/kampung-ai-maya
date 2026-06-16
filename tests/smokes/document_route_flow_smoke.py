@@ -20,7 +20,7 @@ from maya_harness.harness_artifact_store import init_harness_artifact_db
 from maya_harness.harness_store import init_harness_db
 from maya_core.lesson_store import init_lesson_db
 from maya_documents.artifact_preflight import ArtifactPreflight
-from markdown_drafter import MarkdownDraft
+from maya_core.markdown_drafter import MarkdownDraft
 from route_tracker import last_route_text
 from routine_store import init_routine_db
 from session_memory_store import init_session_memory_db

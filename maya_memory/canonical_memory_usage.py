@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import aiosqlite
 
-from memory_audit import record_memory_audit_event
+from maya_memory.memory_audit import record_memory_audit_event
 
 
 async def mark_canonical_used(

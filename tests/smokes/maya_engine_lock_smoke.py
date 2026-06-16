@@ -12,7 +12,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from maya_engine_lock import acquire_engine_lock
+from maya_core.maya_engine_lock import acquire_engine_lock
 
 
 def main() -> None:

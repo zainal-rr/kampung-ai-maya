@@ -13,7 +13,7 @@ from pathlib import Path
 
 from PIL import Image
 
-from office_modern_files import create_pptx
+from maya_documents.office_modern_files import create_pptx
 from pptx_preview import powerpoint_contact_sheet
 
 

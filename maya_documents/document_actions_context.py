@@ -35,20 +35,20 @@ from maya_documents.document_natural_artifact_parser import artifact_intent_clar
 from maya_documents.document_request_parser import document_request, markdown_update
 from maya_documents.document_style import style_document_text, style_sections, style_table
 from maya_core.html_reviewer import review_html_app
-from office_drafter import (
+from maya_documents.office_drafter import (
     sections_from_markdown,
     slides_from_markdown,
     spreadsheet_from_markdown,
     word_sections_from_markdown,
 )
-from office_modern_files import create_docx, create_xlsx
+from maya_documents.office_modern_files import create_docx, create_xlsx
 from pptx_document_flow import create_powerpoint_with_qa
 from presentation_reviewer import review_presentation_slides
 from word_quality import word_prompt_context
 from word_section_repair import strengthen_word_sections
 from maya_harness.harness_artifact_store import record_structured_artifact
 from maya_harness.harness_models import local_artifact
-from markdown_drafter import (
+from maya_core.markdown_drafter import (
     MarkdownDraft,
     draft_html_with_gemini,
     draft_html_with_artisan,

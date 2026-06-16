@@ -7,7 +7,7 @@ from maya_core.artisan_runner import latest_artisan_delivery_text
 from maya_core.daily_cockpit import daily_cockpit_text, focus_text, project_cockpit_text
 from maya_core.desktop_file_opener import DesktopFileOpener
 from maya_harness.harness_artifact_store import latest_artifacts
-from maya_desk import maya_desk_text
+from maya_core.maya_desk import maya_desk_text
 from storage import get_preference
 from utils import OSBridge
 from waiting_on import handle_waiting_on

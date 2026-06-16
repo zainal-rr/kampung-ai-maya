@@ -14,7 +14,7 @@ import tempfile
 import zipfile
 from pathlib import Path
 
-from markdown_drafter import MarkdownDraft
+from maya_core.markdown_drafter import MarkdownDraft
 from openpyxl import load_workbook
 
 

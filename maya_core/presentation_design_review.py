@@ -6,9 +6,9 @@ from pathlib import Path
 
 from maya_core.cost_tracker import record_usage
 from maya_documents.artifact_quality import artifact_skill_context
-from models import TheSenses, TheSteward
+from maya_core.models import TheSenses, TheSteward
 from pptx_slide_renderer import render_pptx_slides
-from office_modern_files import safe_slug
+from maya_documents.office_modern_files import safe_slug
 from provider_capabilities import CAPABILITIES
 from skill_store import find_skill
 from workspace_paths import workspace_dir

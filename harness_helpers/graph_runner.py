@@ -20,7 +20,7 @@ from maya_harness.harness_observation_store import record_observation
 from maya_harness.harness_store import create_approval, finish_run, record_artifact, record_event, upsert_run
 from maya_harness.harness_tools import HarnessTools
 from maya_harness.harness_workflows import classify_workflow, next_step_for, plan_for, workflow_for_action
-from maya_permission_kernel import MayaPermissionKernel
+from maya_core.maya_permission_kernel import MayaPermissionKernel
 
 # Budget for the opt-in agentic loop: hard ceiling on execute passes per run.
 MAX_STEPS = 8

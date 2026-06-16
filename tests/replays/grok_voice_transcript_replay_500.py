@@ -23,7 +23,7 @@ from maya_documents.artifact_preflight import ArtifactPreflight
 from maya_documents.artifact_quality import ArtifactQualityResult
 from maya_documents.document_actions_smoke_fakes import _fake_artifact_quality_review, _fake_draft, _fake_html_draft
 from maya_documents.document_actions_smoke_helpers import FakeBridge, _init
-from markdown_drafter import MarkdownDraft
+from maya_core.markdown_drafter import MarkdownDraft
 from route_tracker import last_route_text
 from storage import get_preference
 from maya_core.grok_voice_replay_fakes import FastReplayDocuments

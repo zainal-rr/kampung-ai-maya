@@ -14,12 +14,12 @@ from maya_core.hardening_audit import hardening_audit_summary, route_cost_audit
 from maya_harness.harness_artifact_store import latest_artifacts
 from browser_field_tests import browser_field_scenarios
 from maya_harness.live_reliability_soak import format_soak_status
-from live_test_evidence import load_live_evidence
-from maya_desk_metrics import browser_benchmark_text, failure_metric_items, reliability_metric_text, trace_metric_items
-from maya_event_store import MayaEventStore
-from memory_audit import format_recent_memory_audit
-from memory_canaries import format_memory_leak_report
-from mcp_registry import recent_mcp_usage
+from maya_harness.live_test_evidence import load_live_evidence
+from maya_core.maya_desk_metrics import browser_benchmark_text, failure_metric_items, reliability_metric_text, trace_metric_items
+from maya_core.maya_event_store import MayaEventStore
+from maya_memory.memory_audit import format_recent_memory_audit
+from maya_memory.memory_canaries import format_memory_leak_report
+from maya_core.mcp_registry import recent_mcp_usage
 from route_tracker import last_route_text
 from self_heal_store import latest_self_heal_report
 from skill_outcome_store import recent_skill_outcomes

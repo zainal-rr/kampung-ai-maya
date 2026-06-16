@@ -20,7 +20,7 @@ from maya_harness.harness_store import (
     resolve_approval,
     upsert_run,
 )
-from maya_permission_kernel import MayaPermissionKernel
+from maya_core.maya_permission_kernel import MayaPermissionKernel
 
 MessageHandler = Callable[[str, str, str, str], str | Awaitable[str]]
 ToolExecutor = Callable[[str, Mapping[str, Any]], Any | Awaitable[Any]]

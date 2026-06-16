@@ -11,7 +11,7 @@ del _w4_Path, _w4_root, _w4_sys
 import asyncio
 import tempfile
 
-from mcp_registry import audit_mcp_server, list_mcp_servers, propose_mcp_server, set_mcp_status
+from maya_core.mcp_registry import audit_mcp_server, list_mcp_servers, propose_mcp_server, set_mcp_status
 from security_manifest import get_manifest
 
 

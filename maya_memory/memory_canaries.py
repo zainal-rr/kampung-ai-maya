@@ -6,7 +6,7 @@ from datetime import UTC, datetime, timedelta
 import aiosqlite
 
 from maya_memory.canonical_memory import forget_canonical_memory, subject_key_from_text, upsert_canonical_memory
-from memory_audit import hash_content, record_memory_audit_event
+from maya_memory.memory_audit import hash_content, record_memory_audit_event
 
 
 @dataclass(frozen=True)

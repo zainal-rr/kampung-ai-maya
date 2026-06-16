@@ -26,8 +26,8 @@ from maya_memory.canonical_memory_supersede import (
 from maya_memory.canonical_memory_scoring import activation_score
 from maya_memory.canonical_memory_text import is_temporary_memory, memory_tokens, subject_key_from_text, value_from_text
 from maya_memory.canonical_memory_usage import mark_canonical_used
-from memory_audit import record_memory_audit_event
-from memory_links import expand_with_neighbors
+from maya_memory.memory_audit import record_memory_audit_event
+from maya_memory.memory_links import expand_with_neighbors
 
 
 _INITIALIZED: set[str] = set()

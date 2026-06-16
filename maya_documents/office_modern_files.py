@@ -9,17 +9,17 @@ from openpyxl import Workbook
 from pptx import Presentation
 from pptx.util import Inches
 
-from office_files import safe_slug
+from maya_documents.office_files import safe_slug
 from maya_documents.excel_style import sheet_title_for, style_basic_sheet
-from office_pptx_palette import palette_for
-from office_pptx_layout import (
+from maya_documents.office_pptx_palette import palette_for
+from maya_documents.office_pptx_layout import (
     _content_slide,
     _content_slide_visual,
     _paint_background,
     _speaker_notes,
     _title_slide,
 )
-from office_pptx_text import _visual_bullets, _visual_title
+from maya_documents.office_pptx_text import _visual_bullets, _visual_title
 
 
 

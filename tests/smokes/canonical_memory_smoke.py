@@ -19,9 +19,9 @@ from maya_memory.canonical_memory_inspector import inspect_canonical_memory
 from maya_memory.canonical_memory_pin import set_canonical_memory_pin
 from maya_core.learning_pipeline import LearningPipeline
 from maya_core.lesson_store import init_lesson_db
-from memory_control import forget_memory
-from memory_links import add_memory_link
-from memory_service import MemoryService
+from maya_memory.memory_control import forget_memory
+from maya_memory.memory_links import add_memory_link
+from maya_memory.memory_service import MemoryService
 from storage import init_db
 from voice_transcript_policy import clean_voice_transcript_for_intent
 

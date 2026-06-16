@@ -14,8 +14,8 @@ from tempfile import TemporaryDirectory
 from openpyxl import load_workbook
 
 from maya_documents.artifact_quality import validate_xlsx_path
-from office_edit_helpers import apply_simple_xlsx_edit
-from office_modern_files import create_xlsx
+from maya_documents.office_edit_helpers import apply_simple_xlsx_edit
+from maya_documents.office_modern_files import create_xlsx
 
 
 def main() -> None:

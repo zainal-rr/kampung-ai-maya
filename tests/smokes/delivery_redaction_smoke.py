@@ -9,7 +9,7 @@ del _w4_Path, _w4_root, _w4_sys
 
 
 from maya_core.delivery_redaction import redact_for_delivery, requires_external_redaction
-from models import BaseAgent
+from maya_core.models import BaseAgent
 
 
 def main() -> None:

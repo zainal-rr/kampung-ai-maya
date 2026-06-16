@@ -14,8 +14,8 @@ import aiosqlite
 
 from maya_memory.canonical_memory import subject_key_from_text
 from maya_core.cost_tracker import record_usage
-from memory_audit import record_memory_audit_event
-from memory_links import add_memory_link
+from maya_memory.memory_audit import record_memory_audit_event
+from maya_memory.memory_links import add_memory_link
 from permission_policy import contains_sensitive_info, contains_sensitive_phrase_cue
 from weekly_memory_live import ProviderCall, _clean, _json_blob
 

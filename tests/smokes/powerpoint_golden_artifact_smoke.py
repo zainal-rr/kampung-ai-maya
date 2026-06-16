@@ -13,8 +13,8 @@ from pathlib import Path
 
 from pptx import Presentation
 
-from office_drafter import slides_from_markdown
-from office_modern_files import choose_pptx_theme, create_pptx
+from maya_documents.office_drafter import slides_from_markdown
+from maya_documents.office_modern_files import choose_pptx_theme, create_pptx
 
 
 def main() -> None:

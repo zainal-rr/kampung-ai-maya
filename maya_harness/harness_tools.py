@@ -11,7 +11,7 @@ from maya_harness.harness_browser_observation import agentic_browser_message as 
 from maya_harness.harness_browser_observation import browser_observation as _browser_observation
 from maya_harness.harness_models import GroundedObservation, HarnessArtifact, local_artifact
 from maya_core.imac_workflows import ImacWorkflowRouter
-from local_actions import LocalActionRouter
+from maya_core.local_actions import LocalActionRouter
 from project_actions import ProjectActionRouter
 from screen_responder import ScreenResponder
 from self_heal_execution import execute_checkpointed_self_heal

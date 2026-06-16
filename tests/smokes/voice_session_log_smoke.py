@@ -12,7 +12,7 @@ import tempfile
 from pathlib import Path
 
 from maya_core.assistant_commands import AssistantCommandRouter
-from memory_service import MemoryService
+from maya_memory.memory_service import MemoryService
 from skill_registry import SkillRegistry
 from storage import init_db
 from voice_session_log import (

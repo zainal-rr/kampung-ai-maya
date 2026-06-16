@@ -5,7 +5,7 @@ import tempfile
 from pathlib import Path
 
 from maya_core.audio_devices import bin_path, device_names, resolve_audio_input
-from local_wake_scorer import LocalWakeScorerTranscriptSource
+from maya_core.local_wake_scorer import LocalWakeScorerTranscriptSource
 from voice_device_policy import current_local_wake_allowed
 from xai_stt import xai_transcribe_file
 

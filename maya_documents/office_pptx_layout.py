@@ -3,12 +3,12 @@ from __future__ import annotations
 from pptx.dml.color import RGBColor
 from pptx.util import Inches, Pt
 
-from office_pptx_colors import (
+from maya_documents.office_pptx_colors import (
     DARK_ACCENT, DARK_BG, DARK_CARD, DARK_MUTED, DARK_PANEL, DARK_TEXT,
     FOREST, GOLD, INK, PASTEL_BG, PASTEL_CARD, PASTEL_PANEL, SAGE,
 )
-from office_pptx_palette import DeckPalette, default_palette, rhythm_offset
-from office_pptx_text import _notes_text, _short, _slide_kicker
+from maya_documents.office_pptx_palette import DeckPalette, default_palette, rhythm_offset
+from maya_documents.office_pptx_text import _notes_text, _short, _slide_kicker
 
 
 def _resolve(palette: DeckPalette | None, theme: str) -> DeckPalette:

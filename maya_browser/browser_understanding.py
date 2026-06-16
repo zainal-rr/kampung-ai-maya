@@ -4,7 +4,7 @@ import os
 import re
 
 from maya_core.cost_tracker import record_usage
-from models import TheSenses
+from maya_core.models import TheSenses
 
 
 _PRICE_RE = re.compile(r"(?:MYR|RM)\s*[\d,]+", re.I)

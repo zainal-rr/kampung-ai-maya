@@ -11,7 +11,7 @@ from maya_core.cost_tracker import usage_summary_text
 from maya_memory.canonical_memory_inspector import inspect_canonical_memory
 from maya_memory.canonical_memory_migration import migrate_memory_to_canonical
 from maya_memory.canonical_memory_pin import set_canonical_memory_pin
-from memory_control import cleanup_stale_memory, forget_memory, memory_sources_text
+from maya_memory.memory_control import cleanup_stale_memory, forget_memory, memory_sources_text
 from provider_readiness import provider_readiness_text
 from route_tracker import last_route_text
 from screen_session import activate_screen_sight, deactivate_screen_sight, screen_sight_status, toggle_screen_sight

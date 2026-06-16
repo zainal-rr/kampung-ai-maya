@@ -5,7 +5,7 @@ import re
 
 from maya_documents.artifact_preflight import ArtifactPreflight
 from maya_core.assistant_routes import RouteResult
-from markdown_drafter import MarkdownDraft
+from maya_core.markdown_drafter import MarkdownDraft
 from pptx_quality_gate import PptxQualityResult
 
 
@@ -73,7 +73,7 @@ async def fake_review(db_path: str, topic: str, slides):
 
 
 async def fake_powerpoint_qa(db_path, path, title, slides, run_id, last_doc_key, auto_improve=True, **_kwargs):
-    from office_modern_files import create_pptx
+    from maya_documents.office_modern_files import create_pptx
     from storage import upsert_preference
 
     await asyncio.to_thread(create_pptx, path, title, slides)

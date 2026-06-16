@@ -8,7 +8,7 @@ if str(_w4_root) not in _w4_sys.path:
 del _w4_Path, _w4_root, _w4_sys
 
 
-from memory_perspective import normalize_user_perspective_memory
+from maya_memory.memory_perspective import normalize_user_perspective_memory
 
 
 def main() -> None:

@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Mapping
 
-from maya_tool_registry import MayaToolRegistry, default_maya_tool_registry
+from maya_core.maya_tool_registry import MayaToolRegistry, default_maya_tool_registry
 from permission_policy import hard_no_private_exposure_text
 from tool_sandbox_policy import sandbox_decision, stricter_decision
 from untrusted_input_boundary import untrusted_action_decision
