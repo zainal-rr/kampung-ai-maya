@@ -8,10 +8,11 @@ from pathlib import Path
 
 from dotenv import dotenv_values, load_dotenv
 
+from maya_core.repo_paths import repo_root
 from secret_provider import SECRET_ENV_NAMES, get_secret, migrate_env_to_keychain, redact_secrets_in_text
 
 
-ROOT = Path(__file__).resolve().parent
+ROOT = repo_root(__file__)
 DEFAULT_LOG_GLOBS = ("logs/**/*.log", "logs/**/*.json", "docs/**/*.md")
 SECRET_NAME_SUFFIXES = ("API_KEY", "TOKEN", "SECRET")
 

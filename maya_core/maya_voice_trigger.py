@@ -7,8 +7,9 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from maya_core.repo_paths import repo_root
 
-ROOT = Path(__file__).resolve().parent
+ROOT = repo_root(__file__)
 
 
 def main() -> None:

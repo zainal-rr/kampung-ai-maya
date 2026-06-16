@@ -7,6 +7,7 @@ from pathlib import Path
 
 from dotenv import load_dotenv
 
+from maya_core.repo_paths import repo_root
 
 KEYS = (
     ("GOOGLE_API_KEY", "Gemini 3.1 Flash default, Gemini 3.5 Flash premium sight, Omi, memory shaping"),
@@ -31,7 +32,7 @@ LOCAL_TOOLS = (
 
 
 def provider_readiness_text() -> str:
-    load_dotenv(Path(__file__).resolve().parent / ".env")
+    load_dotenv(repo_root(__file__) / ".env")
     key_lines = [f"{idx}) {name}: {_state(name)} for {purpose}" for idx, (name, purpose) in enumerate(KEYS, start=1)]
     model_lines = [
         f"{idx}) {name}: {os.getenv(name, default)}"

@@ -55,7 +55,7 @@ async def _test_empty_guard_is_behavioral() -> None:
 
 
 def _test_voice_prompt_contract() -> None:
-    source = (ROOT / "voice_context.py").read_text("utf-8")
+    source = (ROOT / "maya_voice" / "voice_context.py").read_text("utf-8")
     assert "Only claim an outcome the tool result confirms" in source
     assert "Do not say it opened in the Maya group unless the result confirms it" in source
     assert "For simple answers, use 1 clear sentence" in source

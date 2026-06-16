@@ -11,8 +11,11 @@ from typing import Any
 
 from dotenv import load_dotenv
 
+from maya_core.repo_paths import repo_root
 
-MANIFEST_PATH = Path(__file__).with_name("dependency_manifest.json")
+
+ROOT = repo_root(__file__)
+MANIFEST_PATH = ROOT / "dependency_manifest.json"
 
 
 @dataclass(frozen=True)
@@ -30,7 +33,7 @@ def load_dependency_manifest(path: Path | str = MANIFEST_PATH) -> dict[str, Any]
 
 
 def dependency_statuses(path: Path | str = MANIFEST_PATH) -> list[DependencyStatus]:
-    load_dotenv(Path(__file__).with_name(".env"))
+    load_dotenv(ROOT / ".env")
     items = load_dependency_manifest(path).get("items", [])
     return [_check_item(dict(item)) for item in items]
 

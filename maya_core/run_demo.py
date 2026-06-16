@@ -9,8 +9,10 @@ from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
+from maya_core.repo_paths import repo_root
 
-ROOT = Path(__file__).resolve().parent
+
+ROOT = repo_root(__file__)
 LOG_DIR = ROOT / "logs" / "demos"
 
 

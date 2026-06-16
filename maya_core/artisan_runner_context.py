@@ -12,6 +12,7 @@ from zipfile import ZIP_DEFLATED, ZipFile
 import aiosqlite
 from dotenv import load_dotenv
 
+from maya_core.repo_paths import repo_root
 from cost_tracker import record_usage
 from harness_artifact_store import record_structured_artifact
 from harness_models import local_artifact
@@ -27,4 +28,4 @@ from artisan_worktree import create_repo_isolation
 from artisan_runner_models import ArtisanTarget
 
 
-load_dotenv(Path(__file__).resolve().parent / ".env")
+load_dotenv(repo_root(__file__) / ".env")

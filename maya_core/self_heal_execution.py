@@ -9,8 +9,9 @@ from harness_store import create_approval, record_artifact, record_event
 from memory_canaries import check_memory_canaries, format_memory_leak_report, seed_memory_canaries
 from self_heal_memory import create_memory_snapshot, memory_self_heal_dry_run
 from self_heal_store import create_self_heal_report, record_self_heal_stage
+from maya_core.repo_paths import repo_root
 
-ROOT = Path(__file__).resolve().parent
+ROOT = repo_root(__file__)
 SNAPSHOT_ROOT = ROOT / "backups" / "self_heal_workflows"
 VERIFY_COMMANDS = (
     "./venv/bin/python memory_time_audit_smoke.py",

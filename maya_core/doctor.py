@@ -10,9 +10,11 @@ from dotenv import load_dotenv
 from provider_readiness import provider_readiness_text
 from speech_input import detect_avfoundation_audio_devices
 from weekly_memory_store import latest_weekly_summary
+from maya_core.repo_paths import repo_root
 
 
 load_dotenv()
+ROOT = repo_root(__file__)
 
 REQUIRED_VARS = ["GOOGLE_API_KEY"]
 OPTIONAL_VARS = ["TELEGRAM_BOT_TOKEN", "OPENAI_API_KEY", "ANTHROPIC_API_KEY", "XAI_API_KEY"]
@@ -100,7 +102,7 @@ def print_audio_status() -> None:
 
 def print_runtime_status() -> None:
     print("\n== Runtime ==")
-    health_path = Path("logs/health.json")
+    health_path = ROOT / "logs/health.json"
     service_path = Path.home() / "Library" / "LaunchAgents" / "com.kampungai.maya.plist"
     print("launch_agent:", "present" if service_path.exists() else "missing")
     if not health_path.exists():
@@ -114,7 +116,7 @@ def print_runtime_status() -> None:
 
 def print_code_health() -> None:
     print("\n== Code Health ==")
-    health = collect_code_health(Path(__file__).resolve().parent)
+    health = collect_code_health(ROOT)
     print(format_code_health(health))
 
 

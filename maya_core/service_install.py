@@ -6,11 +6,12 @@ import subprocess
 import sys
 from pathlib import Path
 
+from maya_core.repo_paths import repo_root
 
 LABEL = "com.kampungai.maya"
 WEEKLY_MEMORY_LABEL = "com.kampungai.maya.weeklymemory"
 NIGHTLY_MEMORY_LABEL = "com.kampungai.maya.nightlymemory"
-ROOT = Path(os.getenv("KAMPUNG_AI_REPO_ROOT", Path(__file__).resolve().parent)).expanduser().resolve()
+ROOT = Path(os.getenv("KAMPUNG_AI_REPO_ROOT", str(repo_root(__file__)))).expanduser().resolve()
 APP_NAME = "Kampung AI"
 PLIST_PATH = Path.home() / "Library" / "LaunchAgents" / f"{LABEL}.plist"
 WEEKLY_MEMORY_PLIST_PATH = Path.home() / "Library" / "LaunchAgents" / f"{WEEKLY_MEMORY_LABEL}.plist"

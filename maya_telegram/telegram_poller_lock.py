@@ -23,9 +23,11 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import IO
 
+from maya_core.repo_paths import repo_root
+
 logger = logging.getLogger(__name__)
 
-_LOCK_DIR = Path(__file__).resolve().parent / "logs"
+_LOCK_DIR = repo_root(__file__) / "logs"
 
 
 @dataclass

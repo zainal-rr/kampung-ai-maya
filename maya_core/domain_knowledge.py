@@ -30,8 +30,9 @@ from domain_knowledge_chunks import directory_boosts, kb_chunks
 from domain_knowledge_context_builder import build_domain_context
 from domain_knowledge_models import DomainSkill, KnowledgeChunk
 from domain_knowledge_parse import parse_domain_skill, word_match
+from maya_core.repo_paths import repo_root
 
-REPO_ROOT = Path(__file__).resolve().parent
+REPO_ROOT = repo_root(__file__)
 DEFAULT_SKILL_DIR = REPO_ROOT / "maya_skills" / "active"
 
 MAX_CONTEXT_CHARS = 6000

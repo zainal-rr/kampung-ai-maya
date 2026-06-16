@@ -8,8 +8,10 @@ from typing import Any
 
 from permission_policy import SECRET_PATTERNS
 
+from maya_core.repo_paths import repo_root
 
-ROOT = Path(__file__).resolve().parent
+
+ROOT = repo_root(__file__)
 DEFAULT_LOG_DIR = ROOT / "logs" / "demos"
 EXPECTED_DEMOS = (
     "telegram_document",

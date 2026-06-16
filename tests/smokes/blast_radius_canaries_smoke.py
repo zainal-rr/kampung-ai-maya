@@ -70,10 +70,10 @@ def main() -> None:
     # S5 — chokepoint exclusivity: the path-taking tools route through
     # resolve_safe_path (grep guard, like context-window C3).
     for module, needle in (
-        ("file_actions.py", "resolve_safe_path"),
-        ("document_actions.py", "resolve_safe_path"),
-        ("telegram_delivery.py", "resolve_safe_path"),
-        ("artisan_runner_engine.py", "scrubbed_subprocess_env"),
+        ("maya_core/file_actions.py", "resolve_safe_path"),
+        ("maya_documents/document_actions.py", "resolve_safe_path"),
+        ("maya_telegram/telegram_delivery.py", "resolve_safe_path"),
+        ("maya_core/artisan_runner_engine.py", "scrubbed_subprocess_env"),
     ):
         text = (_ROOT / module).read_text(encoding="utf-8")
         _require(needle in text, f"S5 FAILED: {module} does not route through {needle}")

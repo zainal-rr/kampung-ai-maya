@@ -90,7 +90,9 @@ class SieveNode:
 
 if __name__ == "__main__":
     # Configuration: env-driven, defaulting to paths relative to this repo.
-    _ROOT = Path(__file__).resolve().parent
+    from maya_core.repo_paths import repo_root
+
+    _ROOT = repo_root(__file__)
     WATCH_DIR = os.getenv("OMI_WATCH_DIR", str(_ROOT / "omi_sync"))
     DB_PATH = os.getenv("KAMPUNG_DB_PATH", str(_ROOT / "session_history.db"))
 
