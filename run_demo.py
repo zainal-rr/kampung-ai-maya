@@ -58,7 +58,7 @@ DEMOS = {
             "Memory self-heal dry-run/proceed guardrails pass.",
             "Complex agentic workflow pauses for approval and resumes safely.",
         ),
-        (("self_healing_smoke.py",), ("self_heal_memory_smoke.py",), ("tests/smokes/complex_agentic_workflow_smoke.py",)),
+        (("self_healing_smoke.py",), ("tests/smokes/self_heal_memory_smoke.py",), ("tests/smokes/complex_agentic_workflow_smoke.py",)),
     ),
     "artisan_project": Demo(
         "artisan_project",

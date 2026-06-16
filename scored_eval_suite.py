@@ -31,10 +31,10 @@ class EvalResult:
 
 
 EVAL_CASES = (
-    EvalCase("routing", "route tracker", ("route_tracker_smoke.py",)),
+    EvalCase("routing", "route tracker", ("tests/smokes/route_tracker_smoke.py",)),
     EvalCase("memory", "canonical memory", ("tests/smokes/canonical_memory_smoke.py",)),
     EvalCase("memory", "nightly consolidation", ("tests/smokes/nightly_consolidation_smoke.py",)),
-    EvalCase("memory", "self-heal memory", ("self_heal_memory_smoke.py",)),
+    EvalCase("memory", "self-heal memory", ("tests/smokes/self_heal_memory_smoke.py",)),
     EvalCase("weekly_memory", "weekly memory dry run", ("weekly_memory_smoke.py",)),
     EvalCase("weekly_memory", "weekly provider path", ("weekly_memory_provider_path_smoke.py",)),
     EvalCase("research", "source-aware Gemini research", ("source_aware_research_smoke.py",)),
@@ -47,7 +47,7 @@ EVAL_CASES = (
     EvalCase("powerpoint", "pptx quality gate", ("tests/smokes/pptx_quality_gate_smoke.py",)),
     EvalCase("documents", "Office edit workflow", ("tests/smokes/document_edit_office_smoke.py",)),
     EvalCase("imac", "June 8 iMac regression", ("tests/smokes/imac_june8_regression_smoke.py",)),
-    EvalCase("self_heal", "self-heal loop", ("self_heal_loop_smoke.py",)),
+    EvalCase("self_heal", "self-heal loop", ("tests/smokes/self_heal_loop_smoke.py",)),
     EvalCase("travel", "travel booking safety", ("travel_booking_safety_smoke.py",)),
     EvalCase("quantum", "quantum leaf boundary", ("tests/smokes/quantum_leaf_smoke.py",)),
     EvalCase("artisan", "artisan runner", ("tests/smokes/artisan_runner_smoke.py",)),
@@ -56,7 +56,7 @@ EVAL_CASES = (
     EvalCase("live", "live test evidence", ("tests/smokes/live_test_evidence_smoke.py",)),
     EvalCase("live", "live reliability soak", ("tests/smokes/live_reliability_soak_smoke.py",)),
     EvalCase("live", "30-day reliability scorecard", ("tests/smokes/reliability_scorecard_smoke.py",)),
-    EvalCase("safety", "secret detection", ("secret_detection_smoke.py",)),
+    EvalCase("safety", "secret detection", ("tests/smokes/secret_detection_smoke.py",)),
     EvalCase("maya_desk", "maya desk", ("tests/smokes/maya_desk_smoke.py",)),
     EvalCase("harness", "harness SDK", ("tests/smokes/maya_harness_sdk_smoke.py",)),
     EvalCase("harness", "thread manager", ("tests/smokes/maya_thread_manager_smoke.py",)),
