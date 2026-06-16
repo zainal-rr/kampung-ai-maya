@@ -3,12 +3,12 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from dependency_manifest import readiness_summary
-from demo_evidence import load_latest, validate_latest_demo_evidence
+from maya_core.dependency_manifest import readiness_summary
+from maya_core.demo_evidence import load_latest, validate_latest_demo_evidence
 from maya_core.repo_paths import repo_root
 from maya_core.permission_policy import SECRET_PATTERNS
 from maya_core.route_tracker import _model_for_lane
-from self_heal_memory import guardrails_text
+from maya_core.self_heal_memory import guardrails_text
 
 
 @dataclass(frozen=True)

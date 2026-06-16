@@ -19,7 +19,7 @@ import tempfile
 import threading
 from pathlib import Path
 
-from browser_extension_bridge import (
+from maya_browser.browser_extension_bridge import (
     ExtensionBridgeServer,
     ExtensionBrowserController,
     extension_last_open_result,

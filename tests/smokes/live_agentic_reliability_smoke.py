@@ -27,7 +27,7 @@ import maya_core.utils as utils
 from maya_core.agentic_lane_validators import validate_scenario
 from maya_core.agentic_reliability_scenarios import agentic_scenarios
 from maya_core.agentic_run_evidence import load_scenarios
-from live_agentic_reliability_run import run_agentic_night
+from maya_harness.live_agentic_reliability_run import run_agentic_night
 
 
 LIVE_SUBSET = (

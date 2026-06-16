@@ -12,7 +12,7 @@ import os
 import tempfile
 from pathlib import Path
 
-import service_install
+import maya_core.service_install as service_install
 
 
 def main() -> None:

@@ -17,7 +17,7 @@ from maya_core.cost_tracker import record_usage
 from maya_memory.memory_audit import record_memory_audit_event
 from maya_memory.memory_links import add_memory_link
 from maya_core.permission_policy import contains_sensitive_info, contains_sensitive_phrase_cue
-from weekly_memory_live import ProviderCall, _clean, _json_blob
+from maya_core.weekly_memory_live import ProviderCall, _clean, _json_blob
 
 MAX_EPISODE_ROWS = 400
 MAX_EPISODE_CHARS = 280

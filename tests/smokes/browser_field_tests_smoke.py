@@ -8,7 +8,7 @@ if str(_w4_root) not in _w4_sys.path:
 del _w4_Path, _w4_root, _w4_sys
 
 
-from browser_field_tests import browser_field_scenarios, format_browser_field_tests
+from maya_browser.browser_field_tests import browser_field_scenarios, format_browser_field_tests
 
 
 def main() -> None:

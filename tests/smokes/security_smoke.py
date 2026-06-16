@@ -13,7 +13,7 @@ import os
 import tempfile
 from pathlib import Path
 
-import service_install
+import maya_core.service_install as service_install
 import maya_telegram.telegram_bridge as telegram_bridge
 from maya_core.permission_policy import path_needs_confirmation
 from maya_telegram.telegram_delivery import split_file_markers

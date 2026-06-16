@@ -11,7 +11,7 @@ del _w4_Path, _w4_root, _w4_sys
 import tempfile
 from pathlib import Path
 
-from browser_benchmark import (
+from maya_browser.browser_benchmark import (
     browser_benchmark_cases,
     browser_benchmark_summary,
     format_browser_benchmark,

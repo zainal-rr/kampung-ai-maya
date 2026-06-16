@@ -6,7 +6,7 @@ from dataclasses import asdict, dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
-from browser_field_tests import BrowserFieldScenario, browser_field_scenarios
+from maya_browser.browser_field_tests import BrowserFieldScenario, browser_field_scenarios
 
 
 BENCHMARK_PATH = Path("logs") / "browser_benchmarks" / "latest.json"

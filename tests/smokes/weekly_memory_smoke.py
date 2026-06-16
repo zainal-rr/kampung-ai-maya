@@ -22,7 +22,7 @@ from maya_core.skill_store import init_skill_db
 from maya_core.storage import create_task, init_db, save_history_message, upsert_preference
 from maya_core.storage import update_task_status
 from maya_telegram.telegram_commands import ParsedCommand, command_to_text
-from weekly_memory import WeeklyMemoryDistiller
+from maya_core.weekly_memory import WeeklyMemoryDistiller
 from maya_core.weekly_memory_store import init_weekly_memory_db, latest_weekly_memory_runs, latest_weekly_summary
 
 

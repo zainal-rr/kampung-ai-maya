@@ -8,7 +8,7 @@ if str(_w4_root) not in _w4_sys.path:
 del _w4_Path, _w4_root, _w4_sys
 
 
-from imac_june8_regression import format_june8_regression, june8_regression_checks
+from maya_core.imac_june8_regression import format_june8_regression, june8_regression_checks
 
 
 def main() -> None:

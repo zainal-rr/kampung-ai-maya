@@ -12,7 +12,7 @@ import json
 import tempfile
 from pathlib import Path
 
-from dependency_manifest import dependency_readiness_text, dependency_statuses, readiness_summary
+from maya_core.dependency_manifest import dependency_readiness_text, dependency_statuses, readiness_summary
 
 
 def main() -> None:

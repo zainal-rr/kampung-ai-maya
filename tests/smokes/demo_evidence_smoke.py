@@ -12,7 +12,7 @@ import json
 import tempfile
 from pathlib import Path
 
-from demo_evidence import EXPECTED_DEMOS, refresh_latest_demo_evidence, validate_latest_demo_evidence, write_latest_demo_files
+from maya_core.demo_evidence import EXPECTED_DEMOS, refresh_latest_demo_evidence, validate_latest_demo_evidence, write_latest_demo_files
 
 
 def main() -> None:

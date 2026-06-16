@@ -15,7 +15,7 @@ from pathlib import Path
 import aiosqlite
 
 from maya_core.curated_memory import CORE_SCOPE, PROFILE_SCOPE, init_curated_memory_db, scope_summary
-from self_heal_memory import handle_memory_self_heal_command, restore_memory_snapshot
+from maya_core.self_heal_memory import handle_memory_self_heal_command, restore_memory_snapshot
 from maya_core.storage import get_preference, init_db, upsert_preference
 from maya_telegram.telegram_commands import command_to_text, parse_command
 

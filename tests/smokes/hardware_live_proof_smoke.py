@@ -8,7 +8,7 @@ if str(_w4_root) not in _w4_sys.path:
 del _w4_Path, _w4_root, _w4_sys
 
 
-from hardware_live_proof import format_hardware_live_proof, hardware_live_proof_items
+from maya_core.hardware_live_proof import format_hardware_live_proof, hardware_live_proof_items
 
 
 def main() -> None:

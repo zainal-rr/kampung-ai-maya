@@ -18,7 +18,7 @@ from maya_memory.canonical_memory import forget_canonical_memory, search_canonic
 from maya_memory.memory_audit import record_memory_audit_event, recent_memory_audit_events
 from maya_memory.memory_canaries import check_memory_canaries, seed_memory_canaries
 from maya_core.storage import init_db
-from weekly_memory_live import live_weekly_canonical_distillation
+from maya_core.weekly_memory_live import live_weekly_canonical_distillation
 
 
 async def main() -> None:

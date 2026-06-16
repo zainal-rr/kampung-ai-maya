@@ -16,7 +16,7 @@ import aiosqlite
 
 from maya_memory.canonical_memory import search_relevant_canonical_memories, upsert_canonical_memory
 from maya_core.lesson_store import init_lesson_db
-from memory_watchdog import format_watchdog_report, run_memory_watchdog
+from maya_memory.memory_watchdog import format_watchdog_report, run_memory_watchdog
 from maya_core.storage import init_db
 
 

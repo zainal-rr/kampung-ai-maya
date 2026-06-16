@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import json
 
-from weekly_memory import WeeklyMemoryDistiller
+from maya_core.weekly_memory import WeeklyMemoryDistiller
 from maya_core.weekly_memory_providers import weekly_distiller_agent, weekly_reviewer_agent
 from maya_core.weekly_memory_store import latest_weekly_memory_runs, latest_weekly_summary
 

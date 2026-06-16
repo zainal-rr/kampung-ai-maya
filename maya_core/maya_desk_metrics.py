@@ -4,7 +4,7 @@ from collections import Counter
 
 import aiosqlite
 
-from browser_benchmark import format_browser_benchmark
+from maya_browser.browser_benchmark import format_browser_benchmark
 from maya_core.reliability_scorecard import format_reliability_scorecard
 
 

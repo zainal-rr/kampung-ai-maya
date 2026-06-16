@@ -52,7 +52,7 @@ def _start_owner_process(port: int, health_port: int, owner_kind: str, ready_pat
     code = """
 import os, time
 from pathlib import Path
-from browser_extension_bridge import ExtensionBridgeServer
+from maya_browser.browser_extension_bridge import ExtensionBridgeServer
 server = ExtensionBridgeServer(owner_kind=os.environ["OWNER_KIND"])
 server.start()
 Path(os.environ["READY_PATH"]).write_text(str(os.getpid()), "utf-8")

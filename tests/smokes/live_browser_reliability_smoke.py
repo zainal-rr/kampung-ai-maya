@@ -21,7 +21,7 @@ import tempfile
 from pathlib import Path
 
 from maya_browser.browser_run_evidence import load_runs
-from live_browser_reliability_run import run_night
+from maya_harness.live_browser_reliability_run import run_night
 
 
 EXPECTED_LANES = {"flights", "stays", "google_search", "google_images", "youtube", "reddit", "safety"}

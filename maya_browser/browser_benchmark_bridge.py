@@ -7,7 +7,7 @@ matching browser benchmark cases and the overall browser live-evidence entry,
 so the scorecard reflects recorded proof instead of manual claims.
 """
 
-from browser_benchmark import browser_benchmark_cases, record_browser_live_result
+from maya_browser.browser_benchmark import browser_benchmark_cases, record_browser_live_result
 from maya_browser.browser_run_evidence import LIVE_RELIABILITY_DIR, load_runs, night_summary
 from maya_harness.live_test_evidence import record_live_evidence
 

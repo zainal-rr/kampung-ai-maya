@@ -17,7 +17,7 @@ from maya_core.route_tracker import last_route_text
 from maya_core.screen_session import activate_screen_sight, deactivate_screen_sight, screen_sight_status, toggle_screen_sight
 from maya_core.session_compactor import inspect_session_context
 from maya_core.self_healing import self_heal_text
-from self_heal_memory import handle_memory_self_heal_command
+from maya_core.self_heal_memory import handle_memory_self_heal_command
 from maya_telegram.telegram_status import command_help, status_text
 from maya_telegram.telegram_delivery_log import latest_telegram_delivery_text
 from maya_telegram.telegram_turn_log import latest_telegram_turn_text

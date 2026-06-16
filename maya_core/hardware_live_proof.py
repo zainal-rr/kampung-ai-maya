@@ -3,7 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from pathlib import Path
 
-from dependency_manifest import dependency_statuses
+from maya_core.dependency_manifest import dependency_statuses
 from maya_core.repo_paths import repo_root
 
 

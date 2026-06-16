@@ -5,7 +5,7 @@ import asyncio
 from pathlib import Path
 
 from code_health import collect_code_health, format_code_health
-from dependency_manifest import dependency_readiness_text
+from maya_core.dependency_manifest import dependency_readiness_text
 from dotenv import load_dotenv
 from maya_core.provider_readiness import provider_readiness_text
 from maya_core.speech_input import detect_avfoundation_audio_devices

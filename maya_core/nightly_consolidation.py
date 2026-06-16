@@ -46,7 +46,7 @@ from maya_core.nightly_consolidation_helpers import (
     record_costs,
     record_links,
 )
-from weekly_memory_live import (
+from maya_core.weekly_memory_live import (
     ProviderCall,
     _clean,
     _forgotten_subject_exists,
