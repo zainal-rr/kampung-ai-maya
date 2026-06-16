@@ -1,22 +1,4 @@
-from __future__ import annotations
-
-from dataclasses import dataclass
-
-
-@dataclass(frozen=True)
-class BrowserPage:
-    title: str
-    url: str
-    text: str
-    text_hash: str = ""
-    modal_state: str = ""
-    untrusted_influence: bool = False
-    injection_detected: bool = False
-    untrusted_source: str = "browser"
-    untrusted_signals: tuple[str, ...] = ()
-
-
-@dataclass(frozen=True)
-class BrowserElement:
-    label: str
-    kind: str
+# W4 compatibility shim — re-exports the relocated module (removed/converted in Wave 5).
+from maya_browser import browser_control_models as _m
+import sys as _sys
+_sys.modules[__name__] = _m
