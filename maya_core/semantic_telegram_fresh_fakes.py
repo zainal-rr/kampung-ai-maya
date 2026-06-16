@@ -4,7 +4,7 @@ import asyncio
 import re
 
 from maya_documents.artifact_preflight import ArtifactPreflight
-from assistant_routes import RouteResult
+from maya_core.assistant_routes import RouteResult
 from markdown_drafter import MarkdownDraft
 from pptx_quality_gate import PptxQualityResult
 

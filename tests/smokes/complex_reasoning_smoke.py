@@ -11,7 +11,7 @@ del _w4_Path, _w4_root, _w4_sys
 import asyncio
 import os
 
-from assistant_model_lanes import ModelLanes
+from maya_core.assistant_model_lanes import ModelLanes
 
 
 class FakeMind:

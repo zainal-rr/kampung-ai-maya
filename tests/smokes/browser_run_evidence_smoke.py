@@ -11,7 +11,7 @@ del _w4_Path, _w4_root, _w4_sys
 import tempfile
 from pathlib import Path
 
-from browser_run_evidence import (
+from maya_browser.browser_run_evidence import (
     BrowserRunRecorder,
     append_run,
     load_runs,

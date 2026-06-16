@@ -21,7 +21,7 @@ from dataclasses import dataclass
 from datetime import date
 
 from maya_core.active_context_models import ActiveContext
-from browser_capability import route_browser_capability
+from maya_browser.browser_capability import route_browser_capability
 from stay_booking_skill import airbnb_url, booking_url, extract_stay_details, extract_stay_options
 from travel_booking_safety import travel_booking_boundary_reply
 

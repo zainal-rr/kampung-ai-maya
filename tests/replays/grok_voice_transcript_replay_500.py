@@ -112,7 +112,7 @@ def _patched_environment(root: Path):
 @contextmanager
 def _patched_models():
     import maya_documents.artifact_builder as artifact_builder
-    import assistant_routes
+    import maya_core.assistant_routes as assistant_routes
     import document_actions as da
 
     old = {
@@ -153,7 +153,7 @@ def _patched_models():
 
 
 async def _make_assistant(db_path: str):
-    from assistant import KampungAssistant
+    from maya_core.assistant import KampungAssistant
 
     assistant = KampungAssistant(db_path)
     bridge = FakeBridge()

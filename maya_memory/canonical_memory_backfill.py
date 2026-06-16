@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import aiosqlite
 
-from canonical_memory import init_canonical_memory_db, upsert_canonical_memory
+from maya_memory.canonical_memory import init_canonical_memory_db, upsert_canonical_memory
 
 
 async def backfill_canonical_memory(db_path: str) -> int:

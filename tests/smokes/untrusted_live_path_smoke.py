@@ -26,7 +26,7 @@ if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
 from maya_core.active_context_models import ActiveContext
-from browser_control import _parse_page, page_summary
+from maya_browser.browser_control import _parse_page, page_summary
 from harness_models import GroundedObservation
 from maya_harness_sdk import MayaHarnessSDK
 

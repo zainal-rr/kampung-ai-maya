@@ -4,12 +4,12 @@ import asyncio
 import re
 from pathlib import Path
 
-from assistant_command_helpers import confirmation_decision
+from maya_core.assistant_command_helpers import confirmation_decision
 from maya_documents.artifact_builder import ArtifactBuilder
-from browser_control import page_summary
-from browser_driver import make_browser_controller
-from browser_workflow_helpers import open_browser_target_new_tab as _open_browser_target_new_tab
-from browser_workflows import HumanBrowserWorkflowRouter
+from maya_browser.browser_control import page_summary
+from maya_browser.browser_driver import make_browser_controller
+from maya_browser.browser_workflow_helpers import open_browser_target_new_tab as _open_browser_target_new_tab
+from maya_browser.browser_workflows import HumanBrowserWorkflowRouter
 from document_actions import DocumentActionRouter
 from network_tools import network_doc_sections, run_network_diagnostics, summarize_network
 from office_modern_files import create_docx

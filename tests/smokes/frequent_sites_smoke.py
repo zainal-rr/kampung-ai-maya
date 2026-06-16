@@ -12,7 +12,7 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-from browser_capability import route_browser_capability, run_browser_capability
+from maya_browser.browser_capability import route_browser_capability, run_browser_capability
 from frequent_sites import find_frequent_site_request, frequent_site_catalog
 from storage import get_preference, init_db
 

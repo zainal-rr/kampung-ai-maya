@@ -13,7 +13,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from browser_understanding import extract_browser_options_with_gemini
+from maya_browser.browser_understanding import extract_browser_options_with_gemini
 from storage import init_db
 
 

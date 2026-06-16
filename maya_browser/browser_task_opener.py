@@ -6,8 +6,8 @@ from dataclasses import dataclass
 
 from maya_core.active_context import ActiveContextInspector
 from maya_core.active_context_models import ActiveContext
-from browser_capability import route_browser_capability, run_browser_capability
-from browser_driver import make_browser_controller
+from maya_browser.browser_capability import route_browser_capability, run_browser_capability
+from maya_browser.browser_driver import make_browser_controller
 from permission_policy import action_permission
 from storage import upsert_preference
 from utils import OSBridge

@@ -3,16 +3,16 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from browser_control import note_browser_route
-from browser_driver import make_browser_controller
-from browser_site_skill_helpers import _site_followup_target
-from browser_site_skills import (
+from maya_browser.browser_control import note_browser_route
+from maya_browser.browser_driver import make_browser_controller
+from maya_browser.browser_site_skill_helpers import _site_followup_target
+from maya_browser.browser_site_skills import (
     run_google_cloud_console_skill,
     run_google_search_skill,
     run_reddit_research_skill,
     run_youtube_research_skill,
 )
-from browser_skill import run_browser_skill
+from maya_browser.browser_skill import run_browser_skill
 from flight_search_skill import run_flight_search_skill
 from frequent_sites import (
     find_frequent_site_request,

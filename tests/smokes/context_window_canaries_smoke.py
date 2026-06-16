@@ -204,7 +204,7 @@ async def _c7_full_flow_regression(root: Path) -> None:
     # the REAL paths: storage funnel + canonical forget hook.
     db = str(root / "c7.db")
     with _env(MAYA_CONTEXT_WINDOW="1", MAYA_CONTEXT_TELEGRAM_BUDGET="4000"):
-        from canonical_memory import forget_canonical_memory, upsert_canonical_memory
+        from maya_memory.canonical_memory import forget_canonical_memory, upsert_canonical_memory
         from storage import init_db, save_history_message
 
         await init_db(db)

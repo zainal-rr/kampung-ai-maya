@@ -25,7 +25,7 @@ from pathlib import Path
 
 import aiosqlite
 
-from canonical_memory import forget_canonical_memory, upsert_canonical_memory
+from maya_memory.canonical_memory import forget_canonical_memory, upsert_canonical_memory
 from memory_links import expand_with_neighbors
 from nightly_consolidation import run_nightly_consolidation
 

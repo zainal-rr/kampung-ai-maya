@@ -14,7 +14,7 @@ from pathlib import Path
 
 import aiosqlite
 
-from canonical_memory import forget_canonical_memory, search_canonical_direct_fact, search_relevant_canonical_memories, upsert_canonical_memory
+from maya_memory.canonical_memory import forget_canonical_memory, search_canonical_direct_fact, search_relevant_canonical_memories, upsert_canonical_memory
 from memory_audit import record_memory_audit_event, recent_memory_audit_events
 from memory_canaries import check_memory_canaries, seed_memory_canaries
 from storage import init_db

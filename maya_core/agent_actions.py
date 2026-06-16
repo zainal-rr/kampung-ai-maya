@@ -5,7 +5,7 @@ import os
 
 from telegram import Bot
 
-from briefing_service import BriefingBuilder
+from maya_core.briefing_service import BriefingBuilder
 from delivery_redaction import redact_for_delivery
 from skill_factory import SkillFactory
 from storage import get_history, get_preference, list_tasks

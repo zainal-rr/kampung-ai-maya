@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import re
 
-from browser_agent_state import BrowserAgentState
-from browser_control_models import BrowserPage
-from browser_cost_policy import escalation_decision, local_decision
+from maya_browser.browser_agent_state import BrowserAgentState
+from maya_browser.browser_control_models import BrowserPage
+from maya_browser.browser_cost_policy import escalation_decision, local_decision
 
 
 def open_browser_target_new_tab(browser, query: str) -> BrowserPage | None:

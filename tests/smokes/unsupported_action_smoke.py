@@ -17,7 +17,7 @@ import aiosqlite
 
 os.environ.setdefault("MPLCONFIGDIR", "/tmp/kampung-ai-mpl")
 
-from assistant import KampungAssistant
+from maya_core.assistant import KampungAssistant
 from imac_workflows import ImacWorkflowRouter
 from lesson_store import init_lesson_db
 from routine_store import init_routine_db

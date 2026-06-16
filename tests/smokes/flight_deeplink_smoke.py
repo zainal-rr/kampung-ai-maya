@@ -20,8 +20,8 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-from browser_control import BrowserPage
-from browser_control_js import _text_hash
+from maya_browser.browser_control import BrowserPage
+from maya_browser.browser_control_js import _text_hash
 from flight_search_deeplink import flights_deep_link
 from flight_search_models import FlightDetails
 from flight_search_skill import FlightSearchSkill

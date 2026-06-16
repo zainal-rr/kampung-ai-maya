@@ -8,7 +8,7 @@ from typing import Any
 
 import aiosqlite
 
-from canonical_memory import upsert_canonical_memory
+from maya_memory.canonical_memory import upsert_canonical_memory
 from harness_artifact_store import record_structured_artifact
 from harness_models import local_artifact
 from harness_store import (

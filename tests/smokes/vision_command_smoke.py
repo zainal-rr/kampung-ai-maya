@@ -20,7 +20,7 @@ from skill_store import init_skill_db
 from storage import init_db, upsert_preference
 from route_tracker import last_route_text
 from telegram_commands import command_to_text, parse_command
-from assistant import KampungAssistant
+from maya_core.assistant import KampungAssistant
 from vision_responder import VisionResponder
 from vision_service import VisionSnapshot
 from vision_session import activate_guided_sight

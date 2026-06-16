@@ -8,8 +8,8 @@ if str(_w4_root) not in _w4_sys.path:
 del _w4_Path, _w4_root, _w4_sys
 
 
-from assistant_model_lanes import ModelLanes
-from browser_followup_policy import looks_like_general_question, looks_like_writing_or_advice_request
+from maya_core.assistant_model_lanes import ModelLanes
+from maya_browser.browser_followup_policy import looks_like_general_question, looks_like_writing_or_advice_request
 
 
 def main() -> None:

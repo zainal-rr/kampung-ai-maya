@@ -2,15 +2,15 @@ import logging, os
 
 from maya_documents.artifact_clarification_state import cleanup_expired_pending_artifact_request
 from maya_documents.artifact_sessions import cleanup_expired_artifact_sessions
-from assistant_context_helpers import handle_context_command
-from assistant_text import clean_model_text, normalize_history, strip_wake_prefix
-from assistant_commands import AssistantCommandRouter
+from maya_core.assistant_context_helpers import handle_context_command
+from maya_core.assistant_text import clean_model_text, normalize_history, strip_wake_prefix
+from maya_core.assistant_commands import AssistantCommandRouter
 from learning_pipeline import LearningPipeline
-from assistant_memory_context import build_assistant_memory_context
-from assistant_model_lanes import ModelLanes
-from assistant_post_route import maybe_curate_memory, route_metadata
-from assistant_reply_paths import prepare_input
-from assistant_route_prefixes import (
+from maya_core.assistant_memory_context import build_assistant_memory_context
+from maya_core.assistant_model_lanes import ModelLanes
+from maya_core.assistant_post_route import maybe_curate_memory, route_metadata
+from maya_core.assistant_reply_paths import prepare_input
+from maya_core.assistant_route_prefixes import (
     COMPLEX_ROUTE_PREFIX,
     SIGHT_ROUTE_PREFIX,
     complex_payload,
@@ -18,7 +18,7 @@ from assistant_route_prefixes import (
     is_sight_route,
     sight_payload,
 )
-from assistant_routes import AssistantRouter, RouteResult
+from maya_core.assistant_routes import AssistantRouter, RouteResult
 from channel_gateway import remember_channel_identity
 from cost_tracker import record_usage
 from harness_router import HarnessRouter

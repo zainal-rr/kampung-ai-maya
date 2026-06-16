@@ -15,7 +15,7 @@ from pathlib import Path
 
 from openpyxl import load_workbook
 
-from browser_task_step import BrowserTaskStepper
+from maya_browser.browser_task_step import BrowserTaskStepper
 from storage import get_preference, init_db
 from travel_budget import TRAVEL_PLAN_KEY, TravelParty
 from travel_budget_workbook import _build_workbook

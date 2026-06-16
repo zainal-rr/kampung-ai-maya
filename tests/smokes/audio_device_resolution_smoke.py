@@ -8,7 +8,7 @@ if str(_w4_root) not in _w4_sys.path:
 del _w4_Path, _w4_root, _w4_sys
 
 
-from audio_devices import list_audio_devices, resolve_audio_input
+from maya_core.audio_devices import list_audio_devices, resolve_audio_input
 
 
 def _require(condition: bool, message: str) -> None:

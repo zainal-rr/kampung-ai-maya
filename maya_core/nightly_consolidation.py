@@ -29,7 +29,7 @@ import json
 from dataclasses import dataclass
 from datetime import datetime, timezone
 
-from canonical_memory import init_canonical_memory_db, upsert_canonical_memory
+from maya_memory.canonical_memory import init_canonical_memory_db, upsert_canonical_memory
 from canonical_memory_dedup import find_semantic_duplicate
 from canonical_memory_embeddings import default_embedding_agent
 from canonical_memory_usage import mark_canonical_used

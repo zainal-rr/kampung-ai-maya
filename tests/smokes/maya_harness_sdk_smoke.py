@@ -14,7 +14,7 @@ from pathlib import Path
 
 import aiosqlite
 
-from canonical_memory import search_canonical_direct_fact
+from maya_memory.canonical_memory import search_canonical_direct_fact
 from harness_artifact_store import latest_artifacts
 from harness_store import get_run, latest_events
 from maya_harness_sdk import MayaHarnessSDK

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from browser_control_js import _modal_state, _text_hash
-from browser_control_models import BrowserElement, BrowserPage
+from maya_browser.browser_control_js import _modal_state, _text_hash
+from maya_browser.browser_control_models import BrowserElement, BrowserPage
 from untrusted_input_boundary import assess_untrusted_context
 
 

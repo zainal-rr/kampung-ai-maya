@@ -13,7 +13,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from assistant import KampungAssistant
+from maya_core.assistant import KampungAssistant
 import telegram_channel
 from storage import init_db
 from telegram_delivery_state import save_last_voice_message_id

@@ -6,7 +6,7 @@ import subprocess
 import tempfile
 from pathlib import Path
 
-from audio_devices import bin_path
+from maya_core.audio_devices import bin_path
 from cost_tracker import record_usage
 from xai_stt import xai_transcribe_file
 

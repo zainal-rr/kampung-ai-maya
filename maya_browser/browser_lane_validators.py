@@ -11,9 +11,9 @@ hallucination, honesty, and safety violations separately.
 import re
 from dataclasses import dataclass
 
-from browser_observe import blocked_marker
-from browser_reliability_prompts import ReliabilityPrompt
-from browser_understanding import grounded_browser_options
+from maya_browser.browser_observe import blocked_marker
+from maya_browser.browser_reliability_prompts import ReliabilityPrompt
+from maya_browser.browser_understanding import grounded_browser_options
 
 
 HONESTY_MARKERS = (

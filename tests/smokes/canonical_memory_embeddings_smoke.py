@@ -12,7 +12,7 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-from canonical_memory import search_relevant_canonical_memories, upsert_canonical_memory
+from maya_memory.canonical_memory import search_relevant_canonical_memories, upsert_canonical_memory
 from canonical_memory_embeddings import RERANK_CONFIDENCE, rerank_with_embeddings
 from lesson_store import init_lesson_db
 from storage import init_db

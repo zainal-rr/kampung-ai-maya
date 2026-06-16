@@ -42,7 +42,7 @@ if str(_ROOT) not in sys.path:
 
 import aiosqlite
 
-from canonical_memory import (
+from maya_memory.canonical_memory import (
     forget_canonical_memory,
     search_relevant_canonical_memories,
     upsert_canonical_memory,

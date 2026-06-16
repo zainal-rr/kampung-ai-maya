@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from browser_control_models import BrowserPage
+from maya_browser.browser_control_models import BrowserPage
 
 
 def injected_page_action_notice(page: BrowserPage, action: str) -> str:

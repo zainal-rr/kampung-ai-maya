@@ -8,7 +8,7 @@ if str(_w4_root) not in _w4_sys.path:
 del _w4_Path, _w4_root, _w4_sys
 
 
-from assistant_text import strip_wake_prefix
+from maya_core.assistant_text import strip_wake_prefix
 from document_request_parser import document_request
 
 

@@ -27,7 +27,7 @@ from harness_helpers.graph_runner import _agentic_tool_instruction, _forced_agen
 from harness_idempotency import init_action_ledger
 from harness_llm_planner import _parse_json
 from harness_tools import HarnessToolResult, HarnessTools, _artifact_paths_from_reply
-from browser_workflows import HumanBrowserWorkflowRouter
+from maya_browser.browser_workflows import HumanBrowserWorkflowRouter
 from harness_state import initial_harness_state
 from harness_store import init_harness_db, latest_events
 from storage import init_db
@@ -80,7 +80,7 @@ async def _happy_path(root: Path) -> None:
         _require(marker in events, f"missing {marker} in trace: {events}")
     details = " ".join(str(e["details"]) for e in await latest_events(db, "hrn_deep1", limit=80))
     _require("agentic memory.write" in details, "memory.write execution not recorded")
-    from canonical_memory import search_relevant_canonical_memories
+    from maya_memory.canonical_memory import search_relevant_canonical_memories
 
     memories = await search_relevant_canonical_memories(db, "customer circuit VRF")
     _require(any("CUST-A" in m for m in memories), f"memory not written: {memories}")

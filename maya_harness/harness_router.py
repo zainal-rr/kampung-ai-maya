@@ -3,7 +3,7 @@ from __future__ import annotations
 import os
 import re
 
-from assistant_command_helpers import confirmation_decision
+from maya_core.assistant_command_helpers import confirmation_decision
 from harness_command_bypass import is_fresh_artifact_request
 from harness_graph import HarnessGraphRunner
 from harness_artifact_store import latest_artifacts

@@ -5,10 +5,10 @@ import re
 from urllib.parse import urlsplit
 
 from maya_core.active_context import ActiveContextInspector
-from browser_capability import run_browser_capability, route_browser_capability
-from browser_driver import make_browser_controller
-from browser_control import element_summary, page_summary
-from browser_site_skill_helpers import _rank_from_text
+from maya_browser.browser_capability import run_browser_capability, route_browser_capability
+from maya_browser.browser_driver import make_browser_controller
+from maya_browser.browser_control import element_summary, page_summary
+from maya_browser.browser_site_skill_helpers import _rank_from_text
 from flight_search_reply import extract_flight_options
 from stay_booking_parsing import extract_stay_options
 from travel_booking_safety import travel_booking_boundary_reply, travel_booking_safety_footer

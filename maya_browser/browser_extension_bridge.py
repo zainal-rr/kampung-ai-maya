@@ -288,7 +288,7 @@ class ExtensionBridgeServer:
 
 
 def main() -> None:
-    from browser_extension_cli import run_bridge_cli
+    from maya_browser.browser_extension_cli import run_bridge_cli
 
     run_bridge_cli(
         server_cls=ExtensionBridgeServer,

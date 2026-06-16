@@ -6,9 +6,9 @@ from dataclasses import dataclass, replace
 
 from maya_core.active_context import ActiveContextInspector
 from maya_core.active_context_models import ActiveContext
-from browser_control import note_browser_intent
-from browser_driver import make_browser_controller
-from browser_understanding import extract_browser_options_with_gemini, grounded_browser_options
+from maya_browser.browser_control import note_browser_intent
+from maya_browser.browser_driver import make_browser_controller
+from maya_browser.browser_understanding import extract_browser_options_with_gemini, grounded_browser_options
 from permission_policy import action_permission
 from storage import upsert_preference
 from stay_booking_parsing import (  # noqa: F401 - re-exported for existing callers

@@ -13,7 +13,7 @@ import json
 import tempfile
 from pathlib import Path
 
-from browser_task_opener import BrowserTaskOpener
+from maya_browser.browser_task_opener import BrowserTaskOpener
 from storage import get_preference, init_db
 
 

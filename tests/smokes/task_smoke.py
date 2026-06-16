@@ -15,8 +15,8 @@ from pathlib import Path
 
 os.environ.setdefault("MPLCONFIGDIR", "/tmp/kampung-ai-mpl")
 
-from assistant import KampungAssistant
-from assistant_commands import AssistantCommandRouter
+from maya_core.assistant import KampungAssistant
+from maya_core.assistant_commands import AssistantCommandRouter
 from lesson_store import init_lesson_db
 from memory_service import MemoryService
 from routine_store import init_routine_db

@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from assistant_command_helpers import direct_key
+from maya_core.assistant_command_helpers import direct_key
 from self_heal_store import latest_self_heal_report, latest_self_heal_stages
 
 

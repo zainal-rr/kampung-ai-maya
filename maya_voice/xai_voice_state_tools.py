@@ -71,7 +71,7 @@ async def _artifact_text(db_path: str) -> str:
 
 
 async def _task_text(db_path: str) -> str:
-    from assistant_task_helpers import format_open_tasks
+    from maya_core.assistant_task_helpers import format_open_tasks
     from storage import list_tasks
 
     return format_open_tasks(await list_tasks(db_path, limit=8))

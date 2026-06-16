@@ -5,7 +5,7 @@ import re
 from dataclasses import dataclass
 from typing import Awaitable, Callable
 
-from canonical_memory import upsert_canonical_memory
+from maya_memory.canonical_memory import upsert_canonical_memory
 from permission_policy import contains_sensitive_info, contains_sensitive_phrase_cue
 from storage import add_knowledge_chunk
 

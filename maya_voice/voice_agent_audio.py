@@ -7,7 +7,7 @@ import tempfile
 import struct
 from pathlib import Path
 
-from audio_devices import bin_path, resolve_audio_input
+from maya_core.audio_devices import bin_path, resolve_audio_input
 
 
 class VoiceAgentAudioCapture:

@@ -13,7 +13,7 @@ import time
 from dataclasses import dataclass
 from pathlib import Path
 
-from browser_control import BrowserController, BrowserPage
+from maya_browser.browser_control import BrowserController, BrowserPage
 
 
 BLOCKED_MARKERS = (

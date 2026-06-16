@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from assistant_command_helpers import direct_key
-from briefing_service import BriefingBuilder
+from maya_core.assistant_command_helpers import direct_key
+from maya_core.briefing_service import BriefingBuilder
 
 
 WEEKLY_REFLECTION_KEYS = {

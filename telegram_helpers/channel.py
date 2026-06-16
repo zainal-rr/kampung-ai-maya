@@ -18,7 +18,7 @@ import time
 from telegram import Update
 from telegram.ext import ApplicationBuilder, ContextTypes, MessageHandler, filters
 
-from assistant import KampungAssistant
+from maya_core.assistant import KampungAssistant
 from channel_gateway import channel_envelope
 from telegram_audit import record_telegram_command
 from telegram_channel_audit import record_delivery_event, record_turn_event

@@ -14,7 +14,7 @@ from pathlib import Path
 
 import aiosqlite
 
-from browser_run_evidence import redact, utc_now
+from maya_browser.browser_run_evidence import redact, utc_now
 
 
 AGENTIC_RELIABILITY_DIR = Path("logs") / "live_tests" / "agentic"

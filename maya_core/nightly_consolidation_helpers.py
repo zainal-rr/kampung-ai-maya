@@ -12,7 +12,7 @@ from datetime import datetime, timedelta, timezone
 
 import aiosqlite
 
-from canonical_memory import subject_key_from_text
+from maya_memory.canonical_memory import subject_key_from_text
 from cost_tracker import record_usage
 from memory_audit import record_memory_audit_event
 from memory_links import add_memory_link

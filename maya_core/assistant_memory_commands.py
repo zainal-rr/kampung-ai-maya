@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from assistant_command_helpers import (
+from maya_core.assistant_command_helpers import (
     empty_preference_memory_reply,
     filter_user_visible_memory,
     format_memory_reply,

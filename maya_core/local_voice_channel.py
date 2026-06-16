@@ -2,7 +2,7 @@ import asyncio
 import os
 
 from maya_core.activation import WakeWindow
-from assistant import KampungAssistant
+from maya_core.assistant import KampungAssistant
 from imac_voice_policy import decide_imac_voice_route
 from speech_input import (
     build_transcript_source_from_env,

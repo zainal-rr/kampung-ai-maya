@@ -6,7 +6,7 @@ from dataclasses import dataclass
 
 import aiosqlite
 
-from assistant_text import clean_model_text, extract_user_text
+from maya_core.assistant_text import clean_model_text, extract_user_text
 from context_layers import (
     preserve_context_layers,
     relevant_context_facts,

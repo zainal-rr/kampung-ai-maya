@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import aiosqlite
 
-from canonical_memory import init_canonical_memory_db, memory_tokens, subject_key_from_text
+from maya_memory.canonical_memory import init_canonical_memory_db, memory_tokens, subject_key_from_text
 
 
 async def set_canonical_memory_pin(db_path: str, query: str, *, pinned: bool) -> str:

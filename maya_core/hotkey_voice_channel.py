@@ -6,7 +6,7 @@ import os
 from pathlib import Path
 import time
 
-from assistant import KampungAssistant
+from maya_core.assistant import KampungAssistant
 from voice_agent_audio import VoiceAgentAudioCapture
 from voice_agent_session import build_voice_agent_session
 from voice_context import build_imac_voice_context

@@ -17,7 +17,7 @@ from weekly_memory_helpers import (
     _topic_highlights,
     _week_key,
 )
-from canonical_memory_backfill import backfill_canonical_memory
+from maya_memory.canonical_memory_backfill import backfill_canonical_memory
 from lesson_store import init_lesson_db
 from retention_policy import run_retention_cleanup
 from storage import init_db

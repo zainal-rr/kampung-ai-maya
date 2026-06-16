@@ -14,7 +14,7 @@ from __future__ import annotations
 
 import re
 
-from assistant_skill_helpers import queue_skill_scaffold
+from maya_core.assistant_skill_helpers import queue_skill_scaffold
 from skill_factory import SkillFactory
 
 

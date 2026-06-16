@@ -17,8 +17,8 @@ from pathlib import Path
 
 import aiosqlite
 
-from assistant import KampungAssistant
-from assistant_routes import RouteResult
+from maya_core.assistant import KampungAssistant
+from maya_core.assistant_routes import RouteResult
 from context_layers import init_context_layers_db
 from harness_artifact_store import init_harness_artifact_db
 from harness_store import init_harness_db

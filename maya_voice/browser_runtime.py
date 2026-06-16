@@ -3,9 +3,9 @@ from __future__ import annotations
 import asyncio
 import os
 
-from browser_driver import extension_bridge_status
-from browser_driver import browser_bridge_preflight
-from browser_capability import run_browser_capability
+from maya_browser.browser_driver import extension_bridge_status
+from maya_browser.browser_driver import browser_bridge_preflight
+from maya_browser.browser_capability import run_browser_capability
 from maya_voice.verified_facts import browser_fact, facts_block, work_fact
 
 

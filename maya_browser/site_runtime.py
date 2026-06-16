@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import asyncio
 
-from browser_control import BrowserPage, page_summary
-from browser_driver import make_browser_controller
+from maya_browser.browser_control import BrowserPage, page_summary
+from maya_browser.browser_driver import make_browser_controller
 
 
 def browser_for(skill):

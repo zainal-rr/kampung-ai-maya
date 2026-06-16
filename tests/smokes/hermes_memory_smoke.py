@@ -19,7 +19,7 @@ from curated_memory import (
     init_curated_memory_db,
     scope_summary,
 )
-from assistant import KampungAssistant
+from maya_core.assistant import KampungAssistant
 from session_memory_actions import handle_session_memory_command, save_voice_session_summary
 from session_search import init_session_search_db, search_sessions
 from storage import init_db, save_history_message

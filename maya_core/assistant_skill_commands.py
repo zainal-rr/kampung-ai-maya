@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 
-from assistant_command_helpers import direct_key
+from maya_core.assistant_command_helpers import direct_key
 from skill_evaluator import evaluate_skill_scaffold
 from skill_importer import adapt_imported_skill_for_maya, import_local_skill, import_npx_skill
 from skill_library import mirror_skill

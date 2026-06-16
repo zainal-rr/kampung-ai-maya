@@ -13,7 +13,7 @@ import json
 import tempfile
 from pathlib import Path
 
-from browser_task_step import BrowserTaskStepper
+from maya_browser.browser_task_step import BrowserTaskStepper
 from storage import init_db
 
 

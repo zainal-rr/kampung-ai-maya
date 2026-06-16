@@ -14,7 +14,7 @@ import tempfile
 from pathlib import Path
 from types import SimpleNamespace
 
-from assistant import KampungAssistant
+from maya_core.assistant import KampungAssistant
 from lesson_store import init_lesson_db
 from route_tracker import last_route_text, record_route
 from routine_store import init_routine_db

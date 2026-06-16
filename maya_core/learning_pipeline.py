@@ -10,8 +10,8 @@ from lesson_store import (
     get_pending_lesson,
     list_lessons,
 )
-from assistant_command_helpers import is_user_visible_memory
-from canonical_memory import upsert_canonical_memory
+from maya_core.assistant_command_helpers import is_user_visible_memory
+from maya_memory.canonical_memory import upsert_canonical_memory
 from memory_extraction import (
     ProviderCall,
     default_extraction_agent,

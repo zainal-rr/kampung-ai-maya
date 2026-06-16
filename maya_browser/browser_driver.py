@@ -12,7 +12,7 @@ import os
 import time
 from typing import Any
 
-from browser_control import BrowserController
+from maya_browser.browser_control import BrowserController
 from browser_extension_bridge import ExtensionBridgeServer, ExtensionBrowserController
 from maya_browser.bridge_status import query_bridge_status, seconds_since_iso, status_is_stale, terminate_pid
 from maya_runtime_config import runtime_config

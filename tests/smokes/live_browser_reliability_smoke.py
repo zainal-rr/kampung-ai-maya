@@ -20,7 +20,7 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-from browser_run_evidence import load_runs
+from maya_browser.browser_run_evidence import load_runs
 from live_browser_reliability_run import run_night
 
 

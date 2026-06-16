@@ -4,7 +4,7 @@ from dataclasses import dataclass
 
 import aiosqlite
 
-from canonical_memory import (
+from maya_memory.canonical_memory import (
     _memory_id,
     init_canonical_memory_db,
     subject_key_from_text,

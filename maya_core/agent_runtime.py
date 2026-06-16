@@ -6,7 +6,7 @@ from datetime import datetime, timezone
 
 from maya_core.agent_actions import AgentActionExecutor
 from maya_core.agent_planner import AgentPlanner
-from autonomy import AutonomyPolicy
+from maya_core.autonomy import AutonomyPolicy
 from harness_graph import HarnessGraphRunner
 from routine_store import claim_due_routines
 from storage import (

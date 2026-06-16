@@ -13,7 +13,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from assistant_model_lanes import ModelLanes
+from maya_core.assistant_model_lanes import ModelLanes
 from complex_workflow import complex_workflow_status
 
 

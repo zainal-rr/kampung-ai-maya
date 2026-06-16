@@ -16,7 +16,7 @@ from pathlib import Path
 
 import aiosqlite
 
-from assistant_model_lanes import ModelLanes
+from maya_core.assistant_model_lanes import ModelLanes
 from harness_router import HarnessRouter
 from harness_store import get_run, init_harness_db, latest_events
 from self_heal_store import latest_self_heal_report

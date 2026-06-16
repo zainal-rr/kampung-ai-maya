@@ -12,8 +12,8 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-from browser_control import BrowserClickResult, BrowserController, element_summary, page_summary
-from browser_workflows import HumanBrowserWorkflowRouter
+from maya_browser.browser_control import BrowserClickResult, BrowserController, element_summary, page_summary
+from maya_browser.browser_workflows import HumanBrowserWorkflowRouter
 from screen_service import ScreenSnapshot
 from storage import init_db
 

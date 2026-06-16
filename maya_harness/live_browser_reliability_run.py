@@ -14,13 +14,13 @@ import re
 from datetime import datetime
 from pathlib import Path
 
-from browser_capability import route_browser_capability, run_browser_capability
-from browser_control import set_browser_recorder
-from browser_driver import extension_bridge_status, make_browser_controller
-from browser_lane_validators import validate_run
-from browser_observe import capture_screenshot, wait_for_content
-from browser_reliability_prompts import LANES, ReliabilityPrompt, reliability_prompts
-from browser_run_evidence import (
+from maya_browser.browser_capability import route_browser_capability, run_browser_capability
+from maya_browser.browser_control import set_browser_recorder
+from maya_browser.browser_driver import extension_bridge_status, make_browser_controller
+from maya_browser.browser_lane_validators import validate_run
+from maya_browser.browser_observe import capture_screenshot, wait_for_content
+from maya_browser.browser_reliability_prompts import LANES, ReliabilityPrompt, reliability_prompts
+from maya_browser.browser_run_evidence import (
     LIVE_RELIABILITY_DIR,
     BrowserRunRecorder,
     append_run,
@@ -29,8 +29,8 @@ from browser_run_evidence import (
     run_to_dict,
     write_night_markdown,
 )
-from browser_site_skill_helpers import _clean_site_query, _is_result_open_request, _rank_from_text
-from browser_skill import parse_browser_intent
+from maya_browser.browser_site_skill_helpers import _clean_site_query, _is_result_open_request, _rank_from_text
+from maya_browser.browser_skill import parse_browser_intent
 from flight_search_parsing import extract_flight_details
 from safety_action_commands import safety_action_reply
 from stay_booking_skill import extract_stay_details
@@ -243,7 +243,7 @@ def _empty_context():
 
 def _bridge(night_id: str, jsonl: Path) -> None:
     try:
-        from browser_benchmark_bridge import record_night_to_benchmark
+        from maya_browser.browser_benchmark_bridge import record_night_to_benchmark
 
         print(record_night_to_benchmark(night_id))
     except Exception as exc:  # noqa: BLE001 - bridging must not lose the night's evidence

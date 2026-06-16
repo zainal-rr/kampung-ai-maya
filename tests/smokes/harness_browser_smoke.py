@@ -11,7 +11,7 @@ del _w4_Path, _w4_root, _w4_sys
 import asyncio
 import tempfile
 
-import browser_control
+import maya_browser.browser_control as browser_control
 from harness_router import HarnessRouter
 from harness_store import get_active_run, init_harness_db
 from storage import init_db

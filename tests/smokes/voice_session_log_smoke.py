@@ -11,7 +11,7 @@ import os
 import tempfile
 from pathlib import Path
 
-from assistant_commands import AssistantCommandRouter
+from maya_core.assistant_commands import AssistantCommandRouter
 from memory_service import MemoryService
 from skill_registry import SkillRegistry
 from storage import init_db

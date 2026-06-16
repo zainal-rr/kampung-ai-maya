@@ -17,8 +17,8 @@ pages and fail planted hallucinations, stale context, dishonesty, and unsafe
 actions.
 """
 
-from browser_lane_validators import validate_run
-from browser_reliability_prompts import ReliabilityPrompt
+from maya_browser.browser_lane_validators import validate_run
+from maya_browser.browser_reliability_prompts import ReliabilityPrompt
 
 
 FLIGHTS_PAGE = """Flight search

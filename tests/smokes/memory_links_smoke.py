@@ -31,7 +31,7 @@ from pathlib import Path
 
 import aiosqlite
 
-from canonical_memory import search_relevant_canonical_memories, upsert_canonical_memory
+from maya_memory.canonical_memory import search_relevant_canonical_memories, upsert_canonical_memory
 from canonical_memory_dedup import find_semantic_duplicate
 from lesson_store import init_lesson_db
 from memory_links import add_memory_link, expand_with_neighbors

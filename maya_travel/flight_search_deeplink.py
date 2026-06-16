@@ -13,9 +13,9 @@ import asyncio
 from datetime import datetime
 from urllib.parse import quote_plus
 
-from browser_control import note_browser_intent
-from browser_observe import wait_for_content
-from browser_understanding import extract_browser_options_with_gemini, grounded_browser_options
+from maya_browser.browser_control import note_browser_intent
+from maya_browser.browser_observe import wait_for_content
+from maya_browser.browser_understanding import extract_browser_options_with_gemini, grounded_browser_options
 from flight_search_form_helpers import capture_result_page
 from flight_search_models import FieldAttempt, FlightDetails
 from flight_search_reply import (

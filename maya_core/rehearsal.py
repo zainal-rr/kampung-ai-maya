@@ -6,8 +6,8 @@ import os
 import tempfile
 from pathlib import Path
 
-from assistant import KampungAssistant
-from briefing_service import BriefingBuilder
+from maya_core.assistant import KampungAssistant
+from maya_core.briefing_service import BriefingBuilder
 from health_monitor import HealthReporter
 from routine_store import claim_due_routines, init_routine_db
 from skill_store import init_skill_db

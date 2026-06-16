@@ -7,8 +7,8 @@ from dataclasses import dataclass
 from pathlib import Path
 from urllib.parse import quote_plus
 
-from browser_control import note_browser_intent, page_summary
-from browser_site_skill_helpers import (
+from maya_browser.browser_control import note_browser_intent, page_summary
+from maya_browser.browser_site_skill_helpers import (
     _clean_site_query,
     _context_query_for_site,
     _extract_visible_options,
@@ -27,7 +27,7 @@ from browser_site_skill_helpers import (
     _unsafe_gcp_action,
     _verify_contextual_open,
 )
-from browser_understanding import extract_browser_options_with_gemini, grounded_browser_options
+from maya_browser.browser_understanding import extract_browser_options_with_gemini, grounded_browser_options
 from maya_browser.intent_normalizer import normalize_browser_request
 from maya_browser.pending_actions import clear_pending_browser_action, clear_pending_browser_clarification, remember_pending_browser_action, remember_pending_browser_clarification
 from maya_browser.query_guard import browser_query_is_incomplete

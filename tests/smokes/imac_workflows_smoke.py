@@ -15,8 +15,8 @@ from pathlib import Path
 
 import imac_workflows
 import document_actions
-from assistant import KampungAssistant
-from browser_control import BrowserClickResult, BrowserPage
+from maya_core.assistant import KampungAssistant
+from maya_browser.browser_control import BrowserClickResult, BrowserPage
 from imac_workflows import ImacWorkflowRouter
 from lesson_store import init_lesson_db
 from markdown_drafter import MarkdownDraft
@@ -50,7 +50,7 @@ class FakeBrowser:
         return BrowserPage("Flights", "https://example.test/flights", "AirAsia RM120\nMalaysia Airlines RM180")
 
     def inspect_elements(self):
-        from browser_control import BrowserElement
+        from maya_browser.browser_control import BrowserElement
         return [BrowserElement("AirAsia", "button"), BrowserElement("Depart date", "input")]
 
     def click_text(self, target: str) -> str:

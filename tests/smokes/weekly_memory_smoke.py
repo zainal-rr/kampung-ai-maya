@@ -13,8 +13,8 @@ import json
 import tempfile
 from pathlib import Path
 
-from assistant import KampungAssistant
-from briefing_service import BriefingBuilder
+from maya_core.assistant import KampungAssistant
+from maya_core.briefing_service import BriefingBuilder
 from canonical_memory_inspector import inspect_canonical_memory
 from lesson_store import add_lesson, init_lesson_db
 from routine_store import init_routine_db

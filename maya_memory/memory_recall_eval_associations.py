@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from canonical_memory import forget_canonical_memory, upsert_canonical_memory
+from maya_memory.canonical_memory import forget_canonical_memory, upsert_canonical_memory
 from memory_links import add_memory_link
 
 ASSOCIATION_RECALL3_FLOOR = 1.0

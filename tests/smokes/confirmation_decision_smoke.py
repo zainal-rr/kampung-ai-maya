@@ -6,7 +6,7 @@ if str(_w4_root) not in _w4_sys.path:
     _w4_sys.path.insert(0, str(_w4_root))
 del _w4_Path, _w4_root, _w4_sys
 
-from assistant_command_helpers import confirmation_decision
+from maya_core.assistant_command_helpers import confirmation_decision
 
 
 def main() -> None:

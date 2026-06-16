@@ -17,9 +17,9 @@ _ROOT = Path(__file__).resolve().parents[2]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from browser_control_models import BrowserPage
-from browser_skill import BrowserSkill
-from browser_workflows import HumanBrowserWorkflowRouter
+from maya_browser.browser_control_models import BrowserPage
+from maya_browser.browser_skill import BrowserSkill
+from maya_browser.browser_workflows import HumanBrowserWorkflowRouter
 from storage import init_db
 
 

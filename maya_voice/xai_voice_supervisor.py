@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
-from browser_capability import route_browser_capability
+from maya_browser.browser_capability import route_browser_capability
 
 
 @dataclass(frozen=True)

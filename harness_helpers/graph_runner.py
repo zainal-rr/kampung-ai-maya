@@ -8,8 +8,8 @@ from langgraph.graph import END, START, StateGraph
 
 import asyncio
 
-from browser_agent_state import task_type_for
-from canonical_memory import upsert_canonical_memory
+from maya_browser.browser_agent_state import task_type_for
+from maya_memory.canonical_memory import upsert_canonical_memory
 from domain_knowledge import domain_knowledge_context
 from harness_state import HarnessState
 from harness_artifact_store import record_structured_artifact

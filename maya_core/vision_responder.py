@@ -4,7 +4,7 @@ import os
 import re
 
 from maya_core.activation import current_work_location
-from assistant_command_helpers import direct_key
+from maya_core.assistant_command_helpers import direct_key
 from cost_tracker import record_usage
 from language_policy import language_instruction
 from maya_eye_overlay import clear_preview_target, set_preview_targets

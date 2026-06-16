@@ -6,10 +6,10 @@ from pathlib import Path
 
 from maya_core.active_context import ActiveContextInspector
 from maya_core.active_context_models import ActiveContext
-from browser_driver import make_browser_controller
-from browser_observe import wait_for_content
+from maya_browser.browser_driver import make_browser_controller
+from maya_browser.browser_observe import wait_for_content
 from flight_search_deeplink import is_extension_driver, note_flight_intent, run_flight_deep_link
-from browser_understanding import extract_browser_options_with_gemini, grounded_browser_options
+from maya_browser.browser_understanding import extract_browser_options_with_gemini, grounded_browser_options
 from maya_core.repo_paths import repo_root
 from permission_policy import action_permission, contains_sensitive_info, hard_no_private_exposure_text
 from skill_store import init_skill_db, record_skill_usage, upsert_skill

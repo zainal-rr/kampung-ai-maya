@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from assistant_prompts import (
+from maya_core.assistant_prompts import (
     IMAC_FAST_SYSTEM_PROMPT,
     TELEGRAM_FAST_SYSTEM_PROMPT,
     TELEGRAM_VOICE_SYSTEM_PROMPT,

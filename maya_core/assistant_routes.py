@@ -5,8 +5,8 @@ import os
 from dataclasses import dataclass
 from typing import Any
 
-from assistant_reply_paths import fast_imac_response, fast_telegram_response
-from assistant_text import clean_model_text, strip_wake_prefix
+from maya_core.assistant_reply_paths import fast_imac_response, fast_telegram_response
+from maya_core.assistant_text import clean_model_text, strip_wake_prefix
 from language_policy import uses_malay_or_manglish, wants_malay_or_manglish
 from response_style import format_grouped_answers, split_telegram_segments
 

@@ -24,7 +24,7 @@ _ROOT = Path(__file__).resolve().parents[2]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
-from canonical_memory import (  # noqa: E402
+from maya_memory.canonical_memory import (  # noqa: E402
     forget_canonical_memory,
     search_canonical_direct_fact,
     upsert_canonical_memory,

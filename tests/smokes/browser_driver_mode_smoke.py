@@ -17,8 +17,8 @@ import tempfile
 import time
 from pathlib import Path
 
-from browser_control import BrowserController
-from browser_driver import make_browser_controller
+from maya_browser.browser_control import BrowserController
+from maya_browser.browser_driver import make_browser_controller
 
 
 def _require(condition: bool, message: str) -> None:
@@ -76,7 +76,7 @@ time.sleep(60)
 def _probe_engine_status(port: int, health_port: int) -> dict:
     code = """
 import json
-from browser_driver import ensure_engine_bridge_started
+from maya_browser.browser_driver import ensure_engine_bridge_started
 print(json.dumps(ensure_engine_bridge_started(), sort_keys=True))
 """
     env = _bridge_env(port, health_port, owner_kind="engine")

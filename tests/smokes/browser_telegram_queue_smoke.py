@@ -12,7 +12,7 @@ import asyncio
 import tempfile
 from pathlib import Path
 
-from browser_workflows import HumanBrowserWorkflowRouter
+from maya_browser.browser_workflows import HumanBrowserWorkflowRouter
 from storage import get_preference, init_db
 
 

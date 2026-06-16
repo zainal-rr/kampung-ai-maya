@@ -16,7 +16,7 @@ from pathlib import Path
 from openpyxl import Workbook, load_workbook
 
 from maya_documents.artifact_builder import ArtifactBuilder
-from assistant import KampungAssistant
+from maya_core.assistant import KampungAssistant
 from context_layers import init_context_layers_db
 from harness_artifact_store import init_harness_artifact_db
 from harness_store import init_harness_db

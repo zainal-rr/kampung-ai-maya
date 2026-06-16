@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from assistant_command_helpers import direct_key
+from maya_core.assistant_command_helpers import direct_key
 from session_compactor import inspect_session_context
 
 

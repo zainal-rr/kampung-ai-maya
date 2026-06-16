@@ -125,7 +125,7 @@ def _plan_path_checks() -> None:
     # "It plans to raise 100 million..." and the old substring trigger
     # converted the QUESTION into a plan/review workflow. Plan routing now
     # requires an explicit ask for a plan.
-    from assistant_model_lanes import ModelLanes
+    from maya_core.assistant_model_lanes import ModelLanes
 
     should_use = ModelLanes.should_use_plan_path
     banking = (

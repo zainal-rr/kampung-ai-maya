@@ -13,7 +13,7 @@ import json
 import tempfile
 from pathlib import Path
 
-from canonical_memory import search_relevant_canonical_memories
+from maya_memory.canonical_memory import search_relevant_canonical_memories
 from omi_context_sieve import ingest_omi_decision, sieve_omi_transcript
 from sieve import SieveNode
 from storage import init_db

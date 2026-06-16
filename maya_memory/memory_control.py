@@ -3,7 +3,7 @@ from __future__ import annotations
 import aiosqlite
 import re
 
-from canonical_memory import forget_canonical_memory, search_relevant_canonical_memories
+from maya_memory.canonical_memory import forget_canonical_memory, search_relevant_canonical_memories
 from curated_memory import curated_memory_status, forget_curated_memory
 from forget_registry import register_forget_handler, run_forget_handlers
 from memory_audit import format_recent_memory_audit

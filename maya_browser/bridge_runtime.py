@@ -5,7 +5,7 @@ import logging
 import os
 from typing import Any
 
-from browser_driver import browser_bridge_preflight, ensure_engine_bridge_started
+from maya_browser.browser_driver import browser_bridge_preflight, ensure_engine_bridge_started
 
 
 def _float_env(name: str, default: float) -> float:
