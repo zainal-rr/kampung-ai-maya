@@ -89,7 +89,7 @@ def run_local_ci(*, live_providers: bool = False) -> list[CheckResult]:
         _command_check("maya UI read API", ("KAMPUNG_AI_UI/ui_read_api_smoke.py",)),
     ]
     if live_providers:
-        results.append(_command_check("provider live text", ("provider_smoke.py", "--stage", "text", "--strict")))
+        results.append(_command_check("provider live text", ("tests/smokes/provider_smoke.py", "--stage", "text", "--strict")))
     return results
 
 
