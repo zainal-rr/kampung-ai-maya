@@ -1,7 +1,4 @@
-from __future__ import annotations
-
-import sys
-
-from telegram_helpers import channel as _channel
-
-sys.modules[__name__] = _channel
+# W4 compatibility shim — re-exports the relocated module (removed/converted in Wave 5).
+from maya_telegram import telegram_channel as _m
+import sys as _sys
+_sys.modules[__name__] = _m
