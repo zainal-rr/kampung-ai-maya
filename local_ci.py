@@ -39,7 +39,7 @@ def run_local_ci(*, live_providers: bool = False) -> list[CheckResult]:
         _command_check("office edit workflow", ("tests/smokes/document_edit_office_smoke.py",)),
         _command_check("household budget", ("tests/smokes/household_budget_smoke.py",)),
         _command_check("word technical repair", ("word_technical_repair_smoke.py",)),
-        _command_check("semantic telegram fresh 500", ("semantic_telegram_fresh_500.py",)),
+        _command_check("semantic telegram fresh 500", ("tests/replays/semantic_telegram_fresh_500.py",)),
         _command_check("voice document transcript", ("voice_document_transcript_smoke.py",)),
         _command_check("voice semantic seam manifest", ("tests/smokes/voice_semantic_seam_manifest_smoke.py",)),
         _command_check("voice browser steering", ("xai_realtime_browser_supervisor_smoke.py",)),
