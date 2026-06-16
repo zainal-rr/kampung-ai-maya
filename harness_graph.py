@@ -1,17 +1,4 @@
-from __future__ import annotations
-
-from harness_helpers.graph_runner import (
-    HarnessGraphRunner,
-    _browser_state,
-    _carry_untrusted_state,
-    _config,
-    _resume_message,
-)
-
-__all__ = [
-    "HarnessGraphRunner",
-    "_browser_state",
-    "_carry_untrusted_state",
-    "_config",
-    "_resume_message",
-]
+# W4 compatibility shim — re-exports the relocated module (removed/converted in Wave 5).
+from maya_harness import harness_graph as _m
+import sys as _sys
+_sys.modules[__name__] = _m
