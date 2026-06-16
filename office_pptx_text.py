@@ -1,45 +1,4 @@
-from __future__ import annotations
-
-from office_pptx_helpers.text import (
-    _agent_topic,
-    _agriculture_topic,
-    _browser_topic,
-    _cloud_topic,
-    _complete,
-    _drone_topic,
-    _fix_acronyms,
-    _house_topic,
-    _notes_text,
-    _quality_topic,
-    _robotics_topic,
-    _short,
-    _slide_kicker,
-    _strong_visual_title,
-    _title_words,
-    _travel_topic,
-    _visual_bullets,
-    _visual_label,
-    _visual_title,
-)
-
-__all__ = [
-    "_agent_topic",
-    "_agriculture_topic",
-    "_browser_topic",
-    "_cloud_topic",
-    "_complete",
-    "_drone_topic",
-    "_fix_acronyms",
-    "_house_topic",
-    "_notes_text",
-    "_quality_topic",
-    "_robotics_topic",
-    "_short",
-    "_slide_kicker",
-    "_strong_visual_title",
-    "_title_words",
-    "_travel_topic",
-    "_visual_bullets",
-    "_visual_label",
-    "_visual_title",
-]
+# W4 compatibility shim — re-exports the relocated module (removed/converted in Wave 5).
+from maya_documents import office_pptx_text as _m
+import sys as _sys
+_sys.modules[__name__] = _m
