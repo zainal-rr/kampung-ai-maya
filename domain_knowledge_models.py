@@ -1,24 +1,4 @@
-from __future__ import annotations
-
-from dataclasses import dataclass
-
-
-@dataclass(frozen=True)
-class DomainSkill:
-    skill_id: str
-    name: str
-    path: str
-    kb_root: str
-    retrieval_order: tuple[str, ...]
-    strong_triggers: tuple[str, ...]
-    weak_triggers: frozenset[str]
-    non_triggers: tuple[str, ...]
-
-
-@dataclass(frozen=True)
-class KnowledgeChunk:
-    source: str
-    header: str
-    text: str
-    tokens: frozenset[str]
-    whole_file: bool = False
+# W4 compatibility shim — re-exports the relocated module (removed/converted in Wave 5).
+from maya_core import domain_knowledge_models as _m
+import sys as _sys
+_sys.modules[__name__] = _m
