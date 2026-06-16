@@ -306,7 +306,7 @@ def rewrite_imports(stem: str, pkg: str) -> int:
 
 
 # --- gates -----------------------------------------------------------------
-def fast_gate(moved: list[str]) -> tuple[bool, str]:
+def fast_gate(moved: list[str], *, import_old_names: bool = True) -> tuple[bool, str]:
     excluded = {".git", ".venv", "venv", "__pycache__", ".claude", "backups"}
     files = [
         str(path.relative_to(ROOT))
@@ -316,10 +316,11 @@ def fast_gate(moved: list[str]) -> tuple[bool, str]:
     r = sh(sys.executable, "-m", "py_compile", *files, check=False)
     if r.returncode != 0:
         return False, "compileall failed:\n" + r.stdout + r.stderr
-    for stem in moved:
-        c = sh(sys.executable, "-c", f"import {stem}", check=False)
-        if c.returncode != 0:
-            return False, f"import {stem} failed:\n" + c.stderr
+    if import_old_names:
+        for stem in moved:
+            c = sh(sys.executable, "-c", f"import {stem}", check=False)
+            if c.returncode != 0:
+                return False, f"import {stem} failed:\n" + c.stderr
     h = sh(sys.executable, "-c",
            "from code_health import collect_code_health as c;import sys;sys.exit(0 if c('.').ok else 1)",
            check=False)
@@ -373,7 +374,8 @@ def plan_batches(wave: int, bs: int = 15) -> list[dict]:
 
 def _gate_and_commit(b, moved, message, auto_rollback, label) -> bool:
     use_full = b.get("full_gate_each")
-    ok, detail = full_gate() if use_full else fast_gate(moved)
+    import_old_names = b.get("wrap") != "none"
+    ok, detail = full_gate() if use_full else fast_gate(moved, import_old_names=import_old_names)
     if not ok:
         log(f"  {'FULL' if use_full else 'FAST'} GATE RED: {detail[:1200]}")
         if auto_rollback:
