@@ -37,7 +37,7 @@ EVAL_CASES = (
     EvalCase("memory", "self-heal memory", ("tests/smokes/self_heal_memory_smoke.py",)),
     EvalCase("weekly_memory", "weekly memory dry run", ("weekly_memory_smoke.py",)),
     EvalCase("weekly_memory", "weekly provider path", ("weekly_memory_provider_path_smoke.py",)),
-    EvalCase("research", "source-aware Gemini research", ("source_aware_research_smoke.py",)),
+    EvalCase("research", "source-aware Gemini research", ("tests/smokes/source_aware_research_smoke.py",)),
     EvalCase("browser", "browser field tests", ("tests/smokes/browser_field_tests_smoke.py",)),
     EvalCase("browser", "browser benchmark", ("tests/smokes/browser_benchmark_smoke.py",)),
     EvalCase("memory", "Omi context sieve", ("tests/smokes/omi_context_sieve_smoke.py",)),

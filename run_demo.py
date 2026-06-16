@@ -36,7 +36,7 @@ DEMOS = {
             ("word_golden_artifact_smoke.py",),
             ("tests/smokes/excel_golden_artifact_smoke.py",),
             ("tests/smokes/pptx_quality_gate_smoke.py",),
-            ("telegram_delivery_file_smoke.py",),
+            ("tests/smokes/telegram_delivery_file_smoke.py",),
         ),
     ),
     "memory_weekly": Demo(
