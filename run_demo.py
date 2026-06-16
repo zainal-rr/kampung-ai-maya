@@ -48,7 +48,7 @@ DEMOS = {
             "Weekly memory dry run completes without live provider calls.",
             "Nightly consolidation proves no-resurrect, association links, decay report, and zero-delta skip.",
         ),
-        (("tests/smokes/canonical_memory_smoke.py",), ("memory_control_smoke.py",), ("weekly_memory_smoke.py",), ("nightly_consolidation_smoke.py",)),
+        (("tests/smokes/canonical_memory_smoke.py",), ("tests/smokes/memory_control_smoke.py",), ("weekly_memory_smoke.py",), ("nightly_consolidation_smoke.py",)),
     ),
     "self_heal": Demo(
         "self_heal",
