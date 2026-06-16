@@ -280,6 +280,17 @@ def update_ci_refs(stem: str, dest_dir: str) -> None:
         ci.write_text(n)
 
 
+def existing_target_wrapper(stem: str, dest: str) -> bool:
+    """True when root `stem.py` is already a wrapper for `dest/stem.py`."""
+    source = ROOT / f"{stem}.py"
+    target = ROOT / dest / f"{stem}.py"
+    if not source.exists() or not target.exists():
+        return False
+    text = source.read_text(errors="ignore")
+    module_path = f"{dest.replace('/', '.')}.{stem}"
+    return module_path in text or f"{dest}/{stem}.py" in text
+
+
 def shim_target(stem: str) -> str | None:
     m = re.search(r"from\s+([\w.]+)\s+import\s+" + re.escape(stem) + r"\s+as\s+_m",
                   (ROOT / f"{stem}.py").read_text(errors="ignore"))
@@ -402,6 +413,11 @@ def run_move_batch(b, *, dry, auto_rollback) -> bool:
     try:
         for stem, dest in b["moves"]:
             ensure_pkg(dest)
+            if existing_target_wrapper(stem, dest):
+                sh("git", "rm", "-q", f"{stem}.py")
+                update_ci_refs(stem, dest)
+                moved.append(stem)
+                continue
             sh("git", "mv", f"{stem}.py", f"{dest}/{stem}.py")
             if b["wrap"] == "shim":
                 if stem in WRAPPER_ALLOWLIST:
