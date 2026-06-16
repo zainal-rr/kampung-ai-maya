@@ -5,6 +5,7 @@ from pathlib import Path
 
 from dependency_manifest import readiness_summary
 from demo_evidence import load_latest, validate_latest_demo_evidence
+from maya_core.repo_paths import repo_root
 from permission_policy import SECRET_PATTERNS
 from route_tracker import _model_for_lane
 from self_heal_memory import guardrails_text
@@ -27,6 +28,8 @@ CAPABILITIES = {
     "agentic_workflow": ("partial", 86, "approval-gated /complex workflows work; full harness spine still in progress"),
     "overall": ("partial", 87, "personal agent harness in hardening sprint"),
 }
+
+ROOT = repo_root(__file__)
 
 
 def route_cost_audit() -> list[AuditItem]:
@@ -65,7 +68,7 @@ def rollback_drill_items() -> list[AuditItem]:
     )
     return [
         AuditItem("memory rollback guardrails", all(item in guardrails for item in required), guardrails),
-        AuditItem("repo apply patch records", Path("artisan_apply.py").exists(), "artisan_apply.py"),
+        AuditItem("repo apply patch records", (ROOT / "maya_core" / "artisan_apply.py").exists(), "maya_core/artisan_apply.py"),
     ]
 
 
