@@ -1600,19 +1600,19 @@ Step 0.
     - [x] Confirm package-aware `code_health.py` excludes `tests/` and fixture scripts, reports grandfathered debt, and fails only new violations.
 - [ ] **W4.1. Package Move Waves**
     - [x] Wave 1: move smoke/replay/eval scripts into `tests/` and update `local_ci.py` paths.
-    - [ ] Wave 2: move non-smoke leaves with temporary identity shims.
-    - [ ] Wave 3: move clustered modules package-by-package.
-    - [ ] Wave 4: move hubs in small supervised batches.
-    - [ ] Wave 5: rewrite imports, remove identity shims, and convert allowlisted root commands into real CLI wrappers.
+    - [x] Wave 2: move non-smoke leaves with temporary identity shims.
+    - [x] Wave 3: move clustered modules package-by-package.
+    - [x] Wave 4: move hubs in small supervised batches.
+    - [x] Wave 5: rewrite imports, remove identity shims, and convert allowlisted root commands into real CLI wrappers.
     - [ ] Wave 6: verify `kampung_ai_app` import and app-entry dynamic paths.
 - [ ] **W4.2. Wrapper Proof**
-    - [ ] Root wrappers execute package entrypoints with `runpy.run_module(..., run_name="__main__")` or `main()`, not plain `sys.modules` shims.
-    - [ ] `./venv/bin/python browser_extension_bridge.py --status` still works from the repo root.
-    - [ ] `./venv/bin/python local_ci.py`, `doctor.py`, `service_install.py`, `run_demo.py`, `weekly_memory.py`, and live reliability run wrappers still execute safe proof modes.
+    - [x] Root wrappers execute package entrypoints with `runpy.run_module(..., run_name="__main__")` or `main()`, not plain `sys.modules` shims.
+    - [x] `./venv/bin/python browser_extension_bridge.py --status` still works from the repo root.
+    - [x] `./venv/bin/python local_ci.py`, `doctor.py`, `service_install.py`, `run_demo.py`, `weekly_memory.py`, and live reliability run wrappers still execute safe proof modes.
 - [ ] **W4.3. Independent Reviews**
-    - [ ] CLI wrapper reviewer: file/line evidence plus command results.
-    - [ ] Import/de-shim reviewer: no stale bare imports or compatibility shim markers.
-    - [ ] Code-health/root reviewer: package-aware health, grandfather baseline, root count, ratchet.
+    - [x] CLI wrapper reviewer: file/line evidence plus command results.
+    - [x] Import/de-shim reviewer: no stale bare imports or compatibility shim markers.
+    - [x] Code-health/root reviewer: package-aware health, grandfather baseline, root count, ratchet.
     - [ ] Docs/checklist reviewer: runbooks and checklist match moved paths and preserved commands.
     - [ ] Browser/operational reviewer: browser bridge status, app entrypoints, service-install wrapper behavior.
 - [ ] **W4.4. Final Acceptance**

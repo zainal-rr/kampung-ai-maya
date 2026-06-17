@@ -1,11 +1,14 @@
 browser_benchmark
 browser_extension_bridge
 browser_field_tests
+build_kampung_ai_app
 code_health
+demo_evidence
 dependency_manifest
 doctor
 hardware_live_proof
 imac_june8_regression
+kampung_ai_app
 live_agentic_reliability_run
 live_browser_reliability_run
 local_ci
