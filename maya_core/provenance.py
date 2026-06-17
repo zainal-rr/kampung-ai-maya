@@ -6,6 +6,7 @@ from typing import Any, Mapping
 
 
 OWNER_SOURCES = frozenset({"owner_voice", "owner_text"})
+MEETING_OWNER_SOURCES = frozenset({"owner_voice_meeting"})
 TRUSTED_INTERNAL_SOURCES = frozenset({"maya_internal"})
 UNTRUSTED_SOURCE_KINDS = frozenset({
     "browser_page",
@@ -15,7 +16,13 @@ UNTRUSTED_SOURCE_KINDS = frozenset({
     "other_speaker",
     "unknown",
 })
-SOURCE_KINDS = OWNER_SOURCES | TRUSTED_INTERNAL_SOURCES | UNTRUSTED_SOURCE_KINDS | frozenset({"memory_recall"})
+SOURCE_KINDS = (
+    OWNER_SOURCES
+    | MEETING_OWNER_SOURCES
+    | TRUSTED_INTERNAL_SOURCES
+    | UNTRUSTED_SOURCE_KINDS
+    | frozenset({"memory_recall"})
+)
 
 SOURCE_CHANNEL_MAP = {
     "imac": "owner_voice",
@@ -63,6 +70,11 @@ def default_untrusted_for_source(source_kind: str) -> bool:
     kind = normalize_source_kind(source_kind)
     if kind in OWNER_SOURCES or kind in TRUSTED_INTERNAL_SOURCES:
         return False
+    # Meeting-owner voice is intentionally not globally trusted. It is only
+    # actionable after maya_meet.policy validates fresh voiceprint evidence and
+    # the reversible-only meeting scope.
+    if kind in MEETING_OWNER_SOURCES:
+        return True
     return True
 
 

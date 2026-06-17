@@ -150,17 +150,19 @@ W7 provenance hardening (2026-06-17) adds the trigger-side half of the safety
 stack. Tool calls, recalled memory, rolling summaries, and confirmations now
 carry structured provenance (`owner_voice`, `owner_text`, `browser_page`,
 `screen_ocr`, `office_document`, `memory_recall`, `meeting_transcript`,
-`other_speaker`, or `unknown`). `unknown` is untrusted, untagged tool output
+`other_speaker`, `owner_voice_meeting`, or `unknown`). `unknown` is untrusted, untagged tool output
 defaults to `unknown`, and untrusted provenance cannot directly trigger
 external, destructive, command, repo-write, or file-changing actions without
 owner confirmation. Confirmation is owner-attributed: only `owner_voice` or
 `owner_text` can approve a pending action, and the existing fingerprint/expiry
 checks still bind the exact effect.
 
-Important W7 limit: this does not solve future Meet owner attribution. Recall
-speaker labels are not sufficient by themselves; all meeting speech must remain
-`other_speaker` until a separate owner-attribution design is implemented and
-proven.
+Important W7/Meet limit: Recall speaker labels are evidence only. M1 meeting
+speech remains `other_speaker`; M2 may grant `owner_voice_meeting` only after
+possession-authenticated voiceprint enrollment and measured real-audio
+verification. `owner_voice_meeting` never authorizes confirmations or
+irreversible/external actions, and owner-private disclosure into the room remains
+separately gated.
 
 `owner_text` means an already-authenticated owner channel such as Zainal's
 Telegram account. If that account is compromised, that is account-security

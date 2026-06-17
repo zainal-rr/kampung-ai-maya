@@ -65,6 +65,7 @@ def _protected_personal_roots() -> tuple[Path, ...]:
             "screenshots",
             "reports",
             "notes",
+            "voiceprints",
         )
     )
     roots.extend(home / name for name in ("Documents", "Downloads", "Pictures", "Movies", "Music"))

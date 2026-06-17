@@ -346,13 +346,22 @@ This document tracks the technical and operational roadmap for building the stan
     - [ ] Test normal embeddings before any GCP tensor-network or PennyLane cloud path.
 - [ ] **8.5. M1: Google Meet Via Recall.ai**
     - [x] Store the current Meet/Recall roadmap plan at `project_documents/roadmap/Maya_in_Google_Meet_via_Recall_Plan.md`.
-    - [ ] Keep this after W5-3 and W7 provenance hardening. In a meeting, other people, shared screens, and chat become untrusted input sources.
+    - [x] Keep this after W5-3 and W7 provenance hardening. In a meeting, other people, shared screens, and chat become untrusted input sources.
     - [ ] Confirm Recall.ai's current realtime audio input/output support, webhook shape, pricing, privacy, consent, and dashboard availability before coding.
-    - [ ] Build the control plane: join a supplied Meet URL, receive bot lifecycle webhooks, and record participant/speaker identity.
-    - [ ] Build the media adapter: Recall meeting audio replaces Maya's local mic, and Maya speech output is sent back through Recall, behind the same voice-loop interface.
+    - [ ] Build M1 passive mode first: Recall bot lifecycle, verified webhook/websocket intake, direct-address engagement, `other_speaker` provenance, and no meeting-triggered tools.
+    - [ ] Use Recall Meeting Bot + Output Media for the speaking teammate path; keep Google Meet Media API out of M1 because it is receive-only.
+    - [ ] Add the disclosure boundary: other speakers can ask about meeting/public context, but owner-private memory/files/logs/docs are refused or sent owner-channel-only.
+    - [ ] Build M2 voiceprint-ready scaffolding now, but do not enable M2 until real voice samples pass a measured false-accept/false-reject scorecard.
+    - [ ] Require owner-channel authentication for voiceprint enrollment, re-enrollment, and revocation; meeting voice can never bootstrap or replace the owner voiceprint.
+    - [ ] Treat voiceprint data as W5-3 personal data: protected local store, read-denied to brokered children unless explicitly declared, and no raw biometric material in normal logs.
     - [ ] Preserve D11 tool-first narration: Maya may use a bridge line only when a tool/action is genuinely in flight, and may claim completion only from verified tool facts.
     - [ ] Treat this as a capstone integration, not a replacement for desk-tested voice. The core Maya brain, work phases, verified facts, browser/doc actions, W5 broker, and W7 boundary stay behind the seam.
 - [ ] **8.6. M2: Multi-Party Turn-Taking Proof**
+    - [ ] Use voiceprint/speaker verification as the chosen M2 owner-attribution mechanism, not Recall labels alone.
+    - [ ] Bias verification toward false reject; uncertain, conflicting, or low-confidence audio stays `other_speaker`.
+    - [ ] Allow verified owner voice to trigger only reversible meeting actions such as pulling up public/meeting context, drafting notes, summarizing, or marking agenda items.
+    - [ ] Exclude irreversible/external actions from meeting voice entirely: send, delete, overwrite, submit, login, payment, booking, upload/export, repo-write, command execution, and file writes outside Maya scratch.
+    - [ ] Keep owner-private disclosure separately gated even for verified owner voice; private data is not spoken into the room without possession-channel confirmation.
     - [ ] Validate barge-in across Recall audio and Maya's realtime model: stop Maya's speech when a person starts talking, without losing the new utterance.
     - [ ] Use speaker attribution so Maya knows who spoke and does not treat two colleagues' handoff or cross-talk as a direct command.
     - [ ] Prove Maya can stay quiet during normal human-to-human talk and answer only when invited or when the meeting role explicitly allows it.

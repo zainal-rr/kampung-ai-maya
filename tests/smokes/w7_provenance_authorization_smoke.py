@@ -144,6 +144,14 @@ async def _confirmation_sources(db_path: str) -> None:
         approver_provenance=provenance_from_source_channel("recall_speech"),
     )
     _require(recall["reason_code"] == "unauthorized_confirmation_source", str(recall))
+    meeting_owner = await confirm_action(
+        db_path,
+        action_id="w7-confirm",
+        approved=True,
+        action_fingerprint_value=pending["action_fingerprint"],
+        approver_provenance=make_provenance("owner_voice_meeting"),
+    )
+    _require(meeting_owner["reason_code"] == "unauthorized_confirmation_source", str(meeting_owner))
     omitted = await confirm_action(
         db_path,
         action_id="w7-confirm",

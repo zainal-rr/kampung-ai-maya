@@ -46,7 +46,12 @@ Every turn-taking/narration fix in the disappointment log (D4, D5, D7, D9) was t
 ## 7. Safety/honesty get *more* load here (ties to W5/W7)
 In a meeting, **other people become input and trigger sources** — anyone can speak a command, and shared-screen/chat content becomes an untrusted read surface. So:
 - W5 (blast-radius/broker) and W7 (untrusted-input boundary) stop being "before more autonomy" and become "**before people who aren't you can talk to her.**"
-- W7 fail-closed rule for M1: all Meet speech is `other_speaker` unless owner identity is positively established. Recall speaker labels alone are not enough to grant `owner_voice`.
+- W7 fail-closed rule for M1: all Meet speech is `other_speaker`; Recall speaker labels are evidence only and never grant authority.
+- M1 is passive: Maya answers only when directly addressed and no room speech can trigger tools.
+- M2 uses owner voiceprint/speaker verification as the chosen attribution mechanism, but only for reversible meeting actions. Other people can ask; only Zainal acts.
+- Meeting voice never authorizes irreversible/external actions such as send, delete, login, payment, booking, upload/export, repo writes, command execution, or file writes outside Maya scratch.
+- Owner-private disclosure is separately gated even for verified owner voice: private memory/files/logs/docs go owner-channel-only unless possession-channel confirmation allows room disclosure.
+- Voiceprint enrollment, re-enrollment, and revocation are root-of-trust operations and must come from an already trusted owner channel, never from meeting voice.
 - The fail-honestly / verified-facts discipline matters most here: a live meeting is the max-embarrassment place to hallucinate. Better "I'm not sure, let me check" than a confident wrong answer in front of five people.
 
 ## 8. One thing to verify before building
@@ -56,4 +61,4 @@ The exact Recall endpoint names and whether **real-time audio *output*** (the bo
 A small adapter that lets Recall's meeting-audio stream stand in for Maya's mic and Recall's output-audio stand in for her speaker — plus a webhook receiver for "join this call." Everything that makes her Maya sits untouched behind that seam, and the audio-decoupling it requires is the same work that frees her voice for VM hosting. The Meet is the capstone demo; the seam underneath is infrastructure you needed anyway.
 
 ## Sequencing note
-This rides on the same prerequisites as the rest of the roadmap: it stresses W5/W7 (other-people-as-input) and the multi-party turn-taking is unproven, so treat the live Meet as a *new thing to prove*, not a free extension of the desk-tested voice loop.
+This rides on the same prerequisites as the rest of the roadmap: it stresses W5/W7 (other-people-as-input) and the multi-party turn-taking is unproven, so treat the live Meet as a *new thing to prove*, not a free extension of the desk-tested voice loop. M2 is not considered enabled until real voiceprint enrollment passes a measured false-accept/false-reject scorecard with recordings, non-owner samples, noise/cross-talk, and threshold tuning biased toward false reject.

@@ -261,6 +261,7 @@ def _personal_data_read_jail_checks(cwd: Path) -> None:
     for folder, content in (
         ("documents", "personal-document-data\n"),
         ("artifacts", "personal-artifact-data\n"),
+        ("voiceprints", "personal-biometric-data\n"),
     ):
         target_dir = Path.home() / "Desktop" / "Maya" / folder
         target_dir.mkdir(parents=True, exist_ok=True)
