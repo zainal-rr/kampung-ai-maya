@@ -26,6 +26,12 @@ from maya_core.safe_paths import (
     ENV_DENY_RE,
     resolve_safe_path,
 )
+from maya_core.execution_broker_read_policy import (
+    effective_read_policy,
+    path_deny_regex,
+    personal_data_read_denies,
+    validate_read_policy,
+)
 
 
 SAFE_BASE_ENV = ("PATH", "HOME", "TMPDIR", "TEMP", "TMP", "LANG", "LC_ALL", "LC_CTYPE")
@@ -61,7 +67,9 @@ class CommandSpec:
     input_bytes: bytes | None = None
     env_allowlist: tuple[str, ...] = ()
     extra_env: Mapping[str, str] = field(default_factory=dict)
+    read_policy: str = "credential_deny"
     read_roots: tuple[Path, ...] = ()
+    personal_read_roots: tuple[Path, ...] = ()
     deny_read_paths: tuple[Path, ...] = ()
     write_roots: tuple[Path, ...] = ()
     network: bool = False
@@ -156,6 +164,32 @@ async def run_command_async(spec: CommandSpec) -> CommandResult:
     return result
 
 
+async def open_command_process_async(spec: CommandSpec) -> tuple[asyncio.subprocess.Process, tuple[str, ...], bool]:
+    """Open an interactive child process through the broker.
+
+    This exists for command paths such as ffmpeg audio capture where Maya needs
+    to stream stderr and send a graceful quit byte. It keeps argv/env/sandbox
+    construction centralized instead of letting call sites bypass the broker.
+    """
+    argv, sandboxed = broker_argv(spec)
+    stdin = asyncio.subprocess.DEVNULL if spec.stdin_policy == "null" and spec.input_bytes is None else asyncio.subprocess.PIPE
+    stdout = asyncio.subprocess.PIPE if spec.capture_output else asyncio.subprocess.DEVNULL
+    stderr = asyncio.subprocess.PIPE if spec.capture_output else asyncio.subprocess.DEVNULL
+    try:
+        proc = await asyncio.create_subprocess_exec(
+            *argv,
+            cwd=str(spec.cwd) if spec.cwd else None,
+            env=broker_env(spec),
+            stdin=stdin,
+            stdout=stdout,
+            stderr=stderr,
+            start_new_session=True,
+        )
+    except OSError as exc:
+        raise BrokerPolicyError(str(exc)) from exc
+    return proc, tuple(argv), sandboxed
+
+
 def broker_env(spec: CommandSpec) -> dict[str, str]:
     names = set(SAFE_BASE_ENV) | set(spec.env_allowlist)
     env = {name: os.environ[name] for name in names if name in os.environ}
@@ -174,6 +208,10 @@ def broker_env(spec: CommandSpec) -> dict[str, str]:
 
 
 def broker_argv(spec: CommandSpec) -> tuple[tuple[str, ...], bool]:
+    try:
+        validate_read_policy(spec.read_policy)
+    except ValueError as exc:
+        raise BrokerPolicyError(str(exc)) from exc
     if spec.write_roots:
         _safe_write_roots(spec.write_roots)
     if not _should_sandbox(spec):
@@ -188,14 +226,24 @@ def sandbox_profile(spec: CommandSpec) -> str:
         raise BrokerPolicyError("credential reads are restricted to the codex_auth profile")
     if not spec.allow_credential_reads:
         read_denies = _credential_read_denies(spec) + read_denies
+    read_denies = personal_data_read_denies(spec.personal_read_roots) + read_denies
     write_roots = _safe_write_roots(spec.write_roots or ((spec.cwd,) if spec.cwd and spec.profile in {"workspace_write", "media"} else ()))
+    read_policy = effective_read_policy(spec.profile, spec.read_policy)
+    read_allow = "(allow file-read*)"
+    if read_policy == "jailed_roots":
+        # On the target macOS host, filtered file-read allowlists abort common
+        # dynamically-linked tools. Use the deny-over-broad-read form that
+        # sandbox-exec enforces reliably, then deny personal-data roots below.
+        pass
     parts = [
         "(version 1)",
         "(deny default)",
         "(allow process*)",
         "(allow sysctl-read)",
         "(allow mach-lookup)",
-        "(allow file-read*)",
+        "(allow file-read-metadata)",
+        "(allow file-map-executable)",
+        read_allow,
         '(allow file-write* (literal "/dev/null")' + "".join(f' (subpath "{_sbpl(root)}")' for root in write_roots) + ")",
     ]
     if spec.network:
@@ -204,7 +252,7 @@ def sandbox_profile(spec: CommandSpec) -> str:
         parts.append("(allow iokit*)")
     if not spec.allow_credential_reads:
         parts.extend(f'(deny file-read* (regex #"{regex}"))' for regex in CREDENTIAL_DENY_REGEXES)
-    parts.extend(f'(deny file-read* (subpath "{_sbpl(path)}"))' for path in read_denies)
+    parts.extend(f'(deny file-read* (regex #"{path_deny_regex(path)}"))' for path in read_denies)
     return "".join(parts)
 
 

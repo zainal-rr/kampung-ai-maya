@@ -344,12 +344,22 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Block quantum advisory output from overriding `/complex`, coding-to-Artisan, current-news, vision, screen, commands, learning, safety, or permission routes.
     - [x] Add `quantum_advisory_smoke.py` and include it in launch rehearsal.
     - [ ] Test normal embeddings before any GCP tensor-network or PennyLane cloud path.
-- [ ] **8.5. Meeting Bot API Research**
-    - [ ] Keep this out of Phase 7. Finish normal assistant reliability first.
-    - [ ] Evaluate Google Meet as the first proper call-mode target instead of WhatsApp/FaceTime audio routing.
-    - [ ] Compare meeting bot providers such as Recall.ai and MeetStream for real participant join, transcript/audio streaming, output media, cost, privacy, and consent requirements.
-    - [ ] Prototype only after Phase 7 evidence says Maya is stable as a normal assistant.
-    - [ ] Preserve the v1 doctrine: no WhatsApp/FaceTime call mode, no Loopback-only call feature, and no claim that Maya can privately join or summarize calls.
+- [ ] **8.5. M1: Google Meet Via Recall.ai**
+    - [x] Store the current Meet/Recall roadmap plan at `project_documents/roadmap/Maya_in_Google_Meet_via_Recall_Plan.md`.
+    - [ ] Keep this after W5-3 and W7 provenance hardening. In a meeting, other people, shared screens, and chat become untrusted input sources.
+    - [ ] Confirm Recall.ai's current realtime audio input/output support, webhook shape, pricing, privacy, consent, and dashboard availability before coding.
+    - [ ] Build the control plane: join a supplied Meet URL, receive bot lifecycle webhooks, and record participant/speaker identity.
+    - [ ] Build the media adapter: Recall meeting audio replaces Maya's local mic, and Maya speech output is sent back through Recall, behind the same voice-loop interface.
+    - [ ] Preserve D11 tool-first narration: Maya may use a bridge line only when a tool/action is genuinely in flight, and may claim completion only from verified tool facts.
+    - [ ] Treat this as a capstone integration, not a replacement for desk-tested voice. The core Maya brain, work phases, verified facts, browser/doc actions, W5 broker, and W7 boundary stay behind the seam.
+- [ ] **8.6. M2: Multi-Party Turn-Taking Proof**
+    - [ ] Validate barge-in across Recall audio and Maya's realtime model: stop Maya's speech when a person starts talking, without losing the new utterance.
+    - [ ] Use speaker attribution so Maya knows who spoke and does not treat two colleagues' handoff or cross-talk as a direct command.
+    - [ ] Prove Maya can stay quiet during normal human-to-human talk and answer only when invited or when the meeting role explicitly allows it.
+- [ ] **8.7. M3: Meeting Safety And Reliability Proof**
+    - [ ] Run live meeting scorecards for latency, false claims, wrong-speaker handling, unauthorized action attempts, interruption quality, and embarrassment-risk.
+    - [ ] Require structured confirmation before any action triggered by non-owner speech, shared-screen text, browser/page text, chat, or documents.
+    - [ ] Keep the v1 doctrine: no WhatsApp/FaceTime call mode, no Loopback-only call feature, and no claim that Maya can privately join or summarize calls.
 
 ## 📡 Phase 9: Channel Integration
 *Goal: Make every channel feel like one Maya.*
@@ -1650,9 +1660,12 @@ containment.
     - [x] Record honest residuals after W5-2: `read_roots` is credential-deny discovery, event cleanup exceptions rely on call-site wiring for Maya-owned paths, and GUI/browser surfaces remain governed rather than OS-contained.
     - [x] Commit the W5-2 checkpoint.
 - [ ] **W5-2.5. Residual hardening debt**
-    - [ ] Full read-jail hardening: W5-2 containment means write + network + process/env control; a brokered child can still read broad non-credential files outside `read_roots`, so exfil-via-read is not closed yet.
-    - [ ] Replace temporary interactive `ffmpeg` audio-capture exceptions once broker streaming mode exists.
+    - [x] Add W5-3 `read_policy` and personal-data read-deny hardening: brokered children are blocked from Maya's DB, DB backups, logs/transcripts, and `~/Desktop/Maya` artifacts unless a profile explicitly declares `personal_read_roots`.
+    - [x] Replace direct interactive `ffmpeg` audio-capture subprocess exceptions with broker-owned process startup for env scrub, timeout/process ownership, and audit.
+    - [ ] Keep full arbitrary home-directory read jail as future debt: the current macOS `sandbox-exec` backend needs broad read support for common tools, so W5-3 protects named personal roots rather than claiming perfect general read isolation.
+    - [ ] Track `media_capture` as an uncontained-read media profile when mic permissions require OS sandboxing disabled; ffmpeg arguments must stay fixed/config-derived, not untrusted-input-derived.
     - [ ] Keep GUI/AppleScript/Office/Chrome as governed surfaces until a later containment design exists; W5 and W7 stay load-bearing together here.
+    - [ ] Extend W7 provenance end-to-end into direct realtime tool requests so model-produced `start_maya_work` / `run_browser_skill` arguments cannot silently carry browser/screen/document-origin instructions without a provenance field.
 
 ## W2-B: Confidence-Gated Paraphrase Recall
 

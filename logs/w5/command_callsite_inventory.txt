@@ -1,5 +1,6 @@
 # W5-2 Command/Delete Call-Site Inventory
 Generated: 2026-06-17T14:21:26
+Updated: 2026-06-17 W5-3 refreshed brokered audio capture and nightly CI service rows.
 Scope: runtime packages; tests/venv excluded. Root harness/build/tool scripts are intentionally excluded and listed below.
 
 ## Explicitly excluded root/tool scripts
@@ -17,15 +18,15 @@ Scope: runtime packages; tests/venv excluded. Root harness/build/tool scripts ar
 - gui_applescript: 1
 - gui_file_open: 1
 - gui_preview_process: 1
-- import_only: 9
+- import_only: 10
 - owned_event_delete: 3
 - owned_failed_edit_cleanup: 3
-- owned_launchd_plist_delete: 3
+- owned_launchd_plist_delete: 4
 - owned_pid_cleanup: 4
 - owned_temp_cleanup: 8
-- service_launchd: 15
+- service_launchd: 19
 
-Total rows: 86
+Total rows: 92
 
 ## Rows
 | file | line | function | kind | category | decision | snippet |
@@ -69,28 +70,33 @@ Total rows: 86
 | maya_core/secret_provider.py | 138 | _run | broker_run | broker_migrated_command | runs_through_execution_broker | `result = run_command(CommandSpec(` |
 | maya_core/self_heal_execution.py | 187 | _git_status | broker_run | broker_migrated_command | runs_through_execution_broker | `proc = run_command(CommandSpec(` |
 | maya_core/service_install.py | 5 | <module> | subprocess_import | import_only | review_context | `import subprocess` |
-| maya_core/service_install.py | 124 | ensure_running | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "bootstrap", domain(), str(PLIST_PATH)], check=False)` |
-| maya_core/service_install.py | 125 | ensure_running | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "enable", f"{domain()}/{LABEL}"], check=False)` |
-| maya_core/service_install.py | 149 | uninstall | unlink | owned_launchd_plist_delete | explicit_service_uninstall | `PLIST_PATH.unlink()` |
-| maya_core/service_install.py | 156 | uninstall_weekly_memory | unlink | owned_launchd_plist_delete | explicit_service_uninstall | `WEEKLY_MEMORY_PLIST_PATH.unlink()` |
-| maya_core/service_install.py | 163 | uninstall_nightly_memory | unlink | owned_launchd_plist_delete | explicit_service_uninstall | `NIGHTLY_MEMORY_PLIST_PATH.unlink()` |
-| maya_core/service_install.py | 170 | status | subprocess_run | service_launchd | explicit_gui_service_allowlist | `result = subprocess.run(["launchctl", "print", f"{domain()}/{LABEL}"], capture_output=True, text=True, check=False)` |
-| maya_core/service_install.py | 177 | is_loaded | subprocess_run | service_launchd | explicit_gui_service_allowlist | `result = subprocess.run(["launchctl", "print", f"{domain()}/{LABEL}"], capture_output=True, text=True, check=False)` |
-| maya_core/service_install.py | 195 | status_weekly_memory | subprocess_run | service_launchd | explicit_gui_service_allowlist | `result = subprocess.run(["launchctl", "print", f"{domain()}/{WEEKLY_MEMORY_LABEL}"], capture_output=True, text=True, check=False)` |
-| maya_core/service_install.py | 203 | status_nightly_memory | subprocess_run | service_launchd | explicit_gui_service_allowlist | `result = subprocess.run(["launchctl", "print", f"{domain()}/{NIGHTLY_MEMORY_LABEL}"], capture_output=True, text=True, check=False)` |
-| maya_core/service_install.py | 211 | restart | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "bootstrap", domain(), str(PLIST_PATH)], check=False)` |
-| maya_core/service_install.py | 212 | restart | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "enable", f"{domain()}/{LABEL}"], check=False)` |
-| maya_core/service_install.py | 218 | restart_weekly_memory | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "bootstrap", domain(), str(WEEKLY_MEMORY_PLIST_PATH)], check=False)` |
-| maya_core/service_install.py | 219 | restart_weekly_memory | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "enable", f"{domain()}/{WEEKLY_MEMORY_LABEL}"], check=False)` |
-| maya_core/service_install.py | 225 | restart_nightly_memory | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "bootstrap", domain(), str(NIGHTLY_MEMORY_PLIST_PATH)], check=False)` |
-| maya_core/service_install.py | 226 | restart_nightly_memory | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "enable", f"{domain()}/{NIGHTLY_MEMORY_LABEL}"], check=False)` |
-| maya_core/service_install.py | 231 | bootout | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "bootout", domain(), str(PLIST_PATH)], check=False)` |
-| maya_core/service_install.py | 235 | bootout_weekly_memory | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "bootout", domain(), str(WEEKLY_MEMORY_PLIST_PATH)], check=False)` |
-| maya_core/service_install.py | 239 | bootout_nightly_memory | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "bootout", domain(), str(NIGHTLY_MEMORY_PLIST_PATH)], check=False)` |
+| maya_core/service_install.py | 132 | ensure_running | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "bootstrap", domain(), str(PLIST_PATH)], check=False)` |
+| maya_core/service_install.py | 133 | ensure_running | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "enable", f"{domain()}/{LABEL}"], check=False)` |
+| maya_core/service_install.py | 157 | uninstall | unlink | owned_launchd_plist_delete | explicit_service_uninstall | `PLIST_PATH.unlink()` |
+| maya_core/service_install.py | 164 | uninstall_weekly_memory | unlink | owned_launchd_plist_delete | explicit_service_uninstall | `WEEKLY_MEMORY_PLIST_PATH.unlink()` |
+| maya_core/service_install.py | 171 | uninstall_nightly_memory | unlink | owned_launchd_plist_delete | explicit_service_uninstall | `NIGHTLY_MEMORY_PLIST_PATH.unlink()` |
+| maya_core/service_install.py | 178 | status | subprocess_run | service_launchd | explicit_gui_service_allowlist | `result = subprocess.run(["launchctl", "print", f"{domain()}/{LABEL}"], capture_output=True, text=True, check=False)` |
+| maya_core/service_install.py | 185 | is_loaded | subprocess_run | service_launchd | explicit_gui_service_allowlist | `result = subprocess.run(["launchctl", "print", f"{domain()}/{LABEL}"], capture_output=True, text=True, check=False)` |
+| maya_core/service_install.py | 203 | status_weekly_memory | subprocess_run | service_launchd | explicit_gui_service_allowlist | `result = subprocess.run(["launchctl", "print", f"{domain()}/{WEEKLY_MEMORY_LABEL}"], capture_output=True, text=True, check=False)` |
+| maya_core/service_install.py | 211 | status_nightly_memory | subprocess_run | service_launchd | explicit_gui_service_allowlist | `result = subprocess.run(["launchctl", "print", f"{domain()}/{NIGHTLY_MEMORY_LABEL}"], capture_output=True, text=True, check=False)` |
+| maya_core/service_install.py | 219 | restart | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "bootstrap", domain(), str(PLIST_PATH)], check=False)` |
+| maya_core/service_install.py | 220 | restart | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "enable", f"{domain()}/{LABEL}"], check=False)` |
+| maya_core/service_install.py | 226 | restart_weekly_memory | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "bootstrap", domain(), str(WEEKLY_MEMORY_PLIST_PATH)], check=False)` |
+| maya_core/service_install.py | 227 | restart_weekly_memory | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "enable", f"{domain()}/{WEEKLY_MEMORY_LABEL}"], check=False)` |
+| maya_core/service_install.py | 233 | restart_nightly_memory | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "bootstrap", domain(), str(NIGHTLY_MEMORY_PLIST_PATH)], check=False)` |
+| maya_core/service_install.py | 234 | restart_nightly_memory | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "enable", f"{domain()}/{NIGHTLY_MEMORY_LABEL}"], check=False)` |
+| maya_core/service_install.py | 239 | bootout | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "bootout", domain(), str(PLIST_PATH)], check=False)` |
+| maya_core/service_install.py | 243 | bootout_weekly_memory | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "bootout", domain(), str(WEEKLY_MEMORY_PLIST_PATH)], check=False)` |
+| maya_core/service_install.py | 247 | bootout_nightly_memory | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "bootout", domain(), str(NIGHTLY_MEMORY_PLIST_PATH)], check=False)` |
+| maya_core/service_install_ci.py | 5 | <module> | subprocess_import | import_only | review_context | `import subprocess` |
+| maya_core/service_install_ci.py | 48 | uninstall_nightly_ci | unlink | owned_launchd_plist_delete | explicit_service_uninstall | `NIGHTLY_CI_PLIST_PATH.unlink()` |
+| maya_core/service_install_ci.py | 54 | status_nightly_ci | subprocess_run | service_launchd | explicit_gui_service_allowlist | `result = subprocess.run(["launchctl", "print", f"{domain()}/{NIGHTLY_CI_LABEL}"], capture_output=True, text=True, check=False)` |
+| maya_core/service_install_ci.py | 62 | restart_nightly_ci | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "bootstrap", domain(), str(NIGHTLY_CI_PLIST_PATH)], check=False)` |
+| maya_core/service_install_ci.py | 63 | restart_nightly_ci | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "enable", f"{domain()}/{NIGHTLY_CI_LABEL}"], check=False)` |
+| maya_core/service_install_ci.py | 68 | bootout_nightly_ci | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "bootout", domain(), str(NIGHTLY_CI_PLIST_PATH)], check=False)` |
 | maya_core/sieve.py | 73 | SieveNode.process_file | unlink | owned_event_delete | contained_to_watch_dir | `file_path.unlink(missing_ok=True)` |
 | maya_core/skill_importer.py | 90 | _run_npx_skill_add | broker_run_async | broker_migrated_command | runs_through_execution_broker | `result = await run_command_async(CommandSpec(` |
-| maya_core/speech_input.py | 3 | <module> | subprocess_import | import_only | review_context | `import subprocess` |
-| maya_core/speech_input.py | 74 | MacOSMicTranscriber._record_clip | create_subprocess | audio_media_interactive | explicit_interactive_ffmpeg_exception | `process = await asyncio.create_subprocess_exec(` |
+| maya_core/speech_input.py | 73 | MacOSMicTranscriber._record_clip | broker_open_process_async | audio_media_interactive | brokered_media_capture_uncontained_read | `process, _argv, _sandboxed = await open_command_process_async(` |
 | maya_core/speech_input.py | 117 | MacOSMicTranscriber._run_whisper | broker_run_async | broker_migrated_command | runs_through_execution_broker | `result = await run_command_async(` |
 | maya_core/utils.py | 2 | <module> | subprocess_import | import_only | review_context | `import subprocess` |
 | maya_core/utils.py | 17 | OSBridge._run_applescript | subprocess_run | gui_applescript | explicit_gui_allowlist_no_os_claim | `result = subprocess.run(` |
@@ -103,8 +109,7 @@ Total rows: 86
 | maya_voice/voice.py | 129 | VoiceNode._render_with_macos | broker_run_async | broker_migrated_command | runs_through_execution_broker | `convert = await run_command_async(CommandSpec(` |
 | maya_voice/voice.py | 146 | VoiceNode._play_and_cleanup | broker_run_async | broker_migrated_command | runs_through_execution_broker | `await run_command_async(CommandSpec(` |
 | maya_voice/voice.py | 160 | VoiceNode._remove_file | unlink | owned_temp_cleanup | allowlist_internal_cleanup | `file_path.unlink()` |
-| maya_voice/voice_agent_audio.py | 5 | <module> | subprocess_import | import_only | review_context | `import subprocess` |
-| maya_voice/voice_agent_audio.py | 61 | VoiceAgentAudioCapture._record_pcm | create_subprocess | audio_media_interactive | explicit_interactive_ffmpeg_exception | `process = await asyncio.create_subprocess_exec(` |
+| maya_voice/voice_agent_audio.py | 61 | VoiceAgentAudioCapture._record_pcm | broker_open_process_async | audio_media_interactive | brokered_media_capture_uncontained_read | `process, _argv, _sandboxed = await open_command_process_async(` |
 | maya_voice/xai_voice_agent.py | 137 | XaiRealtimeVoiceAgentTransport._play_pcm_audio | broker_run_async | broker_migrated_command | runs_through_execution_broker | `await run_command_async(CommandSpec(` |
 | maya_voice/xai_voice_agent.py | 145 | XaiRealtimeVoiceAgentTransport._play_pcm_audio | unlink | owned_temp_cleanup | allowlist_internal_cleanup | `path.unlink(missing_ok=True)` |
 | maya_documents/document_actions_office.py | 79 | DocumentOfficeMixin._restore_failed_edit | unlink | owned_failed_edit_cleanup | allowlist_internal_cleanup | `await asyncio.to_thread(target.unlink)` |

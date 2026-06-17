@@ -6,6 +6,7 @@ from pathlib import Path
 
 from maya_harness.harness_store import create_approval, record_artifact, record_event
 from maya_core.execution_broker import CommandSpec, run_command
+from maya_core.git_broker_env import git_safe_env
 from maya_memory.memory_canaries import check_memory_canaries, format_memory_leak_report, seed_memory_canaries
 from maya_core.self_heal_memory import create_memory_snapshot, memory_self_heal_dry_run
 from maya_core.self_heal_store import create_self_heal_report, record_self_heal_stage
@@ -190,6 +191,7 @@ def _git_status() -> str:
         profile="readonly",
         timeout=20,
         text=True,
+        extra_env=git_safe_env(),
     )).to_completed_process()
     return proc.stdout.strip()
 

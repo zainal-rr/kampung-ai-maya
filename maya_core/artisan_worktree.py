@@ -6,6 +6,7 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from maya_core.execution_broker import CommandSpec, run_command
+from maya_core.git_broker_env import git_safe_env
 from maya_documents.office_files import safe_slug
 from maya_core.workspace_paths import workspace_dir
 
@@ -37,6 +38,7 @@ def create_repo_isolation(source: Path, run_id: str) -> RepoIsolation | None:
         cwd=repo,
         profile="workspace_write",
         write_roots=(repo, worktree.parent),
+        extra_env=git_safe_env(),
         timeout=60,
         text=True,
     ))
@@ -73,6 +75,7 @@ def _git_output(repo: Path, *args: str) -> str:
         argv=("git", "-C", str(repo), *args),
         cwd=repo,
         profile="readonly",
+        extra_env=git_safe_env(),
         timeout=30,
         text=True,
     ))

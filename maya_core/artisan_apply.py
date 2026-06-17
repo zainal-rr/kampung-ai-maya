@@ -8,6 +8,7 @@ import aiosqlite
 
 from maya_harness.harness_store import init_harness_db, record_event, upsert_run
 from maya_core.execution_broker import CommandSpec, run_command
+from maya_core.git_broker_env import git_safe_env
 from maya_core.workspace_paths import workspace_dir
 
 
@@ -91,6 +92,7 @@ def _git_bytes(cwd: Path, *args: str) -> bytes:
         cwd=cwd,
         profile="readonly",
         timeout=60,
+        extra_env=git_safe_env(),
         check=True,
     ))
     return bytes(result.stdout)
@@ -104,6 +106,7 @@ def _git_apply(cwd: Path, diff: bytes, *args: str):
         timeout=60,
         input_bytes=diff,
         write_roots=(cwd,),
+        extra_env=git_safe_env(),
     )).to_completed_process()
 
 

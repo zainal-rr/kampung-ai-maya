@@ -37,13 +37,24 @@ COMMAND_PATTERNS = (
     re.compile(r"runner\s*=\s*subprocess\.run"),
     re.compile(r"asyncio\.to_thread\(\s*subprocess\.run"),
 )
+COMMAND_TARGETS = {
+    "asyncio.create_subprocess_exec",
+    "asyncio.create_subprocess_shell",
+    "os.remove",
+    "os.system",
+    "shutil.rmtree",
+    "subprocess.call",
+    "subprocess.check_call",
+    "subprocess.check_output",
+    "subprocess.Popen",
+    "subprocess.run",
+}
 DELETE_PATTERN = re.compile(r"\.unlink\b")
 
 ALLOWED_COMMAND_CALLS = {
     ("maya_core/execution_broker.py", "run_command"): "broker implementation",
     ("maya_core/execution_broker.py", "run_command_async"): "broker implementation",
-    ("maya_core/speech_input.py", "MacOSMicTranscriber._record_clip"): "interactive ffmpeg capture until broker streaming mode exists",
-    ("maya_voice/voice_agent_audio.py", "VoiceAgentAudioCapture._record_pcm"): "interactive ffmpeg capture until broker streaming mode exists",
+    ("maya_core/execution_broker.py", "open_command_process_async"): "broker implementation for interactive child processes",
     ("maya_core/utils.py", "OSBridge._run_applescript"): "explicit GUI AppleScript; governed, not OS-contained",
     ("maya_core/utils.py", "OSBridge._launch_app"): "explicit GUI app launch; governed, not OS-contained",
     ("maya_core/utils.py", "OSBridge.open_file"): "explicit GUI file open; governed, not OS-contained",
@@ -91,12 +102,14 @@ ALLOWED_DELETE_CALLS = {
 
 
 def main() -> None:
+    _test_alias_detection()
     command_violations: list[str] = []
     delete_violations: list[str] = []
-    for rel_path, line_no, line, function_name in _iter_runtime_lines():
-        if any(pattern.search(line) for pattern in COMMAND_PATTERNS):
+    for rel_path, line_no, line, function_name, ast_command in _iter_runtime_lines():
+        if ast_command or any(pattern.search(line) for pattern in COMMAND_PATTERNS):
             if (rel_path, function_name) not in ALLOWED_COMMAND_CALLS:
-                command_violations.append(f"{rel_path}:{line_no}:{function_name}: {line.strip()}")
+                detail = ast_command or line.strip()
+                command_violations.append(f"{rel_path}:{line_no}:{function_name}: {detail}")
         if DELETE_PATTERN.search(line):
             if (rel_path, function_name) not in ALLOWED_DELETE_CALLS:
                 delete_violations.append(f"{rel_path}:{line_no}:{function_name}: {line.strip()}")
@@ -104,6 +117,31 @@ def main() -> None:
         detail = "\n".join(command_violations + delete_violations)
         raise AssertionError(f"Execution broker bypasses found:\n{detail}")
     print("execution_broker_static_smoke: ok")
+
+
+def _test_alias_detection() -> None:
+    sample = """
+import subprocess as sp
+from subprocess import Popen, run, check_output as co
+
+def a():
+    Popen(["true"])
+    run(["true"])
+    co(["true"])
+    sp.check_output(["true"])
+"""
+    tree = ast.parse(sample)
+    commands = _command_call_lines_from_tree(tree, sample.splitlines())
+    detected = set(commands.values())
+    expected = {
+        'subprocess.Popen: Popen(["true"])',
+        'subprocess.run: run(["true"])',
+        'subprocess.check_output: co(["true"])',
+        'subprocess.check_output: sp.check_output(["true"])',
+    }
+    missing = expected - detected
+    if missing:
+        raise AssertionError(f"static guard alias detection missed: {sorted(missing)}")
 
 
 def _iter_runtime_lines():
@@ -116,9 +154,10 @@ def _iter_runtime_lines():
                 continue
             rel = path.relative_to(ROOT).as_posix()
             function_ranges = _function_ranges(path)
+            ast_commands = _command_call_lines(path)
             for line_no, line in enumerate(path.read_text("utf-8", errors="replace").splitlines(), 1):
                 function_name = next((name for start, end, name in function_ranges if start <= line_no <= end), "<module>")
-                yield rel, line_no, line, function_name
+                yield rel, line_no, line, function_name, ast_commands.get(line_no, "")
 
 
 def _function_ranges(path: Path) -> list[tuple[int, int, str]]:
@@ -138,6 +177,62 @@ def _function_ranges(path: Path) -> list[tuple[int, int, str]]:
 
     visit(tree)
     return ranges
+
+
+def _command_call_lines(path: Path) -> dict[int, str]:
+    text = path.read_text("utf-8", errors="replace")
+    tree = ast.parse(text)
+    return _command_call_lines_from_tree(tree, text.splitlines())
+
+
+def _command_call_lines_from_tree(tree: ast.AST, lines: list[str]) -> dict[int, str]:
+    module_aliases: dict[str, str] = {}
+    callable_aliases: dict[str, str] = {}
+    assignment_aliases: dict[str, str] = {}
+
+    for node in ast.walk(tree):
+        if isinstance(node, ast.Import):
+            for alias in node.names:
+                if alias.name in {"asyncio", "os", "shutil", "subprocess"}:
+                    module_aliases[alias.asname or alias.name] = alias.name
+        elif isinstance(node, ast.ImportFrom) and node.module in {"asyncio", "os", "shutil", "subprocess"}:
+            for alias in node.names:
+                target = f"{node.module}.{alias.name}"
+                if target in COMMAND_TARGETS:
+                    callable_aliases[alias.asname or alias.name] = target
+        elif isinstance(node, ast.Assign):
+            target_name = _callable_name(node.value, module_aliases, callable_aliases, assignment_aliases)
+            if target_name in COMMAND_TARGETS:
+                for target in node.targets:
+                    if isinstance(target, ast.Name):
+                        assignment_aliases[target.id] = target_name
+
+    commands: dict[int, str] = {}
+    for node in ast.walk(tree):
+        if not isinstance(node, ast.Call):
+            continue
+        target_name = _callable_name(node.func, module_aliases, callable_aliases, assignment_aliases)
+        if target_name in COMMAND_TARGETS:
+            line = lines[node.lineno - 1].strip() if 0 < node.lineno <= len(lines) else target_name
+            commands[node.lineno] = f"{target_name}: {line}"
+    return commands
+
+
+def _callable_name(
+    node: ast.AST,
+    module_aliases: dict[str, str],
+    callable_aliases: dict[str, str],
+    assignment_aliases: dict[str, str],
+) -> str:
+    if isinstance(node, ast.Name):
+        return callable_aliases.get(node.id) or assignment_aliases.get(node.id) or node.id
+    if isinstance(node, ast.Attribute):
+        parent = _callable_name(node.value, module_aliases, callable_aliases, assignment_aliases)
+        root, _, rest = parent.partition(".")
+        if root in module_aliases:
+            parent = module_aliases[root] + (f".{rest}" if rest else "")
+        return f"{parent}.{node.attr}"
+    return ""
 
 
 if __name__ == "__main__":

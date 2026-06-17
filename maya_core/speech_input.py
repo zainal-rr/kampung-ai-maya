@@ -1,11 +1,10 @@
 import asyncio
 import os
-import subprocess
 import tempfile
 from pathlib import Path
 
 from maya_core.audio_devices import bin_path, device_names, resolve_audio_input
-from maya_core.execution_broker import CommandSpec, run_command_async
+from maya_core.execution_broker import CommandSpec, open_command_process_async, run_command_async
 from maya_core.local_wake_scorer import LocalWakeScorerTranscriptSource
 from maya_voice.voice_device_policy import current_local_wake_allowed
 from maya_voice.xai_stt import xai_transcribe_file
@@ -71,25 +70,34 @@ class MacOSMicTranscriber:
             f"silencedetect=noise={self.silence_threshold_db}dB:"
             f"d={self.silence_duration}"
         )
-        process = await asyncio.create_subprocess_exec(
-            bin_path("ffmpeg"),
-            "-y",
-            "-f",
-            "avfoundation",
-            "-i",
-            self.audio_device,
-            "-af",
-            silence_filter,
-            "-t",
-            str(self.duration_seconds),
-            "-ac",
-            "1",
-            "-ar",
-            "16000",
-            str(audio_path),
-            stdin=subprocess.PIPE,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.PIPE,
+        process, _argv, _sandboxed = await open_command_process_async(
+            CommandSpec(
+                argv=(
+                    bin_path("ffmpeg"),
+                    "-y",
+                    "-f",
+                    "avfoundation",
+                    "-i",
+                    self.audio_device,
+                    "-af",
+                    silence_filter,
+                    "-t",
+                    str(self.duration_seconds),
+                    "-ac",
+                    "1",
+                    "-ar",
+                    "16000",
+                    str(audio_path),
+                ),
+                cwd=audio_path.parent,
+                profile="media_capture",
+                read_roots=(audio_path.parent,),
+                write_roots=(audio_path.parent,),
+                timeout=self.duration_seconds + 5,
+                stdin_policy="pipe",
+                capture_output=True,
+                sandbox=False,
+            )
         )
         speech_started = False
         stderr_lines = []

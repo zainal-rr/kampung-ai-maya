@@ -120,26 +120,31 @@ or other GUI/service integrations. Those paths remain governed by strict
 extension mode, W7 provenance, verified facts, explicit service commands, and
 no-silent-fallback rules. Browser/GUI is governed, not sandboxed.
 
-Honest W5-2 limit: `read_roots` currently drives credential-deny discovery,
-not a full read jail. The broker denies credential-shaped paths, constrains
-writes to safe roots, strips child environments, blocks network unless a
-profile asks for it, and kills timed-out process groups. A stricter general
-file-read jail remains a later hardening tier because broad read access is
-still needed by several macOS/CLI tools.
+Honest W5-2 limit: `read_roots` drove credential-deny discovery, not a full
+read jail. W5-3 adds `read_policy` and personal-data read denies so brokered
+commands cannot casually read Maya's DB, backups, logs/transcripts, or
+`~/Desktop/Maya` artifacts unless a profile declares `personal_read_roots`.
+The broker still constrains writes to safe roots, strips child environments,
+blocks network unless a profile asks for it, and kills timed-out process
+groups.
 
-Do not round W5-2 up to "fully sandboxed." In this stage, "contained" means
-write control, network control, process/time control, and environment scrubbing.
-It does **not** mean a general read jail: a brokered child can still read broad
-non-credential files outside its declared roots, so exfiltration via read access
-is a named residual. W5-3 must decide whether to add a stricter read jail,
-restricted user, or a replacement backend for command execution.
+Do not round W5 up to "fully sandboxed." In this stage, "contained" means write
+control, network control, process/time control, environment scrubbing, and
+personal-data read denial for the named roots. It does **not** mean a perfect
+general read jail for every possible home-directory file: macOS `sandbox-exec`
+still needs a broad read primitive for common dynamically-linked tools on this
+host, with explicit deny rules layered on top. A restricted user, container, or
+replacement backend remains the stronger future answer if Maya's autonomy
+increases.
 
-Two direct-command exceptions are temporary by condition, not permanent by
-habit: interactive `ffmpeg` audio capture paths remain outside the broker until
-broker streaming mode exists. Track them as W5 follow-up debt. GUI/AppleScript,
-logged-in Chrome, Office, and launchd remain governed rather than OS-contained;
-this is especially important for future meeting/room input, where W5 containment
-and W7 untrusted-input discipline stay load-bearing together.
+Interactive `ffmpeg` audio capture now routes through the broker for env scrub,
+timeout/process ownership, and audit. If mic permissions require the media
+profile to run with OS sandboxing disabled, it is still an uncontained-read
+media exemption, and its arguments must stay fixed/config-derived rather than
+untrusted text-derived. GUI/AppleScript, logged-in Chrome, Office, and launchd
+remain governed rather than OS-contained; this is especially important for
+future meeting/room input, where W5 containment and W7 untrusted-input
+discipline stay load-bearing together.
 
 ## W5 canaries (written FIRST, failing, before code)
 

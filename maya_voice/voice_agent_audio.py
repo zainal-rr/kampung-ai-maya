@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import asyncio
 import os
-import subprocess
 import tempfile
 import struct
 from pathlib import Path
 
 from maya_core.audio_devices import bin_path, resolve_audio_input
+from maya_core.execution_broker import CommandSpec, open_command_process_async
 
 
 class VoiceAgentAudioCapture:
@@ -58,11 +58,18 @@ class VoiceAgentAudioCapture:
         ]
         if self.stop_on_silence:
             command[6:6] = ["-af", f"silencedetect=noise={self.silence_threshold_db}dB:d={self.silence_duration}"]
-        process = await asyncio.create_subprocess_exec(
-            *command,
-            stdin=subprocess.PIPE,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.PIPE,
+        process, _argv, _sandboxed = await open_command_process_async(
+            CommandSpec(
+                argv=tuple(command),
+                cwd=audio_path.parent,
+                profile="media_capture",
+                read_roots=(audio_path.parent,),
+                write_roots=(audio_path.parent,),
+                timeout=self.duration_seconds + 5,
+                stdin_policy="pipe",
+                capture_output=True,
+                sandbox=False,
+            )
         )
         if self.stop_on_silence:
             await self._stop_after_silence(process)

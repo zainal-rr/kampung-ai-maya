@@ -12,10 +12,12 @@ import os
 import shutil
 import tempfile
 import time
+import contextlib
 from pathlib import Path
 
 from maya_core.execution_broker import BrokerPolicyError, CommandSpec, broker_env, run_command, broker_argv, sandbox_profile
 
+ROOT = Path(__file__).resolve().parents[2]
 
 def main() -> None:
     os.environ["MAYA_TEST_API_KEY"] = "secret-should-not-leak"
@@ -44,6 +46,34 @@ def main() -> None:
         env = broker_env(CommandSpec(argv=("/usr/bin/env",)))
         _require("MAYA_TEST_API_KEY" not in env, "secret-shaped env leaked by default")
         _require("PATH" in env, "safe PATH missing")
+
+        (allowed / "plain.txt").write_text("plain-ok\n", "utf-8")
+        read_ok = run_command(
+            CommandSpec(
+                argv=("/bin/cat", str(allowed / "plain.txt")),
+                cwd=allowed,
+                profile="readonly",
+                read_roots=(allowed,),
+                timeout=5,
+            )
+        )
+        _require(read_ok.returncode == 0 and "plain-ok" in _text(read_ok.stdout), "jailed read could not read declared root")
+        home_probe = Path.home() / "w5-read-jail-home-probe.txt"
+        home_probe.write_text("home-personal-data\n", "utf-8")
+        try:
+            read_home = run_command(
+                CommandSpec(
+                    argv=("/bin/cat", str(home_probe)),
+                    cwd=allowed,
+                    profile="readonly",
+                    read_roots=(allowed,),
+                    timeout=5,
+                )
+            )
+            _require(read_home.returncode != 0, "jailed read allowed home-dir file outside declared roots")
+        finally:
+            with contextlib.suppress(OSError):
+                home_probe.unlink()
 
         write_ok = run_command(
             CommandSpec(
@@ -134,6 +164,8 @@ def main() -> None:
             "credential-read flag was accepted outside codex_auth profile",
         )
 
+        _personal_data_read_jail_checks(allowed)
+
         env_bad = run_command(
             CommandSpec(
                 argv=("/bin/sh", "-c", "test -z \"$MAYA_TEST_API_KEY\""),
@@ -220,6 +252,77 @@ def main() -> None:
     print("execution_broker_smoke: ok")
 
 
+def _personal_data_read_jail_checks(cwd: Path) -> None:
+    log_probe_dir = ROOT / "logs" / "w5_read_jail_smoke"
+    log_probe_dir.mkdir(parents=True, exist_ok=True)
+    log_probe = log_probe_dir / "probe.txt"
+    log_probe.write_text("personal-log-data\n", "utf-8")
+    desktop_probes: list[Path] = []
+    for folder, content in (
+        ("documents", "personal-document-data\n"),
+        ("artifacts", "personal-artifact-data\n"),
+    ):
+        target_dir = Path.home() / "Desktop" / "Maya" / folder
+        target_dir.mkdir(parents=True, exist_ok=True)
+        probe = target_dir / "w5-read-jail-smoke.txt"
+        probe.write_text(content, "utf-8")
+        desktop_probes.append(probe)
+    try:
+        targets = [(log_probe, "logs"), *((path, f"Desktop/Maya {path.parent.name}") for path in desktop_probes)]
+        for path, label in targets:
+            denied = run_command(
+                CommandSpec(
+                    argv=("/bin/cat", str(path)),
+                    cwd=cwd,
+                    profile="readonly",
+                    read_roots=(ROOT,),
+                    timeout=5,
+                )
+            )
+            _require(denied.returncode != 0, f"jailed read allowed protected personal data: {label}")
+        session_db = ROOT / "session_history.db"
+        if session_db.exists():
+            db_denied = run_command(
+                CommandSpec(
+                    argv=("/bin/cat", str(session_db)),
+                    cwd=cwd,
+                    profile="readonly",
+                    read_roots=(ROOT,),
+                    timeout=5,
+                )
+            )
+            _require(db_denied.returncode != 0, "jailed read allowed session_history.db")
+        backup_db = next((path for path in (ROOT / "backups").rglob("*.db")), None) if (ROOT / "backups").exists() else None
+        if backup_db:
+            backup_denied = run_command(
+                CommandSpec(
+                    argv=("/bin/cat", str(backup_db)),
+                    cwd=cwd,
+                    profile="readonly",
+                    read_roots=(ROOT,),
+                    timeout=5,
+                )
+            )
+            _require(backup_denied.returncode != 0, "jailed read allowed backup memory DB")
+        explicit_log = run_command(
+            CommandSpec(
+                argv=("/bin/cat", str(log_probe)),
+                cwd=cwd,
+                profile="readonly",
+                read_roots=(ROOT,),
+                personal_read_roots=(ROOT / "logs",),
+                timeout=5,
+            )
+        )
+        _require(explicit_log.returncode == 0, "explicit personal_read_roots could not read declared logs root")
+    finally:
+        for probe in desktop_probes:
+            with contextlib.suppress(OSError):
+                probe.unlink()
+        with contextlib.suppress(OSError):
+            log_probe.unlink()
+
+
 def _require(condition: bool, message: str) -> None:
     if not condition:
         raise AssertionError(message)
@@ -231,6 +334,12 @@ def _require_raises(exc_type: type[BaseException], func, message: str) -> None:
     except exc_type:
         return
     raise AssertionError(message)
+
+
+def _text(value: bytes | str) -> str:
+    if isinstance(value, str):
+        return value
+    return value.decode("utf-8", errors="ignore")
 
 
 if __name__ == "__main__":
