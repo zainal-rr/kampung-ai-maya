@@ -28,6 +28,9 @@ def main() -> None:
             os.environ["HOME"] = str(home)
             site_packages = kampung_ai_app._venv_site_packages(root)
             _require(site_packages is not None and site_packages.name == "site-packages", "site-packages not found")
+            service_install = kampung_ai_app._load_service_install_module()
+            for name in ("ensure_running", "install", "uninstall"):
+                _require(hasattr(service_install, name), f"service_install missing {name}")
             lock = kampung_ai_app._acquire_controller_lock()
             _require(lock is not None, "first controller lock failed")
             try:

@@ -1,6 +1,5 @@
 from __future__ import annotations
 
-import importlib.util
 import fcntl
 import os
 import runpy
@@ -43,13 +42,19 @@ def _run_engine(repo_root: Path) -> None:
     runpy.run_path(str(repo_root / "main.py"), run_name="__main__")
 
 
+def _load_service_install_module():
+    from maya_core import service_install
+
+    return service_install
+
+
 def _run_controller(repo_root: Path) -> None:
     controller_lock = _acquire_controller_lock()
     if controller_lock is None:
         _controller_log(repo_root, f"{APP_NAME} controller is already running.")
         return
 
-    service_install = _load_repo_module("kampung_ai_service_install", repo_root / "service_install.py")
+    service_install = _load_service_install_module()
     if hasattr(service_install, "ensure_running"):
         service_install.ensure_running()
     else:
@@ -175,15 +180,6 @@ def _controller_log(repo_root: Path, message: str) -> None:
             file_obj.write(line)
     except Exception:
         pass
-
-
-def _load_repo_module(name: str, path: Path):
-    spec = importlib.util.spec_from_file_location(name, path)
-    if spec is None or spec.loader is None:
-        raise ImportError(f"Could not load {path}")
-    module = importlib.util.module_from_spec(spec)
-    spec.loader.exec_module(module)
-    return module
 
 
 def _current_app_path() -> Path:
