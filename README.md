@@ -216,7 +216,7 @@ The June 4, 2026 Maya replay passed 700/700 voice-style transcripts by sending t
 Run the broad Telegram post-STT voice transcript replay:
 
 ```bash
-./venv/bin/python voice_telegram_transcript_replay_10000.py
+./venv/bin/python tests/replays/voice_telegram_transcript_replay_10000.py
 ```
 
 The June 5, 2026 replay covers 10,000 deterministic Telegram voice transcript cases across artifact creation, latest-document edits, natural slashless commands, paid-voice park/handoff decisions, and normal-chat negatives. It proves Maya's post-STT routing layer can handle messy human phrasing without requiring exact example prompts.

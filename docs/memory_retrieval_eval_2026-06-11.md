@@ -21,7 +21,7 @@ improvement on the expanded eval.
 ## Commands Run
 
 ```bash
-./venv/bin/python memory_recall_eval.py
+./venv/bin/python tests/evals/memory_recall_eval.py
 ./venv/bin/python memory_recall_eval_compare.py
 ```
 

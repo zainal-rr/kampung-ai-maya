@@ -1598,29 +1598,29 @@ Step 0.
     - [x] Generate `logs/w4/cli_wrapper_candidates.txt` from actual `__main__` files and documented `python X.py` references.
     - [x] Generate `logs/w4/grandfather_baseline.txt` from current package-aware code-health violations; do not hand-code this list.
     - [x] Confirm package-aware `code_health.py` excludes `tests/` and fixture scripts, reports grandfathered debt, and fails only new violations.
-- [ ] **W4.1. Package Move Waves**
+- [x] **W4.1. Package Move Waves**
     - [x] Wave 1: move smoke/replay/eval scripts into `tests/` and update `local_ci.py` paths.
     - [x] Wave 2: move non-smoke leaves with temporary identity shims.
     - [x] Wave 3: move clustered modules package-by-package.
     - [x] Wave 4: move hubs in small supervised batches.
     - [x] Wave 5: rewrite imports, remove identity shims, and convert allowlisted root commands into real CLI wrappers.
-    - [ ] Wave 6: verify `kampung_ai_app` import and app-entry dynamic paths.
-- [ ] **W4.2. Wrapper Proof**
+    - [x] Wave 6: verify `kampung_ai_app` import and app-entry dynamic paths.
+- [x] **W4.2. Wrapper Proof**
     - [x] Root wrappers execute package entrypoints with `runpy.run_module(..., run_name="__main__")` or `main()`, not plain `sys.modules` shims.
     - [x] `./venv/bin/python browser_extension_bridge.py --status` still works from the repo root.
     - [x] `./venv/bin/python local_ci.py`, `doctor.py`, `service_install.py`, `run_demo.py`, `weekly_memory.py`, and live reliability run wrappers still execute safe proof modes.
-- [ ] **W4.3. Independent Reviews**
+- [x] **W4.3. Independent Reviews**
     - [x] CLI wrapper reviewer: file/line evidence plus command results.
     - [x] Import/de-shim reviewer: no stale bare imports or compatibility shim markers.
     - [x] Code-health/root reviewer: package-aware health, grandfather baseline, root count, ratchet.
-    - [ ] Docs/checklist reviewer: runbooks and checklist match moved paths and preserved commands.
-    - [ ] Browser/operational reviewer: browser bridge status, app entrypoints, service-install wrapper behavior.
-- [ ] **W4.4. Final Acceptance**
-    - [ ] `./venv/bin/python local_ci.py` matches the W4 baseline pass set.
-    - [ ] `./venv/bin/python code_health.py` passes with package-aware scanning.
-    - [ ] No `W4 compatibility shim` markers remain outside intentional command wrappers.
-    - [ ] Root contains only approved wrappers/entrypoints.
-    - [ ] Final worktree is clean and committed.
+    - [x] Docs/checklist reviewer: runbooks and checklist match moved paths and preserved commands. Historical handoff docs may still show old root smoke paths; `docs/w4_package_restructure_runbook.md` is the current command-path source of truth.
+    - [x] Browser/operational reviewer: browser bridge wrapper, app entrypoints, and service-install wrapper behavior. Runtime wrapper path passed; live Chrome extension client was disconnected during review and must be reconnected before browser live testing.
+- [x] **W4.4. Final Acceptance**
+    - [x] `./venv/bin/python local_ci.py` matches the W4 baseline pass set.
+    - [x] `./venv/bin/python code_health.py` passes with package-aware scanning.
+    - [x] No `W4 compatibility shim` markers remain outside intentional command wrappers.
+    - [x] Root contains only approved wrappers/entrypoints.
+    - [x] Final worktree is clean and committed.
 
 ## Phase 25: Engine Sprint - Trust The Model With More Of The Loop
 

@@ -5,12 +5,17 @@ Current as of 2026-06-17.
 ## Status
 
 W4 moves runtime implementation out of the repository root and keeps the daily
-operator commands at the root as real CLI wrappers. Waves 1 through 5 are built:
+operator commands at the root as real CLI wrappers. Waves 1 through 6 are built:
 smokes/replays/evals now live under `tests/`, runtime modules live under
 packages, and preserved root commands execute package entrypoints with
 `runpy.run_module(..., run_name="__main__")` or their own `main()`.
 
-Wave 6 and final acceptance still require a clean worktree and final CI pass.
+Wave 6 app/import verification is green, and final `local_ci.py` passed 63/63
+with zero blocking failures. Final acceptance still requires a clean committed
+worktree. Independent reviews are complete with one operational risk carried
+forward: the browser wrapper path is verified, but `client_connected` in
+`browser_extension_bridge.py --status` is volatile live Chrome-extension state
+and can be disconnected even when the packaged command path is correct.
 
 ## Current Proof Commands
 
@@ -24,17 +29,18 @@ python -c "import kampung_ai_app"
 ```
 
 `browser_extension_bridge.py --status` is query-only. A successful wrapper proof
-means the command reaches the packaged bridge status code. The `client_connected`
-field is volatile live Chrome-extension state and must be rechecked at the time
-of browser live testing.
+means the command reaches the packaged bridge status code. For live browser
+testing, require `owner_kind=engine` and `client_connected=true`; if it reports
+`client_disconnected`, reload/reconnect the Chrome extension before testing.
 
 ## Root Entrypoints
 
 The approved root Python files are recorded in
 `logs/w4/cli_wrapper_candidates.txt`. Most are wrappers; the root keeps build,
-gate, app, and engine entrypoints such as `local_ci.py`, `code_health.py`,
+gate, app, and engine entrypoints such as `local_ci.py`,
 `scored_eval_suite.py`, `main.py`, `kampung_ai_app.py`, and
-`build_kampung_ai_app.py`.
+`build_kampung_ai_app.py`. `code_health.py` is a root wrapper over
+`maya_core.code_health`.
 
 ## Moved Tests
 
@@ -55,8 +61,9 @@ path source of truth.
 
 ## Code Health
 
-`code_health.py` is package-aware, excludes `tests/`, and fails only new
-over-300-line runtime violations. Pre-existing package debt is captured in
+`code_health.py` runs the packaged `maya_core.code_health` implementation. It is
+package-aware, excludes `tests/`, and fails only new over-300-line runtime
+violations. Pre-existing package debt is captured in
 `logs/w4/grandfather_baseline.txt` and reported as W4 follow-up debt rather than
 blocking this move.
 

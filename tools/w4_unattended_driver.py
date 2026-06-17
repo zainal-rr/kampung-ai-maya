@@ -209,17 +209,18 @@ def gen_wrapper_candidates() -> list[str]:
                 documented.add(Path(m).name[:-3])
         except Exception:
             continue
-    cand = sorted(main_files & documented)
+    approved_roots = (WRAPPER_ALLOWLIST | KEEP_AT_ROOT) & main_files
+    cand = sorted((main_files & documented) | approved_roots)
     LOG_DIR.mkdir(parents=True, exist_ok=True)
     WRAPPER_CANDIDATES_FILE.write_text("\n".join(cand) + "\n")
     log(f"Step0: {len(cand)} CLI wrapper candidates -> {WRAPPER_CANDIDATES_FILE}")
     # surface drift vs the hard allowlist for human review
-    extra = sorted(set(cand) - WRAPPER_ALLOWLIST - KEEP_AT_ROOT)
-    missing = sorted(WRAPPER_ALLOWLIST - set(cand))
+    extra = sorted((main_files & documented) - WRAPPER_ALLOWLIST - KEEP_AT_ROOT)
+    missing = sorted(WRAPPER_ALLOWLIST - main_files)
     if extra:
         log(f"Step0 REVIEW: documented commands NOT in allowlist: {extra}")
     if missing:
-        log(f"Step0 REVIEW: allowlist entries not found as documented commands: {missing}")
+        log(f"Step0 REVIEW: allowlist entries missing root entrypoints: {missing}")
     return cand
 
 
@@ -251,7 +252,7 @@ def gen_grandfather_baseline(*, force: bool = False) -> list[str]:
         ]
         log(f"Step0: reusing {len(existing)} grandfathered package violations -> {GRANDFATHER_FILE}")
         return existing
-    import code_health
+    from maya_core import code_health
     excl = FIXTURE_EXCLUDE
     over = []
     for d in _baseline_package_dirs():
@@ -415,7 +416,7 @@ def fast_gate(moved: list[str], *, import_old_names: bool = True) -> tuple[bool,
             if c.returncode != 0:
                 return False, f"import {stem} failed:\n" + c.stderr
     h = sh(sys.executable, "-c",
-           "from code_health import collect_code_health as c;import sys;sys.exit(0 if c('.').ok else 1)",
+           "from maya_core.code_health import collect_code_health as c;import sys;sys.exit(0 if c('.').ok else 1)",
            check=False)
     if h.returncode != 0:
         return False, "code_health regressed:\n" + h.stdout + h.stderr
@@ -585,7 +586,7 @@ def run_app_verify(b, *, dry, auto_rollback) -> bool:
 
 def ratchet_limit() -> None:
     count = len(list(ROOT.glob("*.py")))
-    ch = ROOT / "code_health.py"
+    ch = ROOT / "maya_core" / "code_health.py"
     t = ch.read_text()
     n = re.sub(r"ROOT_PY_FILE_LIMIT\s*=\s*\d+", f"ROOT_PY_FILE_LIMIT = {count}", t)
     if n != t:

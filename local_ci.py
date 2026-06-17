@@ -7,7 +7,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
-from code_health import collect_code_health, format_code_health
+from maya_core.code_health import collect_code_health, format_code_health
 from scored_eval_suite import DEFAULT_OUTPUT, format_eval_summary, run_eval_suite
 
 

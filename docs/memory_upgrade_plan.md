@@ -110,12 +110,12 @@ Remaining observations:
 ## How to run
 
 ```
-./venv/bin/python memory_recall_eval.py     # exits 1 on hard failure
+./venv/bin/python tests/evals/memory_recall_eval.py     # exits 1 on hard failure
 ./venv/bin/python memory_watchdog.py --db session_history.db   # exits 1 on alert
 
 # Embedding rerank A/B (run both, compare paraphrase/malay numbers):
-./venv/bin/python memory_recall_eval.py
-MEMORY_EMBED_RERANK_LIVE=1 ./venv/bin/python memory_recall_eval.py
+./venv/bin/python tests/evals/memory_recall_eval.py
+MEMORY_EMBED_RERANK_LIVE=1 ./venv/bin/python tests/evals/memory_recall_eval.py
 ```
 
 ## Acceptance criteria
