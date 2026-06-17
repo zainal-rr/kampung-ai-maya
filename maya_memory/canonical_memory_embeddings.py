@@ -75,6 +75,40 @@ async def rerank_with_embeddings(
     return reranked
 
 
+async def score_candidates_with_embeddings(
+    db_path: str,
+    query: str,
+    scored: list[tuple[int, str, str]],
+    agent: EmbedCall | None,
+    *,
+    model: str = "",
+) -> list[tuple[float, int, str, str]]:
+    """Return cosine scores for an already-filtered candidate pool.
+
+    The caller owns candidate eligibility. This helper never searches memory by
+    itself, which keeps forgotten/superseded filtering upstream of vector work.
+    """
+    if agent is None or not scored:
+        return []
+    try:
+        async with aiosqlite.connect(db_path) as db:
+            await init_vector_cache(db)
+            vectors = await _candidate_vectors(db, scored, agent, model)
+            await db.commit()
+        query_vector = (await agent([query]))[0]
+    except Exception:
+        return []
+    if not query_vector or not vectors:
+        return []
+    semantic = []
+    for score, memory_id, content in scored:
+        vector = vectors.get(memory_id)
+        cosine = _cosine(query_vector, vector) if vector else 0.0
+        semantic.append((cosine, score, memory_id, content))
+    semantic.sort(key=lambda item: (item[0], item[1]), reverse=True)
+    return semantic
+
+
 async def _candidate_vectors(
     db: aiosqlite.Connection,
     scored: list[tuple[int, str, str]],

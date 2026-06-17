@@ -31,6 +31,7 @@ Embeddings trigger (decided in advance so the decision is not vibes):
 import asyncio
 import json
 import tempfile
+import time
 from datetime import datetime, timezone
 from pathlib import Path
 
@@ -105,12 +106,27 @@ async def _seed(db_path: str) -> None:
                     (f"-{int(fact['old_days'])} days", fact["content"]),
                 )
                 await db.commit()
+        if fact.get("expire"):
+            async with aiosqlite.connect(db_path) as db:
+                await db.execute(
+                    """
+                    UPDATE canonical_memory_items
+                    SET status = 'expired',
+                        expires_at = datetime('now', '-1 day'),
+                        updated_at = CURRENT_TIMESTAMP
+                    WHERE content = ?
+                    """,
+                    (fact["content"],),
+                )
+                await db.commit()
 
 
 async def _run_case(db_path: str, case: dict[str, str]) -> dict[str, object]:
     query = case["query"]
+    started = time.perf_counter()
     relevant = await search_relevant_canonical_memories(db_path, query, limit=3)
     direct = await MemoryService(db_path).search_direct_fact(query, limit=3)
+    elapsed_ms = round((time.perf_counter() - started) * 1000, 2)
     top1 = ([*direct[:1], *relevant[:1]])
     pool = [*direct, *relevant]
     record: dict[str, object] = {
@@ -118,6 +134,7 @@ async def _run_case(db_path: str, case: dict[str, str]) -> dict[str, object]:
         "query": query,
         "direct": direct,
         "relevant": relevant,
+        "elapsed_ms": elapsed_ms,
     }
     if "expect" in case:
         needle = case["expect"].casefold()
@@ -126,6 +143,8 @@ async def _run_case(db_path: str, case: dict[str, str]) -> dict[str, object]:
         record["hit_at_3"] = any(needle in item.casefold() for item in pool)
         direct_needle = str(case.get("direct_forbid", "")).casefold()
         record["direct_leaked"] = bool(direct_needle) and any(direct_needle in item.casefold() for item in direct)
+        forbid_needle = str(case.get("forbid", "")).casefold()
+        record["leaked"] = bool(forbid_needle) and any(forbid_needle in item.casefold() for item in pool)
     elif "forbid" in case:
         needle = case["forbid"].casefold()
         record["forbid"] = case["forbid"]
@@ -202,19 +221,25 @@ async def _supersede_scenarios(db_path: str) -> list[dict[str, object]]:
 
 def _metrics(results: list[dict[str, object]]) -> dict[str, dict[str, float | int]]:
     metrics: dict[str, dict[str, float | int]] = {}
-    for category in ("exact", "paraphrase", "malay_manglish", "voice_noisy", "temporal_old"):
+    for category in ("exact", "paraphrase", "malay_manglish", "voice_noisy", "temporal_old", "conflict"):
         rows = [item for item in results if item["category"] == category]
         if not rows:
             continue
         metrics[category] = {
             "cases": len(rows),
+            "hits_at_1": sum(bool(item["hit_at_1"]) for item in rows),
+            "hits_at_3": sum(bool(item["hit_at_3"]) for item in rows),
             "recall_at_1": round(sum(bool(item["hit_at_1"]) for item in rows) / len(rows), 3),
             "recall_at_3": round(sum(bool(item["hit_at_3"]) for item in rows) / len(rows), 3),
+            "leaks": sum(bool(item.get("leaked")) for item in rows),
+            "direct_leaks": sum(bool(item.get("direct_leaked")) for item in rows),
         }
     metrics["association"] = association_metrics(results)
     forgotten = [item for item in results if item["category"] == "forgotten"]
+    excluded = [item for item in results if item["category"] == "excluded"]
     absent = [item for item in results if item["category"] == "absent"]
     metrics["forgotten"] = {"cases": len(forgotten), "leaks": sum(bool(item["leaked"]) for item in forgotten)}
+    metrics["excluded"] = {"cases": len(excluded), "leaks": sum(bool(item["leaked"]) for item in excluded)}
     metrics["absent"] = {"cases": len(absent), "false_direct_recalls": sum(bool(item["false_direct_recall"]) for item in absent)}
     return metrics
 
@@ -229,9 +254,19 @@ def _hard_failures(
     if metrics["forgotten"]["leaks"]:
         leaked = [item["query"] for item in results if item.get("leaked")]
         failures.append(f"forgotten facts leaked: {leaked}")
+    if metrics["excluded"]["leaks"]:
+        leaked = [item["query"] for item in results if item["category"] == "excluded" and item.get("leaked")]
+        failures.append(f"excluded old/expired facts leaked: {leaked}")
     if metrics["absent"]["false_direct_recalls"]:
         false = [item["query"] for item in results if item.get("false_direct_recall")]
         failures.append(f"false direct recall on absent facts: {false}")
+    for category in ("exact", "paraphrase", "malay_manglish", "voice_noisy", "temporal_old", "conflict"):
+        leaked = [item["query"] for item in results if item["category"] == category and item.get("leaked")]
+        if leaked:
+            failures.append(f"{category} cases leaked forbidden values: {leaked}")
+        direct_leaked = [item["query"] for item in results if item["category"] == category and item.get("direct_leaked")]
+        if direct_leaked:
+            failures.append(f"{category} cases leaked direct-forbidden values: {direct_leaked}")
     exact = metrics.get("exact", {})
     if float(exact.get("recall_at_3", 0)) < EXACT_RECALL3_FLOOR:
         failures.append(f"exact recall@3 {exact.get('recall_at_3')} below floor {EXACT_RECALL3_FLOOR}")

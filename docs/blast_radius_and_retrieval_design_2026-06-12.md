@@ -127,6 +127,20 @@ profile asks for it, and kills timed-out process groups. A stricter general
 file-read jail remains a later hardening tier because broad read access is
 still needed by several macOS/CLI tools.
 
+Do not round W5-2 up to "fully sandboxed." In this stage, "contained" means
+write control, network control, process/time control, and environment scrubbing.
+It does **not** mean a general read jail: a brokered child can still read broad
+non-credential files outside its declared roots, so exfiltration via read access
+is a named residual. W5-3 must decide whether to add a stricter read jail,
+restricted user, or a replacement backend for command execution.
+
+Two direct-command exceptions are temporary by condition, not permanent by
+habit: interactive `ffmpeg` audio capture paths remain outside the broker until
+broker streaming mode exists. Track them as W5 follow-up debt. GUI/AppleScript,
+logged-in Chrome, Office, and launchd remain governed rather than OS-contained;
+this is especially important for future meeting/room input, where W5 containment
+and W7 untrusted-input discipline stay load-bearing together.
+
 ## W5 canaries (written FIRST, failing, before code)
 
 | # | Canary | Asserts |
@@ -176,6 +190,34 @@ existing `RERANK_CONFIDENCE` threshold pattern in
 `canonical_memory_embeddings.py`. Guard: vector-only evidence may not WIN a
 direct-recall question — semantic can surface a candidate, lexical/exact still
 arbitrates, so a related-but-wrong memory cannot impersonate a direct hit.
+
+Implementation sequence:
+
+1. Add canaries first: R4 for paraphrase recall (`carrier` -> saved airline)
+   and R5 for exact lexical facts beating weak semantic neighbors.
+2. Keep direct lexical recall as the first pass and record whether its evidence
+   is strong, weak, or absent.
+3. When lexical evidence is weak, ask the existing embedding layer to surface a
+   small active-only candidate pool. Forgotten, expired, and superseded rows
+   remain excluded before any semantic scoring happens.
+4. Treat semantic output as candidate discovery, not final truth. Exact/current
+   canonical facts still arbitrate the answer; if the semantic candidate cannot
+   clear the direct-recall safety checks, Maya should miss honestly.
+5. Keep the provider path fail-open: embedding cache/provider failure returns
+   current lexical behavior, not a guessed answer.
+
+Built result (2026-06-17): W2-B direct recall now uses confidence-gated semantic
+candidate surfacing behind the existing embedding flag. The selected weak
+threshold is `30`, chosen from a small fixed grid and explicitly provisional:
+it is fitted to the current case set and must be re-confirmed as live memory
+cases accumulate. The acceptance compare ran 95 cases with 21 paraphrase, 9
+Malay/Manglish, 10 conflict, 11 excluded, and 12 absent cases. Result:
+paraphrase recall@3 improved 0.571 -> 0.762, Malay/Manglish 0.778 -> 0.889,
+net gain +5 hits against a +3 bar, exact recall stayed 1.0, conflict recall
+improved 0.7 -> 0.8, forgotten/excluded/absent leaks stayed zero, and p95
+weak-path added latency was 867.28 ms against a 1200 ms desk-use ceiling.
+This is a default-on candidate for desk use only; future Meet/live-room use
+needs tighter latency or cache/prewarm work.
 
 Why AFTER Phase 7: the eval already shows weak paraphrase recall, but WHICH
 paraphrases fail in real use is exactly what Day 2's `[MEMORY]` pile names.

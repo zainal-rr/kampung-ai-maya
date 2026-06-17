@@ -1643,12 +1643,43 @@ containment.
     - [x] Add broker escape smokes for credential reads, `.env`, out-of-root writes, secret env inheritance, and network-denied profiles.
     - [x] Add a static broker-bypass guard with explicit exception files and reasons.
     - [x] Add reversible delete quarantine for future user-file deletes.
-- [ ] **W5-2.4. Final Acceptance**
+- [x] **W5-2.4. Final Acceptance**
     - [x] Run focused W5-2 smokes and existing W5-1 canaries.
     - [x] Run `code_health.py` and `local_ci.py` with zero blocking failures.
     - [x] Run post-implementation subagent reviews: execution broker, sandbox escape, browser/GUI.
-    - [ ] Residual to track after W5-2: broker `read_roots` is credential-deny discovery, not a full read jail; event cleanup exceptions rely on call-site wiring for Maya-owned paths.
-    - [ ] Commit the W5-2 checkpoint.
+    - [x] Record honest residuals after W5-2: `read_roots` is credential-deny discovery, event cleanup exceptions rely on call-site wiring for Maya-owned paths, and GUI/browser surfaces remain governed rather than OS-contained.
+    - [x] Commit the W5-2 checkpoint.
+- [ ] **W5-2.5. Residual hardening debt**
+    - [ ] Full read-jail hardening: W5-2 containment means write + network + process/env control; a brokered child can still read broad non-credential files outside `read_roots`, so exfil-via-read is not closed yet.
+    - [ ] Replace temporary interactive `ffmpeg` audio-capture exceptions once broker streaming mode exists.
+    - [ ] Keep GUI/AppleScript/Office/Chrome as governed surfaces until a later containment design exists; W5 and W7 stay load-bearing together here.
+
+## W2-B: Confidence-Gated Paraphrase Recall
+
+Goal: improve daily-use memory recall without letting semantic search invent or
+override facts. Lexical/exact recall stays authoritative; embeddings may surface
+candidates only when lexical confidence is weak and the candidate still passes
+the direct-recall safety rules.
+
+- [x] **W2-B.0. Canaries first**
+    - [x] Add R4: save `my preferred airline is AirAsia`; ask `which carrier do I prefer?`; expect the airline fact via semantic surfacing.
+    - [x] Add R5: current lexical/canonical fact beats superseded or forgotten semantic temptations.
+    - [x] Confirm forgotten, expired, and superseded rows never enter the fallback candidate pool.
+- [x] **W2-B.1. Confidence-gated fallback**
+    - [x] Keep lexical direct fact recall as the primary path.
+    - [x] Trigger semantic surfacing only when direct lexical confidence is weak, not only when it is empty.
+    - [x] Reuse the existing embedding cache and `RERANK_CONFIDENCE` pattern; fail open to lexical behavior if embeddings fail.
+- [x] **W2-B.2. Arbitration and safety**
+    - [x] Vector-only evidence may propose a candidate, but must not become the final authority for direct recall.
+    - [x] Exact lexical/current canonical facts beat semantically related candidates.
+    - [x] Direct recall returns a clean miss rather than a plausible-but-wrong memory when confidence remains low.
+- [x] **W2-B.3. Verification**
+    - [x] Expanded eval coverage: 21 paraphrase, 9 Malay/Manglish, 10 conflict, 11 excluded, and 12 absent cases.
+    - [x] Threshold grid selected `30` as provisional/case-set-fitted; default-on candidate only, not a universal optimum.
+    - [x] Compare result: +5 net recall hits (required +3), no exact/conflict regression, no forgotten/excluded/absent leaks, p95 weak-path added latency 867.28 ms under the 1200 ms desk ceiling.
+    - [x] Run final code health and `local_ci.py` with zero blocking failures.
+    - [x] Record subagent review synthesis: measurement PASS WITH RISKS, memory safety PASS, arbitration/default-on PASS WITH RISKS; no blockers.
+    - [x] Commit the W2-B checkpoint.
 
 ## Phase 25: Engine Sprint - Trust The Model With More Of The Loop
 

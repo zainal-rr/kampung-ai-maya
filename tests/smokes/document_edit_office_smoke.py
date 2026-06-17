@@ -13,7 +13,9 @@ import tempfile
 from pathlib import Path
 
 import maya_documents.document_actions as da
+import maya_documents.document_actions_excel_mixin as excel_mixin
 from maya_documents.artifact_preflight import ArtifactPreflight
+from maya_documents.artifact_quality import ArtifactQualityResult
 from maya_documents.document_actions_word_helpers import _document_edit_request
 from maya_core.markdown_drafter import MarkdownDraft
 from maya_documents.office_edit_helpers import apply_simple_xlsx_edit
@@ -35,11 +37,15 @@ async def main() -> None:
         old_draft = da.draft_markdown_with_gemini
         old_pptx = da.create_powerpoint_with_qa
         old_review = da.review_presentation_slides
+        old_artifact_review = da.review_artifact_quality
+        old_excel_artifact_review = excel_mixin.review_artifact_quality
         try:
             da.artifact_preflight_with_gemini = _fake_preflight
             da.draft_markdown_with_gemini = _fake_draft
             da.create_powerpoint_with_qa = _fake_powerpoint_qa
             da.review_presentation_slides = _identity_review
+            da.review_artifact_quality = _fake_artifact_review
+            excel_mixin.review_artifact_quality = _fake_artifact_review
             router = da.DocumentActionRouter(db_path, workspace=workspace)
 
             _require(_document_edit_request("make that shorter and more practical") is None, "generic chat follow-up should not edit latest artifact")
@@ -102,7 +108,7 @@ async def main() -> None:
             )
             await upsert_preference(db_path, LAST_DOC_KEY, str(xlsx), source="document")
             excel_reply = await router.handle("Can you update that with extra cafe budget", "telegram")
-            _require("updated the latest Excel workbook" in excel_reply, "xlsx edit reply wrong")
+            _require("updated the latest Excel workbook" in excel_reply, f"xlsx edit reply wrong: {excel_reply}")
             _require(str(xlsx) in excel_reply, "xlsx edit did not attach latest file")
             book = await asyncio.to_thread(load_workbook, xlsx, data_only=False)
             formulas = [
@@ -134,6 +140,8 @@ async def main() -> None:
             da.draft_markdown_with_gemini = old_draft
             da.create_powerpoint_with_qa = old_pptx
             da.review_presentation_slides = old_review
+            da.review_artifact_quality = old_artifact_review
+            excel_mixin.review_artifact_quality = old_excel_artifact_review
     print("document_edit_office_smoke: ok")
 
 
@@ -155,6 +163,10 @@ async def _fake_powerpoint_qa(db_path, path, title, slides, _run_id, last_doc_ke
 
 async def _identity_review(_db_path, _topic, slides):
     return slides
+
+
+async def _fake_artifact_review(_db_path: str, artifact_type: str, _topic: str, _extracted: str) -> ArtifactQualityResult:
+    return ArtifactQualityResult(artifact_type, passed=True, summary="deterministic smoke review pass")
 
 
 def _require(condition: bool, message: str) -> None:

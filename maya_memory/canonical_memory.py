@@ -14,6 +14,7 @@ from maya_memory.canonical_memory_embeddings import (
     default_embedding_model_name,
     rerank_with_embeddings,
 )
+from maya_memory.canonical_memory_direct import search_canonical_direct_fact_impl
 from maya_memory.canonical_memory_fts import ensure_canonical_memory_fts, fts_rank_bonuses
 from maya_memory.canonical_memory_supersede import (
     archive_superseded_value,
@@ -174,45 +175,19 @@ async def upsert_canonical_memory(
     return memory_id
 
 
-async def search_canonical_direct_fact(db_path: str, query: str, limit: int = 3) -> list[str] | None:
+async def search_canonical_direct_fact(
+    db_path: str,
+    query: str,
+    limit: int = 3,
+    *,
+    embedding_agent: EmbedCall | None = None,
+) -> list[str] | None:
     await init_canonical_memory_db(db_path)
-    subject_key = subject_key_from_text(query)
-    if not subject_key:
-        return []
-    query_tokens = memory_tokens(subject_key)
-    async with aiosqlite.connect(db_path) as db:
-        db.row_factory = aiosqlite.Row
-        active = await db.execute(
-            """
-            SELECT memory_id, subject_key, content
-            FROM canonical_memory_items
-            WHERE status = 'active'
-              AND (expires_at IS NULL OR expires_at > datetime('now'))
-            ORDER BY updated_at DESC
-            """
-        )
-        rows = [row for row in await active.fetchall() if _direct_fact_match(query_tokens, subject_key, row["subject_key"], row["content"])][:limit]
-        if not rows:
-            forgotten = await db.execute(
-                """
-                SELECT subject_key, content FROM canonical_memory_items
-                WHERE status IN ('forgotten', 'expired', 'superseded')
-                ORDER BY updated_at DESC
-                """
-            )
-            if any(_direct_fact_match(query_tokens, subject_key, row["subject_key"], row["content"]) for row in await forgotten.fetchall()):
-                return None
-    await mark_canonical_used(
+    return await search_canonical_direct_fact_impl(
         db_path,
-        [str(row["memory_id"]) for row in rows],
-        event_type="canonical_recall",
-        source_ref=query,
-    )
-    return [str(row["content"]) for row in rows]
-
-def _direct_fact_match(query_tokens: set[str], subject_key: str, row_subject: str, row_content: str) -> bool:
-    return row_subject == subject_key or (
-        len(query_tokens) >= 2 and query_tokens.issubset(memory_tokens(f"{row_subject} {row_content}"))
+        query,
+        limit=limit,
+        embedding_agent=embedding_agent,
     )
 
 async def search_relevant_canonical_memories(
@@ -261,8 +236,7 @@ async def search_relevant_canonical_memories(
         elif not row["temporary"]:
             zero_evidence.append((0, memory_id, str(row["content"])))
     scored.sort(key=lambda item: item[0], reverse=True)
-    # Semantic layer, env-gated and fail-open. Two roles, both limited to
-    # relevance context (direct-fact recall is never touched):
+    # Semantic relevance layer, env-gated and fail-open:
     # 1) rerank weak lexical candidates;
     # 2) admit zero-evidence rows (pure paraphrase / cross-language queries
     #    produce no lexical candidates at all) only when cosine clears

@@ -53,6 +53,7 @@ def run_local_ci(*, live_providers: bool = False) -> list[CheckResult]:
         _command_check("browser untrusted action guard", ("tests/smokes/browser_untrusted_action_guard_smoke.py",)),
         _command_check("canonical memory", ("tests/smokes/canonical_memory_smoke.py",)),
         _command_check("canonical memory embeddings", ("tests/smokes/canonical_memory_embeddings_smoke.py",)),
+        _command_check("memory paraphrase canaries (W2-B)", ("tests/smokes/memory_paraphrase_canaries_smoke.py",)),
         _command_check("nightly consolidation", ("tests/smokes/nightly_consolidation_smoke.py",)),
         _command_check("memory time audit", ("tests/smokes/memory_time_audit_smoke.py",)),
         _command_check("context window canaries", ("tests/smokes/context_window_canaries_smoke.py",)),
