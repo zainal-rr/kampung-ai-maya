@@ -167,6 +167,21 @@ Use local CI for no-provider regression checks:
 ./venv/bin/python local_ci.py
 ```
 
+Default local CI is the fast edit-loop gate. It keeps representative scored
+eval, artifact-continuity, and replay canaries, but skips the full scored eval
+suite, full artifact matrices, and full 500/10k deterministic replay banks.
+Run the extended deterministic gate before merge/release or through nightly CI:
+
+```bash
+./venv/bin/python local_ci.py --extended
+```
+
+Live provider checks stay explicit:
+
+```bash
+./venv/bin/python local_ci.py --live-providers
+```
+
 Use the scored eval suite directly when needed:
 
 ```bash
@@ -223,7 +238,7 @@ The June 5, 2026 replay covers 10,000 deterministic Telegram voice transcript ca
 
 The eval suite writes JSON to `logs/evals/latest.json` and reports pass/fail scores across routing, memory, weekly memory, Word, Excel, PowerPoint, iMac readiness, hardware/live readiness, self-heal, Artisan, Blender/Maker, safety, Maya Desk, harness, and dependency readiness.
 
-Local CI is the default proof command. It runs Python compile checks, blocking code health, the scored eval suite, hardening audit, and latest demo evidence check. Live provider checks are optional and should not be required to claim local harness health.
+Local CI is the default proof command. It runs Python compile checks, blocking code health, representative scored eval/artifact/replay canaries, hardening audit, and latest demo evidence check. `local_ci.py --extended` runs the full deterministic proof set before merge/release. Live provider checks are optional and should not be required to claim local harness health.
 
 Operational progress should be read conservatively: deterministic software proof is strong, but the current overall Kampung AI operational estimate is about 82-84% until real iMac long-work voice, live browser field runs, Omi/Mudra hardware, printer boundaries, and 30-day reliability evidence are recorded.
 

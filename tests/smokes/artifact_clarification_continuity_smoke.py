@@ -9,6 +9,7 @@ del _w4_Path, _w4_root, _w4_sys
 
 
 import asyncio
+import argparse
 import os
 import tempfile
 from pathlib import Path
@@ -26,7 +27,7 @@ from maya_core.skill_store import init_skill_db
 from maya_core.storage import init_db, save_history_message
 
 
-async def main() -> None:
+async def main(mode: str = "full") -> None:
     with tempfile.TemporaryDirectory(prefix="maya-artifact-continuity-") as tmp:
         db_path = str(Path(tmp) / "smoke.db")
         os.environ["MAYA_TEST_MODE"] = "1"
@@ -49,17 +50,19 @@ async def main() -> None:
             travel_budget.draft_markdown_with_gemini = fake_draft
             assistant = KampungAssistant(db_path)
 
-            direct = await assistant.handle_text(
-                "Hey Maya, um make me a Tokyo food trip Word document for two days.",
-                "telegram",
-                input_type="voice note",
-            )
-            _require("[file:" in direct and ".docx" in direct, f"direct Word voice phrase failed: {direct}")
-            await _normal_chat_to_word_case(assistant, db_path)
+            if mode == "full":
+                direct = await assistant.handle_text(
+                    "Hey Maya, um make me a Tokyo food trip Word document for two days.",
+                    "telegram",
+                    input_type="voice note",
+                )
+                _require("[file:" in direct and ".docx" in direct, f"direct Word voice phrase failed: {direct}")
             await _ambiguous_context_confirmation_case(assistant, db_path)
-            await _continuity_case(assistant, db_path, "Word document", ".docx")
-            await _continuity_case(assistant, db_path, "Excel sheet", ".xlsx")
-            await _continuity_case(assistant, db_path, "PowerPoint slides", ".pptx")
+            if mode == "full":
+                await _continuity_case(assistant, db_path, "Word document", ".docx")
+                await _normal_chat_to_word_case(assistant, db_path)
+                await _continuity_case(assistant, db_path, "Excel sheet", ".xlsx")
+                await _continuity_case(assistant, db_path, "PowerPoint slides", ".pptx")
         finally:
             da.artifact_preflight_with_gemini = old_preflight
             da.draft_markdown_with_gemini = old_draft
@@ -138,4 +141,7 @@ def _require(condition: bool, message: str) -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--mode", choices=("canary", "full"), default="full")
+    args = parser.parse_args()
+    asyncio.run(main(args.mode))

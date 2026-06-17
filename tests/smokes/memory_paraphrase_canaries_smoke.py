@@ -31,8 +31,10 @@ VECTORS = {
     "my preferred airline is Malaysia Airlines": [1.0, 0.0, 0.0],
     "my preferred hotel chain is Marriott": [0.0, 1.0, 0.0],
     "my favourite colour is purple": [0.0, 0.0, 1.0],
+    "My copper mug label is River7.": [0.0, 0.0, 1.0],
     "which carrier do I prefer": [0.98, 0.02, 0.0],
     "which colour shade do I like": [0.0, 0.0, 0.99],
+    "level on my coffee mug": [0.0, 0.0, 0.99],
 }
 
 
@@ -101,6 +103,18 @@ async def main() -> None:
         embedded_texts = [text for batch in calls for text in batch]
         _require("my favourite colour is purple" not in embedded_texts,
                  f"forgotten row reached embedder: {embedded_texts}")
+
+        # ASR near-miss: "label" can become "level" and "copper" can become
+        # "coffee" in live voice. Semantic fallback may recover the active row,
+        # but only after active-row filtering and weak lexical gating.
+        await _save(db_path, "My copper mug label is River7.")
+        calls = []
+        recalled = await search_canonical_direct_fact(
+            db_path,
+            "level on my coffee mug",
+            embedding_agent=fake_embedder(calls),
+        )
+        _require(recalled == ["My copper mug label is River7."], f"ASR near-miss recall failed: {recalled}")
 
     print("memory_paraphrase_canaries_smoke: ok")
 

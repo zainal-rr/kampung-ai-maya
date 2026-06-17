@@ -19,6 +19,7 @@ import maya_voice.xai_realtime_tools as xai_realtime_tools
 from maya_browser.browser_extension_bridge import remember_extension_open_result
 from maya_core.storage import init_db
 from maya_voice.xai_realtime_events import XaiRealtimeEventMixin
+from maya_voice.xai_realtime_output_audit import XaiRealtimeOutputAuditMixin
 from maya_voice.xai_realtime_tools import BROWSER_TOOL_NAME
 from maya_voice.tool_specs import voice_tools
 from maya_voice.xai_voice_work import voice_work_status_text
@@ -32,11 +33,13 @@ class FakeWebSocket:
         self.sent.append(json.loads(payload))
 
 
-class FakeRealtimeSession(XaiRealtimeEventMixin):
+class FakeRealtimeSession(XaiRealtimeEventMixin, XaiRealtimeOutputAuditMixin):
     def __init__(self, db_path):
         self.db_path = db_path
         self.voice_log_session_id = None
         self.current_response_id = "resp_browser"
+        self.tool_calls_by_response = {}
+        self._init_output_audit_state()
         self.function_call_tasks = set()
         self.stop_event = asyncio.Event()
         self.websocket = FakeWebSocket()

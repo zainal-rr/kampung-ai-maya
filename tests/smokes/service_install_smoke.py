@@ -13,15 +13,18 @@ import tempfile
 from pathlib import Path
 
 import maya_core.service_install as service_install
+import maya_core.service_install_ci as service_install_ci
 
 
 def main() -> None:
     calls = []
     restart_calls = []
     old_run = service_install.subprocess.run
+    old_ci_run = service_install_ci.subprocess.run
     old_app_path = os.environ.get("KAMPUNG_AI_APP_PATH")
     old_plist_path = service_install.PLIST_PATH
     old_nightly_plist_path = service_install.NIGHTLY_MEMORY_PLIST_PATH
+    old_nightly_ci_plist_path = service_install_ci.NIGHTLY_CI_PLIST_PATH
 
     def fake_run(args, **kwargs):
         calls.append(tuple(args))
@@ -35,6 +38,7 @@ def main() -> None:
     try:
         with tempfile.TemporaryDirectory(prefix="maya-service-install-") as tmp:
             service_install.PLIST_PATH = Path(tmp) / "com.kampungai.maya.plist"
+            service_install_ci.NIGHTLY_CI_PLIST_PATH = Path(tmp) / "com.kampungai.maya.nightlyci.plist"
             app_exe = Path(tmp) / "Kampung AI.app" / "Contents" / "MacOS" / "Kampung AI"
             app_exe.parent.mkdir(parents=True)
             app_exe.write_text("#!/bin/sh\n", encoding="utf-8")
@@ -43,9 +47,11 @@ def main() -> None:
             plist = service_install.build_plist()
             assert plist["ProgramArguments"] == [str(app_exe), "--engine"]
             service_install.subprocess.run = fake_run
+            service_install_ci.subprocess.run = fake_run
             service_install.restart()
             service_install.restart_weekly_memory()
             service_install.restart_nightly_memory()
+            service_install.restart_nightly_ci()
             restart_calls = list(calls)
 
             calls.clear()
@@ -62,8 +68,10 @@ def main() -> None:
             assert not any(call[:2] == ("launchctl", "bootout") for call in calls)
     finally:
         service_install.subprocess.run = old_run
+        service_install_ci.subprocess.run = old_ci_run
         service_install.PLIST_PATH = old_plist_path
         service_install.NIGHTLY_MEMORY_PLIST_PATH = old_nightly_plist_path
+        service_install_ci.NIGHTLY_CI_PLIST_PATH = old_nightly_ci_plist_path
         if old_app_path is None:
             os.environ.pop("KAMPUNG_AI_APP_PATH", None)
         else:
@@ -79,6 +87,11 @@ def main() -> None:
     assert any(str(item).endswith("nightly_consolidation.py") for item in nightly["ProgramArguments"])
     assert "--live" in nightly["ProgramArguments"]
     assert nightly["EnvironmentVariables"]["MEMORY_EMBED_RERANK_LIVE"] == "0"
+    nightly_ci = service_install_ci.build_nightly_ci_plist()
+    assert nightly_ci["StartCalendarInterval"] == {"Hour": 3, "Minute": 30}
+    assert any(str(item).endswith("local_ci.py") for item in nightly_ci["ProgramArguments"])
+    assert "--extended" in nightly_ci["ProgramArguments"]
+    assert "--live-providers" not in nightly_ci["ProgramArguments"]
     print("service_install_smoke: ok")
 
 

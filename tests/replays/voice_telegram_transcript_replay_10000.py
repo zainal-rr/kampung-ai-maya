@@ -8,6 +8,7 @@ if str(_w4_root) not in _w4_sys.path:
 del _w4_Path, _w4_root, _w4_sys
 
 
+import argparse
 from collections import Counter
 
 from maya_core.assistant_text import strip_wake_prefix
@@ -18,10 +19,13 @@ from maya_telegram.telegram_commands import parse_command
 from maya_voice.voice_command_aliases import spoken_command_alias
 from maya_voice.voice_telegram_transcript_cases import FORBIDDEN_TOPIC_NOISE, ReplayCase, build_cases
 from maya_voice.voice_transcript_policy import clean_voice_transcript_for_intent, should_park_voice_for_worker
+from tests.replays.replay_sampling import stratified_limit
 
 
 def main() -> None:
-    cases = build_cases()
+    args = _args()
+    all_cases = build_cases()
+    cases = stratified_limit(all_cases, args.limit, lambda case: case.group)
     failures: list[str] = []
     counts: Counter[str] = Counter()
     for index, case in enumerate(cases, start=1):
@@ -32,7 +36,13 @@ def main() -> None:
     if failures:
         raise AssertionError("\n".join(failures))
     parts = ", ".join(f"{key}={counts[key]}" for key in sorted(counts))
-    print(f"voice_telegram_transcript_replay_10000: ok ({len(cases)} cases; {parts})")
+    print(f"voice_telegram_transcript_replay_10000: ok ({len(cases)}/{len(all_cases)} cases; {parts})")
+
+
+def _args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--limit", type=int, default=None, help="Run a fixed stratified subset instead of all cases.")
+    return parser.parse_args()
 
 
 def _check_case(index: int, case: ReplayCase) -> list[str]:

@@ -44,6 +44,7 @@ if str(_ROOT) not in sys.path:
 import aiosqlite
 
 from maya_memory.canonical_memory import (
+    EmbedCall,
     forget_canonical_memory,
     search_relevant_canonical_memories,
     upsert_canonical_memory,
@@ -60,14 +61,14 @@ EXACT_RECALL3_FLOOR = 0.8
 EMBEDDINGS_TRIGGER = {"paraphrase_floor": 0.6, "malay_floor": 0.5, "exact_gate": 0.9}
 
 
-async def run_eval() -> dict[str, object]:
+async def run_eval(*, embedding_agent: EmbedCall | None = None) -> dict[str, object]:
     with tempfile.TemporaryDirectory(prefix="maya-memory-eval-") as tmp:
         db_path = str(Path(tmp) / "eval.db")
         await init_db(db_path)
         await init_lesson_db(db_path)
         await _seed(db_path)
         await seed_association_memories(db_path)
-        results = [await _run_case(db_path, case) for case in CASES]
+        results = [await _run_case(db_path, case, embedding_agent=embedding_agent) for case in CASES]
         scenarios = await _forget_scenarios(db_path)
         supersede = await _supersede_scenarios(db_path)
     metrics = _metrics(results)
@@ -121,11 +122,21 @@ async def _seed(db_path: str) -> None:
                 await db.commit()
 
 
-async def _run_case(db_path: str, case: dict[str, str]) -> dict[str, object]:
+async def _run_case(
+    db_path: str,
+    case: dict[str, str],
+    *,
+    embedding_agent: EmbedCall | None = None,
+) -> dict[str, object]:
     query = case["query"]
     started = time.perf_counter()
-    relevant = await search_relevant_canonical_memories(db_path, query, limit=3)
-    direct = await MemoryService(db_path).search_direct_fact(query, limit=3)
+    relevant = await search_relevant_canonical_memories(
+        db_path,
+        query,
+        limit=3,
+        embedding_agent=embedding_agent,
+    )
+    direct = await MemoryService(db_path, embedding_agent=embedding_agent).search_direct_fact(query, limit=3)
     elapsed_ms = round((time.perf_counter() - started) * 1000, 2)
     top1 = ([*direct[:1], *relevant[:1]])
     pool = [*direct, *relevant]

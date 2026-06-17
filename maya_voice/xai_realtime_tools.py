@@ -3,9 +3,6 @@ from __future__ import annotations
 import asyncio
 import os
 
-from maya_core.cost_tracker import record_usage
-from maya_core.language_policy import language_instruction
-from maya_core.models import TheSenses
 from maya_voice.xai_realtime_visual_context_tools import execute_visual_context_tool
 from maya_browser.browser_extension_bridge import extension_last_open_result, reset_extension_last_open_result
 from maya_voice.browser_runtime import (
@@ -36,11 +33,14 @@ from maya_voice.tool_specs import (
     BROWSER_TOOL_NAME,
     CANCEL_WORK_TOOL_NAME,
     CONFIRM_ACTION_TOOL_NAME,
+    FORGET_MEMORY_TOOL_NAME,
     GEMINI_TOOL_NAME,
     HANDOFF_TOOL_NAME,
     MAYA_STATE_TOOL_NAME,
     MAYA_WORK_TOOL_NAME,
+    RECALL_MEMORY_TOOL_NAME,
     REVISE_WORK_TOOL_NAME,
+    SAVE_MEMORY_TOOL_NAME,
     voice_tools,
 )
 from maya_voice.xai_voice_work import (
@@ -51,6 +51,8 @@ from maya_voice.xai_voice_work import (
     voice_work_cancel_requested,
 )
 from maya_voice.xai_voice_state_tools import read_maya_state
+from maya_voice.xai_gemini_tool import answer_with_gemini
+from maya_voice.xai_memory_tools import forget_voice_memory, recall_voice_memory, save_voice_memory
 
 
 async def execute_voice_tool(
@@ -69,6 +71,21 @@ async def execute_voice_tool(
         return await answer_with_gemini(db_path, question)
     if name == MAYA_STATE_TOOL_NAME:
         return await read_maya_state(db_path, question)
+    if name == SAVE_MEMORY_TOOL_NAME:
+        memory_text = str(args.get("memory_text") or question).strip()
+        if empty_request_reason(bool(memory_text)):
+            return _tool_result_for_maya("", "empty_request", status="needs_clarification")
+        return await save_voice_memory(db_path, memory_text)
+    if name == RECALL_MEMORY_TOOL_NAME:
+        query = str(args.get("query") or question).strip()
+        if empty_request_reason(bool(query)):
+            return _tool_result_for_maya("", "empty_request", status="needs_clarification")
+        return await recall_voice_memory(db_path, query)
+    if name == FORGET_MEMORY_TOOL_NAME:
+        query = str(args.get("query") or question).strip()
+        if empty_request_reason(bool(query)):
+            return _tool_result_for_maya("", "empty_request", status="needs_clarification")
+        return await forget_voice_memory(db_path, query)
     if name == BROWSER_TOOL_NAME:
         request = str(args.get("request") or question).strip()
         if empty_request_reason(bool(request)):
@@ -136,21 +153,6 @@ async def execute_voice_tool(
     if extra is not None:
         return extra
     return f"Unknown tool: {name}"
-
-
-async def answer_with_gemini(db_path: str, question: str) -> str:
-    api_key = os.getenv("GOOGLE_API_KEY")
-    if not api_key:
-        return "Malay quality answering is not available right now."
-    prompt = [
-        {"role": "system", "content": "You are Maya. Answer in natural Malay or Manglish for iMac voice."},
-        {"role": "system", "content": language_instruction(question)},
-        {"role": "system", "content": "Use 2 to 5 spoken sentences. Do not use exclamation marks. Avoid dash symbols."},
-        {"role": "user", "content": question},
-    ]
-    reply = await TheSenses(api_key).chat(prompt)
-    await record_usage(db_path, "gemini_flash_text_calls", 1, "imac voice Malay or Manglish tool")
-    return reply.strip() or "Saya tak dapat susun jawapan elok tadi."
 
 
 async def run_voice_browser_skill(

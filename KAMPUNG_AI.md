@@ -246,7 +246,7 @@ Use `docs/proof_and_readiness.md` and Maya Desk for detailed proof status.
 
 1. Root Python files should not exceed 300 lines.
 2. Files in the 280 to 300 line range are urgent refactor candidates.
-3. `local_ci.py` is the default no-provider proof command.
+3. `local_ci.py` is the default fast no-provider proof command; `local_ci.py --extended` is the deterministic pre-merge/release gate for full replay banks.
 4. `code_health.py` is blocking in local CI.
 5. Retired architecture markers are blocked by `legacy_architecture_removed_smoke.py`.
 6. New features must have tests or explicit live-proof boundaries.
@@ -256,6 +256,7 @@ Use `docs/proof_and_readiness.md` and Maya Desk for detailed proof status.
 
 ```bash
 ./venv/bin/python local_ci.py
+./venv/bin/python local_ci.py --extended
 ./venv/bin/python legacy_architecture_removed_smoke.py
 ./venv/bin/python browser_multistep_live_probe.py
 ```

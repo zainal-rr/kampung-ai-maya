@@ -2,7 +2,11 @@ from __future__ import annotations
 
 import re
 
-STOPWORDS = {"a", "an", "are", "is", "my", "the", "that", "this", "to", "for", "of", "me", "i"}
+STOPWORDS = {
+    "a", "an", "are", "is", "my", "the", "that", "this", "to", "for", "of", "me", "i",
+    "on", "in", "at", "by", "with", "from", "about", "what", "which", "who", "where",
+    "when", "how", "do", "did", "does", "usually",
+}
 TOKEN_ALIASES = {"snacks": "snack", "replies": "reply"}
 TEST_MARKERS = ("test", "tests", "regression", "smoke", "temporary")
 # Whole-word match only: substring matching wrongly flagged durable memories

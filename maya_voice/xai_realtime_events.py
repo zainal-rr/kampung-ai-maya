@@ -43,6 +43,12 @@ class XaiRealtimeEventMixin(XaiRealtimeVoiceWorkMixin, XaiRealtimeVadGuardMixin)
                 await self._record_pending_assistant_transcript(interrupted=False)
                 response = event.get("response") or {}
                 self.current_response_id = response.get("id", "")
+                pending_tool_results = getattr(self, "tool_results_pending_for_next_response", set())
+                if pending_tool_results and self.current_response_id:
+                    calls = getattr(self, "tool_calls_by_response", {})
+                    calls.setdefault(self.current_response_id, set()).update(pending_tool_results)
+                    self.tool_calls_by_response = calls
+                    self.tool_results_pending_for_next_response = set()
                 self.assistant_transcript_parts = []
                 self.assistant_transcript_recorded = False
                 self.response_active = True
@@ -107,13 +113,7 @@ class XaiRealtimeEventMixin(XaiRealtimeVoiceWorkMixin, XaiRealtimeVadGuardMixin)
                 if transcript:
                     self._update_fragment_response_guard(transcript)
                     self.transcripts.append(transcript)
-                    await record_voice_turn(
-                        self.db_path,
-                        self.voice_log_session_id,
-                        "user",
-                        transcript,
-                        event_type=event_type,
-                    )
+                    await record_voice_turn(self.db_path, self.voice_log_session_id, "user", transcript, event_type=event_type)
                     await self._maybe_start_supervised_voice_work(transcript)
 
     async def _handle_function_call(self, event: dict) -> None:
@@ -126,6 +126,7 @@ class XaiRealtimeEventMixin(XaiRealtimeVoiceWorkMixin, XaiRealtimeVadGuardMixin)
             calls = getattr(self, "tool_calls_by_response", {})
             calls.setdefault(self.current_response_id, set()).add(name)
             self.tool_calls_by_response = calls
+            await self._audit_assistant_transcript_for_response(self.current_response_id)
         try:
             args = json.loads(event.get("arguments") or "{}")
         except json.JSONDecodeError:
@@ -135,13 +136,9 @@ class XaiRealtimeEventMixin(XaiRealtimeVoiceWorkMixin, XaiRealtimeVadGuardMixin)
             return
         supervised = await self._begin_supervised_tool_call(name, args)
         await record_voice_turn(
-            self.db_path,
-            self.voice_log_session_id,
-            "tool",
+            self.db_path, self.voice_log_session_id, "tool",
             f"call {name} args {json.dumps(args, ensure_ascii=True)[:1200]}",
-            event_type="response.function_call_arguments.done",
-            response_id=self.current_response_id,
-            tool_name=name,
+            event_type="response.function_call_arguments.done", response_id=self.current_response_id, tool_name=name,
         )
         task = asyncio.create_task(
             self._run_function_call_task(
@@ -278,13 +275,12 @@ class XaiRealtimeEventMixin(XaiRealtimeVoiceWorkMixin, XaiRealtimeVadGuardMixin)
         if not self.websocket:
             return
         try:
+            pending = getattr(self, "tool_results_pending_for_next_response", set())
+            pending.add(name)
+            self.tool_results_pending_for_next_response = pending
             await self.websocket.send(json.dumps({
                 "type": "conversation.item.create",
-                "item": {
-                    "type": "function_call_output",
-                    "call_id": call_id,
-                    "output": output,
-                },
+                "item": {"type": "function_call_output", "call_id": call_id, "output": output},
             }))
             await self.websocket.send(json.dumps({"type": "response.create"}))
         except Exception as exc:

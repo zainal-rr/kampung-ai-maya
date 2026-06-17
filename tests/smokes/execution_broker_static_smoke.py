@@ -58,6 +58,9 @@ ALLOWED_COMMAND_CALLS = {
     ("maya_core/service_install.py", "bootout"): "explicit launchd service stop path",
     ("maya_core/service_install.py", "bootout_weekly_memory"): "explicit launchd service stop path",
     ("maya_core/service_install.py", "bootout_nightly_memory"): "explicit launchd service stop path",
+    ("maya_core/service_install_ci.py", "status_nightly_ci"): "explicit launchd service status path",
+    ("maya_core/service_install_ci.py", "restart_nightly_ci"): "explicit launchd service restart path",
+    ("maya_core/service_install_ci.py", "bootout_nightly_ci"): "explicit launchd service stop path",
     ("maya_core/maya_eye_preview.py", "start_preview"): "persistent GUI preview process",
 }
 
@@ -74,6 +77,7 @@ ALLOWED_DELETE_CALLS = {
     ("maya_core/service_install.py", "uninstall"): "explicit launchd plist uninstall path",
     ("maya_core/service_install.py", "uninstall_weekly_memory"): "explicit launchd plist uninstall path",
     ("maya_core/service_install.py", "uninstall_nightly_memory"): "explicit launchd plist uninstall path",
+    ("maya_core/service_install_ci.py", "uninstall_nightly_ci"): "explicit launchd plist uninstall path",
     ("maya_core/sieve.py", "SieveNode.process_file"): "contained Omi watch-directory event cleanup",
     ("maya_documents/document_actions_word.py", "DocumentWordMixin._edit_latest_document"): "Maya-owned failed Word edit copy cleanup",
     ("maya_documents/document_actions_word.py", "DocumentWordMixin._simple_word_edit"): "Maya-owned failed Word edit copy cleanup",

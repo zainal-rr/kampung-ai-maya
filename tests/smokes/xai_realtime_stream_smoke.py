@@ -14,6 +14,7 @@ from pathlib import Path
 from maya_voice.xai_realtime_stream import XaiRealtimeStreamingSession
 from maya_voice.xai_realtime_stream_helpers import append_audio_message
 from maya_voice.xai_realtime_tools import BROWSER_TOOL_NAME, HANDOFF_TOOL_NAME, MAYA_WORK_TOOL_NAME, execute_voice_tool
+from maya_voice.tool_specs import FORGET_MEMORY_TOOL_NAME, RECALL_MEMORY_TOOL_NAME, SAVE_MEMORY_TOOL_NAME
 from maya_voice.xai_voice_state_tools import read_maya_state
 from maya_voice.xai_voice_work import voice_work_status_text
 from maya_core.storage import init_db
@@ -42,6 +43,12 @@ async def main():
     assert payload["session"]["voice"] == "ara"
     assert payload["session"]["input_audio_transcription"]["model"] == "grok-2-audio"
     tool_names = [tool["name"] for tool in payload["session"]["tools"] if tool.get("type") == "function"]
+    assert SAVE_MEMORY_TOOL_NAME in tool_names
+    assert RECALL_MEMORY_TOOL_NAME in tool_names
+    assert FORGET_MEMORY_TOOL_NAME in tool_names
+    assert tool_names.index(SAVE_MEMORY_TOOL_NAME) < tool_names.index("answer_with_gemini")
+    assert tool_names.index(RECALL_MEMORY_TOOL_NAME) < tool_names.index("answer_with_gemini")
+    assert tool_names.index(FORGET_MEMORY_TOOL_NAME) < tool_names.index("answer_with_gemini")
     assert "answer_with_gemini" in tool_names
     assert "read_maya_state" in tool_names
     assert "inspect_active_context" in tool_names

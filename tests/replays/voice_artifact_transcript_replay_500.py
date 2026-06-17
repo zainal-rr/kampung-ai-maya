@@ -8,9 +8,12 @@ if str(_w4_root) not in _w4_sys.path:
 del _w4_Path, _w4_root, _w4_sys
 
 
+import argparse
+
 from maya_core.assistant_text import strip_wake_prefix
 from maya_documents.document_request_parser import document_request
 from maya_voice.voice_transcript_policy import clean_voice_transcript_for_intent
+from tests.replays.replay_sampling import coverage_text, stratified_limit
 
 
 TOPICS = (
@@ -41,7 +44,9 @@ FORBIDDEN_TOPIC_NOISE = (
 
 
 def main() -> None:
-    cases = _build_cases()
+    args = _args()
+    all_cases = _build_cases()
+    cases = stratified_limit(all_cases, args.limit, lambda case: case[1])
     failures: list[str] = []
     for index, case in enumerate(cases, start=1):
         transcript, expected_kind = case
@@ -60,7 +65,16 @@ def main() -> None:
             failures.append(f"{index}: topic noise {noise!r} | {transcript!r} -> {parsed!r}")
     if failures:
         raise AssertionError("\n".join(failures[:20]))
-    print(f"voice_artifact_transcript_replay_500: ok ({len(cases)} cases)")
+    print(
+        "voice_artifact_transcript_replay_500: ok "
+        f"({len(cases)}/{len(all_cases)} cases; coverage {coverage_text(cases, lambda case: case[1])})"
+    )
+
+
+def _args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--limit", type=int, default=None, help="Run a fixed stratified subset instead of all 500 cases.")
+    return parser.parse_args()
 
 
 def _build_cases() -> list[tuple[str, str]]:

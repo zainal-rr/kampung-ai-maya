@@ -23,29 +23,52 @@ These checks run without relying on live provider calls by default:
 ./venv/bin/python local_ci.py
 ```
 
-Current local CI coverage includes:
+Default local CI is the fast edit-loop gate. It includes representative
+canaries for the scored eval suite, artifact-continuity matrices, and large
+replay banks. The full scored eval suite, full artifact matrices, and full
+500/10k deterministic replays run in the extended tier:
+
+```bash
+./venv/bin/python local_ci.py --extended
+```
+
+Run `--extended` before merge/release and from the optional nightly CI launchd
+job. Live provider checks remain explicit:
+
+```bash
+./venv/bin/python local_ci.py --live-providers
+```
+
+Current fast local CI coverage includes:
 
 1. Python compile checks.
 2. Blocking code health.
-3. Scored eval suite.
+3. Scored eval suite representative canary.
 4. Document request parser.
 5. Natural artifact parser.
-6. Artifact clarification/session continuity.
+6. Artifact clarification/session continuity representative canaries.
 7. Artifact naming and delivery gate.
 8. Artifact retry loop.
 9. Office edit workflow.
 10. Word technical repair.
-11. Semantic Telegram fresh 500.
+11. Semantic Telegram fresh representative canary.
 12. Voice document transcript.
-13. Voice artifact transcript replay 500.
-14. Voice Telegram transcript replay 10000.
+13. Voice artifact transcript representative canary.
+14. Voice Telegram transcript representative canary.
 15. Canonical memory.
 16. Telegram text/voice/photo input.
-17. Browser semantic scrape 500.
+17. Browser semantic scrape representative canary.
 18. Retired architecture guard.
 19. Memory perspective.
 20. Hardening audit.
 21. Latest demo evidence.
+
+Extended CI adds the full scored eval suite, full artifact
+clarification/session continuity matrices, full semantic Telegram 500, voice
+artifact 500, voice Telegram 10000, browser semantic scrape 500, memory recall
+compare, and deeper agentic/flight reliability checks. This keeps subtle
+full-replay regressions out of the hot edit loop while preserving the
+pre-merge/nightly safety net.
 
 ## Live Browser Proof
 

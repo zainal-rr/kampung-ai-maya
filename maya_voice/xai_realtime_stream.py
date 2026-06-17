@@ -25,11 +25,12 @@ from maya_voice.xai_realtime_stream_helpers import append_audio_message, put_lat
 from maya_voice.xai_voice_agent import realtime_url
 from maya_voice.xai_realtime_events import XaiRealtimeEventMixin
 from maya_voice.xai_realtime_models import PlaybackCommand, SessionCloseReason
+from maya_voice.xai_realtime_output_audit import XaiRealtimeOutputAuditMixin
 from maya_voice.xai_realtime_playback import XaiRealtimePlaybackMixin
 from maya_voice.xai_realtime_session_update import session_update_payload
 
 
-class XaiRealtimeStreamingSession(XaiRealtimeEventMixin, XaiRealtimePlaybackMixin):
+class XaiRealtimeStreamingSession(XaiRealtimeEventMixin, XaiRealtimePlaybackMixin, XaiRealtimeOutputAuditMixin):
     def __init__(self, db_path: str, instructions: str, stop_event: asyncio.Event | None = None, *, assistant=None):
         self.db_path = db_path
         self.assistant = assistant
@@ -81,6 +82,8 @@ class XaiRealtimeStreamingSession(XaiRealtimeEventMixin, XaiRealtimePlaybackMixi
         self.voice_log_session_id: int | None = None
         self.current_response_id = ""
         self.tool_calls_by_response: dict[str, set[str]] = {}
+        self.tool_results_pending_for_next_response: set[str] = set()
+        self._init_output_audit_state()
         self.assistant_transcript_parts: list[str] = []
         self.assistant_transcript_recorded = False
         self.function_call_tasks: set[asyncio.Task] = set()
@@ -154,6 +157,7 @@ class XaiRealtimeStreamingSession(XaiRealtimeEventMixin, XaiRealtimePlaybackMixi
         finally:
             duration = max(0.0, time.monotonic() - self.started_at)
             await self._record_pending_assistant_transcript(interrupted=False)
+            await self._flush_assistant_transcript_audits()
             await save_voice_session_summary(self.db_path, self.transcripts)
             export_path = ""
             try:

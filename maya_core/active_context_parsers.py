@@ -83,27 +83,49 @@ def parse_excel_context(path: str, sheet: str = "", selected_range: str = "") ->
 
 def infer_markdown_path(active_title: str = "", selected_text: str = "") -> str:
     hints = [active_title, selected_text[:80]]
+    tokens = {
+        token
+        for hint in hints
+        for token in re.findall(r"[a-z0-9]{3,}", hint.casefold())
+    }
+    if not tokens:
+        return ""
     candidates = []
     for root in (maya_workspace_root(), legacy_workspace_root(), Path.cwd()):
         if root.exists():
             candidates.extend(path for path in root.rglob("*.md") if path.is_file())
-    scored = []
+    filename_scored = []
     for path in candidates:
         score = 0
-        text = ""
-        try:
-            text = path.read_text(encoding="utf-8", errors="replace")[:20000]
-        except Exception:
-            pass
-        hay = f"{path.name}\n{text}".casefold()
-        for hint in hints:
-            for token in re.findall(r"[a-z0-9]{3,}", hint.casefold()):
-                if token in hay:
-                    score += 1
+        filename = path.name.casefold()
+        for token in tokens:
+            if token in filename:
+                score += 2
         if score:
-            scored.append((score, path.stat().st_mtime, path))
-    scored.sort(reverse=True)
-    return str(scored[0][2]) if scored else ""
+            filename_scored.append((score, path.stat().st_mtime, path))
+    if filename_scored:
+        filename_scored.sort(reverse=True)
+        return str(filename_scored[0][2])
+    if not selected_text.strip():
+        return ""
+    # Content inference is a fallback for editor titles that do not expose the
+    # file name. Keep it bounded so active-context checks cannot stall on repo
+    # documentation scans.
+    recent_candidates = sorted(
+        ((path.stat().st_mtime, path) for path in candidates),
+        reverse=True,
+    )[:80]
+    content_scored = []
+    for mtime, path in recent_candidates:
+        try:
+            text = path.read_text(encoding="utf-8", errors="replace")[:12000].casefold()
+        except Exception:
+            text = ""
+        score = sum(1 for token in tokens if token in text)
+        if score:
+            content_scored.append((score, mtime, path))
+    content_scored.sort(reverse=True)
+    return str(content_scored[0][2]) if content_scored else ""
 
 
 def is_sensitive_browser_context(text: str, url: str = "") -> bool:

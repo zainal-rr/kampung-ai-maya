@@ -5,6 +5,7 @@ import re
 
 import aiosqlite
 
+from maya_memory.canonical_memory_embeddings import EmbedCall
 from maya_memory.canonical_memory import search_canonical_direct_fact, search_relevant_canonical_memories
 from maya_memory.canonical_memory_text import subject_key_from_text
 from maya_core.lesson_store import search_lessons
@@ -21,12 +22,13 @@ INTERNAL_PREFERENCE_KEYS = {"telegram_chat_id"}
 
 
 class MemoryService:
-    def __init__(self, db_path: str):
+    def __init__(self, db_path: str, *, embedding_agent: EmbedCall | None = None):
         self.db_path = db_path
+        self.embedding_agent = embedding_agent
         self.archive_enabled = os.getenv("ENABLE_ARCHIVE_MEMORY", "0") == "1"
 
     async def build_prompt_context(self, query: str, limit: int = 6) -> str:
-        canonical = await search_relevant_canonical_memories(self.db_path, query, limit=3)
+        canonical = await search_relevant_canonical_memories(self.db_path, query, limit=3, embedding_agent=self.embedding_agent)
         lessons = await search_lessons(self.db_path, query, limit=3)
         preferences = await self._relevant_preferences(query, limit=3)
         memories = await self._relevant_knowledge(query, limit=limit) if self.archive_enabled else []
@@ -49,7 +51,7 @@ class MemoryService:
         return "\n\n".join(sections)
 
     async def search(self, query: str, limit: int = 6) -> list[str]:
-        canonical = await search_relevant_canonical_memories(self.db_path, query, limit=2)
+        canonical = await search_relevant_canonical_memories(self.db_path, query, limit=2, embedding_agent=self.embedding_agent)
         lessons = await search_lessons(self.db_path, query, limit=2)
         preferences = await self._relevant_preferences(query, limit=2)
         memories = await self._relevant_knowledge(query, limit=limit) if self.archive_enabled else []
@@ -62,7 +64,7 @@ class MemoryService:
         subject = self._normalize_fact_subject(query)
         if not subject:
             return []
-        canonical = await search_canonical_direct_fact(self.db_path, query, limit=limit)
+        canonical = await search_canonical_direct_fact(self.db_path, query, limit=limit, embedding_agent=self.embedding_agent)
         if canonical is None:
             return []
         if canonical:

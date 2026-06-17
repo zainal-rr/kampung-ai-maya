@@ -1,5 +1,14 @@
 from __future__ import annotations
 
+from maya_voice.tool_confirmation_specs import CONFIRM_ACTION_TOOL_NAME, confirm_action_tool
+from maya_voice.tool_memory_specs import (
+    FORGET_MEMORY_TOOL_NAME,
+    RECALL_MEMORY_TOOL_NAME,
+    SAVE_MEMORY_TOOL_NAME,
+    forget_memory_tool,
+    recall_memory_tool,
+    save_memory_tool,
+)
 from maya_voice.xai_realtime_visual_context_tools import active_context_tool
 
 
@@ -10,11 +19,13 @@ BROWSER_TOOL_NAME = "run_browser_skill"
 MAYA_WORK_TOOL_NAME = "start_maya_work"
 REVISE_WORK_TOOL_NAME = "revise_maya_work"
 CANCEL_WORK_TOOL_NAME = "cancel_maya_work"
-CONFIRM_ACTION_TOOL_NAME = "confirm_action"
 
 
 def voice_tools() -> list[dict]:
     return [
+        save_memory_tool(),
+        recall_memory_tool(),
+        forget_memory_tool(),
         gemini_voice_tool(),
         maya_state_tool(),
         active_context_tool(),
@@ -92,10 +103,11 @@ def maya_work_tool() -> dict:
         "name": MAYA_WORK_TOOL_NAME,
         "description": (
             "Use this for longer non-browser iMac work during live voice: documents, spreadsheets, PowerPoint, "
-            "Markdown, visual workflows, memory writes, project work, coding requests, and file actions. "
+            "Markdown, visual workflows, project work, coding requests, and file actions. "
             "It starts Maya's local work immediately while the voice session remains available. Use it for artifact "
             "follow-ups such as document names, opening drafts, adding sections, executive summaries, or giving Zainal "
-            "a draft even if QA did not call it final."
+            "a draft even if QA did not call it final. Do not use this for memory save, recall, update, or forget; "
+            "use the dedicated memory tools instead."
         ),
         "parameters": {
             "type": "object",
@@ -277,35 +289,6 @@ def cancel_work_tool() -> dict:
                 },
             },
             "required": [],
-        },
-    }
-
-
-def confirm_action_tool() -> dict:
-    return {
-        "type": "function",
-        "name": CONFIRM_ACTION_TOOL_NAME,
-        "description": (
-            "Use this only to answer a pending safety confirmation. Maya interprets Zainal's yes/no, then calls "
-            "this tool with the exact pending action id and fingerprint. Python never parses spoken confirmation text."
-        ),
-        "parameters": {
-            "type": "object",
-            "properties": {
-                "action_id": {
-                    "type": "string",
-                    "description": "The pending action id Maya was given.",
-                },
-                "approved": {
-                    "type": "boolean",
-                    "description": "True only when Zainal clearly approved this exact pending action.",
-                },
-                "action_fingerprint": {
-                    "type": "string",
-                    "description": "The action fingerprint Maya was given when asking for confirmation.",
-                },
-            },
-            "required": ["action_id", "approved", "action_fingerprint"],
         },
     }
 

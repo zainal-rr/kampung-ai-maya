@@ -7,6 +7,14 @@ import sys
 from pathlib import Path
 
 from maya_core.repo_paths import repo_root
+from maya_core.service_install_ci import (
+    NIGHTLY_CI_PLIST_PATH,
+    build_nightly_ci_plist,
+    install_nightly_ci,
+    restart_nightly_ci,
+    status_nightly_ci,
+    uninstall_nightly_ci,
+)
 
 LABEL = "com.kampungai.maya"
 WEEKLY_MEMORY_LABEL = "com.kampungai.maya.weeklymemory"
@@ -253,21 +261,29 @@ if __name__ == "__main__":
         install_weekly_memory()
     elif action == "install-nightly-memory":
         install_nightly_memory()
+    elif action == "install-nightly-ci":
+        install_nightly_ci()
     elif action == "restart":
         restart()
     elif action == "restart-weekly-memory":
         restart_weekly_memory()
     elif action == "restart-nightly-memory":
         restart_nightly_memory()
+    elif action == "restart-nightly-ci":
+        restart_nightly_ci()
     elif action == "uninstall":
         uninstall()
     elif action == "uninstall-weekly-memory":
         uninstall_weekly_memory()
     elif action == "uninstall-nightly-memory":
         uninstall_nightly_memory()
+    elif action == "uninstall-nightly-ci":
+        uninstall_nightly_ci()
     elif action == "status-weekly-memory":
         status_weekly_memory()
     elif action == "status-nightly-memory":
         status_nightly_memory()
+    elif action == "status-nightly-ci":
+        status_nightly_ci()
     else:
         status()

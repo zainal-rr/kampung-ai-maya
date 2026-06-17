@@ -165,6 +165,12 @@ def embedding_rerank_enabled() -> bool:
     return get_env("MEMORY_EMBED_RERANK_LIVE", "0") == "1" and bool(get_env("GOOGLE_API_KEY"))
 
 
+def direct_semantic_enabled() -> bool:
+    from maya_core.config import get_env
+
+    return get_env("MEMORY_DIRECT_SEMANTIC_LIVE", "1") == "1" and bool(get_env("GOOGLE_API_KEY"))
+
+
 def default_embedding_agent() -> EmbedCall | None:
     """Env-gated Gemini embeddings (MEMORY_EMBED_RERANK_LIVE=1 + GOOGLE_API_KEY).
 
@@ -176,7 +182,21 @@ def default_embedding_agent() -> EmbedCall | None:
 
     if not embedding_rerank_enabled():
         return None
+    return _gemini_embedding_agent(get_env)
+
+
+def default_direct_embedding_agent() -> EmbedCall | None:
+    from maya_core.config import get_env
+
+    if not direct_semantic_enabled():
+        return None
+    return _gemini_embedding_agent(get_env)
+
+
+def _gemini_embedding_agent(get_env) -> EmbedCall | None:
     api_key = get_env("GOOGLE_API_KEY")
+    if not api_key:
+        return None
     model = get_env("GEMINI_EMBED_MODEL", "gemini-embedding-001")
 
     async def _embed(texts: list[str]) -> list[list[float]]:

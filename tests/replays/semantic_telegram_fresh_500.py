@@ -9,6 +9,7 @@ del _w4_Path, _w4_root, _w4_sys
 
 
 import asyncio
+import argparse
 import os
 import tempfile
 from pathlib import Path
@@ -35,9 +36,11 @@ from maya_core.semantic_telegram_fresh_fakes import (
 from maya_core.session_memory_store import init_session_memory_db
 from maya_core.skill_store import init_skill_db
 from maya_core.storage import get_preference, init_db
+from tests.replays.replay_sampling import coverage_text, stratified_limit
 
 
 async def main() -> None:
+    args = _args()
     with tempfile.TemporaryDirectory(prefix="maya-semantic-telegram-fresh-") as tmp:
         db_path = str(Path(tmp) / "fresh.db")
         workspace = Path(tmp) / "Maya"
@@ -66,8 +69,9 @@ async def main() -> None:
             assistant = KampungAssistant(db_path)
             assistant.router.route = fake_normal_route
 
-            cases = build_cases()
-            _require(len(cases) == TARGET_CASES, f"expected {TARGET_CASES} cases, got {len(cases)}")
+            all_cases = build_cases()
+            _require(len(all_cases) == TARGET_CASES, f"expected {TARGET_CASES} cases, got {len(all_cases)}")
+            cases = stratified_limit(all_cases, args.limit, _case_group)
             counts: dict[str, int] = {}
             for index, case in enumerate(cases, 1):
                 response = await assistant.handle_text(
@@ -82,7 +86,7 @@ async def main() -> None:
 
             await _assert_delivery_gate(db_path, workspace)
             counts["failed_qa_no_attachment"] = counts.get("failed_qa_no_attachment", 0) + 1
-            print(_summary(counts))
+            print(_summary(counts, len(cases), len(all_cases), coverage_text(cases, _case_group)))
         finally:
             semantic_resolver.TheNews = old_news
             da.artifact_preflight_with_gemini = old_preflight
@@ -181,9 +185,19 @@ def _restore_env(values: dict[str, str | None]) -> None:
             os.environ[key] = value
 
 
-def _summary(counts: dict[str, int]) -> str:
+def _args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--limit", type=int, default=None, help="Run a fixed stratified subset instead of all 500 cases.")
+    return parser.parse_args()
+
+
+def _case_group(case: FreshCase) -> str:
+    return f"{case.input_type}:{case.expected}"
+
+
+def _summary(counts: dict[str, int], selected: int, total: int, coverage: str) -> str:
     parts = ", ".join(f"{key}={counts[key]}" for key in sorted(counts))
-    return f"semantic_telegram_fresh_500: ok ({parts})"
+    return f"semantic_telegram_fresh_500: ok ({selected}/{total}; {parts}; coverage {coverage})"
 
 
 def _require(condition: bool, message: str) -> None:

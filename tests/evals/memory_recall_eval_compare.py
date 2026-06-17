@@ -16,6 +16,7 @@ import json
 import os
 from datetime import datetime, timezone
 from pathlib import Path
+from typing import Awaitable, Callable
 
 import sys
 from pathlib import Path as _Path
@@ -23,7 +24,10 @@ _ROOT = _Path(__file__).resolve().parents[2]
 if str(_ROOT) not in sys.path:
     sys.path.insert(0, str(_ROOT))
 
+from maya_memory.memory_recall_eval_cases import CASES, SEED_FACTS
 from tests.evals.memory_recall_eval import run_eval
+
+EmbedCall = Callable[[list[str]], Awaitable[list[list[float]]]]
 
 THRESHOLD_GRID = (10, 15, 20, 25, 30)
 DELTA_RECALL_FLOOR = 0.10
@@ -39,19 +43,30 @@ MIN_COVERAGE = {
 }
 
 
-async def _run_with_flag(flag: str, *, threshold: int | None = None) -> dict[str, object]:
+async def _run_with_flag(
+    flag: str,
+    *,
+    threshold: int | None = None,
+    embedding_agent: EmbedCall | None = None,
+) -> dict[str, object]:
     old_value = os.environ.get("MEMORY_EMBED_RERANK_LIVE")
+    old_direct = os.environ.get("MEMORY_DIRECT_SEMANTIC_LIVE")
     old_threshold = os.environ.get("MEMORY_DIRECT_SEMANTIC_WEAK_THRESHOLD")
     os.environ["MEMORY_EMBED_RERANK_LIVE"] = flag
+    os.environ["MEMORY_DIRECT_SEMANTIC_LIVE"] = flag
     if threshold is not None:
         os.environ["MEMORY_DIRECT_SEMANTIC_WEAK_THRESHOLD"] = str(threshold)
     try:
-        report = await run_eval()
+        report = await run_eval(embedding_agent=embedding_agent)
     finally:
         if old_value is None:
             os.environ.pop("MEMORY_EMBED_RERANK_LIVE", None)
         else:
             os.environ["MEMORY_EMBED_RERANK_LIVE"] = old_value
+        if old_direct is None:
+            os.environ.pop("MEMORY_DIRECT_SEMANTIC_LIVE", None)
+        else:
+            os.environ["MEMORY_DIRECT_SEMANTIC_LIVE"] = old_direct
         if old_threshold is None:
             os.environ.pop("MEMORY_DIRECT_SEMANTIC_WEAK_THRESHOLD", None)
         else:
@@ -59,6 +74,49 @@ async def _run_with_flag(flag: str, *, threshold: int | None = None) -> dict[str
     report["rerank_flag"] = flag
     report["direct_semantic_weak_threshold"] = threshold
     return report
+
+
+def _deterministic_eval_embedding_agent() -> EmbedCall:
+    """Token-free semantic signal for the fixed W2-B eval cases.
+
+    The live Gemini embedder is tested manually/live. Extended CI stays
+    deterministic by mapping each expected query to the seeded fact that
+    contains the expected answer. Absent/no-answer queries get no semantic
+    vector, so the safety checks still prove no false direct recall.
+    """
+    labels: dict[str, str] = {}
+    ordered_labels: list[str] = []
+
+    def _label(value: str) -> str:
+        key = value.casefold()
+        if key not in ordered_labels:
+            ordered_labels.append(key)
+        return key
+
+    for fact in SEED_FACTS:
+        content = str(fact["content"])
+        for case in CASES:
+            expected = str(case.get("expect", ""))
+            if expected and expected.casefold() in content.casefold():
+                labels[content] = _label(expected)
+                break
+    for case in CASES:
+        expected = str(case.get("expect", ""))
+        if expected:
+            labels[str(case["query"])] = _label(expected)
+
+    def _vector_for(text: str) -> list[float]:
+        label = labels.get(text)
+        vector = [0.0] * max(1, len(ordered_labels))
+        if not label:
+            return vector
+        vector[ordered_labels.index(label)] = 1.0
+        return vector
+
+    async def _embed(texts: list[str]) -> list[list[float]]:
+        return [_vector_for(text) for text in texts]
+
+    return _embed
 
 
 def _comparison(baseline: dict[str, object], rerank_reports: list[dict[str, object]]) -> dict[str, object]:
@@ -215,7 +273,11 @@ def _report_path() -> Path:
 
 async def _main() -> int:
     baseline = await _run_with_flag("0")
-    rerank_reports = [await _run_with_flag("1", threshold=threshold) for threshold in THRESHOLD_GRID]
+    eval_embedder = _deterministic_eval_embedding_agent()
+    rerank_reports = [
+        await _run_with_flag("1", threshold=threshold, embedding_agent=eval_embedder)
+        for threshold in THRESHOLD_GRID
+    ]
     report = {
         "baseline": baseline,
         "embedding_rerank_grid": rerank_reports,

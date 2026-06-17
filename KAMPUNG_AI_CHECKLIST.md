@@ -1681,6 +1681,19 @@ the direct-recall safety rules.
     - [x] Record subagent review synthesis: measurement PASS WITH RISKS, memory safety PASS, arbitration/default-on PASS WITH RISKS; no blockers.
     - [x] Commit the W2-B checkpoint.
 
+## CI Tiering: Fast Default, Extended Replay Gate
+
+Goal: keep the daily edit-loop proof fast and token-free without losing the
+large replay banks that catch subtle regressions.
+
+- [x] Refactor `local_ci.py` around additive tiers: fast by default, `--extended` adds heavy deterministic replays/evals, and `--live-providers` adds live provider checks only when explicitly requested.
+- [x] Move full scored eval suite, full artifact clarification/session matrices, full semantic Telegram 500, voice artifact 500, voice Telegram 10000, browser semantic scrape 500, memory recall compare, and deeper agentic/flight reliability checks into the extended tier.
+- [x] Keep representative fast canaries for each moved replay/matrix using fixed stratified subsets or explicit representative cases instead of first-N cases.
+- [x] Measure fast CI wall-clock after tiering. Current default result: 65 fast checks, 0 blocking failures, 95.66s.
+- [x] Print each CI check before it runs and report timeout failures explicitly so slow checks do not look like silent hangs.
+- [x] Add optional nightly extended CI launchd commands: `install-nightly-ci`, `restart-nightly-ci`, `status-nightly-ci`, and `uninstall-nightly-ci`.
+- [x] Record discipline: `local_ci.py` is the fast default gate; `local_ci.py --extended` is required before merge/release and intended for nightly CI.
+
 ## Phase 25: Engine Sprint - Trust The Model With More Of The Loop
 
 Goal: close the "strong governance, weak loop" inversion. The permission kernel,

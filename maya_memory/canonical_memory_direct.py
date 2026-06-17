@@ -4,7 +4,6 @@ import aiosqlite
 
 from maya_memory.canonical_memory_embeddings import EmbedCall
 from maya_memory.canonical_memory_fts import fts_rank_bonuses
-from maya_memory.canonical_memory_scoring import activation_score
 from maya_memory.canonical_memory_semantic import semantic_direct_recall_candidates
 from maya_memory.canonical_memory_text import memory_tokens, subject_key_from_text
 from maya_memory.canonical_memory_usage import mark_canonical_used
@@ -91,12 +90,11 @@ def _semantic_direct_candidate_pool(
         fts_bonus = fts_bonuses.get(memory_id, 0)
         if row["temporary"] and overlap == 0 and not fts_bonus:
             continue
-        score = activation_score(
-            overlap=overlap,
-            pinned=bool(row["pinned"]),
-            reinforcement_count=int(row["reinforcement_count"]),
-            updated_at=str(row["updated_at"] or ""),
-        ) + fts_bonus
+        # Direct semantic fallback is gated by lexical/FTS evidence only.
+        # Activation, age, and reinforcement are useful for general relevance,
+        # but they must not make an unrelated memory look like a confident
+        # answer to a direct fact question.
+        score = overlap * 10 + fts_bonus
         scored.append((score, memory_id, str(row["content"])))
     scored.sort(key=lambda item: item[0], reverse=True)
     return scored[:64]

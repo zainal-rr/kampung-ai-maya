@@ -17,6 +17,7 @@ actions, and treats YouTube as a visible-title/metadata/transcript task rather
 than a generic web search.
 """
 
+import argparse
 from dataclasses import dataclass
 from datetime import date
 
@@ -24,6 +25,7 @@ from maya_core.active_context_models import ActiveContext
 from maya_browser.browser_capability import route_browser_capability
 from maya_travel.stay_booking_skill import airbnb_url, booking_url, extract_stay_details, extract_stay_options
 from maya_travel.travel_booking_safety import travel_booking_boundary_reply
+from tests.replays.replay_sampling import stratified_limit
 
 
 @dataclass(frozen=True)
@@ -34,7 +36,9 @@ class Case:
 
 
 def main() -> None:
-    cases = _cases()
+    args = _args()
+    all_cases = _cases()
+    cases = stratified_limit(all_cases, args.limit, lambda case: case.kind)
     failures: list[str] = []
     for index, case in enumerate(cases, start=1):
         ok, detail = _run_case(case)
@@ -47,8 +51,16 @@ def main() -> None:
         counts[case.kind] = counts.get(case.kind, 0) + 1
     print(
         "browser_semantic_scrape_500: ok "
+        + f"({len(cases)}/{len(all_cases)}; "
         + ", ".join(f"{key}={value}" for key, value in sorted(counts.items()))
+        + ")"
     )
+
+
+def _args() -> argparse.Namespace:
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--limit", type=int, default=None, help="Run a fixed stratified subset instead of all 500 cases.")
+    return parser.parse_args()
 
 
 def _run_case(case: Case) -> tuple[bool, str]:

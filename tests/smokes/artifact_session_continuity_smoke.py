@@ -9,6 +9,7 @@ del _w4_Path, _w4_root, _w4_sys
 
 
 import asyncio
+import argparse
 import os
 import re
 import tempfile
@@ -38,7 +39,7 @@ class FakeBridge:
         self.opened.append((path, app_name))
 
 
-async def main() -> None:
+async def main(channel: str = "all", mode: str = "full") -> None:
     with tempfile.TemporaryDirectory(prefix="maya-artifact-session-") as tmp:
         old_anthropic = os.environ.get("ANTHROPIC_API_KEY")
         os.environ.pop("ANTHROPIC_API_KEY", None)
@@ -52,8 +53,9 @@ async def main() -> None:
         try:
             da.draft_markdown_with_gemini = _fake_travel_draft
             da.artifact_preflight_with_gemini = _fake_preflight
-            await _channel_case(db_path, workspace, "telegram")
-            await _channel_case(db_path, workspace, "imac")
+            channels = ("telegram", "imac") if channel == "all" else (channel,)
+            for item in channels:
+                await _channel_case(db_path, workspace, item, mode=mode)
             print("artifact_session_continuity_smoke: ok")
         finally:
             da.draft_markdown_with_gemini = old_draft
@@ -61,7 +63,7 @@ async def main() -> None:
             _restore_env("ANTHROPIC_API_KEY", old_anthropic)
 
 
-async def _channel_case(db_path: str, workspace: Path, channel: str) -> None:
+async def _channel_case(db_path: str, workspace: Path, channel: str, *, mode: str) -> None:
     bridge = FakeBridge()
     router = DocumentActionRouter(db_path, workspace=workspace, bridge=bridge)
     created = await router.handle("make me a Word document for Tokyo itinerary for two days and two people", channel)
@@ -82,6 +84,14 @@ async def _channel_case(db_path: str, workspace: Path, channel: str) -> None:
     qa = validate_docx_path(second_path, "Tokyo itinerary 4 days 2 people", doc_kind="travel_itinerary")
     _require(qa.passed, f"{channel} edited file failed 4-day QA: {qa.issues}")
 
+    if channel == "imac":
+        opened_names = [Path(path).name for path, _ in bridge.opened]
+        _require(any(name.startswith("tokyo-itinerary-v") for name in opened_names), "iMac case should request Word open through fake bridge")
+    else:
+        _require(not bridge.opened, "telegram case should not request desktop opens")
+    if mode == "canary":
+        return
+
     budget = await router.handle("make an Excel spreadsheet for the Tokyo itinerary", channel)
     _require(budget and ("created" in budget.lower()), f"{channel} contextual Excel create failed: {budget}")
     budget_path = Path(await get_preference(db_path, "maya_last_document_path") or "")
@@ -90,10 +100,7 @@ async def _channel_case(db_path: str, workspace: Path, channel: str) -> None:
     _require(sheet["B3"].value == 2, f"{channel} Excel did not inherit 2 travelers: {sheet['B3'].value!r}")
     if channel == "imac":
         opened_names = [Path(path).name for path, _ in bridge.opened]
-        _require(any(name.startswith("tokyo-itinerary-v") for name in opened_names), "iMac case should request Word open through fake bridge")
         _require(any(name.startswith("tokyo-budget-tracker-v") for name in opened_names), "iMac case should request Excel open through fake bridge")
-    else:
-        _require(not bridge.opened, "telegram case should not request desktop opens")
 
 
 async def _fake_preflight(_db_path: str, artifact_type: str, topic: str) -> ArtifactPreflight:
@@ -177,4 +184,8 @@ def _require(condition: bool, message: str) -> None:
 
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--channel", choices=("all", "telegram", "imac"), default="all")
+    parser.add_argument("--mode", choices=("canary", "full"), default="full")
+    args = parser.parse_args()
+    asyncio.run(main(args.channel, args.mode))

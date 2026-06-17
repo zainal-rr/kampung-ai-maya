@@ -17,6 +17,7 @@ from maya_documents.artifact_sessions import record_artifact_session
 from maya_core.storage import init_db
 from maya_voice.voice_session_log import voice_session_turns
 from maya_voice.xai_realtime_events import XaiRealtimeEventMixin
+from maya_voice.xai_realtime_output_audit import XaiRealtimeOutputAuditMixin
 from maya_voice.xai_realtime_playback import XaiRealtimePlaybackMixin
 from maya_voice.xai_realtime_tools import CANCEL_WORK_TOOL_NAME, MAYA_WORK_TOOL_NAME, REVISE_WORK_TOOL_NAME, execute_voice_tool
 from maya_voice.xai_voice_state_tools import read_maya_state
@@ -77,7 +78,7 @@ class FakeAssistant:
         return "Done. I updated the latest document at /Users/zainalabidinjamal/Desktop/Maya/documents/meraki-mx-v1.docx."
 
 
-class FakeRealtimeSession(XaiRealtimeEventMixin, XaiRealtimePlaybackMixin):
+class FakeRealtimeSession(XaiRealtimeEventMixin, XaiRealtimePlaybackMixin, XaiRealtimeOutputAuditMixin):
     def __init__(self, db_path, assistant=None):
         self.db_path = db_path
         self.voice_log_session_id = 42
@@ -85,6 +86,7 @@ class FakeRealtimeSession(XaiRealtimeEventMixin, XaiRealtimePlaybackMixin):
         self.assistant_transcript_parts = []
         self.assistant_transcript_recorded = False
         self.tool_calls_by_response = {}
+        self._init_output_audit_state()
         self.function_call_tasks = set()
         self.stop_event = asyncio.Event()
         self.websocket = FakeWebSocket()
@@ -194,8 +196,30 @@ async def main():
         session = FakeRealtimeSession(db_path, FakeAssistant(db_path, tmp))
         session.current_response_id = "resp_no_tool"
         await session._record_assistant_transcript("I'll create that Excel now.", interrupted=False)
+        await session._flush_assistant_transcript_audits()
         turns = await voice_session_turns(db_path, session.voice_log_session_id)
         assert any(turn["event_type"] == "voice_action_promise_without_tool" for turn in turns)
+
+    with tempfile.TemporaryDirectory(prefix="maya-memory-tool-audit-") as tmp:
+        db_path = str(Path(tmp) / "smoke.db")
+        await init_db(db_path)
+        session = FakeRealtimeSession(db_path, FakeAssistant(db_path, tmp))
+        session.current_response_id = "resp_memory_no_tool"
+        await session._record_assistant_transcript("I've noted your preferred airline for testing.", interrupted=False)
+        await session._flush_assistant_transcript_audits()
+        turns = await voice_session_turns(db_path, session.voice_log_session_id)
+        assert any(turn["event_type"] == "voice_memory_claim_without_memory_tool" for turn in turns)
+
+    with tempfile.TemporaryDirectory(prefix="maya-memory-tool-audit-ordered-") as tmp:
+        db_path = str(Path(tmp) / "smoke.db")
+        await init_db(db_path)
+        session = FakeRealtimeSession(db_path, FakeAssistant(db_path, tmp))
+        session.current_response_id = "resp_memory_tool_same_response"
+        await session._record_assistant_transcript("I don't have that saved anymore.", interrupted=False)
+        session.tool_calls_by_response.setdefault(session.current_response_id, set()).add("recall_maya_memory")
+        await session._audit_assistant_transcript_for_response(session.current_response_id)
+        turns = await voice_session_turns(db_path, session.voice_log_session_id)
+        assert not any(turn["event_type"] == "voice_memory_claim_without_memory_tool" for turn in turns)
 
     for request in ("can you make me a", "asdfqwer", "build a site readiness brief for tomorrow"):
         with tempfile.TemporaryDirectory(prefix="maya-work-tool-seam-") as tmp:
@@ -360,7 +384,11 @@ async def main():
     assert not Path("maya_voice/readiness.py").exists()
     realtime_sources = "\n".join(
         Path(path).read_text(encoding="utf-8").lower()
-        for path in ("xai_realtime_tools.py", "xai_realtime_voice_work.py", "xai_realtime_events.py")
+        for path in (
+            "maya_voice/xai_realtime_tools.py",
+            "maya_voice/xai_realtime_voice_work.py",
+            "maya_voice/xai_realtime_events.py",
+        )
     )
     assert "maya_voice.readiness" not in realtime_sources
     assert "evaluate_voice_work_readiness" not in realtime_sources
