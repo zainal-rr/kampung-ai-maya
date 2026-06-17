@@ -1353,6 +1353,7 @@ This document tracks the technical and operational roadmap for building the stan
 - [x] **22.5. 7-Day Reliability Soak**
     - [x] Add `live_reliability_soak.py` to track missed replies, wrong routes, voice timeouts, memory mistakes, file delivery failures, browser failures, cost spikes, and false saved claims.
     - [x] Add deterministic smoke coverage for clean and failing soak days.
+    - [x] Add conservative auto-recording from voice-session logs and controller uptime logs; subjective failures and corrections still require notes or explicit counters.
     - [x] Run a one-day Telegram Web stress pass across chat, memory, documents, audit, safety, workflow, current/news, browser-safe, skill, and meta prompts.
     - [x] Fix and prove the June 3 weak paths found by the stress pass: early safety gate, stale browser-workflow hijack, Artisan false-positive routing, unsupported-action false positives, Word transit-tip edit, Excel notes-column edit, Excel task-tracker creation, and PowerPoint topic/title QA.
     - [ ] Complete seven normal-use daily live soak records.
