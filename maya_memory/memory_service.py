@@ -5,8 +5,14 @@ import re
 
 import aiosqlite
 
+from maya_core.provenance import make_provenance, provenance_from_json, provenance_to_json
 from maya_memory.canonical_memory_embeddings import EmbedCall
-from maya_memory.canonical_memory import search_canonical_direct_fact, search_relevant_canonical_memories
+from maya_memory.canonical_memory import (
+    search_canonical_direct_fact,
+    search_canonical_direct_fact_with_provenance,
+    search_relevant_canonical_memory_items,
+    search_relevant_canonical_memories,
+)
 from maya_memory.canonical_memory_text import subject_key_from_text
 from maya_core.lesson_store import search_lessons
 from maya_core.language_policy import is_language_topic, uses_malay_or_manglish, wants_malay_or_manglish
@@ -21,6 +27,47 @@ SOURCE_WEIGHTS = {"imac": 5, "telegram": 4, "project": 3, "legacy": 2, "omi_tran
 INTERNAL_PREFERENCE_KEYS = {"telegram_chat_id"}
 
 
+def _legacy_recall_item(content: str, source_id: str) -> dict[str, object]:
+    provenance = make_provenance("unknown", source_id=source_id, risk_notes=("legacy_memory_no_provenance",))
+    return {
+        "content": content,
+        "provenance_json": provenance_to_json(provenance),
+        "untrusted_influence": True,
+        "injection_detected": False,
+    }
+
+
+def _curated_recall_item(row: aiosqlite.Row) -> dict[str, object]:
+    provenance = provenance_from_json(row["provenance_json"], default_kind="unknown")
+    legacy_unknown = str(row["provenance_json"] or "{}").strip() in {"", "{}"}
+    if legacy_unknown:
+        provenance = make_provenance(
+            "unknown",
+            source_id="legacy_curated_memory",
+            risk_notes=("legacy_memory_no_provenance",),
+        )
+    return {
+        "content": str(row["content"]),
+        "provenance_json": provenance_to_json(provenance),
+        "untrusted_influence": bool(row["untrusted_influence"]) or provenance.untrusted_influence,
+        "injection_detected": bool(row["injection_detected"]) or provenance.injection_detected,
+    }
+
+
+def _format_canonical_context_item(item: dict[str, object]) -> str:
+    content = " ".join(str(item.get("content") or "").split())
+    provenance = provenance_from_json(item.get("provenance_json"), default_kind="unknown")
+    untrusted = bool(item.get("untrusted_influence")) or provenance.untrusted_influence
+    injection = bool(item.get("injection_detected")) or provenance.injection_detected
+    if not untrusted and not injection:
+        return content
+    return (
+        f"{content} "
+        f"[provenance: {provenance.source_kind}; "
+        "reference-only; untrusted_influence: true]"
+    )
+
+
 class MemoryService:
     def __init__(self, db_path: str, *, embedding_agent: EmbedCall | None = None):
         self.db_path = db_path
@@ -28,7 +75,12 @@ class MemoryService:
         self.archive_enabled = os.getenv("ENABLE_ARCHIVE_MEMORY", "0") == "1"
 
     async def build_prompt_context(self, query: str, limit: int = 6) -> str:
-        canonical = await search_relevant_canonical_memories(self.db_path, query, limit=3, embedding_agent=self.embedding_agent)
+        canonical = await search_relevant_canonical_memory_items(
+            self.db_path,
+            query,
+            limit=3,
+            embedding_agent=self.embedding_agent,
+        )
         lessons = await search_lessons(self.db_path, query, limit=3)
         preferences = await self._relevant_preferences(query, limit=3)
         memories = await self._relevant_knowledge(query, limit=limit) if self.archive_enabled else []
@@ -37,7 +89,7 @@ class MemoryService:
 
         sections = []
         if canonical:
-            sections.append("Saved facts:\n" + "\n".join(f"- {item}" for item in canonical))
+            sections.append("Saved facts:\n" + "\n".join(f"- {_format_canonical_context_item(item)}" for item in canonical))
         if lessons:
             sections.append("Learned rules:\n" + "\n".join(f"- {item}" for item in lessons))
         if preferences:
@@ -61,15 +113,21 @@ class MemoryService:
         return await self._relevant_preferences(query, limit=limit)
 
     async def search_direct_fact(self, query: str, limit: int = 3) -> list[str]:
+        items = await self.search_direct_fact_items(query, limit=limit)
+        return [str(item["content"]) for item in items]
+
+    async def search_direct_fact_items(self, query: str, limit: int = 3) -> list[dict[str, object]]:
         subject = self._normalize_fact_subject(query)
         if not subject:
             return []
-        canonical = await search_canonical_direct_fact(self.db_path, query, limit=limit, embedding_agent=self.embedding_agent)
+        canonical = await search_canonical_direct_fact_with_provenance(
+            self.db_path, query, limit=limit, embedding_agent=self.embedding_agent
+        )
         if canonical is None:
             return []
         if canonical:
             return canonical
-        rows: list[str] = []
+        rows: list[dict[str, object]] = []
         async with aiosqlite.connect(self.db_path) as db:
             db.row_factory = aiosqlite.Row
             pref_cursor = await db.execute(
@@ -80,40 +138,44 @@ class MemoryService:
                 LIMIT 80
                 """
             )
-            rows.extend(str(row["content"]) for row in await pref_cursor.fetchall())
-            lesson_cursor = await db.execute(
-                """
-                SELECT normalized_rule AS content
-                FROM lessons
-                ORDER BY created_at DESC
-                LIMIT 80
-                """
-            )
-            rows.extend(str(row["content"]) for row in await lesson_cursor.fetchall())
+            rows.extend(_legacy_recall_item(str(row["content"]), "legacy_preferences") for row in await pref_cursor.fetchall())
+            try:
+                lesson_cursor = await db.execute(
+                    """
+                    SELECT normalized_rule AS content
+                    FROM lessons
+                    ORDER BY created_at DESC
+                    LIMIT 80
+                    """
+                )
+                rows.extend(_legacy_recall_item(str(row["content"]), "legacy_lessons") for row in await lesson_cursor.fetchall())
+            except aiosqlite.OperationalError:
+                pass
             try:
                 curated_cursor = await db.execute(
                     """
-                    SELECT content
+                    SELECT content, provenance_json, untrusted_influence, injection_detected
                     FROM curated_memory_items
                     WHERE status = 'active'
                     ORDER BY updated_at DESC, id DESC
                     LIMIT 80
                     """
                 )
-                rows.extend(str(row["content"]) for row in await curated_cursor.fetchall())
+                rows.extend(_curated_recall_item(row) for row in await curated_cursor.fetchall())
             except aiosqlite.OperationalError:
                 pass
-        matches: list[str] = []
+        matches: list[dict[str, object]] = []
         seen: set[str] = set()
-        for row in rows:
-            if self._normalize_fact_subject(row) != subject:
+        for item in rows:
+            cleaned = " ".join(str(item["content"]).split())
+            if self._normalize_fact_subject(cleaned) != subject:
                 continue
-            cleaned = " ".join(row.split())
             key = cleaned.casefold()
             if key in seen:
                 continue
             seen.add(key)
-            matches.append(cleaned)
+            item["content"] = cleaned
+            matches.append(item)
             if len(matches) >= limit:
                 break
         return matches

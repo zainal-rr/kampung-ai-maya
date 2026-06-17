@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from maya_voice.tool_provenance_specs import provenance_schema
+
 
 CONFIRM_ACTION_TOOL_NAME = "confirm_action"
 
@@ -24,6 +26,9 @@ def confirm_action_tool() -> dict:
                     "type": "string",
                     "description": "The action fingerprint Maya was given when asking for confirmation.",
                 },
+                "provenance": provenance_schema(
+                    "Source of the approval utterance. Only owner_voice or owner_text may authorize."
+                ),
             },
             "required": ["action_id", "approved", "action_fingerprint"],
         },

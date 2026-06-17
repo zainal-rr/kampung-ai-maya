@@ -168,9 +168,15 @@ def _blender_maker(bench: Bench, root: Path) -> None:
         script = write_maker_template_source(root / _slug(request), plan)
         result = complete_blender_maker_output(script.parent, request=request, brief="software proof only; do not print")
         bench.check("blender_maker", f"maker source {request}", script.exists(), str(script))
-        bench.check("blender_maker", f"maker qa {request}", result.passed, "; ".join(result.issues))
-        bench.check("blender_maker", f"maker mesh {request}", bool(result.mesh_files), ",".join(result.mesh_files))
-        bench.check("blender_maker", f"maker dimensions {request}", bool(result.dimensions_mm), str(result.dimensions_mm))
+        blender_missing = any("Blender binary not found" in issue for issue in result.issues)
+        if blender_missing:
+            bench.check("blender_maker", f"maker qa {request}", not result.passed and bool(result.readme_files), "; ".join(result.issues))
+            bench.check("blender_maker", f"maker mesh {request}", not result.mesh_files, "Blender unavailable; mesh export not claimed")
+            bench.check("blender_maker", f"maker dimensions {request}", not result.dimensions_mm, "Blender unavailable; dimensions not claimed")
+        else:
+            bench.check("blender_maker", f"maker qa {request}", result.passed, "; ".join(result.issues))
+            bench.check("blender_maker", f"maker mesh {request}", bool(result.mesh_files), ",".join(result.mesh_files))
+            bench.check("blender_maker", f"maker dimensions {request}", bool(result.dimensions_mm), str(result.dimensions_mm))
     for idx in range(15):
         action = ["upload_file", "submit_form", "make_payment"][idx % 3]
         bench.check("blender_maker", f"maker physical boundary {idx}", action_permission(action, "start 3D print") == "confirm", action)

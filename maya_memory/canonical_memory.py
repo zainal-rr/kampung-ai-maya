@@ -14,7 +14,10 @@ from maya_memory.canonical_memory_embeddings import (
     default_embedding_model_name,
     rerank_with_embeddings,
 )
+from maya_memory.canonical_memory_provenance import ensure_canonical_memory_provenance_schema, resolve_memory_provenance
+from maya_memory.canonical_memory_context_items import relevant_items_for_selected
 from maya_memory.canonical_memory_direct import search_canonical_direct_fact_impl
+from maya_memory.canonical_memory_forget import forget_canonical_memory_impl
 from maya_memory.canonical_memory_fts import ensure_canonical_memory_fts, fts_rank_bonuses
 from maya_memory.canonical_memory_supersede import (
     archive_superseded_value,
@@ -67,6 +70,7 @@ async def init_canonical_memory_db(db_path: str) -> None:
         # superseded archive rows can share the (kind, subject_key, scope)
         # triple. ensure_supersede_schema owns the migration.
         await ensure_supersede_schema(db)
+        await ensure_canonical_memory_provenance_schema(db)
         await db.execute(
             """
             CREATE INDEX IF NOT EXISTS idx_canonical_memory_status
@@ -94,6 +98,7 @@ async def upsert_canonical_memory(
     source_ref: str = "",
     pinned: bool = False,
     allow_resurrect: bool = True,
+    provenance: object | None = None,
 ) -> str:
     await init_canonical_memory_db(db_path)
     subject_key = subject_key_from_text(content)
@@ -102,6 +107,7 @@ async def upsert_canonical_memory(
     expires_at = _expiry() if temporary else None
     memory_id = _memory_id(kind, subject_key, scope)
     existing_status = ""
+    provenance_json, untrusted_influence, injection_detected = resolve_memory_provenance(provenance, source_channel, source_ref)
     async with aiosqlite.connect(db_path) as db:
         db.row_factory = aiosqlite.Row
         existing, existing_status = await load_existing_for_upsert(
@@ -148,6 +154,9 @@ async def upsert_canonical_memory(
             pinned=pinned,
             temporary=temporary,
             existing_status=existing_status,
+            provenance_json=provenance_json,
+            untrusted_influence=bool(untrusted_influence),
+            injection_detected=bool(injection_detected),
         )
         await db.commit()
     if superseded_archive:
@@ -190,6 +199,23 @@ async def search_canonical_direct_fact(
         embedding_agent=embedding_agent,
     )
 
+
+async def search_canonical_direct_fact_with_provenance(
+    db_path: str,
+    query: str,
+    limit: int = 3,
+    *,
+    embedding_agent: EmbedCall | None = None,
+) -> list[dict[str, object]] | None:
+    await init_canonical_memory_db(db_path)
+    return await search_canonical_direct_fact_impl(
+        db_path,
+        query,
+        limit=limit,
+        embedding_agent=embedding_agent,
+        include_provenance=True,
+    )
+
 async def search_relevant_canonical_memories(
     db_path: str,
     query: str,
@@ -197,6 +223,22 @@ async def search_relevant_canonical_memories(
     *,
     embedding_agent: EmbedCall | None = None,
 ) -> list[str]:
+    items = await search_relevant_canonical_memory_items(
+        db_path,
+        query,
+        limit=limit,
+        embedding_agent=embedding_agent,
+    )
+    return [str(item["content"]) for item in items]
+
+
+async def search_relevant_canonical_memory_items(
+    db_path: str,
+    query: str,
+    limit: int = 5,
+    *,
+    embedding_agent: EmbedCall | None = None,
+) -> list[dict[str, object]]:
     await init_canonical_memory_db(db_path)
     tokens = memory_tokens(query)
     async with aiosqlite.connect(db_path) as db:
@@ -261,7 +303,7 @@ async def search_relevant_canonical_memories(
         event_type="activation",
         source_ref=query,
     )
-    return [content for _, _memory_id, content in selected]
+    return await relevant_items_for_selected(db_path, selected)
 
 
 async def _with_association_neighbors(
@@ -305,59 +347,7 @@ async def _with_association_neighbors(
 
 async def forget_canonical_memory(db_path: str, query: str) -> int:
     await init_canonical_memory_db(db_path)
-    subject_key = subject_key_from_text(query)
-    tokens = memory_tokens(subject_key or query)
-    async with aiosqlite.connect(db_path) as db:
-        db.row_factory = aiosqlite.Row
-        # R3: forget covers the WHOLE supersede chain, not just the active row,
-        # so history cannot resurrect a forgotten fact.
-        cursor = await db.execute(
-            """
-            SELECT memory_id, subject_key, content
-            FROM canonical_memory_items
-            WHERE status IN ('active', 'superseded')
-            """
-        )
-        rows = await cursor.fetchall()
-        matches = []
-        for row in rows:
-            content = str(row["content"])
-            if subject_key and row["subject_key"] == subject_key:
-                matches.append(dict(row))
-            elif tokens and tokens.issubset(memory_tokens(f"{row['subject_key']} {content}")):
-                matches.append(dict(row))
-        for row in matches:
-            await db.execute(
-                """
-                UPDATE canonical_memory_items
-                SET status = 'forgotten', updated_at = CURRENT_TIMESTAMP
-                WHERE memory_id = ?
-                """,
-                (str(row["memory_id"]),),
-            )
-        await db.commit()
-    for row in matches:
-        await record_memory_audit_event(
-            db_path,
-            event_type="canonical_forget",
-            memory_id=str(row["memory_id"]),
-            subject_key=str(row["subject_key"]),
-            status_before="active",
-            status_after="forgotten",
-            source_channel="memory_control",
-            source_ref=query,
-            content=str(row["content"]),
-        )
-    if matches:
-        # Forget honesty spans ALL memory tiers: watermark the context window
-        # and drop rolling summaries so a forgotten fact cannot resurface from
-        # working memory (docs/context_window_design_2026-06-12.md, C1/C5).
-        # A no-match forget does NOT watermark — it would erase working memory
-        # for nothing.
-        from maya_core.context_window import on_canonical_forget
-
-        await on_canonical_forget(db_path)
-    return len(matches)
+    return await forget_canonical_memory_impl(db_path, query)
 
 
 def _memory_id(kind: str, subject_key: str, scope: str) -> str:

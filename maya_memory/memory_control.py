@@ -48,9 +48,12 @@ async def forget_memory(db_path: str, query: str) -> str:
 async def _forget_preferences_like(db_path: str, query: str) -> int:
     pattern = f"%{query}%"
     async with aiosqlite.connect(db_path) as db:
-        result = await db.execute(
-            "DELETE FROM preferences WHERE key LIKE ? OR value LIKE ?", (pattern, pattern)
-        )
+        try:
+            result = await db.execute(
+                "DELETE FROM preferences WHERE key LIKE ? OR value LIKE ?", (pattern, pattern)
+            )
+        except aiosqlite.OperationalError:
+            return 0
         await db.commit()
     return result.rowcount
 
@@ -58,9 +61,12 @@ async def _forget_preferences_like(db_path: str, query: str) -> int:
 async def _forget_lessons_like(db_path: str, query: str) -> int:
     pattern = f"%{query}%"
     async with aiosqlite.connect(db_path) as db:
-        result = await db.execute(
-            "DELETE FROM lessons WHERE raw_text LIKE ? OR normalized_rule LIKE ?", (pattern, pattern)
-        )
+        try:
+            result = await db.execute(
+                "DELETE FROM lessons WHERE raw_text LIKE ? OR normalized_rule LIKE ?", (pattern, pattern)
+            )
+        except aiosqlite.OperationalError:
+            return 0
         await db.commit()
     return result.rowcount
 
@@ -105,20 +111,26 @@ async def _forget_fuzzy_memory(db_path: str, query: str) -> int:
     related_tokens: set[str] = set()
     async with aiosqlite.connect(db_path) as db:
         db.row_factory = aiosqlite.Row
-        pref_rows = await (await db.execute("SELECT key, value FROM preferences")).fetchall()
-        for row in pref_rows:
-            text = f"{row['key']} {row['value']}"
-            if _token_match(tokens, text):
-                related_tokens |= _memory_tokens(text) - tokens
-                result = await db.execute("DELETE FROM preferences WHERE key = ?", (row["key"],))
-                deleted += result.rowcount
-        lesson_rows = await (await db.execute("SELECT id, raw_text, normalized_rule FROM lessons")).fetchall()
-        for row in lesson_rows:
-            text = f"{row['raw_text']} {row['normalized_rule']}"
-            if _token_match(tokens, text):
-                related_tokens |= _memory_tokens(text) - tokens
-                result = await db.execute("DELETE FROM lessons WHERE id = ?", (row["id"],))
-                deleted += result.rowcount
+        try:
+            pref_rows = await (await db.execute("SELECT key, value FROM preferences")).fetchall()
+            for row in pref_rows:
+                text = f"{row['key']} {row['value']}"
+                if _token_match(tokens, text):
+                    related_tokens |= _memory_tokens(text) - tokens
+                    result = await db.execute("DELETE FROM preferences WHERE key = ?", (row["key"],))
+                    deleted += result.rowcount
+        except aiosqlite.OperationalError:
+            pass
+        try:
+            lesson_rows = await (await db.execute("SELECT id, raw_text, normalized_rule FROM lessons")).fetchall()
+            for row in lesson_rows:
+                text = f"{row['raw_text']} {row['normalized_rule']}"
+                if _token_match(tokens, text):
+                    related_tokens |= _memory_tokens(text) - tokens
+                    result = await db.execute("DELETE FROM lessons WHERE id = ?", (row["id"],))
+                    deleted += result.rowcount
+        except aiosqlite.OperationalError:
+            pass
         try:
             summary_rows = await (await db.execute("SELECT id, summary FROM session_summaries")).fetchall()
             for row in summary_rows:

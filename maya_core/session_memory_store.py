@@ -20,6 +20,8 @@ async def init_session_memory_db(db_path: str) -> None:
             """
         )
         await _ensure_column(db, "session_summaries", "token_count", "INTEGER DEFAULT 0")
+        await _ensure_column(db, "session_summaries", "untrusted_influence", "INTEGER DEFAULT 0")
+        await _ensure_column(db, "session_summaries", "injection_detected", "INTEGER DEFAULT 0")
         await db.commit()
 
 
@@ -31,17 +33,28 @@ async def save_session_summary(
     source: str = "no_key_compactor",
     message_count: int = 0,
     token_count: int = 0,
+    untrusted_influence: bool = False,
+    injection_detected: bool = False,
 ) -> int:
     await init_session_memory_db(db_path)
     async with aiosqlite.connect(db_path) as db:
         cursor = await db.execute(
             """
             INSERT INTO session_summaries (
-                scope, summary, source, message_count, token_count, updated_at
+                scope, summary, source, message_count, token_count,
+                untrusted_influence, injection_detected, updated_at
             )
-            VALUES (?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+            VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             """,
-            (scope, summary, source, message_count, token_count),
+            (
+                scope,
+                summary,
+                source,
+                message_count,
+                token_count,
+                int(untrusted_influence),
+                int(injection_detected),
+            ),
         )
         await db.commit()
         return int(cursor.lastrowid)
@@ -53,7 +66,9 @@ async def latest_session_summary(db_path: str, scope: str = "shared") -> dict[st
         db.row_factory = aiosqlite.Row
         cursor = await db.execute(
             """
-            SELECT id, scope, summary, source, message_count, token_count, created_at, updated_at
+            SELECT
+                id, scope, summary, source, message_count, token_count,
+                untrusted_influence, injection_detected, created_at, updated_at
             FROM session_summaries
             WHERE scope = ?
             ORDER BY updated_at DESC, id DESC
@@ -76,7 +91,9 @@ async def list_session_summaries(
         db.row_factory = aiosqlite.Row
         cursor = await db.execute(
             """
-            SELECT id, scope, summary, source, message_count, token_count, created_at, updated_at
+            SELECT
+                id, scope, summary, source, message_count, token_count,
+                untrusted_influence, injection_detected, created_at, updated_at
             FROM session_summaries
             WHERE scope = ?
             ORDER BY updated_at DESC, id DESC

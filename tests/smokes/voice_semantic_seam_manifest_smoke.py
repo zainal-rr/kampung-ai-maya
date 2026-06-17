@@ -26,6 +26,7 @@ from maya_voice.artifact_manifest import (
     record_current_render_report_for_sections,
 )
 from maya_voice.confirmation import confirm_action, create_pending_confirmation
+from maya_core.provenance import make_provenance
 from maya_voice.tool_guard import empty_request_reason
 from maya_voice.work_control import revise_maya_work
 from maya_voice.work_runtime import voice_work_context
@@ -169,6 +170,7 @@ async def _test_confirmation_fingerprint_and_expiry() -> None:
             action_id="send_1",
             approved=True,
             action_fingerprint_value=pending["action_fingerprint"],
+            approver_provenance=make_provenance("owner_voice"),
         )
         assert ok["status"] == "approved"
         stale = await confirm_action(
@@ -176,6 +178,7 @@ async def _test_confirmation_fingerprint_and_expiry() -> None:
             action_id="send_1",
             approved=True,
             action_fingerprint_value=pending["action_fingerprint"],
+            approver_provenance=make_provenance("owner_voice"),
         )
         assert stale["reason_code"] == "stale_confirmation"
         pending2 = await create_pending_confirmation(
@@ -190,6 +193,7 @@ async def _test_confirmation_fingerprint_and_expiry() -> None:
             action_id="send_2",
             approved=True,
             action_fingerprint_value="not-" + pending2["action_fingerprint"],
+            approver_provenance=make_provenance("owner_voice"),
         )
         assert conflict["reason_code"] == "version_conflict"
 

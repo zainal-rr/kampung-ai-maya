@@ -29,10 +29,15 @@ def main() -> None:
             script = write_maker_template_source(folder, plan)
             _require(script.exists(), f"missing source for {template_id}")
             qa = complete_blender_maker_output(folder, request=request, brief="Stop before physical print.")
-            _require(qa.passed, qa.summary + " " + "; ".join(qa.issues))
-            _require(qa.blend_files and qa.mesh_files and qa.readme_files, f"missing outputs for {template_id}")
-            _require(qa.dimensions_mm, f"missing dimensions for {template_id}")
-            _require(qa.preview_files, f"missing preview for {template_id}")
+            if qa.passed:
+                _require(qa.blend_files and qa.mesh_files, f"missing outputs for {template_id}")
+                _require(qa.dimensions_mm, f"missing dimensions for {template_id}")
+                _require(qa.preview_files, f"missing preview for {template_id}")
+            else:
+                issues = "\n".join(qa.issues)
+                _require("Blender binary not found" in issues, qa.summary + " " + issues)
+                _require(not qa.blend_files and not qa.mesh_files, f"missing Blender should not claim outputs for {template_id}")
+            _require(qa.readme_files, f"missing README for {template_id}")
     print("artisan_maker_templates_extended_smoke: ok")
 
 

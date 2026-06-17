@@ -9,6 +9,7 @@ from maya_voice.tool_memory_specs import (
     recall_memory_tool,
     save_memory_tool,
 )
+from maya_voice.tool_provenance_specs import provenance_schema
 from maya_voice.xai_realtime_visual_context_tools import active_context_tool
 
 
@@ -90,7 +91,10 @@ def browser_tool() -> dict:
                 "request": {
                     "type": "string",
                     "description": "The exact browser request from Zainal.",
-                }
+                },
+                "provenance": provenance_schema(
+                    "Structured source/trust metadata. Omit only for direct owner voice in the iMac session."
+                ),
             },
             "required": ["request"],
         },
@@ -160,6 +164,9 @@ def maya_work_tool() -> dict:
                     "type": "string",
                     "description": "Optional stable key if this tool call is a retry of the same side-effecting request.",
                 },
+                "provenance": provenance_schema(
+                    "Structured source/trust metadata. Omit only for direct owner voice in the iMac session."
+                ),
             },
             "required": ["request"],
         },
@@ -261,6 +268,9 @@ def revise_work_tool() -> dict:
                     "type": "string",
                     "description": "Optional stable key if this revision tool call is retried.",
                 },
+                "provenance": provenance_schema(
+                    "Structured source/trust metadata. Omit only for direct owner voice in the iMac session."
+                ),
             },
             "required": ["instruction"],
         },
@@ -287,6 +297,9 @@ def cancel_work_tool() -> dict:
                     "type": "string",
                     "description": "Short reason in Zainal's words, if available.",
                 },
+                "provenance": provenance_schema(
+                    "Structured source/trust metadata. Omit only for direct owner voice in the iMac session."
+                ),
             },
             "required": [],
         },
@@ -299,3 +312,4 @@ def _question_schema(description: str) -> dict:
         "properties": {"question": {"type": "string", "description": description}},
         "required": ["question"],
     }
+

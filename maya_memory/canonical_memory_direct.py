@@ -15,7 +15,8 @@ async def search_canonical_direct_fact_impl(
     limit: int = 3,
     *,
     embedding_agent: EmbedCall | None = None,
-) -> list[str] | None:
+    include_provenance: bool = False,
+) -> list[str] | list[dict[str, object]] | None:
     subject_key = subject_key_from_text(query)
     if not subject_key:
         return []
@@ -26,7 +27,8 @@ async def search_canonical_direct_fact_impl(
         active = await db.execute(
             """
             SELECT memory_id, subject_key, content, pinned, temporary, updated_at,
-                   COALESCE(reinforcement_count, 0) AS reinforcement_count
+                   COALESCE(reinforcement_count, 0) AS reinforcement_count,
+                   provenance_json, untrusted_influence, injection_detected
             FROM canonical_memory_items
             WHERE status = 'active'
               AND (expires_at IS NULL OR expires_at > datetime('now'))
@@ -45,16 +47,19 @@ async def search_canonical_direct_fact_impl(
             candidates,
             embedding_agent=embedding_agent,
         )
-        selected = [(memory_id, content) for _score, memory_id, content in semantic_rows[:limit]]
+        by_id = {str(row["memory_id"]): row for row in active_rows}
+        selected = [(memory_id, content, by_id.get(memory_id)) for _score, memory_id, content in semantic_rows[:limit]]
     else:
-        selected = [(str(row["memory_id"]), str(row["content"])) for row in rows[:limit]]
+        selected = [(str(row["memory_id"]), str(row["content"]), row) for row in rows[:limit]]
     await mark_canonical_used(
         db_path,
-        [memory_id for memory_id, _content in selected],
+        [memory_id for memory_id, _content, _row in selected],
         event_type="canonical_recall",
         source_ref=query,
     )
-    return [content for _memory_id, content in selected]
+    if include_provenance:
+        return [_row_payload(memory_id, content, row) for memory_id, content, row in selected]
+    return [content for _memory_id, content, _row in selected]
 
 
 def _direct_fact_match(query_tokens: set[str], subject_key: str, row_subject: str, row_content: str) -> bool:
@@ -98,3 +103,21 @@ def _semantic_direct_candidate_pool(
         scored.append((score, memory_id, str(row["content"])))
     scored.sort(key=lambda item: item[0], reverse=True)
     return scored[:64]
+
+
+def _row_payload(memory_id: str, content: str, row: aiosqlite.Row | None) -> dict[str, object]:
+    if row is None:
+        return {
+            "memory_id": memory_id,
+            "content": content,
+            "provenance_json": "{}",
+            "untrusted_influence": True,
+            "injection_detected": False,
+        }
+    return {
+        "memory_id": memory_id,
+        "content": content,
+        "provenance_json": str(row["provenance_json"] or "{}"),
+        "untrusted_influence": bool(row["untrusted_influence"]),
+        "injection_detected": bool(row["injection_detected"]),
+    }

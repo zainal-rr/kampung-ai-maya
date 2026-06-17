@@ -38,7 +38,7 @@ Maya should acknowledge immediately and act in parallel ("give me a sec, opening
 - **Audio format plumbing** — sample rates, PCM frame sizes, resampling between Recall and the realtime model. Tedious, bounded.
 - **Latency budget** — every hop (meeting → Recall → server → model → back → Recall → meeting) adds ms; conversational feel lives or dies here, which is why the bridge topology beats the pipe. Note: W2-B's weak-path recall added ~867ms; memory recall firing mid-meeting would stack on top — pre-warm/cache or gate it.
 - **Barge-in across two systems** — detecting a human starting to talk (to stop Maya's TTS) now spans Recall's stream and the model's voice-activity detection. Coordinating the interrupt across both is the genuinely tricky engineering.
-- **Speaker attribution** — use Recall's per-participant labels so Maya knows *who* said what and doesn't treat two colleagues' handoff as her cue.
+- **Speaker attribution** — Recall's per-participant labels are useful evidence, but not authority. M1 needs a separate owner-attribution mini-plan before Maya can treat any meeting speech as Zainal; until then, every meeting utterance defaults to `other_speaker`, so action requests and confirmations require owner approval.
 
 ## 6. The new risk axis: multi-party turn-taking
 Every turn-taking/narration fix in the disappointment log (D4, D5, D7, D9) was tested **1:1** — you and Maya. A Meet adds an axis those never covered: **multiple human speakers and cross-talk.** Her turn detector is silence-based and tuned for one person's stutters; a four-person Meet is a different acoustic problem (who's talking, not stepping on a handoff, not treating a pause as her cue). This is the next disappointment-log entry waiting to be written, and the one thing only a live meeting can prove.
@@ -46,6 +46,7 @@ Every turn-taking/narration fix in the disappointment log (D4, D5, D7, D9) was t
 ## 7. Safety/honesty get *more* load here (ties to W5/W7)
 In a meeting, **other people become input and trigger sources** — anyone can speak a command, and shared-screen/chat content becomes an untrusted read surface. So:
 - W5 (blast-radius/broker) and W7 (untrusted-input boundary) stop being "before more autonomy" and become "**before people who aren't you can talk to her.**"
+- W7 fail-closed rule for M1: all Meet speech is `other_speaker` unless owner identity is positively established. Recall speaker labels alone are not enough to grant `owner_voice`.
 - The fail-honestly / verified-facts discipline matters most here: a live meeting is the max-embarrassment place to hallucinate. Better "I'm not sure, let me check" than a confident wrong answer in front of five people.
 
 ## 8. One thing to verify before building

@@ -17,6 +17,9 @@ class RouteResult:
     lane: str
     reason: str
     cost_recorded: bool = False
+    response_source: str | None = None
+    response_untrusted_influence: bool = False
+    response_injection_detected: bool = False
 
 
 class AssistantRouter:

@@ -7,6 +7,7 @@ from typing import Any
 
 import aiosqlite
 
+from maya_core.provenance import ProvenanceContext, can_authorize_confirmation
 
 CONFIRMATION_TABLE = "voice_pending_confirmations"
 DEFAULT_CONFIRMATION_TTL_SECONDS = 120
@@ -55,8 +56,18 @@ async def create_pending_confirmation(
     return {"action_id": action_id, "action_fingerprint": fingerprint, "expires_at": expires_at}
 
 
-async def confirm_action(db_path: str, *, action_id: str, approved: bool, action_fingerprint_value: str) -> dict[str, Any]:
+async def confirm_action(
+    db_path: str,
+    *,
+    action_id: str,
+    approved: bool,
+    action_fingerprint_value: str,
+    approver_provenance: ProvenanceContext | dict | None = None,
+) -> dict[str, Any]:
     await init_confirmation_db(db_path)
+    provenance = approver_provenance
+    if not can_authorize_confirmation(provenance):
+        return {"status": "failed", "reason_code": "unauthorized_confirmation_source"}
     async with aiosqlite.connect(db_path) as db:
         db.row_factory = aiosqlite.Row
         cursor = await db.execute(f"SELECT * FROM {CONFIRMATION_TABLE} WHERE action_id = ?", (action_id,))

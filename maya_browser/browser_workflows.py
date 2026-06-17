@@ -4,6 +4,7 @@ import asyncio
 import re
 
 from maya_browser.browser_agent_state import BrowserAgentState, observation_id, task_type_for
+from maya_browser.browser_confirmation import PENDING_CLICK_KEY, confirm_pending_click, remember_pending_click
 from maya_browser.browser_control import element_summary, page_summary
 from maya_browser.browser_driver import make_browser_controller
 from maya_browser.browser_followup_policy import looks_like_general_question, looks_like_writing_or_advice_request
@@ -13,6 +14,10 @@ from maya_browser.browser_workflow_helpers import browser_options_from_text as _
 from maya_browser.browser_workflow_helpers import click_search_result_candidates as _search_result_candidates
 from maya_browser.browser_workflow_helpers import is_url as _is_url
 from maya_browser.browser_workflow_helpers import open_browser_target_new_tab as _open_browser_target_new_tab
+from maya_browser.browser_workflow_parse import browser_start_requested as _is_browser_start
+from maya_browser.browser_workflow_parse import browser_state_payload as _browser_state_payload
+from maya_browser.browser_workflow_parse import clean_browser_text as _clean
+from maya_browser.browser_workflow_parse import click_target_from_text as _click_target
 from maya_core.permission_policy import action_permission, contains_sensitive_info, hard_no_private_exposure_text, safe_sensitive_guidance
 from maya_core.screen_service import MacScreenService
 from maya_core.storage import delete_preference, get_preference, upsert_preference
@@ -21,20 +26,13 @@ from maya_core.utils import OSBridge
 
 STATE_KEY = "maya_browser_workflow"
 PENDING_CLICK_KEY = "maya_pending_browser_click"
-SENSITIVE_WORDS = (
-    "buy", "book", "pay", "checkout", "purchase", "submit", "passport",
-    "card", "confirm", "login", "password", "otp", "2fa", "upload", "send",
-    "private account", "change account",
-)
+SENSITIVE_WORDS = ("buy", "book", "pay", "checkout", "purchase", "submit", "passport", "card", "confirm", "login", "password", "otp", "2fa", "upload", "send", "private account", "change account")
 MISSING_SKILL_WORDS = ("hotel", "calendar", "shopping", "shop", "account", "design review", "security review")
 
 
 class HumanBrowserWorkflowRouter:
     def __init__(self, db_path: str, bridge: OSBridge | None = None, screen=None):
         self.db_path = db_path
-        # A provided bridge means tests or explicit legacy callers want the
-        # AppleScript controller. Production leaves this as None so
-        # make_browser_controller() can use the Maya Chrome extension path.
         self.bridge = bridge
         self._browser = None
         self.screen = screen or MacScreenService()
@@ -56,14 +54,21 @@ class HumanBrowserWorkflowRouter:
             or await self._stop(text)
         )
 
-    async def handle_confirmation(self, text: str) -> str | None:
+    async def handle_confirmation(self, text: str, channel: str = "imac") -> str | None:
         if _clean(text) not in {"yes", "yes do it", "approve", "confirm"}:
             return None
-        target = await get_preference(self.db_path, PENDING_CLICK_KEY)
-        if not target:
+        browser_state = await self._current_browser_state_payload()
+        result, pending = await confirm_pending_click(
+            self.db_path,
+            channel=channel,
+            browser_state=browser_state,
+        )
+        if not pending:
             return None
+        if result.get("status") != "approved":
+            return f"I cannot approve that browser click yet: {result.get('reason_code', 'confirmation_failed')}."
         await delete_preference(self.db_path, PENDING_CLICK_KEY)
-        return await self._click_target(target, sensitive=True)
+        return await self._click_target(str(pending["target"]), sensitive=True)
 
     async def _start(self, text: str, channel: str) -> str | None:
         if not _is_browser_start(text):
@@ -223,7 +228,7 @@ class HumanBrowserWorkflowRouter:
         if not target:
             return None
         if any(word in _clean(f"{text} {target}") for word in SENSITIVE_WORDS):
-            await upsert_preference(self.db_path, PENDING_CLICK_KEY, target, source="workflow")
+            await remember_pending_click(self.db_path, target, _browser_state_payload(await self._task()))
             await self._set_pending(target)
             return f"This looks sensitive. Say yes if you want me to click `{target}` in Chrome."
         guard = await self._injected_page_guard("click")
@@ -292,29 +297,24 @@ class HumanBrowserWorkflowRouter:
             task.pending_sensitive_action = target
             await self._save(task)
 
+    async def _current_browser_state_payload(self) -> dict[str, str]:
+        task = await self._task()
+        if task:
+            return _browser_state_payload(task)
+        try:
+            page = await asyncio.to_thread(self.browser.inspect_page, 1200)
+        except Exception:
+            return {}
+        return {
+            "current_url": page.url,
+            "page_title": page.title,
+            "last_observation_id": observation_id(page.title, page.url, page.text_hash),
+            "task_type": "",
+        }
+
     async def _injected_page_guard(self, action: str) -> str:
         try:
             page = await asyncio.to_thread(self.browser.inspect_page, 4000)
         except Exception:
             return ""
         return injected_page_action_notice(page, action)
-
-
-def _is_browser_start(text: str) -> bool:
-    lowered = _clean(text)
-    if _is_url(lowered):
-        return True
-    if "flight" in lowered and any(word in lowered for word in ("check", "find", "search", "book", "compare")):
-        return True
-    return bool(re.match(r"^(?:browse|search|look up|google|check online|find online)\s+.+", lowered))
-
-
-def _click_target(text: str) -> str | None:
-    match = re.match(r"^(?:click|choose|select|press)\s+(.+)$", " ".join(text.strip().split()), re.IGNORECASE)
-    if not match:
-        return None
-    return re.sub(r"\s+(?:in|on)\s+(?:chrome|browser)$", "", match.group(1), flags=re.IGNORECASE).strip(" .")
-
-
-def _clean(text: str) -> str:
-    return " ".join(text.lower().strip().split())

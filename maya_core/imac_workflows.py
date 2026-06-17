@@ -6,9 +6,11 @@ from pathlib import Path
 
 from maya_core.assistant_command_helpers import confirmation_decision
 from maya_documents.artifact_builder import ArtifactBuilder
+from maya_browser.browser_agent_state import observation_id
 from maya_browser.browser_control import page_summary
 from maya_browser.browser_driver import make_browser_controller
 from maya_browser.browser_workflow_helpers import open_browser_target_new_tab as _open_browser_target_new_tab
+from maya_browser.browser_confirmation import remember_pending_click
 from maya_browser.browser_workflows import HumanBrowserWorkflowRouter
 from maya_documents.document_actions import DocumentActionRouter
 from maya_core.network_tools import network_doc_sections, run_network_diagnostics, summarize_network
@@ -50,8 +52,8 @@ class ImacWorkflowRouter:
             or await self._network_doc(text, channel)
         )
 
-    async def handle_confirmation(self, text: str) -> str | None:
-        browser_confirmation = await self.human_browser.handle_confirmation(text)
+    async def handle_confirmation(self, text: str, channel: str = "imac") -> str | None:
+        browser_confirmation = await self.human_browser.handle_confirmation(text, channel=channel)
         if browser_confirmation is not None:
             return browser_confirmation
         decision = confirmation_decision(text)
@@ -60,10 +62,10 @@ class ImacWorkflowRouter:
         target = await get_preference(self.db_path, "maya_pending_browser_click")
         if not target:
             return None
-        await delete_preference(self.db_path, "maya_pending_browser_click")
         if decision != "approve":
+            await delete_preference(self.db_path, "maya_pending_browser_click")
             return "Okay, I will not click that."
-        return await self._click_target(target, sensitive=True)
+        return await self.human_browser.handle_confirmation(text, channel=channel)
 
     async def _flight_start(self, text: str) -> str | None:
         lowered = _clean(text)
@@ -120,7 +122,7 @@ class ImacWorkflowRouter:
         if not target:
             return None
         if _is_sensitive_browser_action(f"{text} {target}"):
-            await upsert_preference(self.db_path, "maya_pending_browser_click", target, source="workflow")
+            await remember_pending_click(self.db_path, target, await self._browser_state_payload())
             return f"This looks sensitive. Say yes if you want me to click `{target}` in Chrome."
         return await self._click_target(target, sensitive=False)
 
@@ -134,6 +136,18 @@ class ImacWorkflowRouter:
             suffix = " I will still stop before booking, payment, or private details." if sensitive else ""
             return f"I clicked {target} in Chrome and verified the result. {state}{suffix}"
         return f"I could not find `{target}` as a visible clickable item in Chrome."
+
+    async def _browser_state_payload(self) -> dict[str, str]:
+        try:
+            page = await asyncio.to_thread(self.browser.inspect_page, 1200)
+        except Exception:
+            return {}
+        return {
+            "current_url": page.url,
+            "page_title": page.title,
+            "last_observation_id": observation_id(page.title, page.url, page.text_hash),
+            "task_type": "",
+        }
 
     async def _presentation(self, text: str, channel: str) -> str | None:
         match = re.search(r"(?:make|create|craft)\s+(?:a\s+)?(?:presentation|pptx|slides)\s+(?:on|about)\s+(.+)$", text, re.IGNORECASE)

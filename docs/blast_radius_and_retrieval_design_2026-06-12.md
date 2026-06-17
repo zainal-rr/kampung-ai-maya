@@ -146,6 +146,26 @@ remain governed rather than OS-contained; this is especially important for
 future meeting/room input, where W5 containment and W7 untrusted-input
 discipline stay load-bearing together.
 
+W7 provenance hardening (2026-06-17) adds the trigger-side half of the safety
+stack. Tool calls, recalled memory, rolling summaries, and confirmations now
+carry structured provenance (`owner_voice`, `owner_text`, `browser_page`,
+`screen_ocr`, `office_document`, `memory_recall`, `meeting_transcript`,
+`other_speaker`, or `unknown`). `unknown` is untrusted, untagged tool output
+defaults to `unknown`, and untrusted provenance cannot directly trigger
+external, destructive, command, repo-write, or file-changing actions without
+owner confirmation. Confirmation is owner-attributed: only `owner_voice` or
+`owner_text` can approve a pending action, and the existing fingerprint/expiry
+checks still bind the exact effect.
+
+Important W7 limit: this does not solve future Meet owner attribution. Recall
+speaker labels are not sufficient by themselves; all meeting speech must remain
+`other_speaker` until a separate owner-attribution design is implemented and
+proven.
+
+`owner_text` means an already-authenticated owner channel such as Zainal's
+Telegram account. If that account is compromised, that is account-security
+scope outside W7, the same way physical owner-voice compromise is outside W7.
+
 ## W5 canaries (written FIRST, failing, before code)
 
 | # | Canary | Asserts |

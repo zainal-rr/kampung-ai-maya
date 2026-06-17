@@ -45,6 +45,8 @@ async def init_context_layers_db(db_path: str) -> None:
                 fact TEXT NOT NULL UNIQUE,
                 source TEXT DEFAULT 'session_compactor',
                 confidence REAL DEFAULT 0.72,
+                untrusted_influence INTEGER DEFAULT 0,
+                injection_detected INTEGER DEFAULT 0,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
@@ -58,11 +60,16 @@ async def init_context_layers_db(db_path: str) -> None:
                 vibe TEXT NOT NULL UNIQUE,
                 source TEXT DEFAULT 'session_compactor',
                 confidence REAL DEFAULT 0.62,
+                untrusted_influence INTEGER DEFAULT 0,
+                injection_detected INTEGER DEFAULT 0,
                 created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
                 updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
             )
             """
         )
+        for table in ("context_facts", "context_vibes"):
+            await _ensure_column(db, table, "untrusted_influence", "INTEGER DEFAULT 0")
+            await _ensure_column(db, table, "injection_detected", "INTEGER DEFAULT 0")
         await db.commit()
 
 
@@ -74,24 +81,42 @@ async def preserve_context_layers(db_path: str, rows: list[dict[str, str]], topi
         for fact in facts:
             await db.execute(
                 """
-                INSERT INTO context_facts (topic, fact, updated_at)
-                VALUES (?, ?, CURRENT_TIMESTAMP)
+                INSERT INTO context_facts (
+                    topic, fact, untrusted_influence, injection_detected, updated_at
+                )
+                VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
                 ON CONFLICT(fact) DO UPDATE SET
                     topic = excluded.topic,
+                    untrusted_influence = MAX(context_facts.untrusted_influence, excluded.untrusted_influence),
+                    injection_detected = MAX(context_facts.injection_detected, excluded.injection_detected),
                     updated_at = CURRENT_TIMESTAMP
                 """,
-                (topic, fact),
+                (
+                    topic,
+                    str(fact["text"]),
+                    int(bool(fact.get("untrusted_influence"))),
+                    int(bool(fact.get("injection_detected"))),
+                ),
             )
         for vibe in vibes:
             await db.execute(
                 """
-                INSERT INTO context_vibes (topic, vibe, updated_at)
-                VALUES (?, ?, CURRENT_TIMESTAMP)
+                INSERT INTO context_vibes (
+                    topic, vibe, untrusted_influence, injection_detected, updated_at
+                )
+                VALUES (?, ?, ?, ?, CURRENT_TIMESTAMP)
                 ON CONFLICT(vibe) DO UPDATE SET
                     topic = excluded.topic,
+                    untrusted_influence = MAX(context_vibes.untrusted_influence, excluded.untrusted_influence),
+                    injection_detected = MAX(context_vibes.injection_detected, excluded.injection_detected),
                     updated_at = CURRENT_TIMESTAMP
                 """,
-                (topic, vibe),
+                (
+                    topic,
+                    str(vibe["text"]),
+                    int(bool(vibe.get("untrusted_influence"))),
+                    int(bool(vibe.get("injection_detected"))),
+                ),
             )
         await db.commit()
     return {"facts": len(facts), "vibes": len(vibes)}
@@ -118,7 +143,9 @@ async def _ranked_rows(
         db.row_factory = aiosqlite.Row
         cursor = await db.execute(
             f"""
-            SELECT topic, {text_column} AS text, source, confidence, updated_at
+            SELECT
+                topic, {text_column} AS text, source, confidence,
+                untrusted_influence, injection_detected, updated_at
             FROM {table}
             ORDER BY updated_at DESC, id DESC
             LIMIT 24
@@ -136,7 +163,7 @@ async def _ranked_rows(
     return chosen or [item for _, item in scored[:limit]]
 
 
-def _extract_facts(rows: list[dict[str, str]]) -> list[str]:
+def _extract_facts(rows: list[dict[str, str]]) -> list[dict[str, str | bool]]:
     facts = []
     for row in rows:
         if row.get("role") != "user":
@@ -146,13 +173,13 @@ def _extract_facts(rows: list[dict[str, str]]) -> list[str]:
             continue
         lowered = content.lower()
         if any(cue in lowered for cue in FACT_CUES):
-            facts.append(content)
+            facts.append(_layer_item(content, row))
         if len(facts) >= 8:
             break
     return _dedupe(facts)
 
 
-def _extract_vibes(rows: list[dict[str, str]], topic: str) -> list[str]:
+def _extract_vibes(rows: list[dict[str, str]], topic: str) -> list[dict[str, str | bool]]:
     tokens = Counter()
     for row in rows:
         if row.get("role") == "user":
@@ -160,7 +187,7 @@ def _extract_vibes(rows: list[dict[str, str]], topic: str) -> list[str]:
     matches = [word for word, _ in tokens.most_common(12) if word in VIBE_WORDS]
     if not matches:
         return []
-    return [f"{topic}: recurring tone or theme around {', '.join(matches[:5])}"]
+    return [_layer_item(f"{topic}: recurring tone or theme around {', '.join(matches[:5])}", _merge_rows(rows))]
 
 
 def _shorten(text: str, limit: int = 220) -> str:
@@ -174,11 +201,34 @@ def _tokens(text: str) -> set[str]:
     return set(re.findall(r"\b[a-z0-9]{4,}\b", str(text).lower()))
 
 
-def _dedupe(items: list[str]) -> list[str]:
+def _layer_item(text: str, row: dict[str, str]) -> dict[str, str | bool]:
+    return {
+        "text": text,
+        "untrusted_influence": bool(row.get("untrusted_influence")),
+        "injection_detected": bool(row.get("injection_detected")),
+    }
+
+
+def _merge_rows(rows: list[dict[str, str]]) -> dict[str, str]:
+    return {
+        "untrusted_influence": "1" if any(bool(row.get("untrusted_influence")) for row in rows) else "",
+        "injection_detected": "1" if any(bool(row.get("injection_detected")) for row in rows) else "",
+    }
+
+
+async def _ensure_column(db: aiosqlite.Connection, table: str, column: str, definition: str) -> None:
+    cursor = await db.execute(f"PRAGMA table_info({table})")
+    rows = await cursor.fetchall()
+    if any(row[1] == column for row in rows):
+        return
+    await db.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
+
+
+def _dedupe(items: list[dict[str, str | bool]]) -> list[dict[str, str | bool]]:
     seen = set()
     unique = []
     for item in items:
-        key = item.lower()
+        key = str(item["text"]).lower()
         if key in seen:
             continue
         seen.add(key)

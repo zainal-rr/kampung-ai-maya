@@ -80,7 +80,7 @@ class AssistantCommandRouter:
             self.last_lane = "command"
             self.last_reason = "explicit skill scaffold approval"
             return explicit_skill_approval
-        workflow_confirmation = await self.workflows.handle_confirmation(clean_text)
+        workflow_confirmation = await self.workflows.handle_confirmation(clean_text, channel=channel)
         if workflow_confirmation is not None:
             self.last_lane = "command"
             self.last_reason = "workflow confirmation"

@@ -1,16 +1,16 @@
 def confirmation_decision(text: str) -> str | None:
     lowered = text.lower().strip().rstrip(".!?")
-    if _looks_like_user_request(lowered):
-        return None
     approve = {"yes", "y", "yeah", "yep", "sure", "okay", "ok", "go", "go ahead", "do it"}
     decline = {"no", "n", "nope", "cancel", "stop", "no thanks", "no thank you"}
     later = {"later", "not now", "maybe later", "defer"}
-    if lowered in approve or lowered.startswith(("yes ", "sure ", "okay ", "ok ", "go ahead")):
-        return "approve"
     if lowered in decline or lowered.startswith(("no ", "nope ", "cancel ", "stop ")):
         return "decline"
     if lowered in later or lowered.startswith(("later ", "not now ", "maybe later ")):
         return "later"
+    if _looks_like_user_request(lowered):
+        return None
+    if lowered in approve or lowered.startswith(("yes ", "sure ", "okay ", "ok ", "go ahead")):
+        return "approve"
     return None
 
 

@@ -74,6 +74,7 @@ CHECKS: tuple[CheckSpec, ...] = (
     CheckSpec("artifact parameters", ("tests/smokes/artifact_parameters_smoke.py",)),
     CheckSpec("word travel destination", ("tests/smokes/word_travel_destination_smoke.py",)),
     CheckSpec("untrusted input boundary", ("tests/smokes/untrusted_input_boundary_smoke.py",)),
+    CheckSpec("W7 provenance authorization", ("tests/smokes/w7_provenance_authorization_smoke.py",)),
     CheckSpec("untrusted live path", ("tests/smokes/untrusted_live_path_smoke.py",)),
     CheckSpec("browser untrusted action guard", ("tests/smokes/browser_untrusted_action_guard_smoke.py",)),
     CheckSpec("canonical memory", ("tests/smokes/canonical_memory_smoke.py",)),

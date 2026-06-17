@@ -31,7 +31,11 @@ import re
 from dataclasses import dataclass, field
 
 # Surfaces whose content Maya does not author and must treat as untrusted.
-UNTRUSTED_SOURCES = frozenset({"browser", "screen", "omi", "document", "web", "page", "email", "pdf"})
+UNTRUSTED_SOURCES = frozenset({
+    "browser", "screen", "omi", "document", "web", "page", "email", "pdf",
+    "browser_page", "screen_ocr", "office_document", "memory_recall",
+    "meeting_transcript", "other_speaker", "unknown",
+})
 
 # External-reach actions: anything that moves data OUT of Maya's local boundary.
 # Natural-language action_type names (used by the harness action layer).

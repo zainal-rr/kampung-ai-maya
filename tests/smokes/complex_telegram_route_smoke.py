@@ -18,6 +18,7 @@ from maya_core.assistant_model_lanes import ModelLanes
 from maya_core.lesson_store import init_lesson_db
 from maya_core.routine_store import init_routine_db
 from maya_core.route_tracker import last_route_text
+from maya_core.self_heal_store import latest_self_heal_report
 from maya_core.skill_store import init_skill_db
 from maya_core.storage import create_task, init_db, list_tasks
 from maya_core.storage_tasks import update_task_status
@@ -92,11 +93,15 @@ async def main() -> None:
             _require("lane: GPT 5.5 medium + Claude review" in route, "complex route metadata missing")
 
             approved = await assistant.handle_text("Yes", "telegram")
-            _require("Self heal check:" in approved, "approval did not resume the complex self-heal workflow")
-            _require("approved /complex plan" in approved, "self-heal did not use approved complex plan")
-            _require("Core Memory is near capacity" in approved, "approved complex plan issue was not preserved")
-            _require("Detected: Summary" not in approved, "self-heal issue extraction used a section heading")
+            _require("Self-heal workflow checkpointed" in approved, "approval did not checkpoint the complex self-heal workflow")
+            _require("await_approval: waiting for isolated self-heal approval" in approved, "first approval skipped the isolated mutation gate")
+            report = await latest_self_heal_report(db_path)
+            report_text = f"{report['issue']} {report['diagnosis']}" if report else ""
+            _require("Core Memory is near capacity" in report_text, "approved complex plan issue was not preserved")
+            _require("Detected: Summary" not in report_text, "self-heal issue extraction used a section heading")
             _require("limit: 300 lines" not in approved, "generic code-health self-heal overrode complex plan")
+            completed = await assistant.handle_text("Yes", "telegram")
+            _require("Self-heal workflow completed" in completed, "second approval did not complete the checkpointed self-heal")
             _require("Can you update that to 4 days" not in approved, "stale skill approval was resolved instead")
             pending = await list_tasks(db_path, statuses=("awaiting_confirmation",), limit=10)
             _require(

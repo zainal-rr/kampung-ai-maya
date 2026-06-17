@@ -37,9 +37,14 @@ else:
             encoding="utf-8",
         )
         result = complete_blender_maker_output(root, request="make a tiny 3D printable cube")
-        _require(result.passed, result.summary + " " + "; ".join(result.issues))
-        _require((root / "maker_smoke.blend").exists(), "missing blend")
-        _require((root / "maker_smoke.stl").exists(), "missing stl")
+        if result.passed:
+            _require((root / "maker_smoke.blend").exists(), "missing blend")
+            _require((root / "maker_smoke.stl").exists(), "missing stl")
+        else:
+            issues = "\n".join(result.issues)
+            _require("Blender binary not found" in issues, result.summary + " " + issues)
+            _require(not (root / "maker_smoke.blend").exists(), "missing Blender should not claim blend")
+            _require(not (root / "maker_smoke.stl").exists(), "missing Blender should not claim stl")
         _require((root / "README.md").exists(), "missing generated readme")
     print("artisan_maker_completion_smoke: ok")
 

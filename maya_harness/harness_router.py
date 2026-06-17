@@ -5,9 +5,16 @@ import re
 
 from maya_core.assistant_command_helpers import confirmation_decision
 from maya_harness.harness_command_bypass import is_fresh_artifact_request
+from maya_harness.harness_confirmation import confirm_harness_action
 from maya_harness.harness_graph import HarnessGraphRunner
 from maya_harness.harness_artifact_store import latest_artifacts
 from maya_harness.harness_resume import build_resume_summary
+from maya_harness.harness_router_parse import ARTIFACT_MARKERS, COMMAND_BYPASS_MARKERS, FILE_OPEN_BYPASS_RE
+from maya_harness.harness_router_parse import FOLLOWUP_MARKERS, RESUME_MARKERS, START_MARKERS, STOP_MARKERS
+from maya_harness.harness_router_parse import continuing_prefix as _continuing_prefix
+from maya_harness.harness_router_parse import is_followup as _parse_followup
+from maya_harness.harness_router_parse import is_start as _parse_start
+from maya_harness.harness_router_parse import thread_id as _thread_id
 from maya_harness.harness_state import initial_harness_state
 from maya_harness.harness_store import (
     finish_run,
@@ -20,87 +27,6 @@ from maya_harness.harness_store import (
 )
 from maya_harness.harness_workflows import classify_workflow
 from maya_core.storage import delete_preference, get_preference, upsert_preference
-
-
-# Bare command verbs only count when the message *starts* with them, so chat like
-# "what type of pasta", "is the mall open today", or "press release" stays in the
-# normal conversation lanes instead of hijacking a harness workflow.
-START_COMMAND_RE = re.compile(
-    r"^(?:please\s+|maya[,\s]+)?"
-    r"(?:open|switch\s+to|press|type|draw|browse|google)\b",
-    re.IGNORECASE,
-)
-START_MARKERS = (
-    "check flight",
-    "find flight",
-    "find flights",
-    "search flight",
-    "search flights",
-    "book flight",
-    "search online",
-    "make presentation",
-    "create presentation",
-    "write a word",
-    "create a docx",
-    "make an excel",
-    "create an excel",
-    "write an excel",
-    "make a spreadsheet",
-    "create a spreadsheet",
-    "make an xlsx",
-    "create an xlsx",
-    "create an md",
-    "make a markdown",
-    "create drawing",
-    "open project",
-    "switch project",
-    "self heal",
-    "repair maya",
-    "book me a hotel",
-    "look at my screen",
-)
-FOLLOWUP_MARKERS = (
-    "continue",
-    "what about now",
-    "how about now",
-    "change the date",
-    "find cheaper",
-    "make it cheaper",
-    "open it",
-    "show me",
-    "save it",
-    "use this project",
-    "click ",
-    "fill ",
-)
-STOP_MARKERS = {"stop workflow", "close workflow", "end workflow", "cancel workflow"}
-RESUME_MARKERS = {"what are you working on", "where did we stop", "what is pending", "workflow status"}
-ARTIFACT_MARKERS = {"what files did you create", "show me the latest artifact", "which screenshot did you use"}
-COMMAND_BYPASS_MARKERS = {
-    "open the last document",
-    "open latest document",
-    "what was the last document you created",
-    "what is the last document you created",
-    "what was the latest document you created",
-    "what is the latest document you created",
-    "what document did you just create",
-    "what document did you create just now",
-    "what file did you just create",
-    "what file did you create just now",
-    "what did you just create",
-    "what did you create just now",
-    "what document did you create",
-    "what file did you create",
-    "what was the last document",
-    "what is the last document",
-    "last document",
-    "latest document",
-}
-FILE_OPEN_BYPASS_RE = re.compile(
-    r"^(?:open|show(?: me)?)\s+(?:latest\s+|the\s+latest\s+)?"
-    r"(?:word|docx|document|powerpoint|presentation|pptx|excel|spreadsheet|xlsx|markdown|md)\b",
-    re.I,
-)
 
 
 class HarnessRouter:
@@ -183,7 +109,7 @@ class HarnessRouter:
         if not active:
             return None
         if str(active.get("workflow_type") or "").startswith("artisan"):
-            return await self._artisan_confirmation(active, decision)
+            return await self._artisan_confirmation(active, decision, channel)
         state = await self.runner.get_snapshot(active)
         if not state.get("pending_approval") and active.get("status") != "paused":
             return None
@@ -192,12 +118,16 @@ class HarnessRouter:
             await finish_run(self.db_path, active["run_id"], status="cancelled")
             await self.runner.update_checkpoint(active, {"graph_status": "cancelled", "pending_approval": {}, "approval_result": "declined"})
             return "Okay, I won't do that."
+        approval = await confirm_harness_action(self.db_path, active=active, pending=state.get("pending_approval") or {}, channel=channel)
+        if approval.get("status") != "approved":
+            await record_event(self.db_path, active["run_id"], "confirmation_blocked", str(approval.get("reason_code", "")))
+            return f"I cannot approve that workflow yet: {approval.get('reason_code', 'confirmation_failed')}."
         await resolve_approval(self.db_path, active["run_id"], "approved")
         result = await self.runner.resume(active, "approved", approval_result="approved")
         self._remember_route(result)
         return str(result.get("final_response") or "Done. I continued after your approval.")
 
-    async def _artisan_confirmation(self, active: dict, decision: str) -> str | None:
+    async def _artisan_confirmation(self, active: dict, decision: str, channel: str) -> str | None:
         state = dict(active.get("state") or {})
         if state.get("approval_state") != "repo_approval_required" and active.get("status") != "paused":
             return None
@@ -205,6 +135,14 @@ class HarnessRouter:
             await resolve_approval(self.db_path, active["run_id"], "declined")
             await finish_run(self.db_path, active["run_id"], status="cancelled")
             return "Okay, I won't apply the Artisan repo changes."
+        pending = {
+            "action": "apply_artisan_repo_changes",
+            "details": str(state.get("working_directory") or "") + "\n" + str(state.get("original_repo_path") or ""),
+        }
+        approval = await confirm_harness_action(self.db_path, active=active, pending=pending, channel=channel)
+        if approval.get("status") != "approved":
+            await record_event(self.db_path, active["run_id"], "confirmation_blocked", str(approval.get("reason_code", "")))
+            return f"I cannot approve those Artisan repo changes yet: {approval.get('reason_code', 'confirmation_failed')}."
         await resolve_approval(self.db_path, active["run_id"], "approved")
         await finish_run(self.db_path, active["run_id"], status="approved_waiting_manual_apply")
         worktree = state.get("working_directory", "")
@@ -289,22 +227,8 @@ class HarnessRouter:
 
 
 def _is_start(lowered: str) -> bool:
-    return bool(START_COMMAND_RE.match(lowered)) or any(
-        marker in lowered for marker in START_MARKERS
-    )
+    return _parse_start(lowered, START_MARKERS)
 
 
 def _is_followup(lowered: str) -> bool:
-    if lowered.startswith(("compare ", "explain ", "what is ", "what are ")):
-        return False
-    return any(marker in lowered for marker in FOLLOWUP_MARKERS)
-
-
-def _thread_id(run_id: str) -> str:
-    return f"harness:{run_id}"
-
-
-def _continuing_prefix(active: dict) -> str:
-    workflow = str(active.get("workflow_type") or "workflow")
-    goal = str(active.get("goal") or "").strip()
-    return f"Continuing: {workflow}" + (f" for {goal}." if goal else ".")
+    return _parse_followup(lowered, FOLLOWUP_MARKERS)

@@ -35,7 +35,8 @@ async def load_existing_for_upsert(
             """
             SELECT memory_id, kind, subject_key, content, value, scope,
                    source_channel, source_ref, confidence, status,
-                   created_at, updated_at, pinned, temporary, test_marker
+                   created_at, updated_at, pinned, temporary, test_marker,
+                   provenance_json, untrusted_influence, injection_detected
             FROM canonical_memory_items
             WHERE kind = ? AND subject_key = ? AND scope = ? AND status = 'active'
             """,
@@ -49,7 +50,8 @@ async def load_existing_for_upsert(
             """
             SELECT memory_id, kind, subject_key, content, value, scope,
                    source_channel, source_ref, confidence, status,
-                   created_at, updated_at, pinned, temporary, test_marker
+                   created_at, updated_at, pinned, temporary, test_marker,
+                   provenance_json, untrusted_influence, injection_detected
             FROM canonical_memory_items
             WHERE memory_id = ? AND status IN ('forgotten', 'expired')
             """,
@@ -87,6 +89,9 @@ async def write_active_memory_row(
     pinned: bool,
     temporary: bool,
     existing_status: str,
+    provenance_json: str,
+    untrusted_influence: bool,
+    injection_detected: bool,
 ) -> None:
     """Write the active truth row. Forgotten/expired base rows are reactivated
     in place so explicit user re-saves keep the stable memory_id."""
@@ -100,6 +105,9 @@ async def write_active_memory_row(
         int(pinned),
         int(temporary),
         int(temporary),
+        provenance_json,
+        int(untrusted_influence),
+        int(injection_detected),
     )
     if existing_status in {"forgotten", "expired"}:
         await db.execute(
@@ -108,6 +116,7 @@ async def write_active_memory_row(
             SET content = ?, value = ?, source_channel = ?, source_ref = ?,
                 confidence = ?, status = 'active', expires_at = ?,
                 pinned = MAX(pinned, ?), temporary = ?, test_marker = ?,
+                provenance_json = ?, untrusted_influence = ?, injection_detected = ?,
                 updated_at = CURRENT_TIMESTAMP
             WHERE memory_id = ?
             """,
@@ -119,9 +128,10 @@ async def write_active_memory_row(
         INSERT INTO canonical_memory_items (
             memory_id, kind, subject_key, content, value, scope,
             source_channel, source_ref, confidence, status, expires_at,
-            pinned, temporary, test_marker, updated_at
+            pinned, temporary, test_marker, provenance_json,
+            untrusted_influence, injection_detected, updated_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, CURRENT_TIMESTAMP)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, 'active', ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
         ON CONFLICT(kind, subject_key, scope) WHERE status = 'active' DO UPDATE SET
             content = excluded.content,
             value = excluded.value,
@@ -133,6 +143,9 @@ async def write_active_memory_row(
             pinned = MAX(pinned, excluded.pinned),
             temporary = excluded.temporary,
             test_marker = excluded.test_marker,
+            provenance_json = excluded.provenance_json,
+            untrusted_influence = excluded.untrusted_influence,
+            injection_detected = excluded.injection_detected,
             updated_at = CURRENT_TIMESTAMP
         """,
         (
@@ -149,6 +162,9 @@ async def write_active_memory_row(
             int(pinned),
             int(temporary),
             int(temporary),
+            provenance_json,
+            int(untrusted_influence),
+            int(injection_detected),
         ),
     )
 
@@ -235,11 +251,13 @@ async def archive_superseded_value(
             memory_id, kind, subject_key, content, value, scope,
             source_channel, source_ref, confidence, status,
             created_at, updated_at, pinned, temporary, test_marker,
+            provenance_json, untrusted_influence, injection_detected,
             superseded_by, superseded_at
         )
         SELECT ?, kind, subject_key, content, value, scope,
                source_channel, source_ref, confidence, ?,
                created_at, CURRENT_TIMESTAMP, 0, temporary, test_marker,
+               provenance_json, untrusted_influence, injection_detected,
                ?, CURRENT_TIMESTAMP
         FROM canonical_memory_items
         WHERE memory_id = ?

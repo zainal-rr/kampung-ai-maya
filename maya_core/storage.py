@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import aiosqlite
 
+from maya_core.provenance import provenance_from_source_channel
 from maya_documents.artifact_sessions import init_artifact_sessions_db
 from maya_memory.canonical_memory import init_canonical_memory_db
 from maya_memory.memory_audit import init_memory_audit_db
@@ -37,10 +38,16 @@ async def init_db(db_path: str) -> None:
                 user_id INTEGER,
                 role TEXT,
                 content TEXT,
+                source TEXT DEFAULT 'unknown',
+                untrusted_influence INTEGER DEFAULT 1,
+                injection_detected INTEGER DEFAULT 0,
                 timestamp DATETIME DEFAULT CURRENT_TIMESTAMP
             )
             """
         )
+        await _ensure_column(db, "history", "source", "TEXT DEFAULT 'unknown'")
+        await _ensure_column(db, "history", "untrusted_influence", "INTEGER DEFAULT 1")
+        await _ensure_column(db, "history", "injection_detected", "INTEGER DEFAULT 0")
         await db.execute(
             """
             CREATE TABLE IF NOT EXISTS shadow_memory (
@@ -130,7 +137,13 @@ async def init_db(db_path: str) -> None:
             await db.execute(
                 """
                 CREATE VIRTUAL TABLE IF NOT EXISTS session_search
-                USING fts5(role, content, channel, created_at UNINDEXED)
+                USING fts5(
+                    role, content, channel,
+                    source UNINDEXED,
+                    untrusted_influence UNINDEXED,
+                    injection_detected UNINDEXED,
+                    created_at UNINDEXED
+                )
                 """
             )
         except aiosqlite.OperationalError:
@@ -160,18 +173,39 @@ async def save_history_message(
     untrusted_influence: bool = False,
     injection_detected: bool = False,
 ) -> None:
+    source_name = (source or channel or "unknown").strip() or "unknown"
+    provenance = provenance_from_source_channel(source_name)
+    row_untrusted = bool(untrusted_influence or provenance.untrusted_influence)
+    row_injection = bool(injection_detected or provenance.injection_detected)
     async with aiosqlite.connect(db_path) as db:
         await db.execute(
-            "INSERT INTO history (user_id, role, content) VALUES (?, ?, ?)",
-            (user_id, role, content),
+            """
+            INSERT INTO history (
+                user_id, role, content, source, untrusted_influence, injection_detected
+            )
+            VALUES (?, ?, ?, ?, ?, ?)
+            """,
+            (user_id, role, content, source_name, int(row_untrusted), int(row_injection)),
         )
         try:
             await db.execute(
-                "INSERT INTO session_search (role, content, channel, created_at) VALUES (?, ?, ?, datetime('now'))",
-                (role, content, channel),
+                """
+                INSERT INTO session_search (
+                    role, content, channel, source,
+                    untrusted_influence, injection_detected, created_at
+                )
+                VALUES (?, ?, ?, ?, ?, ?, datetime('now'))
+                """,
+                (role, content, channel, source_name, int(row_untrusted), int(row_injection)),
             )
         except aiosqlite.OperationalError:
-            pass
+            try:
+                await db.execute(
+                    "INSERT INTO session_search (role, content, channel, created_at) VALUES (?, ?, ?, datetime('now'))",
+                    (role, content, channel),
+                )
+            except aiosqlite.OperationalError:
+                pass
         await db.commit()
     # Context-window turn store (docs/context_window_design_2026-06-12.md).
     # save_history_message is the single funnel every turn already flows
@@ -185,9 +219,17 @@ async def save_history_message(
         role=role,
         content=content,
         source=source,
-        untrusted_influence=untrusted_influence,
-        injection_detected=injection_detected,
+        untrusted_influence=row_untrusted,
+        injection_detected=row_injection,
     )
+
+
+async def _ensure_column(db: aiosqlite.Connection, table: str, column: str, definition: str) -> None:
+    cursor = await db.execute(f"PRAGMA table_info({table})")
+    rows = await cursor.fetchall()
+    if any(row[1] == column for row in rows):
+        return
+    await db.execute(f"ALTER TABLE {table} ADD COLUMN {column} {definition}")
 
 
 async def add_knowledge_chunk(

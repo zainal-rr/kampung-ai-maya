@@ -5,6 +5,8 @@ import uuid
 
 import aiosqlite
 
+from maya_harness.harness_confirmation import create_harness_confirmation
+
 async def init_harness_db(db_path: str) -> None:
     async with aiosqlite.connect(db_path) as db:
         await db.execute(
@@ -158,6 +160,7 @@ async def create_approval(db_path: str, run_id: str, action: str, details: str) 
             (run_id, action, details[:1000]),
         )
         await db.commit()
+    await create_harness_confirmation(db_path, run_id=run_id, action=action, details=details)
 
 
 async def resolve_approval(db_path: str, run_id: str, status: str) -> None:
@@ -172,6 +175,8 @@ async def resolve_approval(db_path: str, run_id: str, status: str) -> None:
             (status, run_id),
         )
         await db.commit()
+
+
 
 
 async def get_active_run(db_path: str, channel: str | None = None) -> dict | None:

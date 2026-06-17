@@ -226,11 +226,11 @@ class KampungAssistant:
         elif vision_response is not None:
             cost = vision_response.startswith("I see.")
             lane = "Gemini sight" if cost else "camera sight state"
-            result = RouteResult(vision_response, lane, "sight request", cost)
+            result = RouteResult(vision_response, lane, "sight request", cost, response_source="screen_ocr", response_untrusted_influence=cost)
         elif screen_response is not None:
             cost = screen_response.startswith(("I see it.", "I see your screen."))
             lane = "Gemini screen sight" if cost else "macOS screen state"
-            result = RouteResult(screen_response, lane, "screen sight request", cost)
+            result = RouteResult(screen_response, lane, "screen sight request", cost, response_source="screen_ocr", response_untrusted_influence=cost, response_injection_detected="Safety note:" in screen_response)
         elif learning_response is not None:
             result = RouteResult(learning_response, "learning pipeline", "learning cue")
         elif context_response is not None:
@@ -278,7 +278,16 @@ class KampungAssistant:
         await self.skills.record_latest_outcome(clean_text, channel, result.lane, response)
         await record_route(self.db_path, input_type, route_lane, route_reason, route_cost)
         await save_history_message(self.db_path, user_id, "user", clean_text, channel)
-        await save_history_message(self.db_path, user_id, "assistant", response, channel)
+        await save_history_message(
+            self.db_path,
+            user_id,
+            "assistant",
+            response,
+            channel,
+            source=result.response_source,
+            untrusted_influence=result.response_untrusted_influence,
+            injection_detected=result.response_injection_detected,
+        )
         await remember_rewrite_candidate(self.db_path, channel, clean_text, response)
         await maybe_curate_memory(self.db_path, clean_text, channel)
 

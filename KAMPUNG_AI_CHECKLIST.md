@@ -1665,7 +1665,9 @@ containment.
     - [ ] Keep full arbitrary home-directory read jail as future debt: the current macOS `sandbox-exec` backend needs broad read support for common tools, so W5-3 protects named personal roots rather than claiming perfect general read isolation.
     - [ ] Track `media_capture` as an uncontained-read media profile when mic permissions require OS sandboxing disabled; ffmpeg arguments must stay fixed/config-derived, not untrusted-input-derived.
     - [ ] Keep GUI/AppleScript/Office/Chrome as governed surfaces until a later containment design exists; W5 and W7 stay load-bearing together here.
-    - [ ] Extend W7 provenance end-to-end into direct realtime tool requests so model-produced `start_maya_work` / `run_browser_skill` arguments cannot silently carry browser/screen/document-origin instructions without a provenance field.
+    - [x] Extend W7 provenance into direct realtime tool requests, memory recall, W2-B semantic recall, context summaries, and structured confirmations so untrusted/browser/screen/document-origin instructions cannot silently become trusted action requests.
+    - [x] Require owner-attributed confirmation: only `owner_voice` or authenticated owner-channel `owner_text` can approve a pending action; `other_speaker`, page/screen/document/memory/meeting, and `unknown` sources cannot approve.
+    - [ ] Keep Meet owner attribution as a separate pre-M1 design gate: Recall speaker labels are not enough by themselves, so all meeting speech defaults to `other_speaker` until owner identity is positively established.
 
 ## W2-B: Confidence-Gated Paraphrase Recall
 
