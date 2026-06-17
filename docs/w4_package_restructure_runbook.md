@@ -32,6 +32,7 @@ python -c "import kampung_ai_app"
 means the command reaches the packaged bridge status code. For live browser
 testing, require `owner_kind=engine` and `client_connected=true`; if it reports
 `client_disconnected`, reload/reconnect the Chrome extension before testing.
+The final W4 status snapshot is stored in `logs/w4/final_browser_status.txt`.
 
 ## Root Entrypoints
 
