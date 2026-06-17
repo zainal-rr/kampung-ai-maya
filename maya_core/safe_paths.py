@@ -88,6 +88,7 @@ def allowed_roots(mode: str) -> tuple[Path, ...]:
         *project_roots(),
         *_user_dirs(),
         Path(tempfile.gettempdir()),
+        Path(tempfile.gettempdir()).parent / "C",
     )
 
 

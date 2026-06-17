@@ -2,10 +2,10 @@ from __future__ import annotations
 
 import os
 import shutil
-import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
+from maya_core.execution_broker import CommandSpec, run_command
 from maya_documents.office_files import safe_slug
 from maya_core.workspace_paths import workspace_dir
 
@@ -32,15 +32,15 @@ def create_repo_isolation(source: Path, run_id: str) -> RepoIsolation | None:
     worktree = root / f"{safe_slug(repo.name, 42)}-{safe_slug(run_id, 24)}"
     if worktree.exists():
         return RepoIsolation(repo, worktree, base_ref, _dirty_summary(repo))
-    try:
-        subprocess.run(
-            ["git", "-C", str(repo), "worktree", "add", "--detach", str(worktree), "HEAD"],
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-    except (subprocess.CalledProcessError, OSError):
+    result = run_command(CommandSpec(
+        argv=("git", "-C", str(repo), "worktree", "add", "--detach", str(worktree), "HEAD"),
+        cwd=repo,
+        profile="workspace_write",
+        write_roots=(repo, worktree.parent),
+        timeout=60,
+        text=True,
+    ))
+    if result.returncode != 0:
         return None
     return RepoIsolation(repo, worktree, base_ref, _dirty_summary(repo))
 
@@ -69,14 +69,13 @@ def _dirty_summary(repo: Path) -> str:
 
 
 def _git_output(repo: Path, *args: str) -> str:
-    try:
-        proc = subprocess.run(
-            ["git", "-C", str(repo), *args],
-            check=True,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            text=True,
-        )
-    except (subprocess.CalledProcessError, OSError):
+    result = run_command(CommandSpec(
+        argv=("git", "-C", str(repo), *args),
+        cwd=repo,
+        profile="readonly",
+        timeout=30,
+        text=True,
+    ))
+    if result.returncode != 0:
         return ""
-    return proc.stdout.strip()
+    return str(result.stdout).strip()

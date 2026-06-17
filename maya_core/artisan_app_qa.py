@@ -4,13 +4,14 @@ import html
 import os
 import re
 import shutil
-import subprocess
 import threading
 import tempfile
 import urllib.request
 from dataclasses import dataclass, asdict
 from http.server import SimpleHTTPRequestHandler, ThreadingHTTPServer
 from pathlib import Path
+
+from maya_core.execution_broker import CommandSpec, run_command
 
 
 @dataclass(frozen=True)
@@ -75,7 +76,13 @@ def qa_artisan_app_project(
         if not js.exists() or "node_modules" in js.parts:
             continue
         if node:
-            proc = subprocess.run([node, "--check", str(js)], capture_output=True, text=True, timeout=20)
+            proc = run_command(CommandSpec(
+                argv=(node, "--check", str(js)),
+                cwd=app_root,
+                profile="readonly",
+                timeout=20,
+                text=True,
+            )).to_completed_process()
             if proc.returncode != 0:
                 issues.append(f"JavaScript syntax failed in {js.relative_to(app_root)}: {(proc.stderr or proc.stdout).strip()[:180]}")
             else:
@@ -232,8 +239,8 @@ def _capture_browser_preview(app_root: Path, url: str) -> str:
     qa_dir.mkdir(parents=True, exist_ok=True)
     screenshot = qa_dir / "app-preview.png"
     with tempfile.TemporaryDirectory(prefix="maya-app-chrome-") as tmp:
-        proc = subprocess.run(
-            [
+        proc = run_command(CommandSpec(
+            argv=(
                 chrome,
                 "--headless=new",
                 "--disable-gpu",
@@ -245,11 +252,15 @@ def _capture_browser_preview(app_root: Path, url: str) -> str:
                 f"--user-data-dir={tmp}",
                 f"--screenshot={screenshot}",
                 url,
-            ],
-            capture_output=True,
+            ),
+            cwd=app_root,
             text=True,
             timeout=8,
-        )
+            profile="browser_headless",
+            write_roots=(Path(tmp), qa_dir),
+            network=True,
+            sandbox=False,
+        )).to_completed_process()
     if proc.returncode == 0 and screenshot.exists() and screenshot.stat().st_size > 1024:
         return str(screenshot)
     return ""

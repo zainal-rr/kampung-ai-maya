@@ -7,6 +7,7 @@ import sys
 from dataclasses import dataclass
 from pathlib import Path
 
+from maya_core.execution_broker import CommandSpec, run_command
 from maya_core.repo_paths import repo_root
 
 
@@ -184,15 +185,15 @@ def _run(check: Check) -> subprocess.CompletedProcess[str]:
     env.setdefault("MAYA_TEST_MODE", "1")
     root = repo_root(__file__)
     current_pythonpath = env.get("PYTHONPATH", "")
-    env["PYTHONPATH"] = str(root) if not current_pythonpath else f"{root}{os.pathsep}{current_pythonpath}"
-    return subprocess.run(
-        command,
+    pythonpath = str(root) if not current_pythonpath else f"{root}{os.pathsep}{current_pythonpath}"
+    return run_command(CommandSpec(
+        argv=command,
         cwd=root,
-        env=env,
-        capture_output=True,
+        profile="readonly",
+        extra_env={"MAYA_TEST_MODE": "1", "PYTHONPATH": pythonpath},
         text=True,
-        check=False,
-    )
+        timeout=180,
+    )).to_completed_process()
 
 
 def _summary(check: Check, code: int) -> str:

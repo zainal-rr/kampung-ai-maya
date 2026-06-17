@@ -3,8 +3,9 @@ from __future__ import annotations
 import os
 import re
 import shutil
-import subprocess
 from dataclasses import dataclass
+
+from maya_core.execution_broker import CommandSpec, run_command
 
 
 @dataclass(frozen=True)
@@ -25,12 +26,13 @@ def bin_path(name: str) -> str:
 
 
 def list_audio_devices() -> list[AudioDevice]:
-    result = subprocess.run(
-        [bin_path("ffmpeg"), "-f", "avfoundation", "-list_devices", "true", "-i", ""],
-        capture_output=True,
+    result = run_command(CommandSpec(
+        argv=(bin_path("ffmpeg"), "-f", "avfoundation", "-list_devices", "true", "-i", ""),
+        profile="media",
+        timeout=15,
         text=True,
-        check=False,
-    )
+        sandbox=False,
+    )).to_completed_process()
     output = (result.stdout or "") + (result.stderr or "")
     in_audio = False
     devices: list[AudioDevice] = []

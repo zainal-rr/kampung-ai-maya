@@ -4,11 +4,12 @@ import asyncio
 import base64
 import json
 import os
-import subprocess
 import tempfile
 import wave
 from pathlib import Path
 from urllib.parse import urlencode
+
+from maya_core.execution_broker import CommandSpec, run_command_async
 
 try:
     import websockets
@@ -133,13 +134,15 @@ class XaiRealtimeVoiceAgentTransport:
 
     async def _play_pcm_audio(self, audio: bytes) -> None:
         path = await asyncio.to_thread(self._write_wav, audio)
-        process = await asyncio.create_subprocess_exec(
-            "afplay",
-            str(path),
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-        await _cleanup_after_playback(process, path)
+        await run_command_async(CommandSpec(
+            argv=("afplay", str(path)),
+            cwd=path.parent,
+            profile="gui",
+            timeout=300,
+            capture_output=False,
+            sandbox=False,
+        ))
+        path.unlink(missing_ok=True)
 
     def _write_wav(self, audio: bytes) -> Path:
         fd, filename = tempfile.mkstemp(prefix="maya-grok-voice-", suffix=".wav")
@@ -151,12 +154,6 @@ class XaiRealtimeVoiceAgentTransport:
             output.setframerate(self.sample_rate)
             output.writeframes(audio)
         return path
-
-
-async def _cleanup_after_playback(process, path: Path) -> None:
-    await process.wait()
-    path.unlink(missing_ok=True)
-
 
 def _event_error(event: dict) -> str:
     error = event.get("error") or {}

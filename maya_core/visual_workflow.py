@@ -4,12 +4,12 @@ import asyncio
 import html
 import re
 import shutil
-import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 
 from maya_harness.harness_artifact_store import record_structured_artifact
 from maya_harness.harness_models import local_artifact
+from maya_core.execution_broker import CommandSpec, run_command
 from maya_documents.office_files import safe_slug
 from maya_core.utils import OSBridge
 from maya_core.workspace_paths import maya_workspace_root
@@ -84,9 +84,10 @@ class VisualWorkflowRenderer:
         mmdc = shutil.which("mmdc")
         if mmdc:
             try:
-                await asyncio.to_thread(
-                    subprocess.run,
-                    [
+                result = await asyncio.to_thread(
+                    run_command,
+                    CommandSpec(
+                        argv=(
                         mmdc,
                         "-i",
                         str(source_path),
@@ -96,10 +97,14 @@ class VisualWorkflowRenderer:
                         "transparent",
                         "-t",
                         "dark",
-                    ],
-                    capture_output=True,
-                    text=True,
-                    check=True,
+                        ),
+                        cwd=source_path.parent,
+                        profile="workspace_write",
+                        timeout=60,
+                        write_roots=(source_path.parent, output_path.parent),
+                        text=True,
+                        check=True,
+                    ),
                 )
                 return "Mermaid CLI"
             except Exception:

@@ -4,11 +4,11 @@ import re
 import asyncio
 import logging
 import os
-import subprocess
 from contextlib import suppress
 from pathlib import Path
 
 from maya_core.audio_devices import bin_path
+from maya_core.execution_broker import CommandSpec, run_command_async
 from maya_core.safe_paths import resolve_safe_path
 from telegram import Bot
 from telegram.error import NetworkError, RetryAfter, TimedOut
@@ -176,25 +176,15 @@ def _spokenize_telegram_reply(text: str) -> str:
 async def _voice_note_path(audio_path: Path) -> Path | None:
     ffmpeg = bin_path("ffmpeg")
     output_path = audio_path.with_suffix(".ogg")
-    process = await asyncio.create_subprocess_exec(
-        ffmpeg,
-        "-y",
-        "-i",
-        str(audio_path),
-        "-ac",
-        "1",
-        "-ar",
-        "48000",
-        "-c:a",
-        "libopus",
-        "-b:a",
-        "32k",
-        str(output_path),
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
-    )
-    await process.wait()
-    return output_path if process.returncode == 0 and output_path.exists() else None
+    result = await run_command_async(CommandSpec(
+        argv=(ffmpeg, "-y", "-i", str(audio_path), "-ac", "1", "-ar", "48000", "-c:a", "libopus", "-b:a", "32k", str(output_path)),
+        cwd=audio_path.parent,
+        profile="media",
+        timeout=60,
+        write_roots=(audio_path.parent,),
+        capture_output=False,
+    ))
+    return output_path if result.returncode == 0 and output_path.exists() else None
 
 
 def _chunk_text(text: str) -> list[str]:

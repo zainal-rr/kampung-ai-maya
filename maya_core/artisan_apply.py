@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import json
-import subprocess
 from datetime import datetime, timezone
 from pathlib import Path
 
 import aiosqlite
 
 from maya_harness.harness_store import init_harness_db, record_event, upsert_run
+from maya_core.execution_broker import CommandSpec, run_command
 from maya_core.workspace_paths import workspace_dir
 
 
@@ -86,12 +86,25 @@ async def _approved_repo_run(db_path: str, run_id: str | None):
 
 
 def _git_bytes(cwd: Path, *args: str) -> bytes:
-    proc = subprocess.run(["git", "-C", str(cwd), *args], check=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-    return proc.stdout
+    result = run_command(CommandSpec(
+        argv=("git", "-C", str(cwd), *args),
+        cwd=cwd,
+        profile="readonly",
+        timeout=60,
+        check=True,
+    ))
+    return bytes(result.stdout)
 
 
-def _git_apply(cwd: Path, diff: bytes, *args: str) -> subprocess.CompletedProcess[bytes]:
-    return subprocess.run(["git", "-C", str(cwd), "apply", *args], input=diff, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+def _git_apply(cwd: Path, diff: bytes, *args: str):
+    return run_command(CommandSpec(
+        argv=("git", "-C", str(cwd), "apply", *args),
+        cwd=cwd,
+        profile="workspace_write",
+        timeout=60,
+        input_bytes=diff,
+        write_roots=(cwd,),
+    )).to_completed_process()
 
 
 def _patch_path(run_id: str) -> Path:

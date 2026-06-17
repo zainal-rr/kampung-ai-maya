@@ -5,6 +5,7 @@ import tempfile
 from pathlib import Path
 
 from maya_core.audio_devices import bin_path, device_names, resolve_audio_input
+from maya_core.execution_broker import CommandSpec, run_command_async
 from maya_core.local_wake_scorer import LocalWakeScorerTranscriptSource
 from maya_voice.voice_device_policy import current_local_wake_allowed
 from maya_voice.xai_stt import xai_transcribe_file
@@ -113,28 +114,37 @@ class MacOSMicTranscriber:
             raise RuntimeError(message or "ffmpeg recording failed")
 
     async def _run_whisper(self, audio_path: Path) -> Path:
-        process = await asyncio.create_subprocess_exec(
-            bin_path("whisper"),
-            str(audio_path),
-            "--model",
-            self.whisper_model,
-            "--language",
-            self.language,
-            "--fp16",
-            "False",
-            "--condition_on_previous_text",
-            "False",
-            "--temperature",
-            "0",
-            "--output_format",
-            "txt",
-            "--output_dir",
-            str(audio_path.parent),
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.PIPE,
+        result = await run_command_async(
+            CommandSpec(
+                argv=(
+                    bin_path("whisper"),
+                    str(audio_path),
+                    "--model",
+                    self.whisper_model,
+                    "--language",
+                    self.language,
+                    "--fp16",
+                    "False",
+                    "--condition_on_previous_text",
+                    "False",
+                    "--temperature",
+                    "0",
+                    "--output_format",
+                    "txt",
+                    "--output_dir",
+                    str(audio_path.parent),
+                ),
+                cwd=audio_path.parent,
+                profile="media",
+                read_roots=(audio_path.parent,),
+                write_roots=(audio_path.parent,),
+                timeout=max(30, self.duration_seconds + 30),
+                sandbox=False,
+                capture_output=True,
+            )
         )
-        _, stderr = await process.communicate()
-        if process.returncode != 0:
+        if result.returncode != 0:
+            stderr = result.stderr if isinstance(result.stderr, bytes) else result.stderr.encode()
             message = stderr.decode("utf-8", errors="ignore").strip()
             raise RuntimeError(message or "whisper transcription failed")
         return audio_path.with_suffix(".txt")

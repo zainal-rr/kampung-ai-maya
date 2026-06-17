@@ -73,7 +73,7 @@ def main() -> None:
         ("maya_core/file_actions.py", "resolve_safe_path"),
         ("maya_documents/document_actions.py", "resolve_safe_path"),
         ("maya_telegram/telegram_delivery.py", "resolve_safe_path"),
-        ("maya_core/artisan_runner_engine.py", "scrubbed_subprocess_env"),
+        ("maya_core/artisan_runner_engine.py", "run_command_async"),
     ):
         text = (_ROOT / module).read_text(encoding="utf-8")
         _require(needle in text, f"S5 FAILED: {module} does not route through {needle}")

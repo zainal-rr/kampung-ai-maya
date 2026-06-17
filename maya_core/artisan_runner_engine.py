@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from maya_core.artisan_runner_context import *
 from maya_core.artisan_runner_postprocess import _result, _write_transcript
-from maya_core.safe_paths import scrubbed_subprocess_env
+from maya_core.execution_broker import CommandSpec, run_command, run_command_async
 
 
 def build_codex_command(target: ArtisanTarget, final_path: Path, prompt: str) -> list[str]:
@@ -52,34 +52,31 @@ async def _run_codex(run_id: str, request: str, target: ArtisanTarget, brief: st
     final_path = transcript_path.with_suffix(".final.txt")
     cmd = build_codex_command(target, final_path, prompt)
     timeout = int(os.getenv("ARTISAN_TIMEOUT_SECONDS", "300"))
-    # W5-1 (S4): generated code runs worktree-confined with a scrubbed
-    # environment — no credential-shaped env vars reach the child process.
-    proc = await asyncio.create_subprocess_exec(
-        *cmd,
-        cwd=str(target.cwd),
-        env=scrubbed_subprocess_env(),
-        stdin=subprocess.DEVNULL,
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-    try:
-        stdout, stderr = await asyncio.wait_for(proc.communicate(), timeout=timeout)
-    except asyncio.TimeoutError:
-        proc.kill()
-        stdout, stderr = await proc.communicate()
-        return _result("failed", "Codex timed out.", stdout, stderr, run_id, final_path=final_path)
-    return _result("completed" if proc.returncode == 0 else "failed", "", stdout, stderr, run_id, final_path=final_path)
+    # W5-2: Codex runs through the execution broker. Codex's own
+    # workspace-write sandbox remains defense-in-depth, not the only boundary.
+    result = await run_command_async(CommandSpec(
+        argv=tuple(cmd),
+        cwd=target.cwd,
+        profile="codex_auth",
+        timeout=timeout,
+        write_roots=(target.cwd, final_path.parent),
+        network=True,
+        allow_credential_reads=True,
+    ))
+    if result.timed_out:
+        return _result("failed", "Codex timed out.", result.stdout, result.stderr, run_id, final_path=final_path)
+    return _result("completed" if result.returncode == 0 else "failed", "", result.stdout, result.stderr, run_id, final_path=final_path)
 
 
 def _codex_chatgpt_auth_state() -> tuple[bool, str]:
     try:
-        proc = subprocess.run(
-            ["codex", "login", "status"],
-            check=False,
-            capture_output=True,
-            text=True,
+        proc = run_command(CommandSpec(
+            argv=("codex", "login", "status"),
+            profile="codex_auth",
             timeout=5,
-        )
+            text=True,
+            allow_credential_reads=True,
+        )).to_completed_process()
     except Exception as exc:
         return False, f"unable to check Codex login: {exc}"
     output = f"{proc.stdout}\n{proc.stderr}".strip()

@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import json
-import subprocess
 from datetime import UTC, datetime
 from pathlib import Path
 
 from maya_harness.harness_store import create_approval, record_artifact, record_event
+from maya_core.execution_broker import CommandSpec, run_command
 from maya_memory.memory_canaries import check_memory_canaries, format_memory_leak_report, seed_memory_canaries
 from maya_core.self_heal_memory import create_memory_snapshot, memory_self_heal_dry_run
 from maya_core.self_heal_store import create_self_heal_report, record_self_heal_stage
@@ -184,7 +184,13 @@ def _failure_message(checkpoint: dict) -> str:
 
 
 def _git_status() -> str:
-    proc = subprocess.run(["git", "status", "--short"], cwd=ROOT, capture_output=True, text=True, timeout=20)
+    proc = run_command(CommandSpec(
+        argv=("git", "status", "--short"),
+        cwd=ROOT,
+        profile="readonly",
+        timeout=20,
+        text=True,
+    )).to_completed_process()
     return proc.stdout.strip()
 
 

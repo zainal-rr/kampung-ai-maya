@@ -1,12 +1,13 @@
 from __future__ import annotations
 
 import shutil
-import subprocess
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
 
 from docx import Document
+
+from maya_core.execution_broker import CommandSpec, run_command
 
 
 @dataclass(frozen=True)
@@ -89,13 +90,15 @@ def _optional_html_preview(path: Path, warnings: list[str]) -> str:
         return ""
     with tempfile.TemporaryDirectory(prefix="maya-word-preview-") as tmp:
         preview = Path(tmp) / (path.stem + ".html")
-        proc = subprocess.run(
-            [textutil, "-convert", "html", "-output", str(preview), str(path)],
-            capture_output=True,
+        proc = run_command(CommandSpec(
+            argv=(textutil, "-convert", "html", "-output", str(preview), str(path)),
+            cwd=path.parent,
+            profile="workspace_write",
             text=True,
             timeout=12,
             check=False,
-        )
+            write_roots=(Path(tmp),),
+        )).to_completed_process()
         if proc.returncode != 0 or not preview.exists():
             warnings.append("Word HTML preview skipped: textutil conversion failed")
             return ""

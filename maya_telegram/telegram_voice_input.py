@@ -2,12 +2,12 @@ from __future__ import annotations
 
 import asyncio
 import os
-import subprocess
 import tempfile
 from pathlib import Path
 
 from maya_core.audio_devices import bin_path
 from maya_core.cost_tracker import record_usage
+from maya_core.execution_broker import CommandSpec, run_command_async
 from maya_voice.xai_stt import xai_transcribe_file
 
 
@@ -31,22 +31,15 @@ async def transcribe_telegram_voice(update, context, db_path: str) -> str:
 
 async def _convert_to_wav(input_path: Path, wav_path: Path) -> None:
     ffmpeg = bin_path("ffmpeg")
-    process = await asyncio.create_subprocess_exec(
-        ffmpeg,
-        "-y",
-        "-i",
-        str(input_path),
-        "-ac",
-        "1",
-        "-ar",
-        "16000",
-        str(wav_path),
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.PIPE,
-    )
-    _, stderr = await process.communicate()
-    if process.returncode != 0:
-        message = stderr.decode("utf-8", errors="ignore").strip()
+    result = await run_command_async(CommandSpec(
+        argv=(ffmpeg, "-y", "-i", str(input_path), "-ac", "1", "-ar", "16000", str(wav_path)),
+        cwd=wav_path.parent,
+        profile="media",
+        timeout=60,
+        write_roots=(wav_path.parent,),
+    ))
+    if result.returncode != 0:
+        message = bytes(result.stderr).decode("utf-8", errors="ignore").strip()
         raise RuntimeError(message or "Telegram voice conversion failed")
 
 
@@ -61,28 +54,31 @@ async def _transcribe_wav(wav_path: Path) -> tuple[str, bool]:
 
 async def _transcribe_with_whisper(wav_path: Path) -> str:
     whisper = bin_path("whisper")
-    process = await asyncio.create_subprocess_exec(
-        whisper,
-        str(wav_path),
-        "--model",
-        os.getenv("WHISPER_MODEL", "tiny"),
-        "--language",
-        os.getenv("WHISPER_LANGUAGE", "en"),
-        "--fp16",
-        "False",
-        "--condition_on_previous_text",
-        "False",
-        "--temperature",
-        "0",
-        "--output_format",
-        "txt",
-        "--output_dir",
-        str(wav_path.parent),
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.PIPE,
-    )
-    _, stderr = await process.communicate()
-    if process.returncode != 0:
-        message = stderr.decode("utf-8", errors="ignore").strip()
+    result = await run_command_async(CommandSpec(
+        argv=(
+            whisper,
+            str(wav_path),
+            "--model",
+            os.getenv("WHISPER_MODEL", "tiny"),
+            "--language",
+            os.getenv("WHISPER_LANGUAGE", "en"),
+            "--fp16",
+            "False",
+            "--condition_on_previous_text",
+            "False",
+            "--temperature",
+            "0",
+            "--output_format",
+            "txt",
+            "--output_dir",
+            str(wav_path.parent),
+        ),
+        cwd=wav_path.parent,
+        profile="media",
+        timeout=300,
+        write_roots=(wav_path.parent,),
+    ))
+    if result.returncode != 0:
+        message = bytes(result.stderr).decode("utf-8", errors="ignore").strip()
         raise RuntimeError(message or "whisper transcription failed")
     return wav_path.with_suffix(".txt").read_text(encoding="utf-8")

@@ -3,12 +3,12 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import subprocess
 import sys
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
 
+from maya_core.execution_broker import CommandSpec, run_command
 from maya_core.repo_paths import repo_root
 
 
@@ -115,11 +115,16 @@ def format_demo_result(payload: dict) -> str:
 
 
 def _run_command(command: tuple[str, ...]) -> dict:
-    env = os.environ.copy()
-    env.setdefault("MAYA_TEST_MODE", "1")
-    current_pythonpath = env.get("PYTHONPATH", "")
-    env["PYTHONPATH"] = str(ROOT) if not current_pythonpath else f"{ROOT}{os.pathsep}{current_pythonpath}"
-    proc = subprocess.run([sys.executable, *command], cwd=ROOT, capture_output=True, text=True, env=env, timeout=120)
+    current_pythonpath = os.environ.get("PYTHONPATH", "")
+    pythonpath = str(ROOT) if not current_pythonpath else f"{ROOT}{os.pathsep}{current_pythonpath}"
+    proc = run_command(CommandSpec(
+        argv=(sys.executable, *command),
+        cwd=ROOT,
+        profile="readonly",
+        timeout=120,
+        text=True,
+        extra_env={"MAYA_TEST_MODE": "1", "PYTHONPATH": pythonpath},
+    )).to_completed_process()
     output = (proc.stdout + proc.stderr).strip()
     return {
         "command": " ".join(command),

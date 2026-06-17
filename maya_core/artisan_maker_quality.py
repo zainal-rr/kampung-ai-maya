@@ -1,14 +1,13 @@
 from __future__ import annotations
 
-import os
 import re
 import shutil
 import struct
-import subprocess
 import tempfile
 from pathlib import Path
 
 from maya_core.artisan_maker_models import ArtisanMakerResult
+from maya_core.execution_broker import CommandSpec, run_command
 
 
 def _candidate_blender_scripts(root: Path) -> list[Path]:
@@ -54,17 +53,14 @@ def _script_safety_issue(script: Path) -> str:
 
 def _run_blender_script(blender: str, script: Path) -> tuple[bool, str]:
     with tempfile.TemporaryDirectory(prefix="maya-blender-maker-runtime-") as tmp:
-        env = os.environ.copy()
         root = Path(tmp)
-        env.update(
-            {
-                "BLENDER_USER_CONFIG": str(root / "config"),
-                "BLENDER_USER_SCRIPTS": str(root / "scripts"),
-                "BLENDER_USER_EXTENSIONS": str(root / "extensions"),
-            }
-        )
-        proc = subprocess.run(
-            [
+        env = {
+            "BLENDER_USER_CONFIG": str(root / "config"),
+            "BLENDER_USER_SCRIPTS": str(root / "scripts"),
+            "BLENDER_USER_EXTENSIONS": str(root / "extensions"),
+        }
+        proc = run_command(CommandSpec(
+            argv=(
                 blender,
                 "--background",
                 "--factory-startup",
@@ -72,13 +68,14 @@ def _run_blender_script(blender: str, script: Path) -> tuple[bool, str]:
                 "11",
                 "--python",
                 str(script),
-            ],
-            cwd=str(script.parent),
-            capture_output=True,
+            ),
+            cwd=script.parent,
             text=True,
             timeout=90,
-            env=env,
-        )
+            profile="generated_blender",
+            extra_env=env,
+            write_roots=(script.parent, root, Path(tempfile.gettempdir())),
+        )).to_completed_process()
     if proc.returncode == 0:
         return True, ""
     output = "\n".join(part for part in (proc.stdout, proc.stderr) if part).strip()
@@ -230,7 +227,10 @@ def _render_preview(blend_file: Path) -> Path | None:
     if not blender:
         return None
     preview = blend_file.with_name(f"{blend_file.stem}-preview.png")
-    script = f"""
+    with tempfile.TemporaryDirectory(prefix="maya-blender-preview-runtime-") as tmp:
+        runtime_root = Path(tmp)
+        cache_root = Path(tempfile.gettempdir()).parent / "C"
+        script = f"""
 import math
 from pathlib import Path
 
@@ -265,18 +265,22 @@ bpy.context.scene.render.filepath = str(preview)
 bpy.context.scene.eevee.taa_render_samples = 32 if hasattr(bpy.context.scene, 'eevee') else 16
 bpy.ops.render.render(write_still=True)
 """
-    with tempfile.NamedTemporaryFile("w", suffix=".py", delete=False) as handle:
-        handle.write(script)
-        script_path = Path(handle.name)
-    try:
-        proc = subprocess.run(
-            [blender, "--background", str(blend_file), "--python-exit-code", "11", "--python", str(script_path)],
-            capture_output=True,
+        script_path = runtime_root / "render_preview.py"
+        script_path.write_text(script, "utf-8")
+        env = {
+            "BLENDER_USER_CONFIG": str(runtime_root / "config"),
+            "BLENDER_USER_SCRIPTS": str(runtime_root / "scripts"),
+            "BLENDER_USER_EXTENSIONS": str(runtime_root / "extensions"),
+        }
+        proc = run_command(CommandSpec(
+            argv=(blender, "--background", str(blend_file), "--python-exit-code", "11", "--python", str(script_path)),
+            cwd=blend_file.parent,
             text=True,
             timeout=90,
-        )
-    finally:
-        script_path.unlink(missing_ok=True)
+            profile="generated_blender",
+            extra_env=env,
+            write_roots=(blend_file.parent, runtime_root, Path(tempfile.gettempdir()), cache_root),
+        )).to_completed_process()
     if proc.returncode == 0 and preview.exists() and preview.stat().st_size > 1024:
         return preview
     return None

@@ -6,6 +6,7 @@ import shutil
 import tempfile
 from pathlib import Path
 
+from maya_core.execution_broker import CommandSpec, run_command_async
 from maya_core.security_manifest import SecurityManifest, upsert_manifest
 from maya_core.skill_learning_store import upsert_skill_metadata
 from maya_core.skill_library import proposed_path
@@ -86,23 +87,20 @@ async def _import_skill_file(db_path: str, skill_file: Path, request_text: str) 
 
 
 async def _run_npx_skill_add(package: str, cwd: Path) -> tuple[bool, str]:
-    process = await asyncio.create_subprocess_exec(
-        "npx", "--yes", "skills", "add", package,
-        "--all", "-y", "--copy",
-        cwd=str(cwd),
-        stdout=asyncio.subprocess.PIPE,
-        stderr=asyncio.subprocess.PIPE,
-    )
-    try:
-        stdout, stderr = await asyncio.wait_for(process.communicate(), timeout=180)
-    except asyncio.TimeoutError:
-        process.kill()
-        await process.communicate()
+    result = await run_command_async(CommandSpec(
+        argv=("npx", "--yes", "skills", "add", package, "--all", "-y", "--copy"),
+        cwd=cwd,
+        profile="workspace_write",
+        timeout=180,
+        write_roots=(cwd,),
+        network=True,
+    ))
+    if result.timed_out:
         return False, "The npx skill import timed out before any skill was registered."
-    if process.returncode != 0:
-        error = (stderr or stdout).decode("utf-8", errors="replace").strip()
+    if result.returncode != 0:
+        error = (result.stderr or result.stdout).decode("utf-8", errors="replace").strip()
         return False, f"The npx skill import failed: {error[:500]}"
-    return True, stdout.decode("utf-8", errors="replace")
+    return True, result.stdout.decode("utf-8", errors="replace")
 
 
 def _discover_skill_files(root: Path) -> list[Path]:

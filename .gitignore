@@ -24,6 +24,9 @@ logs/demos/*
 !logs/evals/
 logs/evals/*
 !logs/evals/latest.json
+!logs/w5/
+logs/w5/*
+!logs/w5/command_callsite_inventory.txt
 distilled_memories.log
 omi_sync/
 mudra_sync/

@@ -16,6 +16,8 @@ from collections.abc import Callable, Sequence
 
 from dotenv import load_dotenv
 
+from maya_core.execution_broker import CommandSpec, run_command
+
 
 load_dotenv(override=False)
 
@@ -133,13 +135,11 @@ def _keychain_set(name: str, value: str, *, service: str | None = None, runner: 
 def _run(command: Sequence[str], runner: Runner | None = None) -> subprocess.CompletedProcess[str]:
     if runner is not None:
         return runner(command)
-    try:
-        return subprocess.run(
-            list(command),
-            check=False,
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
-    except (OSError, subprocess.TimeoutExpired) as exc:
-        return subprocess.CompletedProcess(list(command), 1, "", str(exc))
+    result = run_command(CommandSpec(
+        argv=tuple(command),
+        profile="keychain",
+        timeout=10,
+        text=True,
+        sandbox=False,
+    ))
+    return result.to_completed_process()

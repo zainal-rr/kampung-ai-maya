@@ -104,14 +104,28 @@ given the narrow surface + per-call confirms, but if `run_command`/MCP/Artisan
 usage grows, OS-level enforcement (sandbox-exec / restricted user / container)
 becomes the next tier. The jail is a policy, not a sandbox — do not confuse them.
 
-## W5-2 — `mcp.call` / `run_command` + OS enforcement (build-later, Phase-7-informed)
+## W5-2 — `mcp.call` / `run_command` + OS enforcement (Stage 2 built 2026-06-17)
 
 `mcp.call` with `run_command` scope is the open-ended wildcard: an MCP
 connector can do anything. Already external-gated, but "approved once" should
-not mean "unbounded." Tighten to: scrubbed environment, restricted PATH,
-per-call confirm rather than blanket. If field use shows real `run_command`/MCP
-volume, escalate to OS-level enforcement — that is the only thing that actually
-binds child processes (closes the W5-1 honest limit).
+not mean "unbounded." Stage 2 adds an execution broker for command-like child
+processes: allowlist environment inheritance, restricted PATH, timeouts,
+optional network, swappable macOS `sandbox-exec` enforcement, and explicit
+audit-friendly profiles. `sandbox-exec` is deprecated by Apple but still
+available on the iMac; the broker is the abstraction so this backend can be
+replaced later.
+
+W5-2 does **not** claim OS containment for logged-in Chrome, Office, launchd,
+or other GUI/service integrations. Those paths remain governed by strict
+extension mode, W7 provenance, verified facts, explicit service commands, and
+no-silent-fallback rules. Browser/GUI is governed, not sandboxed.
+
+Honest W5-2 limit: `read_roots` currently drives credential-deny discovery,
+not a full read jail. The broker denies credential-shaped paths, constrains
+writes to safe roots, strips child environments, blocks network unless a
+profile asks for it, and kills timed-out process groups. A stricter general
+file-read jail remains a later hardening tier because broad read access is
+still needed by several macOS/CLI tools.
 
 ## W5 canaries (written FIRST, failing, before code)
 

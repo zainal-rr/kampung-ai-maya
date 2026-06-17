@@ -8,12 +8,12 @@ timeout honestly instead of letting Maya answer from a half-loaded page.
 """
 
 import shutil
-import subprocess
 import time
 from dataclasses import dataclass
 from pathlib import Path
 
 from maya_browser.browser_control import BrowserController, BrowserPage
+from maya_core.execution_broker import CommandSpec, run_command
 
 
 BLOCKED_MARKERS = (
@@ -90,7 +90,7 @@ def blocked_marker(text: str) -> str:
     return ""
 
 
-def capture_screenshot(directory: Path, label: str, *, runner=subprocess.run) -> str:
+def capture_screenshot(directory: Path, label: str, *, runner=None) -> str:
     """Capture the screen with macOS `screencapture`; returns path or ''."""
     if not shutil.which("screencapture"):
         return ""
@@ -99,12 +99,18 @@ def capture_screenshot(directory: Path, label: str, *, runner=subprocess.run) ->
     safe_label = "".join(ch if ch.isalnum() or ch in "-_" else "-" for ch in label)[:60]
     path = directory / f"{safe_label}_{stamp}.png"
     try:
-        result = runner(
-            ["screencapture", "-x", str(path)],
-            capture_output=True,
-            text=True,
-            timeout=10,
-        )
+        if runner is None:
+            result = run_command(CommandSpec(
+                argv=("screencapture", "-x", str(path)),
+                cwd=directory,
+                profile="screen_capture",
+                timeout=10,
+                write_roots=(directory,),
+                text=True,
+                sandbox=False,
+            )).to_completed_process()
+        else:
+            result = runner(["screencapture", "-x", str(path)], capture_output=True, text=True, timeout=10)
     except Exception:  # noqa: BLE001 - screenshot failure must never break a run
         return ""
     if getattr(result, "returncode", 1) != 0 or not path.exists():

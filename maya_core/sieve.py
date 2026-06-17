@@ -22,7 +22,7 @@ class SieveNode:
         self.senses = TheSenses(os.getenv("GOOGLE_API_KEY", "dummy"))
         
         # Ensure watch directory exists
-        os.makedirs(self.watch_dir, exist_ok=True)
+        Path(self.watch_dir).mkdir(parents=True, exist_ok=True)
 
     def is_noise(self, text: str) -> bool:
         """Simple heuristic to skip obviously useless transcripts."""
@@ -35,7 +35,11 @@ class SieveNode:
 
     async def process_file(self, filename: str):
         """Processes a single transcript file."""
-        file_path = os.path.join(self.watch_dir, filename)
+        watch_root = Path(self.watch_dir).expanduser().resolve(strict=False)
+        file_path = (watch_root / filename).resolve(strict=False)
+        if not _within(file_path, watch_root):
+            logger.warning("Skipping Omi file outside watch directory: %s", filename)
+            return
         try:
             transcript = load_omi_transcript(file_path)
             await record_hardware_event(
@@ -66,7 +70,7 @@ class SieveNode:
                 logger.info("Skipping %s: %s.", filename, decision.status)
             
             # Move to processed or delete
-            os.remove(file_path)
+            file_path.unlink(missing_ok=True)
             
         except Exception as e:
             logger.error("Failed to process %s: %s", filename, e)
@@ -82,7 +86,7 @@ class SieveNode:
         """Polls the watch directory for new Tailscale syncs."""
         logger.info("Sieve Node monitoring: %s", self.watch_dir)
         while True:
-            files = [f for f in os.listdir(self.watch_dir) if f.endswith(".txt") or f.endswith(".json")]
+            files = [f.name for f in Path(self.watch_dir).iterdir() if f.name.endswith(".txt") or f.name.endswith(".json")]
             for file in files:
                 await self.process_file(file)
             
@@ -103,3 +107,11 @@ if __name__ == "__main__":
         await sieve.run()
 
     asyncio.run(main())
+
+
+def _within(path: Path, root: Path) -> bool:
+    try:
+        path.relative_to(root)
+        return True
+    except ValueError:
+        return False

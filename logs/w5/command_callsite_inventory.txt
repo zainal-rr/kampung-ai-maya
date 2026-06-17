@@ -1,0 +1,118 @@
+# W5-2 Command/Delete Call-Site Inventory
+Generated: 2026-06-17T14:21:26
+Scope: runtime packages; tests/venv excluded. Root harness/build/tool scripts are intentionally excluded and listed below.
+
+## Explicitly excluded root/tool scripts
+- .codex_mcp/blender-ahujasid/addon.py: third_party_mcp_addon
+- build_kampung_ai_app.py: build_script_root
+- local_ci.py: test_harness_root
+- scored_eval_suite.py: eval_harness_root
+- tools/w4_unattended_driver.py: historical_w4_tool
+
+## Category counts
+- audio_media_interactive: 2
+- broker_migrated_command: 31
+- execution_broker_internal: 4
+- gui_app_launch: 1
+- gui_applescript: 1
+- gui_file_open: 1
+- gui_preview_process: 1
+- import_only: 9
+- owned_event_delete: 3
+- owned_failed_edit_cleanup: 3
+- owned_launchd_plist_delete: 3
+- owned_pid_cleanup: 4
+- owned_temp_cleanup: 8
+- service_launchd: 15
+
+Total rows: 86
+
+## Rows
+| file | line | function | kind | category | decision | snippet |
+| --- | ---: | --- | --- | --- | --- | --- |
+| maya_core/artisan_app_qa.py | 79 | qa_artisan_app_project | broker_run | broker_migrated_command | runs_through_execution_broker | `proc = run_command(CommandSpec(` |
+| maya_core/artisan_app_qa.py | 242 | _capture_browser_preview | broker_run | broker_migrated_command | runs_through_execution_broker | `proc = run_command(CommandSpec(` |
+| maya_core/artisan_apply.py | 89 | _git_bytes | broker_run | broker_migrated_command | runs_through_execution_broker | `result = run_command(CommandSpec(` |
+| maya_core/artisan_apply.py | 100 | _git_apply | broker_run | broker_migrated_command | runs_through_execution_broker | `return run_command(CommandSpec(` |
+| maya_core/artisan_maker_quality.py | 62 | _run_blender_script | broker_run | broker_migrated_command | runs_through_execution_broker | `proc = run_command(CommandSpec(` |
+| maya_core/artisan_maker_quality.py | 269 | _render_preview | broker_run | broker_migrated_command | runs_through_execution_broker | `proc = run_command(CommandSpec(` |
+| maya_core/artisan_maker_quality.py | 278 | _render_preview | unlink | owned_temp_cleanup | allowlist_internal_cleanup | `script_path.unlink(missing_ok=True)` |
+| maya_core/artisan_runner_context.py | 8 | <module> | subprocess_import | import_only | review_context | `import subprocess` |
+| maya_core/artisan_runner_engine.py | 57 | _run_codex | broker_run_async | broker_migrated_command | runs_through_execution_broker | `result = await run_command_async(CommandSpec(` |
+| maya_core/artisan_runner_engine.py | 73 | _codex_chatgpt_auth_state | broker_run | broker_migrated_command | runs_through_execution_broker | `proc = run_command(CommandSpec(` |
+| maya_core/artisan_worktree.py | 35 | create_repo_isolation | broker_run | broker_migrated_command | runs_through_execution_broker | `result = run_command(CommandSpec(` |
+| maya_core/artisan_worktree.py | 72 | _git_output | broker_run | broker_migrated_command | runs_through_execution_broker | `result = run_command(CommandSpec(` |
+| maya_core/audio_devices.py | 29 | list_audio_devices | broker_run | broker_migrated_command | runs_through_execution_broker | `result = run_command(CommandSpec(` |
+| maya_core/camera_adapter.py | 68 | ExternalCameraAdapter._process | unlink | owned_event_delete | allowlist_internal_cleanup | `file_path.unlink()` |
+| maya_core/dependency_manifest.py | 97 | _codex_auth_detail | broker_run | broker_migrated_command | runs_through_execution_broker | `proc = run_command(CommandSpec(` |
+| maya_core/execution_broker.py | 17 | <module> | subprocess_import | import_only | review_context | `import subprocess` |
+| maya_core/execution_broker.py | 90 | run_command | broker_run | execution_broker_internal | allowed_broker_implementation | `def run_command(spec: CommandSpec) -> CommandResult:` |
+| maya_core/execution_broker.py | 97 | run_command | popen | execution_broker_internal | allowed_broker_implementation | `proc = subprocess.Popen(` |
+| maya_core/execution_broker.py | 128 | run_command_async | broker_run_async | execution_broker_internal | allowed_broker_implementation | `async def run_command_async(spec: CommandSpec) -> CommandResult:` |
+| maya_core/execution_broker.py | 135 | run_command_async | create_subprocess | execution_broker_internal | allowed_broker_implementation | `proc = await asyncio.create_subprocess_exec(` |
+| maya_core/may1_rehearsal.py | 5 | <module> | subprocess_import | import_only | review_context | `import subprocess` |
+| maya_core/may1_rehearsal.py | 189 | _run | broker_run | broker_migrated_command | runs_through_execution_broker | `return run_command(CommandSpec(` |
+| maya_core/maya_eye_overlay.py | 25 | clear_preview_target | unlink | owned_pid_cleanup | allowlist_internal_cleanup | `target_file().unlink(missing_ok=True)` |
+| maya_core/maya_eye_preview.py | 5 | <module> | subprocess_import | import_only | review_context | `import subprocess` |
+| maya_core/maya_eye_preview.py | 25 | start_preview | popen | gui_preview_process | explicit_gui_allowlist_no_os_claim | `process = subprocess.Popen(` |
+| maya_core/maya_eye_preview.py | 35 | start_preview | unlink | owned_pid_cleanup | allowlist_internal_cleanup | `pid_file().unlink(missing_ok=True)` |
+| maya_core/maya_eye_preview.py | 60 | stop_preview | unlink | owned_pid_cleanup | allowlist_internal_cleanup | `pid_file().unlink(missing_ok=True)` |
+| maya_core/maya_eye_preview.py | 108 | run_preview | unlink | owned_pid_cleanup | allowlist_internal_cleanup | `pid_file().unlink(missing_ok=True)` |
+| maya_core/mudra_adapter.py | 70 | MudraAdapter._process | unlink | owned_event_delete | allowlist_internal_cleanup | `file_path.unlink()` |
+| maya_core/network_tools.py | 50 | _run | broker_run | broker_migrated_command | runs_through_execution_broker | `result = run_command(CommandSpec(` |
+| maya_core/provider_readiness.py | 75 | _codex_auth_state | broker_run | broker_migrated_command | runs_through_execution_broker | `proc = run_command(CommandSpec(` |
+| maya_core/rehearsal.py | 75 | main | unlink | owned_temp_cleanup | allowlist_internal_cleanup | `Path(db_path).unlink(missing_ok=True)` |
+| maya_core/run_demo.py | 120 | _run_command | broker_run | broker_migrated_command | runs_through_execution_broker | `proc = run_command(CommandSpec(` |
+| maya_core/screen_service.py | 24 | MacScreenService.capture_once | broker_run | broker_migrated_command | runs_through_execution_broker | `result = run_command(CommandSpec(` |
+| maya_core/screen_service.py | 43 | MacScreenService.capture_once | unlink | owned_temp_cleanup | allowlist_internal_cleanup | `path.unlink(missing_ok=True)` |
+| maya_core/secret_provider.py | 14 | <module> | subprocess_import | import_only | review_context | `import subprocess` |
+| maya_core/secret_provider.py | 138 | _run | broker_run | broker_migrated_command | runs_through_execution_broker | `result = run_command(CommandSpec(` |
+| maya_core/self_heal_execution.py | 187 | _git_status | broker_run | broker_migrated_command | runs_through_execution_broker | `proc = run_command(CommandSpec(` |
+| maya_core/service_install.py | 5 | <module> | subprocess_import | import_only | review_context | `import subprocess` |
+| maya_core/service_install.py | 124 | ensure_running | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "bootstrap", domain(), str(PLIST_PATH)], check=False)` |
+| maya_core/service_install.py | 125 | ensure_running | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "enable", f"{domain()}/{LABEL}"], check=False)` |
+| maya_core/service_install.py | 149 | uninstall | unlink | owned_launchd_plist_delete | explicit_service_uninstall | `PLIST_PATH.unlink()` |
+| maya_core/service_install.py | 156 | uninstall_weekly_memory | unlink | owned_launchd_plist_delete | explicit_service_uninstall | `WEEKLY_MEMORY_PLIST_PATH.unlink()` |
+| maya_core/service_install.py | 163 | uninstall_nightly_memory | unlink | owned_launchd_plist_delete | explicit_service_uninstall | `NIGHTLY_MEMORY_PLIST_PATH.unlink()` |
+| maya_core/service_install.py | 170 | status | subprocess_run | service_launchd | explicit_gui_service_allowlist | `result = subprocess.run(["launchctl", "print", f"{domain()}/{LABEL}"], capture_output=True, text=True, check=False)` |
+| maya_core/service_install.py | 177 | is_loaded | subprocess_run | service_launchd | explicit_gui_service_allowlist | `result = subprocess.run(["launchctl", "print", f"{domain()}/{LABEL}"], capture_output=True, text=True, check=False)` |
+| maya_core/service_install.py | 195 | status_weekly_memory | subprocess_run | service_launchd | explicit_gui_service_allowlist | `result = subprocess.run(["launchctl", "print", f"{domain()}/{WEEKLY_MEMORY_LABEL}"], capture_output=True, text=True, check=False)` |
+| maya_core/service_install.py | 203 | status_nightly_memory | subprocess_run | service_launchd | explicit_gui_service_allowlist | `result = subprocess.run(["launchctl", "print", f"{domain()}/{NIGHTLY_MEMORY_LABEL}"], capture_output=True, text=True, check=False)` |
+| maya_core/service_install.py | 211 | restart | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "bootstrap", domain(), str(PLIST_PATH)], check=False)` |
+| maya_core/service_install.py | 212 | restart | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "enable", f"{domain()}/{LABEL}"], check=False)` |
+| maya_core/service_install.py | 218 | restart_weekly_memory | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "bootstrap", domain(), str(WEEKLY_MEMORY_PLIST_PATH)], check=False)` |
+| maya_core/service_install.py | 219 | restart_weekly_memory | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "enable", f"{domain()}/{WEEKLY_MEMORY_LABEL}"], check=False)` |
+| maya_core/service_install.py | 225 | restart_nightly_memory | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "bootstrap", domain(), str(NIGHTLY_MEMORY_PLIST_PATH)], check=False)` |
+| maya_core/service_install.py | 226 | restart_nightly_memory | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "enable", f"{domain()}/{NIGHTLY_MEMORY_LABEL}"], check=False)` |
+| maya_core/service_install.py | 231 | bootout | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "bootout", domain(), str(PLIST_PATH)], check=False)` |
+| maya_core/service_install.py | 235 | bootout_weekly_memory | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "bootout", domain(), str(WEEKLY_MEMORY_PLIST_PATH)], check=False)` |
+| maya_core/service_install.py | 239 | bootout_nightly_memory | subprocess_run | service_launchd | explicit_gui_service_allowlist | `subprocess.run(["launchctl", "bootout", domain(), str(NIGHTLY_MEMORY_PLIST_PATH)], check=False)` |
+| maya_core/sieve.py | 73 | SieveNode.process_file | unlink | owned_event_delete | contained_to_watch_dir | `file_path.unlink(missing_ok=True)` |
+| maya_core/skill_importer.py | 90 | _run_npx_skill_add | broker_run_async | broker_migrated_command | runs_through_execution_broker | `result = await run_command_async(CommandSpec(` |
+| maya_core/speech_input.py | 3 | <module> | subprocess_import | import_only | review_context | `import subprocess` |
+| maya_core/speech_input.py | 74 | MacOSMicTranscriber._record_clip | create_subprocess | audio_media_interactive | explicit_interactive_ffmpeg_exception | `process = await asyncio.create_subprocess_exec(` |
+| maya_core/speech_input.py | 117 | MacOSMicTranscriber._run_whisper | broker_run_async | broker_migrated_command | runs_through_execution_broker | `result = await run_command_async(` |
+| maya_core/utils.py | 2 | <module> | subprocess_import | import_only | review_context | `import subprocess` |
+| maya_core/utils.py | 17 | OSBridge._run_applescript | subprocess_run | gui_applescript | explicit_gui_allowlist_no_os_claim | `result = subprocess.run(` |
+| maya_core/utils.py | 70 | OSBridge._launch_app | subprocess_run | gui_app_launch | explicit_gui_allowlist_no_os_claim | `subprocess.run(` |
+| maya_core/utils.py | 158 | OSBridge.open_file | subprocess_run | gui_file_open | explicit_gui_allowlist_no_os_claim | `subprocess.run(command, capture_output=True, text=True, check=True)` |
+| maya_core/visual_workflow.py | 87 | VisualWorkflowRenderer._render_mermaid | broker_to_thread | broker_migrated_command | runs_through_execution_broker | `result = await asyncio.to_thread(` |
+| maya_browser/browser_observe.py | 103 | capture_screenshot | broker_run | broker_migrated_command | runs_through_execution_broker | `result = run_command(CommandSpec(` |
+| maya_voice/voice.py | 110 | VoiceNode._render_with_xai | unlink | owned_temp_cleanup | allowlist_internal_cleanup | `temp_filename.unlink()` |
+| maya_voice/voice.py | 117 | VoiceNode._render_with_macos | broker_run_async | broker_migrated_command | runs_through_execution_broker | `result = await run_command_async(CommandSpec(` |
+| maya_voice/voice.py | 129 | VoiceNode._render_with_macos | broker_run_async | broker_migrated_command | runs_through_execution_broker | `convert = await run_command_async(CommandSpec(` |
+| maya_voice/voice.py | 146 | VoiceNode._play_and_cleanup | broker_run_async | broker_migrated_command | runs_through_execution_broker | `await run_command_async(CommandSpec(` |
+| maya_voice/voice.py | 160 | VoiceNode._remove_file | unlink | owned_temp_cleanup | allowlist_internal_cleanup | `file_path.unlink()` |
+| maya_voice/voice_agent_audio.py | 5 | <module> | subprocess_import | import_only | review_context | `import subprocess` |
+| maya_voice/voice_agent_audio.py | 61 | VoiceAgentAudioCapture._record_pcm | create_subprocess | audio_media_interactive | explicit_interactive_ffmpeg_exception | `process = await asyncio.create_subprocess_exec(` |
+| maya_voice/xai_voice_agent.py | 137 | XaiRealtimeVoiceAgentTransport._play_pcm_audio | broker_run_async | broker_migrated_command | runs_through_execution_broker | `await run_command_async(CommandSpec(` |
+| maya_voice/xai_voice_agent.py | 145 | XaiRealtimeVoiceAgentTransport._play_pcm_audio | unlink | owned_temp_cleanup | allowlist_internal_cleanup | `path.unlink(missing_ok=True)` |
+| maya_documents/document_actions_office.py | 79 | DocumentOfficeMixin._restore_failed_edit | unlink | owned_failed_edit_cleanup | allowlist_internal_cleanup | `await asyncio.to_thread(target.unlink)` |
+| maya_documents/document_actions_word.py | 224 | DocumentWordMixin._edit_latest_document | unlink | owned_failed_edit_cleanup | allowlist_internal_cleanup | `await asyncio.to_thread(target.unlink)` |
+| maya_documents/document_actions_word.py | 271 | DocumentWordMixin._simple_word_edit | unlink | owned_failed_edit_cleanup | allowlist_internal_cleanup | `await asyncio.to_thread(target.unlink)` |
+| maya_documents/word_visual_qa.py | 93 | _optional_html_preview | broker_run | broker_migrated_command | runs_through_execution_broker | `proc = run_command(CommandSpec(` |
+| maya_telegram/telegram_delivery.py | 45 | send_text | unlink | owned_temp_cleanup | allowlist_internal_cleanup | `image_path.unlink(missing_ok=True)` |
+| maya_telegram/telegram_delivery.py | 124 | send_speech | unlink | owned_temp_cleanup | allowlist_internal_cleanup | `voice_note_path.unlink()` |
+| maya_telegram/telegram_delivery.py | 179 | _voice_note_path | broker_run_async | broker_migrated_command | runs_through_execution_broker | `result = await run_command_async(CommandSpec(` |
+| maya_telegram/telegram_voice_input.py | 34 | _convert_to_wav | broker_run_async | broker_migrated_command | runs_through_execution_broker | `result = await run_command_async(CommandSpec(` |
+| maya_telegram/telegram_voice_input.py | 57 | _transcribe_with_whisper | broker_run_async | broker_migrated_command | runs_through_execution_broker | `result = await run_command_async(CommandSpec(` |

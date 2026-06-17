@@ -4,13 +4,13 @@ import importlib.util
 import json
 import os
 import shutil
-import subprocess
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
 from dotenv import load_dotenv
 
+from maya_core.execution_broker import CommandSpec, run_command
 from maya_core.repo_paths import repo_root
 
 
@@ -94,16 +94,15 @@ def _status_detail(item: dict[str, Any]) -> tuple[str, str]:
 
 
 def _codex_auth_detail(found: str) -> tuple[str, str]:
-    try:
-        proc = subprocess.run(
-            ["codex", "login", "status"],
-            check=False,
-            capture_output=True,
-            text=True,
-            timeout=5,
-        )
-    except Exception as exc:
-        return "unknown", f"{found}; auth check failed: {exc}"
+    proc = run_command(CommandSpec(
+        argv=("codex", "login", "status"),
+        profile="codex_auth",
+        timeout=5,
+        text=True,
+        allow_credential_reads=True,
+    )).to_completed_process()
+    if proc.returncode == 127:
+        return "unknown", f"{found}; auth check failed: {proc.stderr}"
     output = f"{proc.stdout}\n{proc.stderr}".lower()
     if "logged in using chatgpt" in output:
         return "ready", "codex logged in using ChatGPT"

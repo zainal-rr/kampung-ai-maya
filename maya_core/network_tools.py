@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-import subprocess
+from maya_core.execution_broker import CommandSpec, run_command
 
 
 NETWORK_CHECKS = (
@@ -47,10 +47,15 @@ def network_doc_sections(results: list[tuple[str, str, str]]) -> list[tuple[str,
 
 
 def _run(command: tuple[str, ...], timeout: int) -> tuple[str, str]:
-    try:
-        result = subprocess.run(command, capture_output=True, text=True, timeout=timeout, check=False)
-    except Exception as exc:
-        return "error", str(exc)
+    result = run_command(CommandSpec(
+        argv=command,
+        profile="network_diagnostic",
+        timeout=timeout,
+        text=True,
+        network=True,
+    ))
+    if result.error:
+        return "error", result.error
     output = "\n".join(part for part in (result.stdout, result.stderr) if part.strip())
     status = "ok" if result.returncode == 0 else "needs attention"
     return status, output.strip()[:1200]

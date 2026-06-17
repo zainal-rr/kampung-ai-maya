@@ -1623,6 +1623,33 @@ Step 0.
     - [x] Root contains only approved wrappers/entrypoints.
     - [x] Final worktree is clean and committed.
 
+## W5-2: Command Containment And Blast-Radius Control
+
+Goal: route command-like child processes through one broker, use allowlist
+environment inheritance, add macOS sandbox enforcement where practical, and
+keep browser/GUI paths honest as governed surfaces rather than claimed OS
+containment.
+
+- [x] **W5-2.0. Inventory**
+    - [x] Generate `logs/w5/command_callsite_inventory.txt` with command/delete call-site categories and migration decisions.
+    - [x] Run an independent inventory reviewer and fold missed surfaces into the inventory.
+- [x] **W5-2.1. Execution Broker**
+    - [x] Add the W5-2 execution broker with sync/async command APIs, allowlist env, timeout handling, restricted PATH, optional network, and swappable `sandbox-exec` backend.
+    - [x] Document that `sandbox-exec` is deprecated and broker-internal, not a permanent platform guarantee.
+- [x] **W5-2.2. High-Risk Migration**
+    - [x] Route Artisan/Codex, git worktree/apply helpers, npx skill import, media conversion/playback helpers, diagnostics, generated-code Blender QA, and preview helpers through the broker where practical.
+    - [x] Keep interactive audio capture, GUI AppleScript/open, launchd service management, and persistent preview processes as explicit direct-call exceptions.
+- [x] **W5-2.3. Guardrails**
+    - [x] Add broker escape smokes for credential reads, `.env`, out-of-root writes, secret env inheritance, and network-denied profiles.
+    - [x] Add a static broker-bypass guard with explicit exception files and reasons.
+    - [x] Add reversible delete quarantine for future user-file deletes.
+- [ ] **W5-2.4. Final Acceptance**
+    - [x] Run focused W5-2 smokes and existing W5-1 canaries.
+    - [x] Run `code_health.py` and `local_ci.py` with zero blocking failures.
+    - [x] Run post-implementation subagent reviews: execution broker, sandbox escape, browser/GUI.
+    - [ ] Residual to track after W5-2: broker `read_roots` is credential-deny discovery, not a full read jail; event cleanup exceptions rely on call-site wiring for Maya-owned paths.
+    - [ ] Commit the W5-2 checkpoint.
+
 ## Phase 25: Engine Sprint - Trust The Model With More Of The Loop
 
 Goal: close the "strong governance, weak loop" inversion. The permission kernel,

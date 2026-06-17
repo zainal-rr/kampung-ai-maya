@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import os
-import subprocess
 import tempfile
 from dataclasses import dataclass
 from pathlib import Path
+
+from maya_core.execution_broker import CommandSpec, run_command
 
 
 @dataclass(frozen=True)
@@ -20,13 +21,15 @@ class MacScreenService:
         os.close(fd)
         path = Path(filename)
         try:
-            result = subprocess.run(
-                ["screencapture", "-x", "-t", "jpg", str(path)],
-                capture_output=True,
-                text=True,
-                check=False,
+            result = run_command(CommandSpec(
+                argv=("screencapture", "-x", "-t", "jpg", str(path)),
+                cwd=path.parent,
+                profile="screen_capture",
                 timeout=10,
-            )
+                write_roots=(path.parent,),
+                text=True,
+                sandbox=False,
+            )).to_completed_process()
             if result.returncode != 0:
                 detail = (result.stderr or result.stdout or "screen capture failed").strip()
                 return ScreenSnapshot(False, _permission_hint(detail))
@@ -36,8 +39,6 @@ class MacScreenService:
             return ScreenSnapshot(True, "screen visible", data)
         except FileNotFoundError:
             return ScreenSnapshot(False, "macOS screencapture is unavailable.")
-        except subprocess.TimeoutExpired:
-            return ScreenSnapshot(False, "Screen capture timed out.")
         finally:
             path.unlink(missing_ok=True)
 

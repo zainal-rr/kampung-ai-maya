@@ -1,6 +1,5 @@
 import os
 import asyncio
-import subprocess
 import uuid
 from pathlib import Path
 from shutil import which
@@ -10,6 +9,7 @@ except ImportError:
     aiohttp = None
 
 from maya_core.cost_tracker import record_usage
+from maya_core.execution_broker import CommandSpec, run_command_async
 from maya_core.repo_paths import repo_root
 
 
@@ -54,13 +54,7 @@ class VoiceNode:
         if not text:
             return
         audio_path = await self.render_audio_file(text, voice=voice)
-        process = await asyncio.create_subprocess_exec(
-            "afplay",
-            str(audio_path),
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-        asyncio.create_task(self._cleanup_after_playback(process, audio_path))
+        asyncio.create_task(self._play_and_cleanup(audio_path))
 
     async def render_audio_file(self, text: str, voice: str = None) -> Path:
         if not text:
@@ -120,30 +114,26 @@ class VoiceNode:
         selected_voice = self.local_voice_ms if lang == "id" else self.local_voice_en
         raw_path = self.log_dir / f"speech_{uuid.uuid4().hex}.aiff"
         final_path = self.log_dir / f"speech_{uuid.uuid4().hex}.m4a"
-        process = await asyncio.create_subprocess_exec(
-            "say",
-            "-v",
-            selected_voice,
-            "-o",
-            str(raw_path),
-            text,
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL,
-        )
-        await process.wait()
-        if process.returncode != 0:
+        result = await run_command_async(CommandSpec(
+            argv=("say", "-v", selected_voice, "-o", str(raw_path), text),
+            cwd=raw_path.parent,
+            profile="gui",
+            timeout=60,
+            write_roots=(raw_path.parent,),
+            capture_output=False,
+            sandbox=False,
+        ))
+        if result.returncode != 0:
             raise RuntimeError("macOS say synthesis failed")
         if which("ffmpeg"):
-            convert = await asyncio.create_subprocess_exec(
-                "ffmpeg",
-                "-y",
-                "-i",
-                str(raw_path),
-                str(final_path),
-                stdout=subprocess.DEVNULL,
-                stderr=subprocess.DEVNULL,
-            )
-            await convert.wait()
+            convert = await run_command_async(CommandSpec(
+                argv=("ffmpeg", "-y", "-i", str(raw_path), str(final_path)),
+                cwd=raw_path.parent,
+                profile="media",
+                timeout=60,
+                write_roots=(raw_path.parent,),
+                capture_output=False,
+            ))
             if convert.returncode == 0:
                 await self.cleanup_file(raw_path)
                 return final_path
@@ -152,8 +142,15 @@ class VoiceNode:
     async def cleanup_file(self, file_path: Path) -> None:
         await asyncio.to_thread(self._remove_file, file_path)
 
-    async def _cleanup_after_playback(self, process, file_path: Path):
-        await process.wait()
+    async def _play_and_cleanup(self, file_path: Path):
+        await run_command_async(CommandSpec(
+            argv=("afplay", str(file_path)),
+            cwd=file_path.parent,
+            profile="gui",
+            timeout=300,
+            capture_output=False,
+            sandbox=False,
+        ))
         await self.cleanup_file(file_path)
 
     @staticmethod
