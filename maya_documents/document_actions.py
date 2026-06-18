@@ -31,6 +31,7 @@ from maya_documents.artifact_discourse_context import resolve_referenced_artifac
 from maya_documents.artifact_semantic_enrichment import enrich_artifact_topic
 from maya_documents.artifact_semantic_resolver import resolve_semantic_artifact_intent
 from maya_documents.artifact_file_state import record_artifact_fingerprint
+from maya_documents.meet_artifact_context import append_current_meet_context_to_preflight
 from maya_voice.work_runtime import set_current_voice_work_phase
 from maya_documents.document_actions_html import DocumentHtmlMixin
 from maya_documents.document_actions_office import DocumentOfficeMixin
@@ -248,7 +249,7 @@ class DocumentActionRouter(DocumentHtmlMixin, DocumentWordMixin, DocumentOfficeM
         preflight = await artifact_preflight_with_gemini(self.db_path, artifact_type, topic)
         if preflight.cost_recorded:
             self.last_cost_recorded = True
-        return preflight
+        return await append_current_meet_context_to_preflight(preflight)
 
     async def _draft_markdown(self, topic: str, preflight: ArtifactPreflight | None = None, extra_context: str = "") -> MarkdownDraft | None:
         context = preflight.content if preflight else ""

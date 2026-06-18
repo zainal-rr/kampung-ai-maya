@@ -25,7 +25,7 @@ from maya_telegram.telegram_turn_log import latest_telegram_turn_text
 from maya_telegram.telegram_voice_state import voice_enabled, voice_text
 from maya_core.vision_session import guided_sight_status, toggle_guided_sight
 from maya_core.weekly_memory_status import run_weekly_memory_now_text, weekly_memory_status_text
-from maya_meet.orchestrator import join_meeting, meet_status_text
+from maya_meet.orchestrator import join_meeting, leave_meeting, meet_status_text
 from maya_core.repo_paths import repo_root
 
 
@@ -67,6 +67,7 @@ def bot_commands() -> list[BotCommand]:
         BotCommand("project", "Show or close active project"),
         BotCommand("memory", "Show or manage memory"),
         BotCommand("join", "Send Maya into a Google Meet"),
+        BotCommand("leave", "Remove Maya from the current Meet"),
         BotCommand("meetstatus", "Show Maya Meet status"),
         BotCommand("complex", "Route this Telegram request to Maya's complex lane"),
     ]
@@ -139,6 +140,8 @@ async def command_to_text(db_path: str, parsed: ParsedCommand) -> str:
         return await _weekly_text(db_path, parsed.args)
     if name == "join":
         return await _join_text(db_path, parsed.args)
+    if name == "leave":
+        return await _leave_text(db_path, parsed.args)
     if name == "meetstatus":
         return await _meet_status_text(db_path, parsed.args)
     if name == "artisan":
@@ -259,6 +262,22 @@ async def _join_text(db_path: str, args: str) -> str:
         trigger="telegram",
     )
     return "Meet join: " + result.telegram_text()
+
+
+async def _leave_text(db_path: str, args: str) -> str:
+    result = await leave_meeting(
+        args.strip().strip("\"'"),
+        db_path=db_path,
+        provenance=make_provenance("owner_text"),
+        trigger="telegram",
+    )
+    if result.status in {"stopped", "ended"}:
+        return "Meet leave: " + result.telegram_text()
+    if result.status == "stopping":
+        return "Meet leave: " + result.telegram_text()
+    if result.reason_code == "meet_leave_no_session":
+        return "Meet leave: no active Meet session recorded."
+    return f"Meet leave: I could not stop Maya in the Meet: {result.reason_code}. {result.detail}".strip()
 
 
 async def _meet_status_text(db_path: str, args: str) -> str:

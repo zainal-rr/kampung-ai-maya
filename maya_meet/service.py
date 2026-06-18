@@ -15,6 +15,7 @@ from maya_meet.config import RecallConfig, recall_config_from_env
 from maya_meet.context_answerer import build_meeting_context_answerer
 from maya_meet.output_security import output_session_active
 from maya_meet.output_media import MeetOutputQueue
+from maya_meet.output_page import output_html
 from maya_meet.recall_events import handle_recall_event
 from maya_meet.responder import MeetM1Responder
 from maya_meet.store import init_meet_db, update_meet_session
@@ -150,7 +151,11 @@ def create_meet_app(
         session_id = request.query.get("session_id", "")
         if not await output_session_active(db_path, session_id):
             return web.Response(status=404, text="not found")
-        return web.Response(text=_output_html(token), content_type="text/html")
+        return web.Response(
+            text=output_html(token),
+            content_type="text/html",
+            headers={"Cache-Control": "no-store, max-age=0", "Pragma": "no-cache"},
+        )
 
     async def next_audio(request: web.Request) -> web.Response:
         if request.query.get("token", "") != output_queue.token:
@@ -230,54 +235,6 @@ def _maya_session_id(payload: dict[str, Any]) -> str:
         if metadata.get("maya_session_id"):
             return str(metadata["maya_session_id"])
     return str(payload.get("maya_session_id") or "")
-
-
-def _output_html(token: str) -> str:
-    return f"""<!doctype html>
-<html>
-<head><meta charset="utf-8"><title>Maya Meet Output</title></head>
-<body>
-<script>
-const token = {json.dumps(token)};
-const params = new URLSearchParams(window.location.search);
-const sessionId = params.get('session_id') || 'recall_default';
-async function report(status, reason) {{
-  try {{
-    await fetch('/meet/output/playback?token=' + encodeURIComponent(token) + '&session_id=' + encodeURIComponent(sessionId), {{
-      method: 'POST',
-      headers: {{'Content-Type': 'application/json'}},
-      body: JSON.stringify({{status: status, reason_code: reason || status}})
-    }});
-  }} catch (error) {{
-    console.error('maya output report failed', error);
-  }}
-}}
-async function poll() {{
-  try {{
-    const response = await fetch('/meet/output/next?token=' + encodeURIComponent(token) + '&session_id=' + encodeURIComponent(sessionId), {{cache: 'no-store'}});
-    const data = await response.json();
-    if (data.utterance && data.utterance.audio_url) {{
-      const audio = new Audio(data.utterance.audio_url);
-      audio.addEventListener('ended', () => {{
-        report('playback_ended', data.utterance.id || 'playback_ended');
-      }}, {{once: true}});
-      audio.addEventListener('error', () => {{
-        report('playback_failed', data.utterance.id || 'playback_failed');
-      }}, {{once: true}});
-      await audio.play();
-      await report('playback_started', data.utterance.id || 'playback_started');
-    }}
-  }} catch (error) {{
-    await report('playback_failed', String(error));
-    console.error('maya output poll failed', error);
-  }} finally {{
-    setTimeout(poll, 1000);
-  }}
-}}
-poll();
-</script>
-</body>
-</html>"""
 
 
 async def _respond_and_record(

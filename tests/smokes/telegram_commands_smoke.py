@@ -39,7 +39,7 @@ async def main() -> None:
         _require(await command_to_text(db_path, parsed) == "open imac", "openImac did not map")
         visible = [item.command for item in bot_commands()]
         _require(
-            visible == ["help", "status", "imac", "see", "screen", "project", "memory", "join", "meetstatus", "complex"],
+            visible == ["help", "status", "imac", "see", "screen", "project", "memory", "join", "leave", "meetstatus", "complex"],
             "visible commands not reduced",
         )
         _require(await command_to_text(db_path, parse_command("/imac off")) == "close imac", "imac off did not map")
@@ -128,6 +128,10 @@ async def main() -> None:
             join_reply = await command_to_text(db_path, parse_command("/join https://meet.google.com/abc-defg-hij"))
         _require("Meet join: Maya is in the Meet now" in join_reply, join_reply)
         _require(TelegramChannel._is_direct_command_reply(join_reply), "/join should be direct")
+        with patch("maya_telegram.telegram_commands.leave_meeting", side_effect=_fake_leave_meeting):
+            leave_reply = await command_to_text(db_path, parse_command("/leave"))
+        _require("Meet leave: Maya left the Meet" in leave_reply, leave_reply)
+        _require(TelegramChannel._is_direct_command_reply(leave_reply), "/leave should be direct")
         meet_status = await command_to_text(db_path, parse_command("/meetstatus"))
         _require(meet_status.startswith("Meet status:"), meet_status)
         _require(TelegramChannel._is_direct_command_reply(meet_status), "/meetstatus should be direct")
@@ -183,14 +187,33 @@ class _FakeAssistant:
 
 
 class _FakeMeetJoinResult:
+    status = "live"
+    reason_code = "recall_bot_live"
+    detail = ""
+
     def telegram_text(self) -> str:
         return "Maya is in the Meet now. Session: fake"
+
+
+class _FakeMeetLeaveResult:
+    status = "stopped"
+    reason_code = "recall_leave_call_requested"
+    detail = ""
+
+    def telegram_text(self) -> str:
+        return "Maya left the Meet. Session: fake"
 
 
 async def _fake_join_meeting(*_args, **kwargs):
     provenance = kwargs.get("provenance")
     _require(getattr(provenance, "source_kind", "") == "owner_text", "/join must use owner_text provenance")
     return _FakeMeetJoinResult()
+
+
+async def _fake_leave_meeting(*_args, **kwargs):
+    provenance = kwargs.get("provenance")
+    _require(getattr(provenance, "source_kind", "") == "owner_text", "/leave must use owner_text provenance")
+    return _FakeMeetLeaveResult()
 
 
 if __name__ == "__main__":

@@ -32,6 +32,7 @@ DIRECT_COMMAND_PREFIXES = (
     "Rejected. /selfheal force",
     "Provider readiness:",
     "Meet join:",
+    "Meet leave:",
     "Meet status:",
     "I can see now.",
     "I stopped seeing.",

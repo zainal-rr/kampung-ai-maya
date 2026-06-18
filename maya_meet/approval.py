@@ -4,7 +4,7 @@ import json
 import logging
 import os
 from dataclasses import dataclass
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Any, Awaitable, Callable
 from uuid import uuid4
 
@@ -19,7 +19,6 @@ from maya_voice.confirmation import (
     CONFIRMATION_TABLE,
     action_fingerprint,
     confirm_action,
-    create_pending_confirmation,
     init_confirmation_db,
 )
 
@@ -57,11 +56,12 @@ async def request_meeting_owner_approval(
         "reason_code": str(reason_code or "meeting_action_requires_owner_approval"),
     }
     action_id = "meet-" + uuid4().hex[:16]
-    pending = await create_pending_confirmation(
+    pending = await _create_single_pending_meet_confirmation(
         db_path,
         action_id=action_id,
         summary=f"Meet request: {payload['request']}",
         payload=payload,
+        ttl_seconds=60,
     )
     message = _approval_message(payload, pending)
     try:
@@ -94,9 +94,10 @@ async def resolve_meeting_approval_command(db_path: str, text: str, channel: str
     if parsed is None:
         return None
     approved, action_id = parsed
-    row = await _pending_row(db_path, action_id)
+    row = await _pending_row(db_path, action_id) if action_id else await _active_pending_meet_row(db_path)
     if row is None:
-        return "I could not find that meeting approval request."
+        return "There is no active meeting approval request."
+    action_id = str(row["action_id"] or "")
     payload = _payload_from_row(row)
     if payload.get("surface") != MEET_APPROVAL_SURFACE:
         return None
@@ -189,8 +190,9 @@ def _approval_message(payload: dict[str, Any], pending: dict[str, Any]) -> str:
         f"Fingerprint: {pending['action_fingerprint']}",
         f"Expires: {pending['expires_at']} UTC",
         "",
-        f"Reply: approve {pending['action_id']}",
-        f"Or: decline {pending['action_id']}",
+        "Reply within 60 seconds: approve",
+        "Or: reject",
+        f"Fallback with id: approve {pending['action_id']}",
     ])
 
 
@@ -225,16 +227,66 @@ def _valid_telegram_chat_id(value: str) -> bool:
 
 def _parse_approval_command(text: str) -> tuple[bool, str] | None:
     parts = str(text or "").strip().split()
-    if len(parts) != 2:
+    if len(parts) not in {1, 2}:
         return None
-    verb, action_id = parts[0].casefold(), parts[1]
-    if not action_id.startswith("meet-"):
+    verb = parts[0].casefold()
+    action_id = parts[1] if len(parts) == 2 else ""
+    if action_id and not action_id.startswith("meet-"):
         return None
     if verb in {"approve", "approved", "yes"}:
         return True, action_id
-    if verb in {"decline", "deny", "no"}:
+    if verb in {"reject", "decline", "deny", "no"}:
         return False, action_id
     return None
+
+
+async def _supersede_pending_meet_confirmations(db_path: str) -> None:
+    await init_confirmation_db(db_path)
+    async with aiosqlite.connect(db_path) as db:
+        await db.execute(
+            f"""
+            UPDATE {CONFIRMATION_TABLE}
+            SET status = 'superseded', updated_at = CURRENT_TIMESTAMP
+            WHERE status = 'pending'
+              AND json_extract(payload_json, '$.surface') = ?
+            """,
+            (MEET_APPROVAL_SURFACE,),
+        )
+        await db.commit()
+
+
+async def _create_single_pending_meet_confirmation(
+    db_path: str,
+    *,
+    action_id: str,
+    summary: str,
+    payload: dict[str, Any],
+    ttl_seconds: int,
+) -> dict[str, str]:
+    await init_confirmation_db(db_path)
+    fingerprint = action_fingerprint(payload)
+    expires_at = (datetime.utcnow() + timedelta(seconds=max(1, ttl_seconds))).isoformat(timespec="seconds")
+    async with aiosqlite.connect(db_path) as db:
+        await db.execute("BEGIN IMMEDIATE")
+        await db.execute(
+            f"""
+            UPDATE {CONFIRMATION_TABLE}
+            SET status = 'superseded', updated_at = CURRENT_TIMESTAMP
+            WHERE status = 'pending'
+              AND json_extract(payload_json, '$.surface') = ?
+            """,
+            (MEET_APPROVAL_SURFACE,),
+        )
+        await db.execute(
+            f"""
+            INSERT OR REPLACE INTO {CONFIRMATION_TABLE}
+                (action_id, action_fingerprint, summary, payload_json, status, expires_at, updated_at)
+            VALUES (?, ?, ?, ?, 'pending', ?, CURRENT_TIMESTAMP)
+            """,
+            (action_id, fingerprint, summary[:1000], json.dumps(payload, sort_keys=True), expires_at),
+        )
+        await db.commit()
+    return {"action_id": action_id, "action_fingerprint": fingerprint, "expires_at": expires_at}
 
 
 async def _pending_row(db_path: str, action_id: str):
@@ -243,6 +295,24 @@ async def _pending_row(db_path: str, action_id: str):
         db.row_factory = aiosqlite.Row
         return await (
             await db.execute(f"SELECT * FROM {CONFIRMATION_TABLE} WHERE action_id = ?", (action_id,))
+        ).fetchone()
+
+
+async def _active_pending_meet_row(db_path: str):
+    await init_confirmation_db(db_path)
+    async with aiosqlite.connect(db_path) as db:
+        db.row_factory = aiosqlite.Row
+        return await (
+            await db.execute(
+                f"""
+                SELECT * FROM {CONFIRMATION_TABLE}
+                WHERE status = 'pending'
+                  AND json_extract(payload_json, '$.surface') = ?
+                ORDER BY created_at DESC, updated_at DESC
+                LIMIT 1
+                """,
+                (MEET_APPROVAL_SURFACE,),
+            )
         ).fetchone()
 
 

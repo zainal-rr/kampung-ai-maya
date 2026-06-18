@@ -39,7 +39,13 @@ class MeetJoinOutcome:
             return f"Maya is waiting to be admitted to the Meet. Session: {self.session_id}"
         if self.status == "joining":
             return f"Maya is joining the Meet. Session: {self.session_id}"
+        if self.status in {"stopped", "ended"}:
+            return f"Maya left the Meet. Session: {self.session_id}"
+        if self.status == "stopping":
+            return f"I asked Maya to leave the Meet, but Recall has not confirmed it ended yet. Session: {self.session_id}"
         if self.status == "failed":
+            if self.reason_code == "output_media_start_failed":
+                return f"Maya joined the Meet, but I could not start Output Media: {self.detail}".strip()
             return f"I could not join the Meet: {self.reason_code}. {self.detail}".strip()
         return f"Meet join status: {self.status} ({self.reason_code})."
 

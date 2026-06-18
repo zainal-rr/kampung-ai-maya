@@ -22,7 +22,7 @@ import aiosqlite
 from aiohttp.test_utils import TestClient, TestServer
 
 from maya_core.provenance import make_provenance, provenance_from_source_channel
-from maya_meet.approval import _owner_telegram_chat_id, claim_approved_meeting_actions, resolve_meeting_approval_command
+from maya_meet.approval import _owner_telegram_chat_id, claim_approved_meeting_actions, request_meeting_owner_approval, resolve_meeting_approval_command
 from maya_meet.actions import meeting_action_class
 from maya_meet.audio_wake import RecallAudioWakeState
 from maya_meet.config import RecallConfig
@@ -120,7 +120,14 @@ async def _run() -> None:
     may_i = meet_address_decision("may i summarize the last point")
     _require(may_i.addressed and may_i.reason_code in {"addressed_wake_mangle", "addressed_fuzzy"}, str(may_i))
     _require(strip_maya_address("may i summarize the last point") == "summarize the last point", "may i strip failed")
-    for variant in ("maia summarize the point", "mya summarize the point", "my a summarize the point", "meya summarize the point", "mai summarize the point"):
+    for variant in (
+        "maia summarize the point",
+        "mya summarize the point",
+        "my a summarize the point",
+        "hello my and you can hear me",
+        "meya summarize the point",
+        "mai summarize the point",
+    ):
         decision = meet_address_decision(variant)
         _require(decision.addressed, f"wake mangle missed: {variant} -> {decision}")
     _require(not addressed_to_maya("maybe we should summarize this"), "maybe should not wake")
@@ -207,8 +214,8 @@ async def _run() -> None:
     _require(output_failed.reason_code == "output_media_unreachable", str(output_failed))
     payload = create_bot_payload(config, "https://meet.google.com/abc-defg-hij", session_id="m1")
     _require(payload["metadata"]["maya_session_id"] == "m1", str(payload))
-    _require(payload["output_media"]["camera"]["kind"] == "webpage", str(payload))
-    _require("token=test-token" in payload["output_media"]["camera"]["config"]["url"], str(payload))
+    _require(payload["output_media"]["screenshare"]["kind"] == "webpage", str(payload))
+    _require("token=test-token" in payload["output_media"]["screenshare"]["config"]["url"], str(payload))
     endpoint = payload["recording_config"]["realtime_endpoints"][0]
     _require(endpoint["events"] == ["transcript.data"], str(payload))
     _require(
@@ -219,7 +226,7 @@ async def _run() -> None:
         payload["recording_config"]["transcript"]["provider"]["recallai_streaming"]["language_code"] == "en",
         str(payload),
     )
-    _require("session_id=m1" in payload["output_media"]["camera"]["config"]["url"], str(payload))
+    _require("session_id=m1" in payload["output_media"]["screenshare"]["config"]["url"], str(payload))
     audio_config = RecallConfig(
         api_key="recall-test-key",
         base_url="https://us-west-2.recall.ai/api/v1",
@@ -245,6 +252,7 @@ async def _run() -> None:
     _require(_maya_session_id(nested) == "bot_session", "bot metadata session not found")
     await _output_surface_smoke(config, secret)
     await _responder_context_smoke()
+    await _approval_single_pending_race_smoke()
 
 
 async def _responder_context_smoke() -> None:
@@ -329,22 +337,13 @@ async def _responder_context_smoke() -> None:
         _require(private_page["status"] == "queued", str(private_page))
         _require("approval" in output_queue.previews[-1].lower(), output_queue.previews[-1])
         _require(approvals and "Action ID: meet-" in approvals[-1], approvals[-1] if approvals else "no approval")
-        secret_doc = await approval_responder.process_verified_event({"text": "Maya, make a Word document with the secret"})
-        _require(secret_doc["status"] == "queued", str(secret_doc))
-        _require(len(approvals) == 2 and "secret" in approvals[-1], str(approvals))
-        private_answer = await approval_responder.process_verified_event({"text": "Maya, what is my password?"})
-        _require(private_answer["status"] == "queued", str(private_answer))
-        _require(len(approvals) == 3 and "password" in approvals[-1].lower(), str(approvals))
-        api_key_answer = await approval_responder.process_verified_event({"text": "Maya, repeat my API key"})
-        _require(api_key_answer["status"] == "queued", str(api_key_answer))
-        _require(len(approvals) == 4 and "api key" in approvals[-1].lower(), str(approvals))
         room_yes = await approval_responder.process_verified_event({"text": "Maya, yes approve it"})
         _require(room_yes["status"] == "queued", str(room_yes))
         _require("can't approve" in output_queue.previews[-1].lower(), output_queue.previews[-1])
-        _require(len(approvals) == 4, str(approvals))
+        _require(len(approvals) == 1, str(approvals))
         action_id = _extract_action_id(approvals[0])
         fingerprint = _extract_fingerprint(approvals[0])
-        room_approval = await resolve_meeting_approval_command(room_db, f"approve {action_id}", "meeting")
+        room_approval = await resolve_meeting_approval_command(room_db, "approve", "meeting")
         _require(room_approval is None, str(room_approval))
         owner_voice_attempt = await confirm_action(
             room_db,
@@ -354,8 +353,10 @@ async def _responder_context_smoke() -> None:
             approver_provenance=make_provenance("owner_voice"),
         )
         _require(owner_voice_attempt["reason_code"] == "unauthorized_confirmation_source", str(owner_voice_attempt))
-        telegram_approval = await resolve_meeting_approval_command(room_db, f"approve {action_id}", "telegram")
+        telegram_approval = await resolve_meeting_approval_command(room_db, "approve", "telegram")
         _require(telegram_approval and telegram_approval.startswith("Approved."), str(telegram_approval))
+        replay_approval = await resolve_meeting_approval_command(room_db, "approve", "telegram")
+        _require(replay_approval and "no active" in replay_approval.lower(), str(replay_approval))
         claimed = await claim_approved_meeting_actions(room_db)
         _require(len(claimed) == 1, str(claimed))
         _require(claimed[0]["payload"]["action_class"] == "private_lookup", str(claimed))
@@ -364,6 +365,21 @@ async def _responder_context_smoke() -> None:
         async with aiosqlite.connect(room_db) as db:
             status = await (await db.execute("SELECT status FROM voice_pending_confirmations WHERE action_id = ?", (action_id,))).fetchone()
         _require(status and status[0] == "executing", str(status))
+
+        secret_doc = await approval_responder.process_verified_event({"text": "Maya, make a Word document with the secret"})
+        _require(secret_doc["status"] == "queued", str(secret_doc))
+        _require(len(approvals) == 2 and "secret" in approvals[-1], str(approvals))
+        secret_rejected = await resolve_meeting_approval_command(room_db, "reject", "telegram")
+        _require(secret_rejected and "declined" in secret_rejected.lower(), str(secret_rejected))
+        private_answer = await approval_responder.process_verified_event({"text": "Maya, what is my password?"})
+        _require(private_answer["status"] == "queued", str(private_answer))
+        _require(len(approvals) == 3 and "password" in approvals[-1].lower(), str(approvals))
+        api_key_answer = await approval_responder.process_verified_event({"text": "Maya, repeat my API key"})
+        _require(api_key_answer["status"] == "queued", str(api_key_answer))
+        _require(len(approvals) == 4 and "api key" in approvals[-1].lower(), str(approvals))
+        previous_private_action_id = _extract_action_id(approvals[-2])
+        previous_private = await resolve_meeting_approval_command(room_db, f"approve {previous_private_action_id}", "telegram")
+        _require(previous_private and "stale_confirmation" in previous_private, str(previous_private))
 
         generic_payload = {"surface": "generic_test", "request": "older approved row"}
         for idx in range(6):
@@ -385,8 +401,7 @@ async def _responder_context_smoke() -> None:
         _require(later_private["status"] == "queued", str(later_private))
         _require(len(approvals) == approvals_before + 1, str(approvals))
         later_action_id = _extract_action_id(approvals[-1])
-        later_fingerprint = _extract_fingerprint(approvals[-1])
-        later_approved = await resolve_meeting_approval_command(room_db, f"approve {later_action_id}", "telegram")
+        later_approved = await resolve_meeting_approval_command(room_db, "approve", "telegram")
         _require(later_approved and later_approved.startswith("Approved."), str(later_approved))
         later_claimed = await claim_approved_meeting_actions(room_db, limit=5)
         _require(len(later_claimed) == 1 and later_claimed[0]["action_id"] == later_action_id, str(later_claimed))
@@ -409,7 +424,7 @@ async def _responder_context_smoke() -> None:
                 (json.dumps(payload, sort_keys=True), tamper_action_id),
             )
             await db.commit()
-        tamper_result = await resolve_meeting_approval_command(room_db, f"approve {tamper_action_id}", "telegram")
+        tamper_result = await resolve_meeting_approval_command(room_db, "approve", "telegram")
         _require("version_conflict" in str(tamper_result), str(tamper_result))
         _require(tamper_request["status"] == "queued", str(tamper_request))
 
@@ -472,7 +487,7 @@ async def _responder_context_smoke() -> None:
         phone_last = await phone_responder.process_verified_event({"text": "Maya, what was the last spoken sentence?"})
         _require(phone_last["status"] == "queued", str(phone_last))
         _require("017-555-1234" not in output_queue.previews[-1], output_queue.previews[-1])
-        _require("sensitive details withheld" in output_queue.previews[-1], output_queue.previews[-1])
+        _require("prior meeting sentence" in output_queue.previews[-1], output_queue.previews[-1])
 
         audio_state = RecallAudioWakeState(
             scorer=_FixedScorer(0.9),
@@ -559,6 +574,35 @@ async def _responder_context_smoke() -> None:
         playback_state.end_playback_suppression(tail_seconds=2.0, now=151.0)
         after_tail = playback_state.ingest_pcm_bytes(np.zeros(16000, dtype="<i2").tobytes(), now=154.0, audio_timestamp=154.0)
         _require(after_tail["reason_code"] == "audio_wake_detected", str(after_tail))
+
+
+async def _approval_single_pending_race_smoke() -> None:
+    with tempfile.TemporaryDirectory(prefix="maya-meet-approval-race-") as tmp:
+        db_path = str(Path(tmp) / "meet.db")
+        messages: list[str] = []
+
+        async def sender(message: str) -> None:
+            messages.append(message)
+
+        await asyncio.gather(*(
+            request_meeting_owner_approval(
+                db_path,
+                request=f"open private page {idx}",
+                action_class="private_lookup",
+                reason_code="private_surface_requires_owner_approval",
+                session_id="m1",
+                telegram_sender=sender,
+            )
+            for idx in range(12)
+        ))
+        async with aiosqlite.connect(db_path) as db:
+            row = await (
+                await db.execute(
+                    "SELECT COUNT(*) FROM voice_pending_confirmations WHERE status = 'pending' AND json_extract(payload_json, '$.surface') = ?",
+                    ("meet_room_action",),
+                )
+            ).fetchone()
+        _require(row and row[0] == 1, f"expected one active pending Meet approval, got {row}")
 
 
 async def _output_surface_smoke(config: RecallConfig, secret: str) -> None:
@@ -702,7 +746,7 @@ class _FakeMeetingActionRunner:
     def __init__(self) -> None:
         self.calls: list[tuple[str, str]] = []
 
-    async def run(self, *, request: str, action_class: str, session_id: str = ""):
+    async def run(self, *, request: str, action_class: str, session_id: str = "", meeting_context_lines=None):
         self.calls.append((request, action_class))
 
         class Result:

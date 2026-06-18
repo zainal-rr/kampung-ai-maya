@@ -15,7 +15,12 @@ from pathlib import Path
 
 from maya_core.provenance import make_provenance
 from maya_meet.config import RecallConfig
-from maya_meet.orchestrator import canonical_meet_url, join_meeting, meet_status_text
+from maya_meet.orchestrator import (
+    canonical_meet_url,
+    join_meeting as _orchestrated_join_meeting,
+    leave_meeting as _orchestrated_leave_meeting,
+    meet_status_text,
+)
 from maya_meet.recall_client import RecallBotState, RecallJoinResult
 from maya_meet.store import create_meet_session, latest_meet_session_for_url, meet_session, update_meet_session
 
@@ -23,6 +28,15 @@ from maya_meet.store import create_meet_session, latest_meet_session_for_url, me
 def _require(condition: bool, message: str) -> None:
     if not condition:
         raise AssertionError(message)
+
+
+async def _join(*args, **kwargs):
+    kwargs.setdefault("start_output", _start_ok)
+    return await _orchestrated_join_meeting(*args, **kwargs)
+
+
+async def _leave(*args, **kwargs):
+    return await _orchestrated_leave_meeting(*args, **kwargs)
 
 
 async def main() -> None:
@@ -45,7 +59,7 @@ async def main() -> None:
 
     with tempfile.TemporaryDirectory(prefix="maya-meet-join-") as tmp:
         db_path = str(Path(tmp) / "meet.db")
-        non_owner = await join_meeting(
+        non_owner = await _join(
             canonical,
             db_path=db_path,
             config=config,
@@ -56,8 +70,28 @@ async def main() -> None:
         )
         _require(non_owner.reason_code == "meet_join_requires_owner_text", str(non_owner))
 
+        non_owner_leave = await _leave(
+            canonical,
+            db_path=db_path,
+            config=config,
+            provenance=make_provenance("other_speaker"),
+            retrieve_bot=_state_sequence([]),
+            leave_bot=_leave_counter([]),
+        )
+        _require(non_owner_leave.reason_code == "meet_leave_requires_owner_text", str(non_owner_leave))
+
+        no_session_leave = await _leave(
+            canonical,
+            db_path=db_path,
+            config=config,
+            provenance=make_provenance("owner_text"),
+            retrieve_bot=_state_sequence([]),
+            leave_bot=_leave_counter([]),
+        )
+        _require(no_session_leave.reason_code == "meet_leave_no_session", str(no_session_leave))
+
         unhealthy_calls: list[str] = []
-        unhealthy = await join_meeting(
+        unhealthy = await _join(
             canonical,
             db_path=db_path,
             config=config,
@@ -70,7 +104,7 @@ async def main() -> None:
         _require(not unhealthy_calls, "unhealthy public endpoint should not create bot")
 
         created_calls: list[str] = []
-        joined = await join_meeting(
+        joined = await _join(
             canonical,
             db_path=db_path,
             config=config,
@@ -86,9 +120,30 @@ async def main() -> None:
         )
         _require(joined.status == "live" and len(created_calls) == 1, str(joined))
         row = await meet_session(db_path, joined.session_id)
-        _require(row and row["canonical_meeting_url"] == canonical and row["recall_status"] == "in_call_recording", str(row))
+        _require(
+            row
+            and row["canonical_meeting_url"] == canonical
+            and row["recall_status"] == "in_call_recording"
+            and row["output_media_status"] == "output_media_started",
+            str(row),
+        )
 
-        reused = await join_meeting(
+        output_failure_url = "https://meet.google.com/zzz-yyyy-xxx"
+        output_failed = await _join(
+            output_failure_url,
+            db_path=db_path,
+            config=config,
+            provenance=make_provenance("owner_text"),
+            create_bot=_create_counter([], bot_id="bot_output_failed"),
+            retrieve_bot=_state_sequence([RecallBotState("live", "recall_bot_live", bot_id="bot_output_failed", raw_status="in_call_recording")]),
+            start_output=_start_failed,
+            public_preflight=_healthy,
+            poll_seconds=0.1,
+            poll_interval=0.01,
+        )
+        _require(output_failed.status == "failed" and output_failed.reason_code == "output_media_start_failed", str(output_failed))
+
+        reused = await _join(
             canonical,
             db_path=db_path,
             config=config,
@@ -101,6 +156,40 @@ async def main() -> None:
         )
         _require(reused.reason_code == "meet_bot_reused" and reused.bot_id == "bot_live", str(reused))
 
+        leave_calls: list[str] = []
+        left = await _leave(
+            canonical,
+            db_path=db_path,
+            config=config,
+            provenance=make_provenance("owner_text"),
+            retrieve_bot=_state_sequence([
+                RecallBotState("live", "recall_bot_live", bot_id="bot_live", raw_status="in_call_recording"),
+                RecallBotState("ended", "recall_bot_ended", bot_id="bot_live", raw_status="done"),
+            ]),
+            leave_bot=_leave_counter(leave_calls),
+            poll_seconds=0.1,
+            poll_interval=0.01,
+        )
+        _require(left.status == "stopped" and leave_calls == ["bot_live"], str((left, leave_calls)))
+        left_row = await meet_session(db_path, joined.session_id)
+        _require(
+            left_row
+            and left_row["status"] == "stopped"
+            and left_row["recall_status"] == "done"
+            and left_row["failure_reason"] == "stopped_by_telegram_leave_call",
+            str(left_row),
+        )
+
+        already_ended = await _leave(
+            canonical,
+            db_path=db_path,
+            config=config,
+            provenance=make_provenance("owner_text"),
+            retrieve_bot=_state_sequence([RecallBotState("ended", "recall_bot_ended", bot_id="bot_live", raw_status="done")]),
+            leave_bot=_leave_counter([]),
+        )
+        _require(already_ended.status == "ended" and already_ended.reason_code == "meet_bot_already_ended", str(already_ended))
+
         stale_url = "https://meet.google.com/bbb-cccc-ddd"
         await create_meet_session(
             db_path,
@@ -112,7 +201,7 @@ async def main() -> None:
         )
         await update_meet_session(db_path, "old_stale", bot_id="bot_old", status="live")
         stale_created: list[str] = []
-        fresh = await join_meeting(
+        fresh = await _join(
             stale_url,
             db_path=db_path,
             config=config,
@@ -141,7 +230,7 @@ async def main() -> None:
         )
         await update_meet_session(db_path, "retrieve_transient", bot_id="bot_transient", status="live")
         transient_create_calls: list[str] = []
-        transient = await join_meeting(
+        transient = await _join(
             transient_url,
             db_path=db_path,
             config=config,
@@ -158,7 +247,7 @@ async def main() -> None:
         _require(transient_row and transient_row["status"] == "live", str(transient_row))
 
         waiting_url = "https://meet.google.com/ccc-dddd-eee"
-        waiting = await join_meeting(
+        waiting = await _join(
             waiting_url,
             db_path=db_path,
             config=config,
@@ -181,7 +270,7 @@ async def main() -> None:
             provenance_source="owner_text",
         )
         await update_meet_session(db_path, "waiting_terminal", bot_id="bot_waiting_terminal", status="in_waiting_room")
-        terminal_waiting = await join_meeting(
+        terminal_waiting = await _join(
             terminal_waiting_url,
             db_path=db_path,
             config=config,
@@ -206,7 +295,7 @@ async def main() -> None:
             RecallBotState("live", "recall_bot_live", bot_id="bot_race", raw_status="in_call_recording"),
         ])
         first, second = await asyncio.gather(
-            join_meeting(
+            _join(
                 race_url,
                 db_path=db_path,
                 config=config,
@@ -217,7 +306,7 @@ async def main() -> None:
                 poll_seconds=0.2,
                 poll_interval=0.01,
             ),
-            join_meeting(
+            _join(
                 race_url,
                 db_path=db_path,
                 config=config,
@@ -267,6 +356,21 @@ def _create_counter(calls, *, bot_id: str = "bot_created"):
         calls.append(meeting_url)
         return RecallJoinResult("created", "recall_bot_created", bot_id=bot_id)
     return create
+
+
+def _start_ok(_config, bot_id, **_kwargs):
+    return RecallJoinResult("started", "output_media_started", bot_id=str(bot_id))
+
+
+def _start_failed(_config, bot_id, **_kwargs):
+    return RecallJoinResult("failed", "output_media_start_failed", bot_id=str(bot_id), detail="test output failure")
+
+
+def _leave_counter(calls, *, status: str = "left", reason_code: str = "recall_leave_call_requested"):
+    def leave(_config, bot_id, **_kwargs):
+        calls.append(str(bot_id))
+        return RecallJoinResult(status, reason_code, bot_id=str(bot_id))
+    return leave
 
 
 def _slow_create_counter(calls, *, bot_id: str):

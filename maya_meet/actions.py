@@ -3,6 +3,7 @@ from __future__ import annotations
 import re
 from dataclasses import dataclass
 
+from maya_meet.artifact_handoff import build_meet_artifact_handoff, build_meet_revision_instruction
 from maya_voice.work_control import revise_maya_work
 from maya_voice.xai_realtime_work_tools import run_voice_browser_skill, start_maya_work
 
@@ -63,7 +64,14 @@ class MeetingActionRunner:
         self.db_path = db_path
         self.assistant = assistant
 
-    async def run(self, *, request: str, action_class: str, session_id: str = "") -> MeetingActionExecution:
+    async def run(
+        self,
+        *,
+        request: str,
+        action_class: str,
+        session_id: str = "",
+        meeting_context_lines: list[str] | tuple[str, ...] | None = None,
+    ) -> MeetingActionExecution:
         prompt = " ".join(str(request or "").split())
         if not prompt:
             return MeetingActionExecution("needs_clarification", "What should I do?", "empty_meeting_action")
@@ -82,27 +90,46 @@ class MeetingActionRunner:
                     "failed",
                     "I can do meeting Office work only when the local work engine is attached.",
                     "meet_work_engine_unavailable",
-                )
+            )
             if _looks_like_revision(prompt):
+                scoped_revision = build_meet_revision_instruction(prompt, meeting_context_lines=meeting_context_lines)
+                if scoped_revision is None:
+                    return MeetingActionExecution(
+                        "needs_clarification",
+                        "I need a little more meeting context before I can revise that artifact without guessing.",
+                        "meet_artifact_context_too_thin",
+                    )
                 result = await revise_maya_work(
                     self.db_path,
                     assistant=self.assistant,
                     voice_session_id=session_id,
-                    content_revision=prompt,
+                    content_revision=scoped_revision,
                     channel="meet",
                 )
                 return _meeting_spoken_result(
                     result,
                     completed="Done. I captured the revision for the current Office artifact.",
                 )
+            handoff = build_meet_artifact_handoff(
+                prompt,
+                action_class=action,
+                meeting_context_lines=meeting_context_lines,
+                session_id=session_id,
+            )
+            if handoff is None:
+                return MeetingActionExecution(
+                    "needs_clarification",
+                    "I need a little more meeting context before I can make that artifact without guessing.",
+                    "meet_artifact_context_too_thin",
+                )
             result = await start_maya_work(
                 self.db_path,
-                prompt,
+                handoff.request,
                 assistant=self.assistant,
                 voice_session_id=session_id,
                 short_ack="Meeting Office action",
                 kind="meet_artifact",
-                tool_args={"request": prompt, "source": "meet_m2"},
+                tool_args=handoff.tool_args,
                 channel="meet",
             )
             return _meeting_spoken_result(

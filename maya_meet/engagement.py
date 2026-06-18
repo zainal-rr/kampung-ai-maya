@@ -64,7 +64,7 @@ def _exact_address(raw: str, tokens: list[tuple[str, int, int]], offset: int) ->
     word, _start, end = tokens[offset]
     if word.casefold() != "maya":
         return None
-    remainder = _remainder(raw, end)
+    remainder = _drop_repeated_address(_remainder(raw, end))
     if not remainder or REFERENCE_START_RE.match(remainder):
         return MeetAddressDecision("not_addressed", raw.strip(), 0.0, "not_addressed_reference")
     reason = "addressed_exact"
@@ -91,7 +91,7 @@ def _fuzzy_address(raw: str, tokens: list[tuple[str, int, int]], offset: int) ->
         return None
     score, span = best
     end = tokens[offset + span - 1][2]
-    remainder = _remainder(raw, end)
+    remainder = _drop_repeated_address(_remainder(raw, end))
     if not remainder or REFERENCE_START_RE.match(remainder):
         return MeetAddressDecision("not_addressed", raw.strip(), 0.0, "not_addressed_reference")
     reason = "addressed_fuzzy"
@@ -102,7 +102,7 @@ def _fuzzy_address(raw: str, tokens: list[tuple[str, int, int]], offset: int) ->
 
 
 def _wake_similarity(words) -> float:
-    compact = _compact_words(words)
+    compact = _wake_compact_words(words)
     if not compact or not compact.startswith("m"):
         return 0.0
     if not _wake_like_shape(compact):
@@ -124,6 +124,39 @@ def _wake_similarity(words) -> float:
         # recover "may i" and "my a".
         return min(score, 0.55)
     return score
+
+
+def _drop_repeated_address(remainder: str) -> str:
+    cleaned = str(remainder or "").strip()
+    for _ in range(3):
+        tokens = _word_tokens(cleaned)
+        if not tokens:
+            return cleaned
+        offset = 1 if tokens[0][0].casefold() in GREETING_WORDS else 0
+        if offset >= len(tokens):
+            return cleaned
+        end = _leading_address_end(tokens, offset)
+        if end is None:
+            return cleaned
+        next_cleaned = _remainder(cleaned, end)
+        if not next_cleaned or REFERENCE_START_RE.match(next_cleaned):
+            return cleaned
+        cleaned = next_cleaned
+    return cleaned
+
+
+def _leading_address_end(tokens: list[tuple[str, int, int]], offset: int) -> int | None:
+    if tokens[offset][0].casefold() == "maya":
+        return tokens[offset][2]
+    best: tuple[float, int] | None = None
+    for span in (1, 2):
+        end_index = offset + span - 1
+        if end_index >= len(tokens):
+            continue
+        score = _wake_similarity(token[0] for token in tokens[offset : offset + span])
+        if score >= 0.74 and (best is None or score > best[0]):
+            best = (score, span)
+    return None if best is None else tokens[offset + best[1] - 1][2]
 
 
 def _wake_like_shape(compact: str) -> bool:
@@ -148,6 +181,22 @@ def _phonetic(value: str) -> str:
 
 def _compact_words(words) -> str:
     return re.sub(r"[^a-z0-9]+", "", "".join(str(word).casefold() for word in words))
+
+
+def _wake_compact_words(words) -> str:
+    normalized: list[str] = []
+    for raw in words:
+        word = re.sub(r"[^a-z0-9]+", "", str(raw).casefold())
+        if not word:
+            continue
+        if word == "and" and normalized and normalized[0] in {"my", "may", "mai"}:
+            # Recall ASR has produced "hello my and..." for "Hello Maya...".
+            # Treat this as a vowel-like wake fragment only in the leading
+            # wake slot; request-shaped speech still cannot wake Maya alone.
+            normalized.append("a")
+        else:
+            normalized.append(word)
+    return _compact_words(normalized)
 
 
 def _word_tokens(raw: str) -> list[tuple[str, int, int]]:

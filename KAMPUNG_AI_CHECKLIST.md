@@ -353,13 +353,18 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add the disclosure boundary: other speakers can ask about meeting/public context, but owner-private memory/files/logs/docs are refused or sent owner-channel-only.
     - [x] Add engine-supervised `ENABLE_MAYA_MEET=1` service with separate callback/output ports for cloudflared live proof.
     - [x] Add Telegram `/join <Meet link>` as the owner-text trigger for a Recall-truthful Meet join orchestrator.
+    - [x] Add Telegram `/leave [Meet link]` so the owner can trigger Recall `leave_call` and reconcile the session to stopped/ended without manual Codex cleanup.
     - [x] Replace quick-tunnel workflow with a `launchd`-supervised named tunnel plan for `maya-meet.labsoft.uk`; quick tunnels are emergency-only.
     - [x] Make Meet join status Recall-sourced: DB status is a cache, stale `live` rows reconcile from Retrieve Bot/lifecycle webhooks, and `leave_call` is used for active bots.
     - [x] Add canonical-URL in-flight locking so double `/join` sends cannot create duplicate bots.
     - [x] Keep permanent public endpoints hardened: output requires token plus active session/opaque utterance id, and callback requires Recall signature/timestamp.
     - [x] Protect the public Output Media surface: opaque utterance ids, token required, no request-supplied paths, no directory listing, and W5 personal-data paths unreachable.
     - [x] Deduplicate Recall webhook retries by event/message id so transcript retries do not double-speak.
-    - [ ] Live solo positive control: bot joins, verified transcript arrives, and Maya speaks back through Output Media before policy-gate tests count.
+    - [x] Live solo positive control: bot joins, verified transcript arrives, and Maya speaks back through Output Media before policy-gate tests count.
+    - [x] Live safety/teardown proof: private browser requests route to Telegram approval, room audio cannot approve, and `leave_call` reconciles the bot to ended/done instead of stale `live`.
+    - [x] Add semantic Meet artifact handoff: Meet Office artifacts receive only the current meeting transcript as source context, and raw wake/command text must not become artifact title/topic/filename.
+    - [ ] Prove Meet Office capability with artifact content inspection: Word, Excel, and PowerPoint must derive title/body/sheets/slides from the current meeting transcript without stale travel/old-artifact content.
+    - [ ] Run Codex synthetic Meet gate before Zainal's real-voice retest; synthetic voice proves plumbing, policy, and missing-code issues, not final human ASR/capability quality.
     - [ ] Live honest-failure proof: wrong API key, invalid signature, stale timestamp, unreachable Output Media, and TTS/output failure report failure without false success.
     - [x] Keep voiceprint authority out of this Meet slice: M2 Room Mode uses action containment plus Telegram owner approval, not speaker identity.
     - [x] Treat Telegram `owner_text` as the possession-authenticated approval channel for risky meeting actions; room audio cannot approve.

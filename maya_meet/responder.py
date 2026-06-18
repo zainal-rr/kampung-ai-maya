@@ -120,6 +120,7 @@ class MeetM1Responder:
                 request=prompt_text,
                 action_class=action_class,
                 session_id=str(payload.get("maya_session_id") or payload.get("session_id") or ""),
+                meeting_context_lines=list(self.meeting_context_lines),
             )
             response = executed.spoken
         elif decision.status == "needs_confirmation":
@@ -252,7 +253,7 @@ def _asks_for_last_spoken(prompt: str) -> bool:
 
 def _meeting_content_class(text: str, action_class: str) -> str:
     action = str(action_class or "").strip().lower()
-    return "owner_private" if PRIVATE_TERMS.search(text) else "meeting_public"
+    return "owner_private" if _contains_private_material(text) else "meeting_public"
 
 
 def _contains_private_material(text: str) -> bool:

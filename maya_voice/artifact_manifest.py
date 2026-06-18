@@ -353,7 +353,20 @@ def _row_to_manifest(row) -> dict[str, Any]:
 
 def _structured_intent(args: dict[str, Any], *, request: str, kind: str) -> dict[str, Any]:
     intent = {"request": request.strip(), "kind": kind}
-    for key in ("artifact_type", "artifact_topic", "topic", "title", "audience", "duration_days"):
+    for key in (
+        "artifact_type",
+        "artifact_topic",
+        "topic",
+        "title",
+        "audience",
+        "duration_days",
+        "source",
+        "meet_session_id",
+        "meet_context_source",
+        "meet_context_lines",
+        "meet_user_request",
+        "meeting_context_policy",
+    ):
         if args.get(key) not in (None, ""):
             intent[key] = args[key]
     return _jsonable_dict(intent)

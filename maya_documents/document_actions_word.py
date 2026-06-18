@@ -25,6 +25,7 @@ from maya_voice.artifact_manifest import (
     current_manifest_title,
     record_current_render_report_for_sections,
 )
+from maya_documents.meet_artifact_context import current_meet_artifact_title_from_markdown
 from maya_core.recent_questions_document import recent_user_questions
 from maya_documents.word_simple_edit import apply_simple_docx_edit, simple_docx_edit_instruction
 
@@ -88,7 +89,8 @@ class DocumentWordMixin:
         sections = strengthen_word_sections(topic, word_sections_from_markdown(markdown, topic))
         sections = await apply_current_manifest_count_sections(sections)
         sections = await style_sections(self.db_path, sections)
-        title = await current_manifest_title(_word_document_title(topic))
+        fallback_title = await current_manifest_title(_word_document_title(topic))
+        title = await current_meet_artifact_title_from_markdown(markdown, fallback=fallback_title)
         await asyncio.to_thread(create_docx, path, title, sections)
         await record_current_render_report_for_sections(path, sections)
 

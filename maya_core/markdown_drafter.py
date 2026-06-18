@@ -25,7 +25,7 @@ async def draft_markdown_with_gemini(db_path: str, topic: str, preflight_context
         return None
     model = os.getenv("GEMINI_FLASH_MODEL", "gemini-3-flash-preview")
     prompt = _prompt(topic, preflight_context)
-    grounded = should_ground_topic(topic)
+    grounded = should_ground_topic(topic) and not _meet_artifact_contract(preflight_context)
     if grounded:
         try:
             reply = await _grounded_reply(api_key, model, prompt)
@@ -89,6 +89,10 @@ def should_ground_topic(topic: str) -> bool:
         "rayban", "smart glasses", "display", "technology",
     )
     return any(marker in lowered for marker in markers)
+
+
+def _meet_artifact_contract(preflight_context: str) -> bool:
+    return "Meet artifact source contract:" in str(preflight_context or "")
 
 
 def _html_prompt(topic: str) -> str:

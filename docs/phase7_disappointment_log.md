@@ -10,6 +10,35 @@ Tags:
 `[SAFETY]` risky behavior · `[NOPACK]` missing domain pack · `[FOLLOWUP]` lost
 thread · `[VOICE]` voice-specific.
 
+## 2026-06-18
+
+### D15 — Meet Office artifact used raw command title and stale context
+
+- **Tags:** `[VOICE]`, `[FORMAT]`, `[WRONG]`, `[FOLLOWUP]`
+- **Prompt / situation:** During a solo Google Meet proof, Codex used synthetic
+  voice to ask Maya to make a Word document about the meeting.
+- **What Maya did:** The file was created inside Maya's documents folder and QA
+  correctly refused to call it final, but the visible document title was the raw
+  command text (`hello maya make a word document about this`) and the body
+  drifted into stale Langkawi/travel content.
+- **What Zainal expected:** The artifact should use the current meeting
+  transcript as source context, derive a sensible title semantically, and never
+  turn wake phrases or command framing into the document title.
+- **Diagnosis:** The Meet Office path passed a raw/under-scoped request into the
+  generic artifact lane without the current meeting transcript as the exclusive
+  source context. The generic lane filled the missing context from stale artifact
+  or memory state.
+- **Fix applied:** Added a semantic Meet artifact handoff that consumes the
+  existing Meet address decision remainder, scopes source context to the current
+  meeting transcript buffer only, and passes a transcript-scoped semantic request
+  plus structured source metadata into the existing work lane. Thin-context Meet
+  artifact requests now fail honestly instead of guessing.
+- **Verified:** `meet_artifact_handoff_smoke.py` and
+  `meet_m1_recall_foundation_smoke.py` pass locally.
+- **Status:** Local wiring fixed. Meet Office capability is still not
+  live-passed until synthetic Meet gate and real-voice artifact content
+  inspection pass.
+
 ## 2026-06-12
 
 ### D1 — Voice document handoff muted follow-up conversation
