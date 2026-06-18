@@ -21,6 +21,7 @@ from maya_harness.harness_store import (
     upsert_run,
 )
 from maya_core.maya_permission_kernel import MayaPermissionKernel
+from maya_core.untrusted_input_boundary import assess_untrusted_content
 
 MessageHandler = Callable[[str, str, str, str], str | Awaitable[str]]
 ToolExecutor = Callable[[str, Mapping[str, Any]], Any | Awaitable[Any]]
@@ -108,6 +109,9 @@ class MayaHarnessSDK:
         untrusted_context = payload.pop("_untrusted_context", {}) or {}
         untrusted_influence = bool(payload.pop("_untrusted_influence", False) or untrusted_context.get("untrusted_influence"))
         injection_detected = bool(payload.pop("_injection_detected", False) or untrusted_context.get("injection_detected"))
+        if untrusted_influence and not injection_detected:
+            source = str(untrusted_context.get("source") or untrusted_context.get("source_kind") or "unknown")
+            injection_detected = _payload_injection_detected(payload, source=source)
         permission = self.permission_kernel.check(
             tool_name,
             action_type=action_type,
@@ -256,3 +260,34 @@ async def _latest_thread_run(db_path: str, thread_id: str) -> dict[str, Any] | N
         )
         row = await cursor.fetchone()
     return await get_run(db_path, row[0]) if row else None
+
+
+def _payload_strings(value: Any) -> list[str]:
+    if isinstance(value, str):
+        return [value]
+    if isinstance(value, Mapping):
+        strings: list[str] = []
+        for item in value.values():
+            strings.extend(_payload_strings(item))
+        return strings
+    if isinstance(value, (list, tuple, set)):
+        strings = []
+        for item in value:
+            strings.extend(_payload_strings(item))
+        return strings
+    return []
+
+
+def _payload_injection_detected(payload: Mapping[str, Any], *, source: str) -> bool:
+    """Defensive W7 parity scan before action execution.
+
+    Read surfaces should pass `_injection_detected` with their provenance, but
+    external actions must not rely on every caller doing so correctly. When a
+    tool call is already marked as untrusted-influenced, scan its outgoing
+    string payload so injected instructions copied into a body/message/URL/path
+    cannot bypass the permission kernel.
+    """
+    for text in _payload_strings(payload):
+        if assess_untrusted_content(text, source=source).injection_detected:
+            return True
+    return False
