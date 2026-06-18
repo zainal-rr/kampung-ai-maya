@@ -105,6 +105,36 @@ _OVERRIDE_PATTERNS = (
     re.compile(r"\b(?:act|behave|respond)\s+as\s+(?:if|though)\b.*\b(?:no|without)\s+(?:restrictions?|rules?|limits?)", re.I),
 )
 
+_TASK_DEFERRAL_PATTERNS = (
+    re.compile(
+        r"\b(?:before|prior\s+to)\b.{0,140}\b"
+        r"(?:task|request|answer|respond|reply|solve|complete|finish)\b",
+        re.I | re.S,
+    ),
+    re.compile(
+        r"\b(?:after|once|when)\b.{0,80}\b(?:done|finished|complete|completed)\b.{0,140}\b"
+        r"(?:task|request|answer|respond|reply|solve|continue|resume|return)\b",
+        re.I | re.S,
+    ),
+)
+
+_DIRECTIVE_CUE_PATTERNS = (
+    re.compile(r"\b(?:do|perform|execute|complete|carry\s+out)\b.{0,80}\b(?:first|instead|before|instruction|task|request|following)\b", re.I | re.S),
+    re.compile(r"\b(?:strictly\s+adhere|follow|obey)\b.{0,80}\b(?:instruction|request|task|order)\b", re.I | re.S),
+    re.compile(r"^\s*(?:todo|action\s*item)\s*:\s*\S+", re.I | re.M),
+    re.compile(r"\b(?:tell|say|respond|reply)\b.{0,40}\b(?:the\s+user|that|with)\b", re.I | re.S),
+)
+
+_TODO_DIRECTIVE_PATTERN = re.compile(
+    r"^\s*todo\s*:\s*(?:ignore|send|email|share|post|upload|open|visit|invite|remove|add|book|reserve|delete|update|say|tell|respond)\b",
+    re.I | re.M,
+)
+
+_ASSISTANT_TARGET_PATTERNS = (
+    re.compile(r"\b(?:assistant|model|ai\s+language\s+model|gpt|chatgpt|maya)\b", re.I),
+    re.compile(r"\b(?:your|the)\s+(?:task|instructions?|rules?|system\s+prompt)\b", re.I),
+)
+
 # Exfiltration asks: read something sensitive and move it out.
 _EXFIL_PATTERNS = (
     re.compile(r"\b(?:send|email|forward|upload|post|share|exfiltrate|leak|transmit)\b.{0,40}\b(?:to|@|http|www\.|address|server|webhook)\b", re.I),
@@ -206,12 +236,31 @@ def assess_untrusted_content(text: str, *, source: str = "browser") -> Untrusted
         signals.append("exfiltration_request")
     if any(p.search(text) for p in _SCOPE_PATTERNS):
         signals.append("scope_widening_request")
+    if _looks_like_embedded_task_directive(text):
+        signals.append("embedded_task_directive")
     return UntrustedAssessment(
         source=source,
         is_untrusted=True,
         injection_detected=bool(signals),
         signals=tuple(signals),
     )
+
+
+def _looks_like_embedded_task_directive(text: str) -> bool:
+    """Detect task-steering instructions by shape, not by a known attack string."""
+    value = str(text or "")
+    if not value.strip():
+        return False
+    has_deferral = any(pattern.search(value) for pattern in _TASK_DEFERRAL_PATTERNS)
+    has_directive = any(pattern.search(value) for pattern in _DIRECTIVE_CUE_PATTERNS)
+    has_assistant_target = any(pattern.search(value) for pattern in _ASSISTANT_TARGET_PATTERNS)
+    if has_deferral and has_directive:
+        return True
+    if has_directive and has_assistant_target:
+        return True
+    if _TODO_DIRECTIVE_PATTERN.search(value):
+        return True
+    return False
 
 
 def assess_untrusted_context(
