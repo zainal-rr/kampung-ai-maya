@@ -13,6 +13,7 @@ from maya_meet.actions import MeetingActionRunner
 from maya_meet.audio_wake import RecallAudioWakeState, audio_bytes_from_recall_message, timestamp_from_recall_payload
 from maya_meet.config import RecallConfig, recall_config_from_env
 from maya_meet.context_answerer import build_meeting_context_answerer
+from maya_meet.output_security import output_session_active
 from maya_meet.output_media import MeetOutputQueue
 from maya_meet.recall_events import handle_recall_event
 from maya_meet.responder import MeetM1Responder
@@ -146,16 +147,29 @@ def create_meet_app(
         token = request.query.get("token", "")
         if token != output_queue.token:
             return web.Response(status=403, text="forbidden")
+        session_id = request.query.get("session_id", "")
+        if not await output_session_active(db_path, session_id):
+            return web.Response(status=404, text="not found")
         return web.Response(text=_output_html(token), content_type="text/html")
 
     async def next_audio(request: web.Request) -> web.Response:
         if request.query.get("token", "") != output_queue.token:
             return web.Response(status=403, text="forbidden")
-        item = await output_queue.next_utterance(request.query.get("token", ""))
+        session_id = request.query.get("session_id", "")
+        if not await output_session_active(db_path, session_id):
+            return web.Response(status=404, text="not found")
+        item = await output_queue.next_utterance(request.query.get("token", ""), session_id=session_id)
         return web.json_response({"utterance": item})
 
     async def audio(request: web.Request) -> web.StreamResponse:
-        path = await output_queue.audio_path(request.match_info.get("utterance_id", ""), request.query.get("token", ""))
+        session_id = request.query.get("session_id", "")
+        if not await output_session_active(db_path, session_id):
+            return web.Response(status=404, text="not found")
+        path = await output_queue.audio_path(
+            request.match_info.get("utterance_id", ""),
+            request.query.get("token", ""),
+            session_id=session_id,
+        )
         if path is None:
             return web.Response(status=404, text="not found")
         return web.FileResponse(path)
@@ -164,6 +178,8 @@ def create_meet_app(
         if request.query.get("token", "") != output_queue.token:
             return web.Response(status=403, text="forbidden")
         session_id = request.query.get("session_id", "") or "recall_default"
+        if not await output_session_active(db_path, session_id):
+            return web.Response(status=404, text="not found")
         payload = await _request_json(request)
         status = str(payload.get("status") or "unknown")[:80]
         reason = str(payload.get("reason_code") or status)[:120]
@@ -238,7 +254,7 @@ async function report(status, reason) {{
 }}
 async function poll() {{
   try {{
-    const response = await fetch('/meet/output/next?token=' + encodeURIComponent(token), {{cache: 'no-store'}});
+    const response = await fetch('/meet/output/next?token=' + encodeURIComponent(token) + '&session_id=' + encodeURIComponent(sessionId), {{cache: 'no-store'}});
     const data = await response.json();
     if (data.utterance && data.utterance.audio_url) {{
       const audio = new Audio(data.utterance.audio_url);
@@ -270,6 +286,9 @@ async def _respond_and_record(
     responder: MeetM1Responder,
     payload: dict[str, Any],
 ) -> None:
+    payload = dict(payload)
+    payload.setdefault("maya_session_id", session_id)
+    payload.setdefault("session_id", session_id)
     result = await responder.process_verified_event(payload)
     reason = str(result.get("reason_code") or result.get("status") or "")
     if reason:

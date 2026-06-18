@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import json
+import time
 from typing import Any, Mapping
 
+from maya_meet.recall_client import normalize_recall_bot_status
 from maya_meet.recall_security import RecallSignatureError, verify_recall_signature
 from maya_meet.store import record_meet_event, update_meet_session
 
@@ -47,15 +49,19 @@ async def handle_recall_event(
     if not inserted:
         return {"status": "duplicate", "reason_code": "duplicate_recall_event", "event_id": event_id}
     if event_type.startswith("bot."):
+        normalized = normalize_recall_bot_status(event_type)
         await update_meet_session(
             db_path,
             session_id,
             bot_id=_bot_id(payload),
-            status=event_type,
+            status=normalized or event_type,
+            recall_status=event_type,
             failure_reason=_sub_code(payload),
+            recall_sub_code=_sub_code(payload),
+            recall_checked_at=time.time(),
         )
     elif event_type == "transcript.data":
-        await update_meet_session(db_path, session_id, status="live")
+        await update_meet_session(db_path, session_id, status="live", recall_checked_at=time.time())
     return {"status": "accepted", "reason_code": "verified", "event_type": event_type, "event_id": event_id}
 
 

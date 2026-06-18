@@ -20,7 +20,7 @@ from maya_voice.voice import VoiceNode
 
 PRIVATE_TERMS = re.compile(
     r"\b("
-    r"private|personal|memory|notes?|logs?|files?|my\s+documents?|"
+    r"private|personal|memory|my\s+notes?|private\s+notes?|personal\s+notes?|logs?|files?|my\s+documents?|"
     r"password|passcode|pin|api\s*keys?|api\s*tokens?|access\s*tokens?|auth\s*tokens?|"
     r"tokens?|credentials?|secret(?:\s+keys?)?|bank|account\s+number"
     r")\b",
@@ -139,7 +139,11 @@ class MeetM1Responder:
             response = PRIVATE_ROOM_REFUSAL
         try:
             audio_path = await self.voice_node.render_audio_file(response)
-            queued = await self.output_queue.queue_audio(audio_path, preview=response)
+            queued = await self.output_queue.queue_audio(
+                audio_path,
+                preview=response,
+                session_id=str(payload.get("maya_session_id") or payload.get("session_id") or ""),
+            )
         except Exception as exc:
             self.logger.exception("Meet Output Media response failed")
             return {"status": "failed", "reason_code": "output_media_failed", "detail": str(exc)[:200]}

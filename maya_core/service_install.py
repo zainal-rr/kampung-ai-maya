@@ -19,11 +19,13 @@ from maya_core.service_install_ci import (
 LABEL = "com.kampungai.maya"
 WEEKLY_MEMORY_LABEL = "com.kampungai.maya.weeklymemory"
 NIGHTLY_MEMORY_LABEL = "com.kampungai.maya.nightlymemory"
+MEET_TUNNEL_LABEL = "com.kampungai.maya.meettunnel"
 ROOT = Path(os.getenv("KAMPUNG_AI_REPO_ROOT", str(repo_root(__file__)))).expanduser().resolve()
 APP_NAME = "Kampung AI"
 PLIST_PATH = Path.home() / "Library" / "LaunchAgents" / f"{LABEL}.plist"
 WEEKLY_MEMORY_PLIST_PATH = Path.home() / "Library" / "LaunchAgents" / f"{WEEKLY_MEMORY_LABEL}.plist"
 NIGHTLY_MEMORY_PLIST_PATH = Path.home() / "Library" / "LaunchAgents" / f"{NIGHTLY_MEMORY_LABEL}.plist"
+MEET_TUNNEL_PLIST_PATH = Path.home() / "Library" / "LaunchAgents" / f"{MEET_TUNNEL_LABEL}.plist"
 
 
 def build_plist() -> dict:
@@ -108,6 +110,34 @@ def build_nightly_memory_plist() -> dict:
     }
 
 
+def build_meet_tunnel_plist() -> dict:
+    logs = ROOT / "logs"
+    logs.mkdir(parents=True, exist_ok=True)
+    cloudflared = os.getenv("MAYA_MEET_CLOUDFLARED_BIN", "cloudflared")
+    config_path = Path(os.getenv("MAYA_MEET_CLOUDFLARED_CONFIG", str(Path.home() / ".cloudflared" / "maya-meet.yml"))).expanduser()
+    tunnel_name = os.getenv("MAYA_MEET_CLOUDFLARED_TUNNEL", "maya-meet")
+    return {
+        "Label": MEET_TUNNEL_LABEL,
+        "ProgramArguments": [
+            cloudflared,
+            "tunnel",
+            "--config",
+            str(config_path),
+            "run",
+            tunnel_name,
+        ],
+        "WorkingDirectory": str(ROOT),
+        "RunAtLoad": True,
+        "KeepAlive": True,
+        "EnvironmentVariables": {
+            "KAMPUNG_AI_REPO_ROOT": str(ROOT),
+        },
+        "StandardOutPath": str(logs / "meet-tunnel.stdout.log"),
+        "StandardErrorPath": str(logs / "meet-tunnel.stderr.log"),
+        "ProcessType": "Background",
+    }
+
+
 def install() -> None:
     PLIST_PATH.parent.mkdir(parents=True, exist_ok=True)
     with PLIST_PATH.open("wb") as file_obj:
@@ -151,6 +181,14 @@ def install_nightly_memory() -> None:
     print(f"Installed nightly memory launch agent at {NIGHTLY_MEMORY_PLIST_PATH}")
 
 
+def install_meet_tunnel() -> None:
+    MEET_TUNNEL_PLIST_PATH.parent.mkdir(parents=True, exist_ok=True)
+    with MEET_TUNNEL_PLIST_PATH.open("wb") as file_obj:
+        plistlib.dump(build_meet_tunnel_plist(), file_obj)
+    restart_meet_tunnel()
+    print(f"Installed Meet tunnel launch agent at {MEET_TUNNEL_PLIST_PATH}")
+
+
 def uninstall() -> None:
     bootout()
     if PLIST_PATH.exists():
@@ -170,6 +208,13 @@ def uninstall_nightly_memory() -> None:
     if NIGHTLY_MEMORY_PLIST_PATH.exists():
         NIGHTLY_MEMORY_PLIST_PATH.unlink()
     print(f"Removed {NIGHTLY_MEMORY_PLIST_PATH}")
+
+
+def uninstall_meet_tunnel() -> None:
+    bootout_meet_tunnel()
+    if MEET_TUNNEL_PLIST_PATH.exists():
+        MEET_TUNNEL_PLIST_PATH.unlink()
+    print(f"Removed {MEET_TUNNEL_PLIST_PATH}")
 
 
 def status() -> None:
@@ -214,6 +259,14 @@ def status_nightly_memory() -> None:
         print(result.stderr.strip())
 
 
+def status_meet_tunnel() -> None:
+    print(f"plist: {'present' if MEET_TUNNEL_PLIST_PATH.exists() else 'missing'} -> {MEET_TUNNEL_PLIST_PATH}")
+    result = subprocess.run(["launchctl", "print", f"{domain()}/{MEET_TUNNEL_LABEL}"], capture_output=True, text=True, check=False)
+    print("loaded:", "yes" if result.returncode == 0 else "no")
+    if result.returncode != 0 and result.stderr.strip():
+        print(result.stderr.strip())
+
+
 def restart() -> None:
     bootout()
     subprocess.run(["launchctl", "bootstrap", domain(), str(PLIST_PATH)], check=False)
@@ -235,6 +288,13 @@ def restart_nightly_memory() -> None:
     print(f"Restarted {NIGHTLY_MEMORY_LABEL}")
 
 
+def restart_meet_tunnel() -> None:
+    bootout_meet_tunnel()
+    subprocess.run(["launchctl", "bootstrap", domain(), str(MEET_TUNNEL_PLIST_PATH)], check=False)
+    subprocess.run(["launchctl", "enable", f"{domain()}/{MEET_TUNNEL_LABEL}"], check=False)
+    print(f"Restarted {MEET_TUNNEL_LABEL}")
+
+
 def bootout() -> None:
     subprocess.run(["launchctl", "bootout", domain(), str(PLIST_PATH)], check=False)
 
@@ -245,6 +305,10 @@ def bootout_weekly_memory() -> None:
 
 def bootout_nightly_memory() -> None:
     subprocess.run(["launchctl", "bootout", domain(), str(NIGHTLY_MEMORY_PLIST_PATH)], check=False)
+
+
+def bootout_meet_tunnel() -> None:
+    subprocess.run(["launchctl", "bootout", domain(), str(MEET_TUNNEL_PLIST_PATH)], check=False)
 
 
 def domain() -> str:
@@ -263,6 +327,8 @@ if __name__ == "__main__":
         install_nightly_memory()
     elif action == "install-nightly-ci":
         install_nightly_ci()
+    elif action == "install-meet-tunnel":
+        install_meet_tunnel()
     elif action == "restart":
         restart()
     elif action == "restart-weekly-memory":
@@ -271,6 +337,8 @@ if __name__ == "__main__":
         restart_nightly_memory()
     elif action == "restart-nightly-ci":
         restart_nightly_ci()
+    elif action == "restart-meet-tunnel":
+        restart_meet_tunnel()
     elif action == "uninstall":
         uninstall()
     elif action == "uninstall-weekly-memory":
@@ -279,11 +347,15 @@ if __name__ == "__main__":
         uninstall_nightly_memory()
     elif action == "uninstall-nightly-ci":
         uninstall_nightly_ci()
+    elif action == "uninstall-meet-tunnel":
+        uninstall_meet_tunnel()
     elif action == "status-weekly-memory":
         status_weekly_memory()
     elif action == "status-nightly-memory":
         status_nightly_memory()
     elif action == "status-nightly-ci":
         status_nightly_ci()
+    elif action == "status-meet-tunnel":
+        status_meet_tunnel()
     else:
         status()

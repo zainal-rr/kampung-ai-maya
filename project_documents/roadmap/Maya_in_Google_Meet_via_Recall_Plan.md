@@ -48,10 +48,11 @@ In a meeting, **other people become input and trigger sources** — anyone can s
 - W5 (blast-radius/broker) and W7 (untrusted-input boundary) stop being "before more autonomy" and become "**before people who aren't you can talk to her.**"
 - W7 fail-closed rule for M1: all Meet speech is `other_speaker`; Recall speaker labels are evidence only and never grant authority.
 - M1 is passive: Maya answers only when directly addressed and no room speech can trigger tools.
-- M2 uses owner voiceprint/speaker verification as the chosen attribution mechanism, but only for reversible meeting actions. Other people can ask; only Zainal acts.
-- Meeting voice never authorizes irreversible/external actions such as send, delete, login, payment, booking, upload/export, repo writes, command execution, or file writes outside Maya scratch.
+- M2 Room Mode no longer requires voiceprint authority: trusted-room speakers may trigger explicitly allowlisted, contained, reversible Maya actions.
+- Anything outside the contained-reversible allowlist defaults to Telegram owner approval; room audio can never approve.
+- Meeting voice never directly authorizes irreversible/external actions such as send, delete, login, payment, booking, upload/export, repo writes, command execution, or file writes outside Maya scratch.
 - Owner-private disclosure is separately gated even for verified owner voice: private memory/files/logs/docs go owner-channel-only unless possession-channel confirmation allows room disclosure.
-- Voiceprint enrollment, re-enrollment, and revocation are root-of-trust operations and must come from an already trusted owner channel, never from meeting voice.
+- Voiceprint remains optional/deferred; Telegram owner approval is the possession channel for risky meeting actions.
 - The fail-honestly / verified-facts discipline matters most here: a live meeting is the max-embarrassment place to hallucinate. Better "I'm not sure, let me check" than a confident wrong answer in front of five people.
 
 ## 8. One thing to verify before building
@@ -59,9 +60,13 @@ The exact Recall endpoint names and whether **real-time audio *output*** (the bo
 
 ## 9. M1 live-proof runbook
 - Run the engine with `ENABLE_MAYA_MEET=1`; the callback service listens on `MAYA_MEET_CALLBACK_PORT` and Output Media listens on `MAYA_MEET_OUTPUT_PORT`.
-- Use two temporary `cloudflared` tunnels today: one public URL for `/recall/webhook`, one public URL for `/meet/output`.
-- Configure only the gitignored `.env`: `RECALL_API_KEY`, `RECALL_VERIFICATION_SECRET`, `RECALL_PUBLIC_CALLBACK_URL`, `MAYA_MEET_OUTPUT_MEDIA_URL`, and `MAYA_MEET_OUTPUT_TOKEN`.
-- The Output Media URL is public, so it is treated as a W5 personal-data boundary: it serves only queued audio by opaque id plus token, never paths.
+- Normal joining goes through Telegram: `/join <Meet link>` is an owner-text trigger that calls the single `join_meeting` chokepoint.
+- Use the stable named tunnel `maya-meet.labsoft.uk`, supervised by `launchd`; temporary `trycloudflare` tunnels are emergency debugging only.
+- Configure only the gitignored `.env`: `RECALL_API_KEY`, `RECALL_VERIFICATION_SECRET`, `RECALL_PUBLIC_CALLBACK_URL=https://maya-meet.labsoft.uk/recall/webhook`, `MAYA_MEET_OUTPUT_MEDIA_URL=https://maya-meet.labsoft.uk/meet/output`, and `MAYA_MEET_OUTPUT_TOKEN`.
+- `/join` must public-health-check both `/recall/health` and `/meet/output/health` before creating a Recall bot.
+- Meet status is Recall-sourced: Retrieve Bot and lifecycle webhooks override stale local DB rows; "I'm in" is said only from Recall/verified activity.
+- The Output Media URL is a permanent public W5 boundary: it serves only active-session queued audio by opaque id plus token, never paths.
+- Duplicate `/join` calls for the same canonical Meet URL use the in-flight lock and must not create duplicate bots.
 - Prove the pipe before proving policy: bot joins → verified transcript arrives → Maya speaks back through Output Media → then test silence, blocked actions, and disclosure.
 - Deliberately break API key/signature/timestamp/output URL/TTS paths and require honest failure. No false "joined" or "answered" claim.
 - Before testing with other people, confirm notice/consent expectations because the Recall bot records/transcribes meeting content.
@@ -70,4 +75,4 @@ The exact Recall endpoint names and whether **real-time audio *output*** (the bo
 A small adapter that lets Recall's meeting-audio stream stand in for Maya's mic and Recall's output-audio stand in for her speaker — plus a webhook receiver for "join this call." Everything that makes her Maya sits untouched behind that seam, and the audio-decoupling it requires is the same work that frees her voice for VM hosting. The Meet is the capstone demo; the seam underneath is infrastructure you needed anyway.
 
 ## Sequencing note
-This rides on the same prerequisites as the rest of the roadmap: it stresses W5/W7 (other-people-as-input) and the multi-party turn-taking is unproven, so treat the live Meet as a *new thing to prove*, not a free extension of the desk-tested voice loop. M2 is not considered enabled until real voiceprint enrollment passes a measured false-accept/false-reject scorecard with recordings, non-owner samples, noise/cross-talk, and threshold tuning biased toward false reject.
+This rides on the same prerequisites as the rest of the roadmap: it stresses W5/W7 (other-people-as-input) and the multi-party turn-taking is unproven, so treat the live Meet as a *new thing to prove*, not a free extension of the desk-tested voice loop. M2 Room Mode is governed by action containment plus Telegram owner approval, not speaker identity; voiceprint remains deferred unless a later design reintroduces owner-only meeting authority.

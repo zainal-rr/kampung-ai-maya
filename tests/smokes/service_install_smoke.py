@@ -24,6 +24,7 @@ def main() -> None:
     old_app_path = os.environ.get("KAMPUNG_AI_APP_PATH")
     old_plist_path = service_install.PLIST_PATH
     old_nightly_plist_path = service_install.NIGHTLY_MEMORY_PLIST_PATH
+    old_meet_tunnel_plist_path = service_install.MEET_TUNNEL_PLIST_PATH
     old_nightly_ci_plist_path = service_install_ci.NIGHTLY_CI_PLIST_PATH
 
     def fake_run(args, **kwargs):
@@ -38,6 +39,7 @@ def main() -> None:
     try:
         with tempfile.TemporaryDirectory(prefix="maya-service-install-") as tmp:
             service_install.PLIST_PATH = Path(tmp) / "com.kampungai.maya.plist"
+            service_install.MEET_TUNNEL_PLIST_PATH = Path(tmp) / "com.kampungai.maya.meettunnel.plist"
             service_install_ci.NIGHTLY_CI_PLIST_PATH = Path(tmp) / "com.kampungai.maya.nightlyci.plist"
             app_exe = Path(tmp) / "Kampung AI.app" / "Contents" / "MacOS" / "Kampung AI"
             app_exe.parent.mkdir(parents=True)
@@ -52,6 +54,7 @@ def main() -> None:
             service_install.restart_weekly_memory()
             service_install.restart_nightly_memory()
             service_install.restart_nightly_ci()
+            service_install.restart_meet_tunnel()
             restart_calls = list(calls)
 
             calls.clear()
@@ -71,6 +74,7 @@ def main() -> None:
         service_install_ci.subprocess.run = old_ci_run
         service_install.PLIST_PATH = old_plist_path
         service_install.NIGHTLY_MEMORY_PLIST_PATH = old_nightly_plist_path
+        service_install.MEET_TUNNEL_PLIST_PATH = old_meet_tunnel_plist_path
         service_install_ci.NIGHTLY_CI_PLIST_PATH = old_nightly_ci_plist_path
         if old_app_path is None:
             os.environ.pop("KAMPUNG_AI_APP_PATH", None)
@@ -92,6 +96,12 @@ def main() -> None:
     assert any(str(item).endswith("local_ci.py") for item in nightly_ci["ProgramArguments"])
     assert "--extended" in nightly_ci["ProgramArguments"]
     assert "--live-providers" not in nightly_ci["ProgramArguments"]
+    meet_tunnel = service_install.build_meet_tunnel_plist()
+    assert meet_tunnel["Label"] == "com.kampungai.maya.meettunnel"
+    assert meet_tunnel["RunAtLoad"] is True and meet_tunnel["KeepAlive"] is True
+    assert meet_tunnel["ProgramArguments"][:3] == ["cloudflared", "tunnel", "--config"]
+    assert str(meet_tunnel["ProgramArguments"][3]).endswith(".cloudflared/maya-meet.yml")
+    assert meet_tunnel["ProgramArguments"][-2:] == ["run", "maya-meet"]
     print("service_install_smoke: ok")
 
 

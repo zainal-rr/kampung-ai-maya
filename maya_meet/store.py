@@ -26,6 +26,19 @@ async def init_meet_db(db_path: str) -> None:
             )
             """
         )
+        await _ensure_column(db, "meet_sessions", "canonical_meeting_url", "TEXT DEFAULT ''")
+        await _ensure_column(db, "meet_sessions", "recall_status", "TEXT DEFAULT ''")
+        await _ensure_column(db, "meet_sessions", "recall_sub_code", "TEXT DEFAULT ''")
+        await _ensure_column(db, "meet_sessions", "recall_checked_at", "REAL NOT NULL DEFAULT 0")
+        await _ensure_column(db, "meet_sessions", "trigger_source", "TEXT DEFAULT ''")
+        await _ensure_column(db, "meet_sessions", "provenance_source", "TEXT DEFAULT ''")
+        await db.execute(
+            """
+            CREATE INDEX IF NOT EXISTS idx_meet_sessions_canonical_url_updated
+            ON meet_sessions(canonical_meeting_url, updated_at)
+            WHERE canonical_meeting_url != ''
+            """
+        )
         await db.execute(
             """
             CREATE TABLE IF NOT EXISTS meet_events (
@@ -55,17 +68,35 @@ async def init_meet_db(db_path: str) -> None:
         await db.commit()
 
 
-async def create_meet_session(db_path: str, *, session_id: str, meeting_url: str) -> None:
+async def create_meet_session(
+    db_path: str,
+    *,
+    session_id: str,
+    meeting_url: str,
+    canonical_meeting_url: str = "",
+    trigger_source: str = "",
+    provenance_source: str = "",
+) -> None:
     now = time.time()
     await init_meet_db(db_path)
     async with aiosqlite.connect(db_path) as db:
         await db.execute(
             """
             INSERT OR REPLACE INTO meet_sessions
-            (session_id, meeting_url, status, room_authority_level, created_at, updated_at)
-            VALUES (?, ?, 'created', ?, ?, ?)
+            (session_id, meeting_url, canonical_meeting_url, status, room_authority_level,
+             trigger_source, provenance_source, created_at, updated_at)
+            VALUES (?, ?, ?, 'created', ?, ?, ?, ?, ?)
             """,
-            (session_id, meeting_url, ROOM_LEVEL_LOCKED, now, now),
+            (
+                session_id,
+                meeting_url,
+                canonical_meeting_url,
+                ROOM_LEVEL_LOCKED,
+                trigger_source,
+                provenance_source,
+                now,
+                now,
+            ),
         )
         await db.commit()
 
@@ -73,7 +104,19 @@ async def create_meet_session(db_path: str, *, session_id: str, meeting_url: str
 async def update_meet_session(db_path: str, session_id: str, **fields: str) -> None:
     if not fields:
         return
-    allowed = {"bot_id", "status", "failure_reason", "output_media_status", "room_authority_level"}
+    allowed = {
+        "bot_id",
+        "status",
+        "failure_reason",
+        "output_media_status",
+        "room_authority_level",
+        "canonical_meeting_url",
+        "recall_status",
+        "recall_sub_code",
+        "recall_checked_at",
+        "trigger_source",
+        "provenance_source",
+    }
     clean = {key: value for key, value in fields.items() if key in allowed}
     if not clean:
         return
@@ -139,6 +182,38 @@ async def meet_session(db_path: str, session_id: str) -> dict[str, Any] | None:
     async with aiosqlite.connect(db_path) as db:
         db.row_factory = aiosqlite.Row
         cursor = await db.execute("SELECT * FROM meet_sessions WHERE session_id = ?", (session_id,))
+        row = await cursor.fetchone()
+    return dict(row) if row else None
+
+
+async def latest_meet_session_for_url(db_path: str, canonical_meeting_url: str) -> dict[str, Any] | None:
+    await init_meet_db(db_path)
+    async with aiosqlite.connect(db_path) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute(
+            """
+            SELECT * FROM meet_sessions
+            WHERE canonical_meeting_url = ?
+            ORDER BY updated_at DESC, created_at DESC
+            LIMIT 1
+            """,
+            (canonical_meeting_url,),
+        )
+        row = await cursor.fetchone()
+    return dict(row) if row else None
+
+
+async def latest_meet_session(db_path: str) -> dict[str, Any] | None:
+    await init_meet_db(db_path)
+    async with aiosqlite.connect(db_path) as db:
+        db.row_factory = aiosqlite.Row
+        cursor = await db.execute(
+            """
+            SELECT * FROM meet_sessions
+            ORDER BY updated_at DESC, created_at DESC
+            LIMIT 1
+            """
+        )
         row = await cursor.fetchone()
     return dict(row) if row else None
 

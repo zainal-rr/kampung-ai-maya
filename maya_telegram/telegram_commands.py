@@ -13,6 +13,7 @@ from maya_memory.canonical_memory_migration import migrate_memory_to_canonical
 from maya_memory.canonical_memory_pin import set_canonical_memory_pin
 from maya_memory.memory_control import cleanup_stale_memory, forget_memory, memory_sources_text
 from maya_core.provider_readiness import provider_readiness_text
+from maya_core.provenance import make_provenance
 from maya_core.route_tracker import last_route_text
 from maya_core.screen_session import activate_screen_sight, deactivate_screen_sight, screen_sight_status, toggle_screen_sight
 from maya_core.session_compactor import inspect_session_context
@@ -24,6 +25,7 @@ from maya_telegram.telegram_turn_log import latest_telegram_turn_text
 from maya_telegram.telegram_voice_state import voice_enabled, voice_text
 from maya_core.vision_session import guided_sight_status, toggle_guided_sight
 from maya_core.weekly_memory_status import run_weekly_memory_now_text, weekly_memory_status_text
+from maya_meet.orchestrator import join_meeting, meet_status_text
 from maya_core.repo_paths import repo_root
 
 
@@ -64,6 +66,8 @@ def bot_commands() -> list[BotCommand]:
         BotCommand("screen", "Turn screen awareness on or off"),
         BotCommand("project", "Show or close active project"),
         BotCommand("memory", "Show or manage memory"),
+        BotCommand("join", "Send Maya into a Google Meet"),
+        BotCommand("meetstatus", "Show Maya Meet status"),
         BotCommand("complex", "Route this Telegram request to Maya's complex lane"),
     ]
 
@@ -133,6 +137,10 @@ async def command_to_text(db_path: str, parsed: ParsedCommand) -> str:
         return await inspect_session_context(db_path)
     if name == "weekly":
         return await _weekly_text(db_path, parsed.args)
+    if name == "join":
+        return await _join_text(db_path, parsed.args)
+    if name == "meetstatus":
+        return await _meet_status_text(db_path, parsed.args)
     if name == "artisan":
         return await _artisan_text(db_path, parsed.args)
     if name == "newtopic":
@@ -238,3 +246,20 @@ async def _weekly_text(db_path: str, args: str) -> str:
     if mode in {"run", "now", "start", "save"}:
         return await run_weekly_memory_now_text(db_path, trigger_source="telegram")
     return "weekly reflection"
+
+
+async def _join_text(db_path: str, args: str) -> str:
+    meeting_url = args.strip().strip("\"'")
+    if not meeting_url:
+        return "Meet join: use /join followed by a Google Meet link."
+    result = await join_meeting(
+        meeting_url,
+        db_path=db_path,
+        provenance=make_provenance("owner_text"),
+        trigger="telegram",
+    )
+    return "Meet join: " + result.telegram_text()
+
+
+async def _meet_status_text(db_path: str, args: str) -> str:
+    return await meet_status_text(db_path, meeting_url=args.strip().strip("\"'"))

@@ -352,21 +352,27 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Use Recall Meeting Bot + Output Media for the speaking teammate path; keep Google Meet Media API out of M1 because it is receive-only.
     - [x] Add the disclosure boundary: other speakers can ask about meeting/public context, but owner-private memory/files/logs/docs are refused or sent owner-channel-only.
     - [x] Add engine-supervised `ENABLE_MAYA_MEET=1` service with separate callback/output ports for cloudflared live proof.
+    - [x] Add Telegram `/join <Meet link>` as the owner-text trigger for a Recall-truthful Meet join orchestrator.
+    - [x] Replace quick-tunnel workflow with a `launchd`-supervised named tunnel plan for `maya-meet.labsoft.uk`; quick tunnels are emergency-only.
+    - [x] Make Meet join status Recall-sourced: DB status is a cache, stale `live` rows reconcile from Retrieve Bot/lifecycle webhooks, and `leave_call` is used for active bots.
+    - [x] Add canonical-URL in-flight locking so double `/join` sends cannot create duplicate bots.
+    - [x] Keep permanent public endpoints hardened: output requires token plus active session/opaque utterance id, and callback requires Recall signature/timestamp.
     - [x] Protect the public Output Media surface: opaque utterance ids, token required, no request-supplied paths, no directory listing, and W5 personal-data paths unreachable.
     - [x] Deduplicate Recall webhook retries by event/message id so transcript retries do not double-speak.
     - [ ] Live solo positive control: bot joins, verified transcript arrives, and Maya speaks back through Output Media before policy-gate tests count.
     - [ ] Live honest-failure proof: wrong API key, invalid signature, stale timestamp, unreachable Output Media, and TTS/output failure report failure without false success.
-    - [ ] Build M2 voiceprint-ready scaffolding now, but do not enable M2 until real voice samples pass a measured false-accept/false-reject scorecard.
-    - [ ] Require owner-channel authentication for voiceprint enrollment, re-enrollment, and revocation; meeting voice can never bootstrap or replace the owner voiceprint.
-    - [ ] Treat voiceprint data as W5-3 personal data: protected local store, read-denied to brokered children unless explicitly declared, and no raw biometric material in normal logs.
+    - [x] Keep voiceprint authority out of this Meet slice: M2 Room Mode uses action containment plus Telegram owner approval, not speaker identity.
+    - [x] Treat Telegram `owner_text` as the possession-authenticated approval channel for risky meeting actions; room audio cannot approve.
+    - [ ] If voiceprint returns later, require a fresh owner-attribution mini-plan with possession-authenticated enrollment and measured real-audio false-accept/false-reject proof.
     - [ ] Preserve D11 tool-first narration: Maya may use a bridge line only when a tool/action is genuinely in flight, and may claim completion only from verified tool facts.
     - [ ] Treat this as a capstone integration, not a replacement for desk-tested voice. The core Maya brain, work phases, verified facts, browser/doc actions, W5 broker, and W7 boundary stay behind the seam.
-- [ ] **8.6. M2: Multi-Party Turn-Taking Proof**
-    - [ ] Use voiceprint/speaker verification as the chosen M2 owner-attribution mechanism, not Recall labels alone.
-    - [ ] Bias verification toward false reject; uncertain, conflicting, or low-confidence audio stays `other_speaker`.
-    - [ ] Allow verified owner voice to trigger only reversible meeting actions such as pulling up public/meeting context, drafting notes, summarizing, or marking agenda items.
-    - [ ] Exclude irreversible/external actions from meeting voice entirely: send, delete, overwrite, submit, login, payment, booking, upload/export, repo-write, command execution, and file writes outside Maya scratch.
-    - [ ] Keep owner-private disclosure separately gated even for verified owner voice; private data is not spoken into the room without possession-channel confirmation.
+- [ ] **8.6. M2: Room Mode And Multi-Party Turn-Taking Proof**
+    - [x] Replace voiceprint authority with Room Mode: trusted-room speakers may trigger only explicitly allowlisted, contained, reversible Maya actions.
+    - [x] Default unknown, ambiguous, private, logged-in, destructive, external, or irreversible meeting actions to Telegram owner approval.
+    - [x] Reject room-audio approvals; only authenticated Telegram `owner_text` can approve a fingerprint-bound pending action.
+    - [x] Keep browser actions in the Maya Chrome group and Office actions inside Maya-owned artifact folders.
+    - [x] Keep owner-private disclosure separately gated; private data is not spoken into the room without possession-channel confirmation.
+    - [ ] Tune wake false positives in real meetings, since false wake can now trigger contained reversible actions.
     - [ ] Validate barge-in across Recall audio and Maya's realtime model: stop Maya's speech when a person starts talking, without losing the new utterance.
     - [ ] Use speaker attribution so Maya knows who spoke and does not treat two colleagues' handoff or cross-talk as a direct command.
     - [ ] Prove Maya can stay quiet during normal human-to-human talk and answer only when invited or when the meeting role explicitly allows it.
@@ -1681,7 +1687,7 @@ containment.
     - [ ] Keep GUI/AppleScript/Office/Chrome as governed surfaces until a later containment design exists; W5 and W7 stay load-bearing together here.
     - [x] Extend W7 provenance into direct realtime tool requests, memory recall, W2-B semantic recall, context summaries, and structured confirmations so untrusted/browser/screen/document-origin instructions cannot silently become trusted action requests.
     - [x] Require owner-attributed confirmation: only `owner_voice` or authenticated owner-channel `owner_text` can approve a pending action; `other_speaker`, page/screen/document/memory/meeting, and `unknown` sources cannot approve.
-    - [ ] Keep Meet owner attribution as a separate pre-M1 design gate: Recall speaker labels are not enough by themselves, so all meeting speech defaults to `other_speaker` until owner identity is positively established.
+    - [x] Replace Meet owner-attribution dependency with Room Mode plus Telegram approval: Recall speaker labels are evidence only, room speech cannot approve, and risky actions route to authenticated `owner_text`.
 
 ## W2-B: Confidence-Gated Paraphrase Recall
 

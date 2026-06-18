@@ -20,6 +20,7 @@ GENERATED_AUDIO_ROOT = (repo_root(__file__) / "logs").resolve()
 class QueuedUtterance:
     utterance_id: str
     file_path: Path
+    session_id: str
     created_at: float
     expires_at: float
     delivered: bool = False
@@ -28,7 +29,7 @@ class QueuedUtterance:
     def as_dict(self, *, token: str) -> dict[str, Any]:
         return {
             "id": self.utterance_id,
-            "audio_url": f"/meet/output/audio/{self.utterance_id}?token={token}",
+            "audio_url": f"/meet/output/audio/{self.utterance_id}?token={token}&session_id={self.session_id}",
             "created_at": self.created_at,
             "expires_at": self.expires_at,
             "preview": self.preview,
@@ -46,7 +47,7 @@ class MeetOutputQueue:
         self._items: dict[str, QueuedUtterance] = {}
         self._lock = asyncio.Lock()
 
-    async def queue_audio(self, source_path: Path, *, preview: str = "") -> QueuedUtterance:
+    async def queue_audio(self, source_path: Path, *, preview: str = "", session_id: str = "") -> QueuedUtterance:
         source = source_path.expanduser().resolve()
         if _is_protected_path(source) and not _is_maya_generated_audio(source):
             raise ValueError("protected_audio_source")
@@ -64,6 +65,7 @@ class MeetOutputQueue:
         item = QueuedUtterance(
             utterance_id=utterance_id,
             file_path=target,
+            session_id=_safe_session_id(session_id),
             created_at=now,
             expires_at=now + self.ttl_seconds,
             preview=" ".join(preview.split())[:160],
@@ -73,17 +75,19 @@ class MeetOutputQueue:
             self._prune_locked(now)
         return item
 
-    async def next_utterance(self, token: str) -> dict[str, Any] | None:
-        if token != self.token:
+    async def next_utterance(self, token: str, *, session_id: str = "") -> dict[str, Any] | None:
+        clean_session_id = _safe_session_id(session_id)
+        if token != self.token or not clean_session_id:
             return None
         now = time.time()
         async with self._lock:
             self._prune_locked(now)
             for item in list(self._items.values()):
-                if not item.delivered:
+                if item.session_id == clean_session_id and not item.delivered:
                     delivered = QueuedUtterance(
                         utterance_id=item.utterance_id,
                         file_path=item.file_path,
+                        session_id=item.session_id,
                         created_at=item.created_at,
                         expires_at=item.expires_at,
                         delivered=True,
@@ -93,14 +97,17 @@ class MeetOutputQueue:
                     return delivered.as_dict(token=token)
         return None
 
-    async def audio_path(self, utterance_id: str, token: str) -> Path | None:
-        if token != self.token or not _safe_id(utterance_id):
+    async def audio_path(self, utterance_id: str, token: str, *, session_id: str = "") -> Path | None:
+        clean_session_id = _safe_session_id(session_id)
+        if token != self.token or not _safe_id(utterance_id) or not clean_session_id:
             return None
         now = time.time()
         async with self._lock:
             self._prune_locked(now)
             item = self._items.get(utterance_id)
             if item is None:
+                return None
+            if item.session_id != clean_session_id:
                 return None
             path = item.file_path.resolve()
             if not _is_under(path, self.root) or _is_protected_path(path) or not path.exists():
@@ -119,6 +126,13 @@ class MeetOutputQueue:
 
 def _safe_id(value: str) -> bool:
     return len(value) == 32 and all(char in "0123456789abcdef" for char in value)
+
+
+def _safe_session_id(value: str) -> str:
+    text = str(value or "").strip()
+    if 1 <= len(text) <= 120 and all(char.isalnum() or char in {"_", "-"} for char in text):
+        return text
+    return ""
 
 
 def _is_under(path: Path, root: Path) -> bool:

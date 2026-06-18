@@ -22,7 +22,7 @@ import aiosqlite
 from aiohttp.test_utils import TestClient, TestServer
 
 from maya_core.provenance import make_provenance, provenance_from_source_channel
-from maya_meet.approval import claim_approved_meeting_actions, resolve_meeting_approval_command
+from maya_meet.approval import _owner_telegram_chat_id, claim_approved_meeting_actions, resolve_meeting_approval_command
 from maya_meet.actions import meeting_action_class
 from maya_meet.audio_wake import RecallAudioWakeState
 from maya_meet.config import RecallConfig
@@ -91,7 +91,7 @@ async def _run() -> None:
         _require(status_result["event_type"] == "bot.in_call_recording", str(status_result))
         row = await meet_session(db_path, "m1")
         _require(row and row["room_authority_level"] == "level_0_locked", str(row))
-        _require(row["status"] == "bot.in_call_recording" and row["bot_id"] == "bot_1", str(row))
+        _require(row["status"] == "live" and row["recall_status"] == "bot.in_call_recording" and row["bot_id"] == "bot_1", str(row))
         nested_transcript = json.dumps({
             "event": "transcript.data",
             "data": {
@@ -158,6 +158,10 @@ async def _run() -> None:
     _require(meeting_action_class("archive this") == "approval_required", "ambiguous/risky action should require approval")
     _require(meeting_action_class("click Continue") == "private_lookup", "context-dependent click should require approval")
     _require(meeting_action_class("open link") == "private_lookup", "bare link open should require approval")
+    _require(
+        meeting_action_class("make a Word document about browser testing") == "draft",
+        "artifact topic mentioning browser should not become a browser action",
+    )
     _require(meeting_action_class("open the second link") == "lookup", "visible result navigation should stay allowed")
     _require(meeting_action_class("click result 3") == "lookup", "numbered result navigation should stay allowed")
 
@@ -295,9 +299,23 @@ async def _responder_context_smoke() -> None:
         owner_word = await room_responder.process_verified_event({"text": "Maya, make a Word document about the agenda"})
         _require(owner_word["status"] == "queued", str(owner_word))
         _require(action_runner.calls[-1] == ("make a Word document about the agenda", "draft"), str(action_runner.calls))
+        meeting_notes = await room_responder.process_verified_event({"text": "Maya, make a Word document titled Meeting Notes with agenda and next steps"})
+        _require(meeting_notes["status"] == "queued", str(meeting_notes))
+        _require(action_runner.calls[-1] == ("make a Word document titled Meeting Notes with agenda and next steps", "draft"), str(action_runner.calls))
         owner_revision = await room_responder.process_verified_event({"text": "Maya, revise the Word document with next steps"})
         _require(owner_revision["status"] == "queued", str(owner_revision))
         _require(action_runner.calls[-1] == ("revise the Word document with next steps", "scratch_artifact"), str(action_runner.calls))
+        async with aiosqlite.connect(room_db) as db:
+            await db.execute(
+                "CREATE TABLE IF NOT EXISTS preferences (key TEXT PRIMARY KEY, value TEXT NOT NULL, source TEXT DEFAULT 'test', updated_at DATETIME DEFAULT CURRENT_TIMESTAMP)"
+            )
+            await db.execute(
+                "INSERT OR REPLACE INTO preferences (key, value, source) VALUES (?, ?, ?)",
+                ("telegram_chat_id", "phase6_approval_probe", "test"),
+            )
+            await db.commit()
+        with patch.dict("os.environ", {"TELEGRAM_ALLOWED_CHAT_IDS": "123456789"}, clear=False):
+            _require(await _owner_telegram_chat_id(room_db) == "123456789", "invalid stored Telegram chat id should fall back to allowed owner chat id")
         approvals: list[str] = []
         approval_responder = MeetM1Responder(
             db_path=room_db,
@@ -549,12 +567,19 @@ async def _output_surface_smoke(config: RecallConfig, secret: str) -> None:
         source = root / "sample.mp3"
         source.write_bytes(b"fake-audio")
         default_queue = MeetOutputQueue(token="default-test-token", ttl_seconds=1)
-        default_item = await default_queue.queue_audio(source, preview="default root")
-        _require(await default_queue.audio_path(default_item.utterance_id, "default-test-token"), "default output root should serve queued audio")
+        default_item = await default_queue.queue_audio(source, preview="default root", session_id="m1")
+        _require(
+            await default_queue.audio_path(default_item.utterance_id, "default-test-token", session_id="m1"),
+            "default output root should serve queued audio for its session",
+        )
+        _require(
+            await default_queue.audio_path(default_item.utterance_id, "default-test-token") is None,
+            "default output root should not serve queued audio without a session",
+        )
         queue = MeetOutputQueue(root=root / "served", token="test-token")
-        queued = await queue.queue_audio(source, preview="hello")
-        _require((await queue.audio_path(queued.utterance_id, "bad")) is None, "wrong token should fail")
-        _require((await queue.audio_path("../session_history.db", "test-token")) is None, "traversal id should fail")
+        queued = await queue.queue_audio(source, preview="hello", session_id="m1")
+        _require((await queue.audio_path(queued.utterance_id, "bad", session_id="m1")) is None, "wrong token should fail")
+        _require((await queue.audio_path("../session_history.db", "test-token", session_id="m1")) is None, "traversal id should fail")
         protected = Path.home() / "Desktop" / "Maya" / "voiceprints" / "owner_voiceprint.json"
         try:
             await queue.queue_audio(protected)
@@ -572,12 +597,25 @@ async def _output_surface_smoke(config: RecallConfig, secret: str) -> None:
         try:
             health = await client.get("/recall/health")
             _require(health.status == 200, await health.text())
-            output = await client.get("/meet/output?token=test-token")
+            no_session_output = await client.get("/meet/output?token=test-token")
+            _require(no_session_output.status == 404, await no_session_output.text())
+            output = await client.get("/meet/output?token=test-token&session_id=m1")
             _require(output.status == 200, await output.text())
             forbidden = await client.get("/meet/output?token=bad")
             _require(forbidden.status == 403, await forbidden.text())
             next_forbidden = await client.get("/meet/output/next?token=bad")
             _require(next_forbidden.status == 403, await next_forbidden.text())
+            next_no_session = await client.get("/meet/output/next?token=test-token")
+            _require(next_no_session.status == 404, await next_no_session.text())
+            next_ok = await client.get("/meet/output/next?token=test-token&session_id=m1")
+            _require(next_ok.status == 200, await next_ok.text())
+            next_payload = await next_ok.json()
+            audio_url = next_payload["utterance"]["audio_url"]
+            _require("session_id=m1" in audio_url, str(next_payload))
+            audio_no_session = await client.get(audio_url.split("&session_id=", 1)[0])
+            _require(audio_no_session.status == 404, str(audio_no_session.status))
+            audio_ok = await client.get(audio_url)
+            _require(audio_ok.status == 200, str(audio_ok.status))
             unknown = await client.get("/meet/output/audio/../../session_history.db?token=test-token")
             _require(unknown.status in {404, 405}, str(unknown.status))
             audio_wake_forbidden = await client.get("/recall/audio-wake?session_id=m1")
@@ -599,8 +637,29 @@ async def _output_surface_smoke(config: RecallConfig, secret: str) -> None:
                 json={"status": "playback_failed", "reason_code": "audio_autoplay_blocked"},
             )
             _require(playback.status == 200, await playback.text())
+            playback_no_session = await client.post(
+                "/meet/output/playback?token=test-token&session_id=missing",
+                json={"status": "playback_started"},
+            )
+            _require(playback_no_session.status == 404, await playback_no_session.text())
             row = await meet_session(db_path, "m1")
             _require(row and row["output_media_status"] == "audio_autoplay_blocked", str(row))
+            left_payload = json.dumps({
+                "event": "bot.left_call",
+                "data": {"data": {"code": "bot.left_call"}, "bot": {"id": "bot_1", "metadata": {"maya_session_id": "m1"}}},
+            })
+            left_result = await handle_recall_event(
+                db_path,
+                session_id="m1",
+                secret=config.verification_secret,
+                headers=_headers(config.verification_secret, left_payload, message_id="msg_left_call"),
+                raw_payload=left_payload,
+            )
+            _require(left_result["event_type"] == "bot.left_call", str(left_result))
+            row = await meet_session(db_path, "m1")
+            _require(row and row["status"] == "ended", str(row))
+            output_after_left = await client.get("/meet/output?token=test-token&session_id=m1")
+            _require(output_after_left.status == 404, await output_after_left.text())
         finally:
             await client.close()
 
@@ -634,7 +693,7 @@ class _FakeOutputQueue:
     def __init__(self) -> None:
         self.previews: list[str] = []
 
-    async def queue_audio(self, _source_path: Path, *, preview: str = ""):
+    async def queue_audio(self, _source_path: Path, *, preview: str = "", session_id: str = ""):
         self.previews.append(preview)
         return _Queued()
 

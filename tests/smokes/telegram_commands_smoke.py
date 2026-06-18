@@ -12,6 +12,7 @@ import asyncio
 import os
 import tempfile
 from pathlib import Path
+from unittest.mock import patch
 
 from maya_core.lesson_store import init_lesson_db
 from maya_documents.artifact_review_store import record_artifact_review
@@ -37,7 +38,10 @@ async def main() -> None:
         _require(parsed and parsed.name == "openimac", "mixed case command did not parse")
         _require(await command_to_text(db_path, parsed) == "open imac", "openImac did not map")
         visible = [item.command for item in bot_commands()]
-        _require(visible == ["help", "status", "imac", "see", "screen", "project", "memory", "complex"], "visible commands not reduced")
+        _require(
+            visible == ["help", "status", "imac", "see", "screen", "project", "memory", "join", "meetstatus", "complex"],
+            "visible commands not reduced",
+        )
         _require(await command_to_text(db_path, parse_command("/imac off")) == "close imac", "imac off did not map")
 
         remembered = await command_to_text(db_path, parse_command("/remember short replies please"))
@@ -117,6 +121,16 @@ async def main() -> None:
         _require(TelegramChannel._is_direct_command_reply(weekly_status), "/weekly status should be direct")
         status = await command_to_text(db_path, parse_command("/status"))
         _require("screen sight" in status and "project:" in status, "status did not report channel state")
+        join_usage = await command_to_text(db_path, parse_command("/join"))
+        _require(join_usage.startswith("Meet join: use /join"), "join usage should be direct")
+        _require(TelegramChannel._is_direct_command_reply(join_usage), "/join usage should be direct")
+        with patch("maya_telegram.telegram_commands.join_meeting", side_effect=_fake_join_meeting):
+            join_reply = await command_to_text(db_path, parse_command("/join https://meet.google.com/abc-defg-hij"))
+        _require("Meet join: Maya is in the Meet now" in join_reply, join_reply)
+        _require(TelegramChannel._is_direct_command_reply(join_reply), "/join should be direct")
+        meet_status = await command_to_text(db_path, parse_command("/meetstatus"))
+        _require(meet_status.startswith("Meet status:"), meet_status)
+        _require(TelegramChannel._is_direct_command_reply(meet_status), "/meetstatus should be direct")
         selfheal = await command_to_text(db_path, parse_command("/selfheal"))
         _require("Self heal check:" in selfheal, "selfheal did not run")
         selfheal_dryrun = await command_to_text(db_path, parse_command("/selfheal dryrun"))
@@ -166,6 +180,17 @@ class _FakeContext:
 class _FakeAssistant:
     def __init__(self, db_path: str):
         self.db_path = db_path
+
+
+class _FakeMeetJoinResult:
+    def telegram_text(self) -> str:
+        return "Maya is in the Meet now. Session: fake"
+
+
+async def _fake_join_meeting(*_args, **kwargs):
+    provenance = kwargs.get("provenance")
+    _require(getattr(provenance, "source_kind", "") == "owner_text", "/join must use owner_text provenance")
+    return _FakeMeetJoinResult()
 
 
 if __name__ == "__main__":

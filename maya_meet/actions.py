@@ -128,10 +128,10 @@ def meeting_action_class(prompt: str) -> str:
         return "approval_required"
     if PUBLIC_BROWSER_ACTION_RE.search(cleaned):
         return "lookup"
-    if BROWSER_ACTION_RE.search(cleaned):
-        return "private_lookup"
     if ARTIFACT_ACTION_RE.search(cleaned) and (CREATE_RE.search(cleaned) or REVISE_RE.search(cleaned)):
         return "scratch_artifact" if REVISE_RE.search(cleaned) else "draft"
+    if BROWSER_ACTION_RE.search(cleaned):
+        return "private_lookup"
     if ACTION_LIKE_RE.search(cleaned):
         return "unknown_action"
     return "answer"

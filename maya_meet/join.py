@@ -6,8 +6,8 @@ import json
 import uuid
 
 from maya_meet.config import recall_config_from_env
-from maya_meet.recall_client import create_recall_bot
-from maya_meet.store import create_meet_session, update_meet_session
+from maya_meet.orchestrator import join_meeting as orchestrated_join_meeting
+from maya_core.provenance import make_provenance
 
 
 def main() -> None:
@@ -21,17 +21,17 @@ def main() -> None:
 
 
 async def join_meeting(meeting_url: str, *, db_path: str, session_id: str | None = None) -> dict[str, str]:
-    clean_session_id = session_id or "meet_" + uuid.uuid4().hex
-    await create_meet_session(db_path, session_id=clean_session_id, meeting_url=meeting_url)
     config = recall_config_from_env()
-    result = await asyncio.to_thread(create_recall_bot, config, meeting_url, session_id=clean_session_id, preflight_output=True)
-    if result.status == "created":
-        await update_meet_session(db_path, clean_session_id, bot_id=result.bot_id, status="bot_created")
-    else:
-        await update_meet_session(db_path, clean_session_id, status="join_failed", failure_reason=result.reason_code)
-    payload = result.as_dict()
-    payload["session_id"] = clean_session_id
-    return payload
+    clean_session_id = session_id or "meet_" + uuid.uuid4().hex
+    result = await orchestrated_join_meeting(
+        meeting_url,
+        db_path=db_path,
+        session_id=clean_session_id,
+        config=config,
+        provenance=make_provenance("owner_text"),
+        trigger="cli",
+    )
+    return result.as_dict()
 
 
 if __name__ == "__main__":

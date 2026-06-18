@@ -76,6 +76,7 @@ CHECKS: tuple[CheckSpec, ...] = (
     CheckSpec("untrusted input boundary", ("tests/smokes/untrusted_input_boundary_smoke.py",)),
     CheckSpec("W7 provenance authorization", ("tests/smokes/w7_provenance_authorization_smoke.py",)),
     CheckSpec("Meet M1 Recall foundation", ("tests/smokes/meet_m1_recall_foundation_smoke.py",)),
+    CheckSpec("Meet join orchestrator", ("tests/smokes/meet_join_orchestrator_smoke.py",)),
     CheckSpec("Meet voiceprint policy", ("tests/smokes/meet_voiceprint_policy_smoke.py",)),
     CheckSpec("Meet voiceprint live scoring", ("tests/smokes/meet_voiceprint_live_smoke.py",)),
     CheckSpec("untrusted live path", ("tests/smokes/untrusted_live_path_smoke.py",)),

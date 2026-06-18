@@ -198,13 +198,29 @@ async def _send_owner_telegram_message(db_path: str, message: str) -> None:
     token = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
     if not token:
         raise RuntimeError("TELEGRAM_BOT_TOKEN is not set")
-    chat_id = (await get_preference(db_path, "telegram_chat_id") or "").strip()
-    if not chat_id:
-        allowed = runtime_config().telegram_allowed_chat_ids
-        chat_id = allowed[0] if allowed else ""
+    chat_id = await _owner_telegram_chat_id(db_path)
     if not chat_id:
         raise RuntimeError("No Telegram owner chat id is configured")
     await send_text(Bot(token=token), int(chat_id), message)
+
+
+async def _owner_telegram_chat_id(db_path: str) -> str:
+    chat_id = (await get_preference(db_path, "telegram_chat_id") or "").strip()
+    if _valid_telegram_chat_id(chat_id):
+        return chat_id
+    if chat_id:
+        logger.warning("Ignoring invalid telegram_chat_id preference for Meet approval: %r", chat_id)
+    for allowed in runtime_config().telegram_allowed_chat_ids:
+        if _valid_telegram_chat_id(allowed):
+            return allowed.strip()
+    return ""
+
+
+def _valid_telegram_chat_id(value: str) -> bool:
+    clean = str(value or "").strip()
+    if not clean:
+        return False
+    return clean.lstrip("-").isdigit()
 
 
 def _parse_approval_command(text: str) -> tuple[bool, str] | None:
