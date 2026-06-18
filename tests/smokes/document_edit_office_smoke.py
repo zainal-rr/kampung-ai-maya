@@ -19,7 +19,7 @@ from maya_documents.artifact_quality import ArtifactQualityResult
 from maya_documents.document_actions_word_helpers import _document_edit_request
 from maya_core.markdown_drafter import MarkdownDraft
 from maya_documents.office_edit_helpers import apply_simple_xlsx_edit
-from maya_documents.office_modern_files import create_pptx, create_xlsx
+from maya_documents.office_modern_files import create_docx, create_pptx, create_xlsx
 from openpyxl import load_workbook
 from pptx import Presentation
 from maya_documents.pptx_quality_gate import PptxQualityResult
@@ -47,6 +47,42 @@ async def main() -> None:
             da.review_artifact_quality = _fake_artifact_review
             excel_mixin.review_artifact_quality = _fake_artifact_review
             router = da.DocumentActionRouter(db_path, workspace=workspace)
+
+            outside = Path(tmp) / "UserFiles"
+            outside.mkdir(parents=True, exist_ok=True)
+            outside_docx = outside / "outside-user-file.docx"
+            await asyncio.to_thread(create_docx, outside_docx, "Outside User File", [("Original", ["Do not overwrite"])])
+            outside_before = outside_docx.read_bytes()
+            await upsert_preference(db_path, LAST_DOC_KEY, str(outside_docx), source="polluted_state")
+            outside_reply = await router.handle("/edit add a source section", "meet")
+            _require("Maya-created Office artifacts" in str(outside_reply), f"outside edit should be blocked: {outside_reply}")
+            _require(outside_docx.read_bytes() == outside_before, "outside docx was modified")
+
+            outside_xlsx = outside / "outside-user-file.xlsx"
+            await asyncio.to_thread(create_xlsx, outside_xlsx, "Outside User Workbook", ["Name", "Value"], [["Original", 1]])
+            xlsx_before = outside_xlsx.read_bytes()
+            await upsert_preference(db_path, LAST_DOC_KEY, str(outside_xlsx), source="polluted_state")
+            outside_xlsx_reply = await router.handle("/edit update that workbook", "meet")
+            _require("Maya-created Office artifacts" in str(outside_xlsx_reply), f"outside xlsx edit should be blocked: {outside_xlsx_reply}")
+            _require(outside_xlsx.read_bytes() == xlsx_before, "outside xlsx was modified")
+
+            inbox_docx = workspace / "inbox" / "uploaded-user-file.docx"
+            inbox_docx.parent.mkdir(parents=True, exist_ok=True)
+            await asyncio.to_thread(create_docx, inbox_docx, "Uploaded User File", [("Original", ["Do not overwrite"])])
+            inbox_before = inbox_docx.read_bytes()
+            await upsert_preference(db_path, LAST_DOC_KEY, str(inbox_docx), source="polluted_state")
+            inbox_reply = await router.handle("/edit add meeting notes", "meet")
+            _require("Maya-created Office artifacts" in str(inbox_reply), f"inbox docx edit should be blocked: {inbox_reply}")
+            _require(inbox_docx.read_bytes() == inbox_before, "inbox docx was modified")
+
+            notes_docx = workspace / "notes" / "uploaded-user-file.docx"
+            notes_docx.parent.mkdir(parents=True, exist_ok=True)
+            await asyncio.to_thread(create_docx, notes_docx, "Uploaded User Notes", [("Original", ["Do not overwrite"])])
+            notes_before = notes_docx.read_bytes()
+            await upsert_preference(db_path, LAST_DOC_KEY, str(notes_docx), source="polluted_state")
+            notes_reply = await router.handle("/edit add meeting notes", "meet")
+            _require("Maya-created Office artifacts" in str(notes_reply), f"notes docx edit should be blocked: {notes_reply}")
+            _require(notes_docx.read_bytes() == notes_before, "notes docx was modified")
 
             _require(_document_edit_request("make that shorter and more practical") is None, "generic chat follow-up should not edit latest artifact")
             _require(_document_edit_request("Can you update that to 4 days") == ("4 days", False), "duration edit follow-up should still edit latest artifact")

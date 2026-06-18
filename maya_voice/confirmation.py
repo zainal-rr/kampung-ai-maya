@@ -7,7 +7,7 @@ from typing import Any
 
 import aiosqlite
 
-from maya_core.provenance import ProvenanceContext, can_authorize_confirmation
+from maya_core.provenance import ProvenanceContext, can_authorize_confirmation, ensure_provenance
 
 CONFIRMATION_TABLE = "voice_pending_confirmations"
 DEFAULT_CONFIRMATION_TTL_SECONDS = 120
@@ -68,6 +68,7 @@ async def confirm_action(
     provenance = approver_provenance
     if not can_authorize_confirmation(provenance):
         return {"status": "failed", "reason_code": "unauthorized_confirmation_source"}
+    approver = ensure_provenance(provenance, default_kind="unknown")
     async with aiosqlite.connect(db_path) as db:
         db.row_factory = aiosqlite.Row
         cursor = await db.execute(f"SELECT * FROM {CONFIRMATION_TABLE} WHERE action_id = ?", (action_id,))
@@ -83,6 +84,11 @@ async def confirm_action(
             )
             await db.commit()
             return {"status": "failed", "reason_code": "confirmation_expired"}
+        payload = _payload_from_raw(str(row["payload_json"] or "{}"))
+        if action_fingerprint(payload) != str(row["action_fingerprint"]):
+            return {"status": "failed", "reason_code": "version_conflict"}
+        if _meet_room_action_payload(payload) and approver.source_kind != "owner_text":
+            return {"status": "failed", "reason_code": "unauthorized_confirmation_source"}
         if action_fingerprint_value != str(row["action_fingerprint"]):
             return {"status": "failed", "reason_code": "version_conflict"}
         status = "approved" if approved else "declined"
@@ -97,6 +103,18 @@ async def confirm_action(
 def action_fingerprint(payload: dict[str, Any]) -> str:
     raw = json.dumps(payload, sort_keys=True, separators=(",", ":"), ensure_ascii=True)
     return hashlib.sha256(raw.encode("utf-8")).hexdigest()
+
+
+def _payload_from_raw(raw: str) -> dict[str, Any]:
+    try:
+        payload = json.loads(raw or "{}")
+    except (TypeError, ValueError, json.JSONDecodeError):
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def _meet_room_action_payload(payload: dict[str, Any]) -> bool:
+    return isinstance(payload, dict) and payload.get("surface") == "meet_room_action"
 
 
 def _expired(value: str) -> bool:

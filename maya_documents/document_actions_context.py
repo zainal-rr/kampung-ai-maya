@@ -69,3 +69,19 @@ logger = logging.getLogger("document_actions")
 LAST_DOC_KEY = "maya_last_document_path"
 LAST_DRAFT_DOC_KEY = "maya_last_draft_document_path"
 DIRECT_DOC_RUN_ID = "direct_document_actions"
+
+
+def maya_owned_latest_artifact_path(path: Path, workspace: Path) -> bool:
+    folder_by_suffix = {
+        ".docx": "documents",
+        ".xlsx": "spreadsheets",
+        ".pptx": "presentations",
+    }
+    folder = folder_by_suffix.get(path.suffix.lower())
+    if not folder:
+        return False
+    try:
+        path.expanduser().resolve(strict=False).relative_to((workspace / folder).expanduser().resolve(strict=False))
+        return True
+    except Exception:
+        return False

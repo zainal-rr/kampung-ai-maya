@@ -115,7 +115,7 @@ async def main():
             if missing:
                 logger.error("Maya Meet disabled; missing config: %s", ", ".join(missing))
             else:
-                tasks.append(asyncio.create_task(_supervise("meet", lambda: MeetRuntime(db_path=db_path, config=meet_config).run())))
+                tasks.append(asyncio.create_task(_supervise("meet", lambda: MeetRuntime(db_path=db_path, config=meet_config, assistant=assistant).run())))
 
         if os.getenv("ENABLE_OMI_ADAPTER", "0") == "1":
             watch_dir = os.getenv("OMI_WATCH_DIR", "omi_sync")

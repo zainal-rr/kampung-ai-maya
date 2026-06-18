@@ -163,6 +163,8 @@ class DocumentWordMixin:
         path = Path(raw)
         if not path.exists():
             return f"I cannot find the last document at {path}."
+        if not maya_owned_latest_artifact_path(path, self.workspace):
+            return "I can only edit Maya-created Office artifacts inside the Maya documents folder. Ask me to create a Maya copy first."
         manual_changed = False
         if not save_copy:
             manual_changed = await artifact_changed_since_recorded(self.db_path, path)

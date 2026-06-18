@@ -100,6 +100,7 @@ async def start_maya_work(
     kind: str = "work",
     voice_work_id: str | None = None,
     tool_args: dict | None = None,
+    channel: str = "imac",
 ) -> str:
     work_id = voice_work_id or await create_voice_work(
         db_path,
@@ -130,7 +131,7 @@ async def start_maya_work(
         return tool_result_for_maya(request, result, status="cancelled")
     try:
         with voice_work_context(db_path, work_id):
-            result = await assistant.handle_text(request, channel="imac", speak_reply=False)
+            result = await assistant.handle_text(request, channel=channel or "imac", speak_reply=False)
     except Exception as exc:
         result = (
             f"I could not finish that local work: {exc}\n"

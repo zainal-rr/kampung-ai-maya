@@ -13,6 +13,7 @@ from pathlib import Path
 
 from maya_core.execution_broker_read_policy import personal_data_read_denies
 from maya_core.provenance import make_provenance
+from maya_meet.actions import meeting_action_class
 from maya_meet.policy import meeting_turn_decision
 from maya_meet.voiceprint import verify_voiceprint
 from maya_meet.voiceprint_store import active_voiceprint_path, enroll_voiceprint, enrollment_status, revoke_voiceprint
@@ -84,43 +85,54 @@ def main() -> None:
 
         reversible = meeting_turn_decision(
             text="Maya, open the agenda doc",
-            provenance=owner.provenance(),
-            action_class="open_view",
-            m2_enabled=True,
-            voiceprint_verified=True,
-        )
-        _require(reversible.status == "allowed", str(reversible))
-        stale = meeting_turn_decision(
-            text="Maya, open the agenda doc",
-            provenance=owner.provenance(),
-            action_class="open_view",
-            m2_enabled=True,
-        )
-        _require(stale.reason_code == "voiceprint_fresh_verification_required", str(stale))
-        irreversible = meeting_turn_decision(
-            text="Maya, send the notes",
-            provenance=owner.provenance(),
-            action_class="send",
-            m2_enabled=True,
-            voiceprint_verified=True,
-        )
-        _require(irreversible.reason_code == "irreversible_action_out_of_meeting_scope", str(irreversible))
-        disclosure = meeting_turn_decision(
-            text="Maya, read my private notes aloud",
-            provenance=owner.provenance(),
-            action_class="answer",
-            content_class="owner_private",
-            m2_enabled=True,
-            voiceprint_verified=True,
-        )
-        _require(disclosure.reason_code == "owner_private_disclosure_blocked", str(disclosure))
-        non_owner = meeting_turn_decision(
-            text="Maya, open the agenda doc",
             provenance=make_provenance("other_speaker"),
             action_class="open_view",
             m2_enabled=True,
         )
-        _require(non_owner.reason_code == "meeting_other_speaker_cannot_act", str(non_owner))
+        _require(reversible.status == "allowed", str(reversible))
+        browser_lookup = meeting_turn_decision(
+            text="Maya, open the browser",
+            provenance=make_provenance("other_speaker"),
+            action_class="lookup",
+            m2_enabled=True,
+        )
+        _require(browser_lookup.status == "allowed", str(browser_lookup))
+        office_draft = meeting_turn_decision(
+            text="Maya, make a Word document",
+            provenance=make_provenance("other_speaker"),
+            action_class="draft",
+            m2_enabled=True,
+        )
+        _require(office_draft.status == "allowed", str(office_draft))
+        office_revision = meeting_turn_decision(
+            text="Maya, revise the Word document",
+            provenance=make_provenance("other_speaker"),
+            action_class="scratch_artifact",
+            m2_enabled=True,
+        )
+        _require(office_revision.status == "allowed", str(office_revision))
+        irreversible = meeting_turn_decision(
+            text="Maya, send the notes",
+            provenance=make_provenance("other_speaker"),
+            action_class="send",
+            m2_enabled=True,
+        )
+        _require(irreversible.reason_code == "meeting_action_requires_owner_telegram_approval", str(irreversible))
+        disclosure = meeting_turn_decision(
+            text="Maya, read my private notes aloud",
+            provenance=make_provenance("other_speaker"),
+            action_class="answer",
+            content_class="owner_private",
+            m2_enabled=True,
+        )
+        _require(disclosure.reason_code == "owner_private_disclosure_requires_telegram", str(disclosure))
+        private_page = meeting_turn_decision(
+            text="Maya, open Gmail",
+            provenance=make_provenance("other_speaker"),
+            action_class=meeting_action_class("open Gmail"),
+            m2_enabled=True,
+        )
+        _require(private_page.reason_code == "meeting_action_requires_owner_telegram_approval", str(private_page))
 
         denied_revoke = revoke_voiceprint(owner_provenance=make_provenance("meeting_transcript"), root=root)
         _require(denied_revoke.reason_code == "unauthorized_enrollment_source", str(denied_revoke))

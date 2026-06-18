@@ -8,7 +8,11 @@ from typing import Any
 
 from aiohttp import web
 
+from maya_meet.approval import claim_approved_meeting_actions, mark_meeting_action_execution
+from maya_meet.actions import MeetingActionRunner
+from maya_meet.audio_wake import RecallAudioWakeState, audio_bytes_from_recall_message, timestamp_from_recall_payload
 from maya_meet.config import RecallConfig, recall_config_from_env
+from maya_meet.context_answerer import build_meeting_context_answerer
 from maya_meet.output_media import MeetOutputQueue
 from maya_meet.recall_events import handle_recall_event
 from maya_meet.responder import MeetM1Responder
@@ -23,6 +27,8 @@ class MeetRuntime:
         config: RecallConfig | None = None,
         callback_port: int | None = None,
         output_port: int | None = None,
+        assistant=None,
+        m2_enabled: bool | None = None,
     ):
         self.db_path = db_path
         self.config = config or recall_config_from_env()
@@ -32,7 +38,17 @@ class MeetRuntime:
         self.callback_port = callback_port or int(os.getenv("MAYA_MEET_CALLBACK_PORT", "8788"))
         self.output_port = output_port or int(os.getenv("MAYA_MEET_OUTPUT_PORT", "8789"))
         self.output_queue = MeetOutputQueue(token=self.config.output_media_token)
-        self.responder = MeetM1Responder(db_path=db_path, output_queue=self.output_queue)
+        self.audio_wake_state = RecallAudioWakeState.from_env()
+        self.m2_enabled = bool(m2_enabled) if m2_enabled is not None else os.getenv("MAYA_MEET_M2_ACTIONS", "0") == "1"
+        self.action_runner = MeetingActionRunner(db_path=db_path, assistant=assistant)
+        self.responder = MeetM1Responder(
+            db_path=db_path,
+            output_queue=self.output_queue,
+            answerer=build_meeting_context_answerer(db_path),
+            audio_wake_state=self.audio_wake_state,
+            action_runner=self.action_runner,
+            m2_enabled=self.m2_enabled,
+        )
         self.logger = logging.getLogger("maya.meet")
 
     async def run(self) -> None:
@@ -42,6 +58,9 @@ class MeetRuntime:
             config=self.config,
             output_queue=self.output_queue,
             responder=self.responder,
+            audio_wake_state=self.audio_wake_state,
+            action_runner=self.action_runner,
+            m2_enabled=self.m2_enabled,
         )
         runner = web.AppRunner(app)
         await runner.setup()
@@ -52,9 +71,11 @@ class MeetRuntime:
         for site in sites:
             await site.start()
         self.logger.info("Maya Meet service listening on callback=%s output=%s", self.callback_port, self.output_port)
+        approval_task = asyncio.create_task(_approved_action_monitor(self.db_path, self.action_runner, self.logger))
         try:
             await asyncio.Event().wait()
         finally:
+            approval_task.cancel()
             await runner.cleanup()
 
 
@@ -64,9 +85,19 @@ def create_meet_app(
     config: RecallConfig,
     output_queue: MeetOutputQueue,
     responder: MeetM1Responder | None = None,
+    audio_wake_state: RecallAudioWakeState | None = None,
+    action_runner: MeetingActionRunner | None = None,
+    m2_enabled: bool = False,
 ) -> web.Application:
     app = web.Application()
-    responder = responder or MeetM1Responder(db_path=db_path, output_queue=output_queue)
+    audio_wake_state = audio_wake_state or RecallAudioWakeState.from_env()
+    responder = responder or MeetM1Responder(
+        db_path=db_path,
+        output_queue=output_queue,
+        audio_wake_state=audio_wake_state,
+        action_runner=action_runner,
+        m2_enabled=m2_enabled,
+    )
 
     async def recall_health(_request: web.Request) -> web.Response:
         return web.json_response({"status": "ok", "service": "maya_meet_callback"})
@@ -89,6 +120,27 @@ def create_meet_app(
             asyncio.create_task(_respond_and_record(db_path, session_id, responder, payload))
         status = 202 if result["status"] in {"accepted", "duplicate"} else 401
         return web.json_response(result, status=status)
+
+    async def audio_wake(request: web.Request) -> web.StreamResponse:
+        if request.query.get("token", "") != config.output_media_token:
+            return web.Response(status=403, text="forbidden")
+        ws = web.WebSocketResponse()
+        await ws.prepare(request)
+        async for message in ws:
+            if message.type == web.WSMsgType.BINARY:
+                result = audio_wake_state.ingest_pcm_bytes(bytes(message.data))
+            elif message.type == web.WSMsgType.TEXT:
+                payload = _json_payload(message.data)
+                result = audio_wake_state.ingest_pcm_bytes(
+                    audio_bytes_from_recall_message(payload or message.data),
+                    audio_timestamp=timestamp_from_recall_payload(payload) if payload else None,
+                )
+            else:
+                continue
+            if result.get("status") == "accepted":
+                logging.getLogger("maya.meet").info("meet audio wake detected result=%s", result)
+            await ws.send_json(result)
+        return ws
 
     async def output_page(request: web.Request) -> web.Response:
         token = request.query.get("token", "")
@@ -115,11 +167,17 @@ def create_meet_app(
         payload = await _request_json(request)
         status = str(payload.get("status") or "unknown")[:80]
         reason = str(payload.get("reason_code") or status)[:120]
-        await update_meet_session(db_path, session_id, output_media_status=reason)
+        if status == "playback_started":
+            audio_wake_state.begin_playback_suppression(max_seconds=120.0)
+        elif status in {"playback_ended", "playback_failed"}:
+            audio_wake_state.end_playback_suppression(tail_seconds=2.0)
+        session_status = "speaking" if status == "playback_started" else "output_media_failed" if status == "playback_failed" else "live"
+        await update_meet_session(db_path, session_id, output_media_status=reason, status=session_status)
         return web.json_response({"status": "accepted"})
 
     app.router.add_get("/recall/health", recall_health)
     app.router.add_post("/recall/webhook", webhook)
+    app.router.add_get("/recall/audio-wake", audio_wake)
     app.router.add_get("/meet/output/health", output_health)
     app.router.add_get("/meet/output", output_page)
     app.router.add_get("/meet/output/next", next_audio)
@@ -184,6 +242,12 @@ async function poll() {{
     const data = await response.json();
     if (data.utterance && data.utterance.audio_url) {{
       const audio = new Audio(data.utterance.audio_url);
+      audio.addEventListener('ended', () => {{
+        report('playback_ended', data.utterance.id || 'playback_ended');
+      }}, {{once: true}});
+      audio.addEventListener('error', () => {{
+        report('playback_failed', data.utterance.id || 'playback_failed');
+      }}, {{once: true}});
       await audio.play();
       await report('playback_started', data.utterance.id || 'playback_started');
     }}
@@ -209,7 +273,45 @@ async def _respond_and_record(
     result = await responder.process_verified_event(payload)
     reason = str(result.get("reason_code") or result.get("status") or "")
     if reason:
-        await update_meet_session(db_path, session_id, output_media_status=reason)
+        status = "response_queued" if result.get("status") == "queued" else "live"
+        await update_meet_session(db_path, session_id, output_media_status=reason, status=status)
+
+
+async def _approved_action_monitor(db_path: str, action_runner: MeetingActionRunner, logger: logging.Logger) -> None:
+    while True:
+        try:
+            for item in await claim_approved_meeting_actions(db_path):
+                payload = item["payload"]
+                action_id = item["action_id"]
+                try:
+                    action_class = str(payload.get("action_class") or "unknown_action")
+                    if action_class == "private_lookup":
+                        action_class = "lookup"
+                    executed = await action_runner.run(
+                        request=str(payload.get("request") or ""),
+                        action_class=action_class,
+                        session_id=str(payload.get("session_id") or ""),
+                    )
+                    status = "executed" if executed.status in {"completed", "needs_clarification"} else "execution_failed"
+                    await mark_meeting_action_execution(
+                        db_path,
+                        action_id,
+                        status=status,
+                        detail=f"{executed.reason_code}: {executed.spoken}",
+                    )
+                except Exception as exc:
+                    logger.exception("Approved Meet action execution failed for %s", action_id)
+                    await mark_meeting_action_execution(
+                        db_path,
+                        action_id,
+                        status="execution_failed",
+                        detail=f"{exc.__class__.__name__}: {str(exc)[:300]}",
+                    )
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception("Meet approved-action monitor failed")
+        await asyncio.sleep(1.0)
 
 
 async def _request_json(request: web.Request) -> dict[str, Any]:

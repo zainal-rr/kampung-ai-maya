@@ -54,12 +54,22 @@ async def handle_recall_event(
             status=event_type,
             failure_reason=_sub_code(payload),
         )
+    elif event_type == "transcript.data":
+        await update_meet_session(db_path, session_id, status="live")
     return {"status": "accepted", "reason_code": "verified", "event_type": event_type, "event_id": event_id}
 
 
 def _speaker_label(payload: dict[str, Any]) -> str:
     participant = payload.get("participant") if isinstance(payload.get("participant"), dict) else {}
-    return str(payload.get("speaker") or payload.get("speaker_label") or participant.get("name") or "")
+    nested = _nested_data(payload)
+    nested_participant = nested.get("participant") if isinstance(nested.get("participant"), dict) else {}
+    return str(
+        payload.get("speaker")
+        or payload.get("speaker_label")
+        or participant.get("name")
+        or nested_participant.get("name")
+        or ""
+    )
 
 
 def _event_type(payload: dict[str, Any]) -> str:

@@ -5,10 +5,14 @@ from maya_core.confirmations import approve_task, decline_task, get_pending_conf
 from maya_core.provenance import provenance_from_source_channel
 from maya_core.skill_factory import SkillFactory
 from maya_core.storage import complete_task, record_task_event
+from maya_meet.approval import resolve_meeting_approval_command
 from maya_voice.confirmation import action_fingerprint, confirm_action, create_pending_confirmation
 
 
 async def resolve_pending_confirmation(db_path: str, text: str, channel: str) -> str | None:
+    meeting_approval = await resolve_meeting_approval_command(db_path, text, channel)
+    if meeting_approval is not None:
+        return meeting_approval
     decision = confirmation_decision(text)
     if not decision:
         return None

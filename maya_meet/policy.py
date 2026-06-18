@@ -6,6 +6,13 @@ from maya_meet.models import IRREVERSIBLE_ACTIONS, REVERSIBLE_ACTIONS, MeetingDe
 
 
 PRIVATE_CONTENT_CLASSES = frozenset({"owner_private", "protected_personal", "secret", "private_memory", "private_file"})
+CONTAINED_ROOM_ACTIONS = frozenset({"lookup", "draft", "scratch_artifact", "summarize", "open_view"})
+APPROVAL_ONLY_ACTIONS = IRREVERSIBLE_ACTIONS | frozenset({
+    "approval_required",
+    "approval_attempt",
+    "unknown_action",
+    "private_lookup",
+})
 
 
 def meeting_turn_decision(
@@ -22,18 +29,16 @@ def meeting_turn_decision(
     prov = ensure_provenance(provenance, default_kind="other_speaker")
     action = str(action_class or "answer").strip().lower()
     content = str(content_class or "meeting_public").strip().lower()
-    if content in PRIVATE_CONTENT_CLASSES:
-        return MeetingDecision("owner_channel_only", "owner_private_disclosure_blocked", prov.source_kind)
-    if prov.source_kind != "owner_voice_meeting":
-        if action == "answer":
-            return MeetingDecision("answer_allowed", "addressed_public_context", prov.source_kind)
-        return MeetingDecision("blocked", "meeting_other_speaker_cannot_act", prov.source_kind)
+    if content in PRIVATE_CONTENT_CLASSES or content in {"unknown", "uncertain"}:
+        return MeetingDecision("needs_confirmation", "owner_private_disclosure_requires_telegram", prov.source_kind)
+    if action == "answer":
+        return MeetingDecision("answer_allowed", "addressed_public_context", prov.source_kind)
+    if action == "approval_attempt":
+        return MeetingDecision("blocked", "meeting_room_audio_cannot_approve", prov.source_kind)
     if not m2_enabled:
-        return MeetingDecision("blocked", "meeting_m2_disabled", prov.source_kind)
-    if not voiceprint_verified:
-        return MeetingDecision("blocked", "voiceprint_fresh_verification_required", prov.source_kind)
-    if action in REVERSIBLE_ACTIONS:
-        return MeetingDecision("allowed", "verified_owner_reversible_action", prov.source_kind)
-    if action in IRREVERSIBLE_ACTIONS:
-        return MeetingDecision("blocked", "irreversible_action_out_of_meeting_scope", prov.source_kind)
-    return MeetingDecision("blocked", "unsupported_meeting_action_class", prov.source_kind)
+        return MeetingDecision("blocked", "meeting_room_actions_disabled", prov.source_kind)
+    if action in CONTAINED_ROOM_ACTIONS and action in REVERSIBLE_ACTIONS:
+        return MeetingDecision("allowed", "meeting_room_contained_reversible_action", prov.source_kind)
+    if action in APPROVAL_ONLY_ACTIONS or action not in CONTAINED_ROOM_ACTIONS:
+        return MeetingDecision("needs_confirmation", "meeting_action_requires_owner_telegram_approval", prov.source_kind)
+    return MeetingDecision("needs_confirmation", "meeting_action_requires_owner_telegram_approval", prov.source_kind)

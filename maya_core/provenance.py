@@ -70,9 +70,9 @@ def default_untrusted_for_source(source_kind: str) -> bool:
     kind = normalize_source_kind(source_kind)
     if kind in OWNER_SOURCES or kind in TRUSTED_INTERNAL_SOURCES:
         return False
-    # Meeting-owner voice is intentionally not globally trusted. It is only
-    # actionable after maya_meet.policy validates fresh voiceprint evidence and
-    # the reversible-only meeting scope.
+    # Meeting-owner voice is intentionally not globally trusted. Meet room
+    # actions use action containment plus Telegram owner approval instead of
+    # speaker identity.
     if kind in MEETING_OWNER_SOURCES:
         return True
     return True

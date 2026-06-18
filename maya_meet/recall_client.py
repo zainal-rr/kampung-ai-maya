@@ -6,7 +6,7 @@ import urllib.request
 from dataclasses import dataclass
 from typing import Any
 
-from maya_meet.config import RecallConfig, output_media_url_with_token
+from maya_meet.config import RecallConfig, audio_wake_url, output_media_url_with_token
 
 
 @dataclass(frozen=True)
@@ -53,6 +53,15 @@ def create_bot_payload(config: RecallConfig, meeting_url: str, *, session_id: st
     }
     if config.output_media_url:
         payload["output_media"] = {"camera": {"kind": "webpage", "config": {"url": output_media_url_with_token(config, session_id=session_id)}}}
+    if config.audio_wake_enabled:
+        payload["recording_config"]["audio_mixed_raw"] = {}
+        payload["recording_config"]["realtime_endpoints"].append(
+            {
+                "type": "websocket",
+                "url": audio_wake_url(config, session_id=session_id),
+                "events": ["audio_mixed_raw.data"],
+            }
+        )
     return payload
 
 
