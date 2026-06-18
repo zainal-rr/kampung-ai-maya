@@ -17,6 +17,7 @@ from maya_harness.harness_checkpoint_migration import snapshot_or_migrate
 from maya_harness.harness_execution import execute_with_ledger
 from maya_harness.harness_llm_planner import LlmCall, choose_next_action, plan_with_llm, synthesize_final_answer, verify_goal
 from maya_harness.harness_observation_store import record_observation
+from maya_harness.planner_facts import append_planner_fact
 from maya_harness.harness_store import create_approval, finish_run, record_artifact, record_event, upsert_run
 from maya_harness.harness_tools import HarnessTools
 from maya_harness.harness_workflows import classify_workflow, next_step_for, plan_for, workflow_for_action
@@ -239,6 +240,7 @@ class HarnessGraphRunner:
         if result.observation:
             observation = result.observation.as_dict()
             state["last_observation"] = observation
+            append_planner_fact(state, observation)
             _carry_untrusted_state(state, observation)
             if state.get("workflow_type") == "browser":
                 state["browser_state"] = _browser_state(state, observation)

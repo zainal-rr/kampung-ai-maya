@@ -23,6 +23,7 @@ class HarnessState(TypedDict, total=False):
     browser_state: dict
     keep_open: bool
     observations: list[str]
+    planner_facts: list[dict]
     artifacts: list[str]
     pending_approval: dict[str, str]
     approval_result: str
@@ -74,6 +75,7 @@ def initial_harness_state(
         "browser_state": {},
         "keep_open": False,
         "observations": [],
+        "planner_facts": [],
         "artifacts": [],
         "pending_approval": {},
         "approval_result": approval_result,
