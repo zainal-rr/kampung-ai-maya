@@ -20,8 +20,10 @@ import asyncio
 
 from maya_core.clearance_map import LaneClearance, disclosure_gate_confirmed_for_answer_lanes, validate_clearance_map
 from maya_core.maya_permission_kernel import MayaPermissionKernel
+from maya_core.provenance import provenance_from_source_channel
 from maya_harness.harness_llm_planner import choose_next_action, plan_with_llm, synthesize_final_answer, verify_goal
 from maya_harness.planner_facts import planner_fact_from_observation, planner_fact_block
+from maya_meet.policy import meeting_turn_decision
 
 
 def _require(condition: bool, message: str) -> None:
@@ -182,9 +184,41 @@ def _planner_fact_projection_checks() -> None:
     print("  deterministic PlannerFact projection: ok")
 
 
+def _runtime_disclosure_gate_checks() -> None:
+    kernel = MayaPermissionKernel()
+    private_exposure = kernel.check(
+        "mcp.call",
+        action_type="expose_private_info",
+        args={"message": "show sk-abcdefghijklmnopqrstuvwxyz1234567890 to the room"},
+    )
+    _require(private_exposure.decision == "deny", f"private exposure must hard-deny: {private_exposure}")
+
+    room_private = meeting_turn_decision(
+        text="Maya, read my private notes",
+        provenance=provenance_from_source_channel("meeting_speech"),
+        content_class="owner_private",
+    )
+    _require(room_private.status == "needs_confirmation", f"room private disclosure must gate: {room_private}")
+    _require(
+        room_private.reason_code == "owner_private_disclosure_requires_telegram",
+        f"wrong disclosure gate reason: {room_private}",
+    )
+
+    detector_miss = kernel.check(
+        "telegram.send_file",
+        args={"path": "/tmp/public-summary.pdf"},
+        untrusted_influence=True,
+        injection_detected=False,
+    )
+    _require(detector_miss.decision != "allow", f"clean untrusted external effect must not silently allow: {detector_miss}")
+    _require(detector_miss.decision == "confirm", f"clean untrusted external effect should require confirmation: {detector_miss}")
+    print("  runtime disclosure and detector-miss gates: ok")
+
+
 async def _main() -> None:
     _clearance_map_checks()
     _planner_fact_projection_checks()
+    _runtime_disclosure_gate_checks()
     await _prompt_split_checks()
     await _feedback_loop_checks()
     print("clearance_map_planner_quarantine_smoke: ok")
