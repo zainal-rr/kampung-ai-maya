@@ -21,6 +21,8 @@ from maya_core.logging_setup import configure_logging
 from maya_core.local_voice_channel import LocalVoiceChannel
 from maya_browser.bridge_runtime import BrowserBridgeMonitor, warm_browser_bridge_once
 from maya_core.maya_engine_lock import acquire_engine_lock
+from maya_meet.config import recall_config_from_env
+from maya_meet.service import MeetRuntime
 from maya_core.mudra_adapter import MudraAdapter
 from maya_core.routine_store import init_routine_db
 from maya_core.route_tracker import init_route_db
@@ -106,6 +108,14 @@ async def main():
 
         if os.getenv("ENABLE_IMAC_HOTKEY_CHANNEL", "0") == "1":
             tasks.append(asyncio.create_task(_supervise("hotkey_voice", lambda: HotkeyVoiceChannel(assistant).run())))
+
+        if os.getenv("ENABLE_MAYA_MEET", "0") == "1":
+            meet_config = recall_config_from_env()
+            missing = meet_config.missing_fields()
+            if missing:
+                logger.error("Maya Meet disabled; missing config: %s", ", ".join(missing))
+            else:
+                tasks.append(asyncio.create_task(_supervise("meet", lambda: MeetRuntime(db_path=db_path, config=meet_config).run())))
 
         if os.getenv("ENABLE_OMI_ADAPTER", "0") == "1":
             watch_dir = os.getenv("OMI_WATCH_DIR", "omi_sync")

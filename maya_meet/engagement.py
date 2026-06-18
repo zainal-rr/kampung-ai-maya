@@ -3,7 +3,7 @@ from __future__ import annotations
 import re
 
 
-GREETING_ADDRESS_RE = re.compile(r"^\s*(?:hey|hi|okay|ok|yo)\s+maya\b[,\s:;-]*(.*)$", re.IGNORECASE)
+GREETING_ADDRESS_RE = re.compile(r"^\s*(?:hey|hi|okay|ok|yo)[,\s]+maya\b[,\s:;-]*(.*)$", re.IGNORECASE)
 PUNCTUATED_ADDRESS_RE = re.compile(r"^\s*maya\s*[,;:-]\s*(.*)$", re.IGNORECASE)
 BARE_ADDRESS_RE = re.compile(r"^\s*maya\s+(.+)$", re.IGNORECASE)
 REFERENCE_START_RE = re.compile(r"^(?:is|was|were|has|had|will|looks|sounds|seems|appears)\b", re.IGNORECASE)

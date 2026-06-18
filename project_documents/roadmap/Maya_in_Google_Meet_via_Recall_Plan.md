@@ -57,6 +57,15 @@ In a meeting, **other people become input and trigger sources** — anyone can s
 ## 8. One thing to verify before building
 The exact Recall endpoint names and whether **real-time audio *output*** (the bot speaking) is enabled on your plan should be confirmed in Recall's current docs / your dashboard — that's a fast-moving product. The architecture above is stable; the precise API surface is what you check.
 
+## 9. M1 live-proof runbook
+- Run the engine with `ENABLE_MAYA_MEET=1`; the callback service listens on `MAYA_MEET_CALLBACK_PORT` and Output Media listens on `MAYA_MEET_OUTPUT_PORT`.
+- Use two temporary `cloudflared` tunnels today: one public URL for `/recall/webhook`, one public URL for `/meet/output`.
+- Configure only the gitignored `.env`: `RECALL_API_KEY`, `RECALL_VERIFICATION_SECRET`, `RECALL_PUBLIC_CALLBACK_URL`, `MAYA_MEET_OUTPUT_MEDIA_URL`, and `MAYA_MEET_OUTPUT_TOKEN`.
+- The Output Media URL is public, so it is treated as a W5 personal-data boundary: it serves only queued audio by opaque id plus token, never paths.
+- Prove the pipe before proving policy: bot joins → verified transcript arrives → Maya speaks back through Output Media → then test silence, blocked actions, and disclosure.
+- Deliberately break API key/signature/timestamp/output URL/TTS paths and require honest failure. No false "joined" or "answered" claim.
+- Before testing with other people, confirm notice/consent expectations because the Recall bot records/transcribes meeting content.
+
 ## Connection in one line
 A small adapter that lets Recall's meeting-audio stream stand in for Maya's mic and Recall's output-audio stand in for her speaker — plus a webhook receiver for "join this call." Everything that makes her Maya sits untouched behind that seam, and the audio-decoupling it requires is the same work that frees her voice for VM hosting. The Meet is the capstone demo; the seam underneath is infrastructure you needed anyway.
 

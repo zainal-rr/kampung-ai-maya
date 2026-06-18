@@ -6,7 +6,7 @@ import urllib.request
 from dataclasses import dataclass
 from typing import Any
 
-from maya_meet.config import RecallConfig
+from maya_meet.config import RecallConfig, output_media_url_with_token
 
 
 @dataclass(frozen=True)
@@ -25,24 +25,71 @@ class RecallJoinResult:
         }
 
 
-def create_bot_payload(config: RecallConfig, meeting_url: str) -> dict[str, Any]:
+def create_bot_payload(config: RecallConfig, meeting_url: str, *, session_id: str = "") -> dict[str, Any]:
+    metadata = {"maya_mode": "meet_m1_passive"}
+    if session_id:
+        metadata["maya_session_id"] = session_id
     payload: dict[str, Any] = {
         "meeting_url": meeting_url,
         "bot_name": config.bot_name,
-        "metadata": {"maya_mode": "meet_m1_passive"},
+        "metadata": metadata,
+        "recording_config": {
+            "transcript": {
+                "provider": {
+                    "recallai_streaming": {
+                        "mode": "prioritize_low_latency",
+                        "language_code": "en",
+                    },
+                },
+            },
+            "realtime_endpoints": [
+                {
+                    "type": "webhook",
+                    "url": config.public_callback_url,
+                    "events": ["transcript.data"],
+                }
+            ],
+        },
     }
     if config.output_media_url:
-        payload["output_media"] = {"camera": {"kind": "webpage", "config": {"url": config.output_media_url}}}
+        payload["output_media"] = {"camera": {"kind": "webpage", "config": {"url": output_media_url_with_token(config, session_id=session_id)}}}
     return payload
 
 
-def create_recall_bot(config: RecallConfig, meeting_url: str, *, timeout: float = 20) -> RecallJoinResult:
+def preflight_output_media(config: RecallConfig, *, session_id: str = "", timeout: float = 5) -> RecallJoinResult | None:
+    request = urllib.request.Request(
+        output_media_url_with_token(config, session_id=session_id),
+        headers={"Accept": "text/html,application/json"},
+        method="GET",
+    )
+    try:
+        with urllib.request.urlopen(request, timeout=timeout) as response:
+            status = int(getattr(response, "status", 200) or 200)
+    except (urllib.error.HTTPError, urllib.error.URLError, TimeoutError) as exc:
+        return RecallJoinResult("failed", "output_media_unreachable", detail=str(exc))
+    if status >= 400:
+        return RecallJoinResult("failed", "output_media_unreachable", detail=f"http_status={status}")
+    return None
+
+
+def create_recall_bot(
+    config: RecallConfig,
+    meeting_url: str,
+    *,
+    session_id: str = "",
+    timeout: float = 20,
+    preflight_output: bool = False,
+) -> RecallJoinResult:
     missing = config.missing_fields()
     if missing:
         return RecallJoinResult("failed", "recall_config_missing", detail=", ".join(missing))
+    if preflight_output:
+        output_failure = preflight_output_media(config, session_id=session_id)
+        if output_failure is not None:
+            return output_failure
     request = urllib.request.Request(
         config.base_url + "/bot/",
-        data=json.dumps(create_bot_payload(config, meeting_url)).encode("utf-8"),
+        data=json.dumps(create_bot_payload(config, meeting_url, session_id=session_id)).encode("utf-8"),
         headers={
             "Authorization": f"Token {config.api_key}",
             "Content-Type": "application/json",
@@ -60,4 +107,4 @@ def create_recall_bot(config: RecallConfig, meeting_url: str, *, timeout: float 
     bot_id = str(data.get("id") or data.get("bot_id") or "")
     if not bot_id:
         return RecallJoinResult("failed", "recall_join_missing_bot_id", detail=json.dumps(data, sort_keys=True)[:500])
-    return RecallJoinResult("joined", "recall_bot_created", bot_id=bot_id)
+    return RecallJoinResult("created", "recall_bot_created", bot_id=bot_id)

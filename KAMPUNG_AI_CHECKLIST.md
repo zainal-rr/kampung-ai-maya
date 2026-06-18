@@ -347,10 +347,15 @@ This document tracks the technical and operational roadmap for building the stan
 - [ ] **8.5. M1: Google Meet Via Recall.ai**
     - [x] Store the current Meet/Recall roadmap plan at `project_documents/roadmap/Maya_in_Google_Meet_via_Recall_Plan.md`.
     - [x] Keep this after W5-3 and W7 provenance hardening. In a meeting, other people, shared screens, and chat become untrusted input sources.
-    - [ ] Confirm Recall.ai's current realtime audio input/output support, webhook shape, pricing, privacy, consent, and dashboard availability before coding.
-    - [ ] Build M1 passive mode first: Recall bot lifecycle, verified webhook/websocket intake, direct-address engagement, `other_speaker` provenance, and no meeting-triggered tools.
-    - [ ] Use Recall Meeting Bot + Output Media for the speaking teammate path; keep Google Meet Media API out of M1 because it is receive-only.
-    - [ ] Add the disclosure boundary: other speakers can ask about meeting/public context, but owner-private memory/files/logs/docs are refused or sent owner-channel-only.
+    - [ ] Confirm Recall.ai's current realtime audio input/output support, webhook shape, pricing, privacy, consent, and dashboard availability before live use.
+    - [x] Build M1 passive foundation: Recall bot lifecycle payload, verified webhook intake, direct-address engagement, `other_speaker` provenance, and no meeting-triggered tools.
+    - [x] Use Recall Meeting Bot + Output Media for the speaking teammate path; keep Google Meet Media API out of M1 because it is receive-only.
+    - [x] Add the disclosure boundary: other speakers can ask about meeting/public context, but owner-private memory/files/logs/docs are refused or sent owner-channel-only.
+    - [x] Add engine-supervised `ENABLE_MAYA_MEET=1` service with separate callback/output ports for cloudflared live proof.
+    - [x] Protect the public Output Media surface: opaque utterance ids, token required, no request-supplied paths, no directory listing, and W5 personal-data paths unreachable.
+    - [x] Deduplicate Recall webhook retries by event/message id so transcript retries do not double-speak.
+    - [ ] Live solo positive control: bot joins, verified transcript arrives, and Maya speaks back through Output Media before policy-gate tests count.
+    - [ ] Live honest-failure proof: wrong API key, invalid signature, stale timestamp, unreachable Output Media, and TTS/output failure report failure without false success.
     - [ ] Build M2 voiceprint-ready scaffolding now, but do not enable M2 until real voice samples pass a measured false-accept/false-reject scorecard.
     - [ ] Require owner-channel authentication for voiceprint enrollment, re-enrollment, and revocation; meeting voice can never bootstrap or replace the owner voiceprint.
     - [ ] Treat voiceprint data as W5-3 personal data: protected local store, read-denied to brokered children unless explicitly declared, and no raw biometric material in normal logs.
