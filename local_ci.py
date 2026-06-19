@@ -77,6 +77,7 @@ CHECKS: tuple[CheckSpec, ...] = (
     CheckSpec("security reliability matrix", ("tests/smokes/security_reliability_matrix_smoke.py",)),
     CheckSpec("W7 provenance authorization", ("tests/smokes/w7_provenance_authorization_smoke.py",)),
     CheckSpec("clearance map planner quarantine", ("tests/smokes/clearance_map_planner_quarantine_smoke.py",)),
+    CheckSpec("router clearance conformance", ("tests/smokes/router_clearance_conformance_smoke.py",)),
     CheckSpec("Meet artifact handoff", ("tests/smokes/meet_artifact_handoff_smoke.py",)),
     CheckSpec("Meet M1 Recall foundation", ("tests/smokes/meet_m1_recall_foundation_smoke.py",)),
     CheckSpec("Meet join orchestrator", ("tests/smokes/meet_join_orchestrator_smoke.py",)),
