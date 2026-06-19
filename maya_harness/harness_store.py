@@ -62,6 +62,25 @@ async def init_harness_db(db_path: str) -> None:
             )
             """
         )
+        await db.execute(
+            """
+            CREATE TABLE IF NOT EXISTS harness_patterns (
+                pattern_id TEXT PRIMARY KEY,
+                task_category TEXT NOT NULL,
+                source_type TEXT NOT NULL,
+                goal_type TEXT NOT NULL,
+                method_json TEXT NOT NULL,
+                outcome TEXT NOT NULL,
+                provenance TEXT NOT NULL,
+                trust_tier TEXT NOT NULL,
+                supersession TEXT NOT NULL DEFAULT 'active',
+                source_run_id TEXT DEFAULT '',
+                use_count INTEGER NOT NULL DEFAULT 0,
+                created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+                last_used DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+            """
+        )
         await db.commit()
 
 

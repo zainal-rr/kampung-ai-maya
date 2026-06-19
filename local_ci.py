@@ -126,6 +126,7 @@ CHECKS: tuple[CheckSpec, ...] = (
     CheckSpec("workflow document bypass", ("tests/smokes/workflow_document_bypass_smoke.py",)),
     CheckSpec("recent questions document", ("tests/smokes/recent_questions_document_smoke.py",)),
     CheckSpec("metacognition taxonomy", ("tests/smokes/metacognition_taxonomy_smoke.py",)),
+    CheckSpec("pattern recognition", ("tests/smokes/pattern_recognition_smoke.py",)),
     CheckSpec("agentic verifier deep", ("tests/smokes/harness_agentic_deep_smoke.py",)),
     CheckSpec("agentic reliability harness", ("tests/smokes/live_agentic_reliability_smoke.py",), tier="extended"),
     CheckSpec("flight deep link", ("tests/smokes/flight_deeplink_smoke.py",), tier="extended"),

@@ -7,6 +7,8 @@ from typing import Any
 
 MAX_PLANNER_FACTS = 6
 MAX_CONTENT_SUMMARY_CHARS = 700
+MAX_PATTERN_FACTS = 2
+MAX_METACOGNITION_FACTS = 2
 
 
 @dataclass(frozen=True)
@@ -60,15 +62,42 @@ def append_planner_fact(state: dict[str, Any], observation: dict[str, Any]) -> N
     fact = planner_fact_from_observation(observation)
     facts = [dict(item) for item in (state.get("planner_facts") or []) if isinstance(item, dict)]
     facts.append(fact.as_dict())
-    state["planner_facts"] = facts[-MAX_PLANNER_FACTS:]
+    state["planner_facts"] = compact_planner_facts(facts)
+
+
+def append_pattern_facts(state: dict[str, Any], pattern_facts: list[dict[str, Any]]) -> None:
+    facts = [
+        dict(item)
+        for item in (state.get("planner_facts") or [])
+        if isinstance(item, dict) and item.get("source") != "pattern_recognition"
+    ]
+    facts.extend(dict(item) for item in pattern_facts if isinstance(item, dict))
+    state["planner_facts"] = compact_planner_facts(facts)
+
+
+def compact_planner_facts(facts: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    clean = [dict(item) for item in facts if isinstance(item, dict)]
+    live = [item for item in clean if item.get("source") not in {"metacognition", "pattern_recognition"}]
+    meta = [item for item in clean if item.get("source") == "metacognition"]
+    patterns = [item for item in clean if item.get("source") == "pattern_recognition"]
+
+    meta_recent = meta[-MAX_METACOGNITION_FACTS:]
+    live_budget = max(0, MAX_PLANNER_FACTS - len(meta_recent))
+    base = [*live[-live_budget:], *meta_recent]
+    if len(base) > MAX_PLANNER_FACTS:
+        return base[-MAX_PLANNER_FACTS:]
+
+    pattern_budget = min(MAX_PATTERN_FACTS, MAX_PLANNER_FACTS - len(base))
+    if pattern_budget <= 0:
+        return base
+    return [*base, *patterns[-pattern_budget:]]
 
 
 def planner_fact_block(state: dict[str, Any]) -> str:
     facts = [dict(item) for item in (state.get("planner_facts") or []) if isinstance(item, dict)]
     if not facts and isinstance(state.get("last_observation"), dict) and state.get("last_observation"):
         facts = [planner_fact_from_observation(dict(state["last_observation"])).as_dict()]
-    recent = facts[-MAX_PLANNER_FACTS:]
+    recent = compact_planner_facts(facts)
     if not recent:
         return "(none yet)"
     return json.dumps(recent, ensure_ascii=True, sort_keys=True)
-

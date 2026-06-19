@@ -25,7 +25,8 @@ from maya_harness.metacognition import (
     should_block_repeated_action,
     should_stop_for_no_progress,
 )
-from maya_harness.planner_facts import append_planner_fact
+from maya_harness.pattern_recognition import record_pattern_from_episode, retrieve_pattern_facts
+from maya_harness.planner_facts import append_pattern_facts, append_planner_fact
 from maya_harness.harness_store import create_approval, finish_run, record_artifact, record_event, upsert_run
 from maya_harness.harness_tools import HarnessTools
 from maya_harness.harness_workflows import classify_workflow, next_step_for, plan_for, workflow_for_action
@@ -180,6 +181,10 @@ class HarnessGraphRunner:
                 f"step {int(state.get('current_step') or 0)} of {int(state.get('max_steps') or MAX_STEPS)}",
             )
         if agentic:
+            pattern_facts = await retrieve_pattern_facts(self.db_path, state)
+            append_pattern_facts(state, pattern_facts)
+            if pattern_facts:
+                await record_event(self.db_path, state["run_id"], "pattern_recognition", f"{len(pattern_facts)} hint(s)")
             if not state.get("plan"):
                 state["plan"] = await plan_with_llm(dict(state), self.planner_llm)
             # Per-step domain retrieval: each loop pass re-queries the skill
@@ -493,6 +498,9 @@ class HarnessGraphRunner:
                 state["final_response"] = _budget_exhausted_message(state)
         await upsert_run(self.db_path, state, status=status)
         if status == "completed":
+            pattern_id = await record_pattern_from_episode(self.db_path, state)
+            if pattern_id:
+                await record_event(self.db_path, state["run_id"], "pattern_store", pattern_id)
             await finish_run(self.db_path, state["run_id"])
         await record_event(self.db_path, state["run_id"], "finish", status)
         return state

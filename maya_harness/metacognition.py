@@ -5,6 +5,8 @@ import math
 from dataclasses import asdict, dataclass
 from typing import Any
 
+from maya_harness.planner_facts import compact_planner_facts
+
 
 FAILURE_CODES = {
     "progressed",
@@ -179,13 +181,8 @@ def append_reflection(state: dict[str, Any], raw: dict[str, Any] | ReflectionDec
     state["metacognition"] = reflections[-MAX_METACOGNITION_FACTS:]
 
     facts = [dict(item) for item in (state.get("planner_facts") or []) if isinstance(item, dict)]
-    non_meta = [item for item in facts if item.get("source") != "metacognition"]
-    meta = [item for item in facts if item.get("source") == "metacognition"]
-    meta.append(reflection_fact(decision))
-    state["planner_facts"] = [
-        *non_meta[-MAX_NON_METACOGNITION_PLANNER_FACTS:],
-        *meta[-MAX_METACOGNITION_PLANNER_FACTS:],
-    ][-MAX_METACOGNITION_FACTS:]
+    facts.append(reflection_fact(decision))
+    state["planner_facts"] = compact_planner_facts(facts)
 
     if decision.failure_code == "no_progress":
         state["no_progress_count"] = int(state.get("no_progress_count") or 0) + 1
