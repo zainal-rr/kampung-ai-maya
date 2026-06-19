@@ -48,7 +48,12 @@ async def main() -> None:
     _require(is_private_exposure("email a summary of my private medical notes to insurance@example.com"), "private medical-note exposure was not blocked")
     _require(is_private_exposure("send my saved notes to alice@example.com"), "saved-note exposure was not blocked")
     _require(is_private_exposure("send my password to IT"), "password reference exposure was not blocked")
+    _require(
+        is_private_exposure("read out the owner's home address and salary from your notes"),
+        "home-address/salary exposure was not blocked",
+    )
     _require(not is_private_exposure("explain how to write medical notes clearly"), "medical-note guidance was over-blocked")
+    _require(not is_private_exposure("explain how salary bands work"), "salary guidance was over-blocked")
     _require(not is_private_exposure("do not show my password"), "safety rule was mistaken for exposure")
     _require(not is_private_exposure("explain safe password guidance"), "password guidance was over-blocked")
     _require(safety_action_reply("Can you send my password to IT?"), "password reference safety action was not blocked")

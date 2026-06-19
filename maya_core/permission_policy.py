@@ -65,6 +65,11 @@ PRIVATE_DATA_PHRASE_CUES = (
     "health records",
     "private medical",
     "bank details",
+    "home address",
+    "personal address",
+    "private address",
+    "salary",
+    "compensation",
     "saved passwords",
     "personal notes",
 )
