@@ -305,37 +305,39 @@ class HarnessGraphRunner:
             await record_event(self.db_path, run_id, "metacognition_stop", repeated.rationale)
             return state
         shape = action_shape(tool_name, args)
-        decision = self.permission_kernel.check(
-            tool_name,
-            args=args,
-            untrusted_influence=bool(state.get("untrusted_influence")),
-            injection_detected=bool(state.get("injection_detected")),
-        )
-        if decision.decision == "deny":
-            reflection = append_reflection(
-                state,
-                ReflectionDecision("gate_blocked", 0.95, "high", "stop_honestly", shape, decision.reason),
+        skip_permission_for_bad_args = tool_name == "memory.write" and not str(args.get("content") or "").strip()
+        if not skip_permission_for_bad_args:
+            decision = self.permission_kernel.check(
+                tool_name,
+                args=args,
+                untrusted_influence=bool(state.get("untrusted_influence")),
+                injection_detected=bool(state.get("injection_detected")),
             )
-            state["final_response"] = decision.reason
-            state["current_step"] = int(state.get("current_step") or 0) + 1
-            state["last_successful_step"] = "tool_denied"
-            state["keep_open"] = False
-            state["planned_action"] = {"done": True, "answer": decision.reason}
-            await record_event(self.db_path, run_id, "metacognition", f"{reflection.failure_code}:{reflection.reflection_move}")
-            await record_event(self.db_path, run_id, "tool_denied", f"{tool_name}: {decision.reason}")
-            return state
-        if decision.decision == "confirm" and not approved:
-            reflection = append_reflection(
-                state,
-                ReflectionDecision("gate_blocked", 0.95, "high", "ask_owner", shape, f"Approval required for {tool_name}."),
-            )
-            state["pending_approval"] = {"action": tool_name, "details": str(args)[:500]}
-            state["final_response"] = f"Approval required before {tool_name}."
-            state["current_step"] = int(state.get("current_step") or 0) + 1
-            state["graph_status"] = "waiting_approval"
-            await record_event(self.db_path, run_id, "metacognition", f"{reflection.failure_code}:{reflection.reflection_move}")
-            await record_event(self.db_path, run_id, "approval_required", tool_name)
-            return state
+            if decision.decision == "deny":
+                reflection = append_reflection(
+                    state,
+                    ReflectionDecision("gate_blocked", 0.95, "high", "stop_honestly", shape, decision.reason),
+                )
+                state["final_response"] = decision.reason
+                state["current_step"] = int(state.get("current_step") or 0) + 1
+                state["last_successful_step"] = "tool_denied"
+                state["keep_open"] = False
+                state["planned_action"] = {"done": True, "answer": decision.reason}
+                await record_event(self.db_path, run_id, "metacognition", f"{reflection.failure_code}:{reflection.reflection_move}")
+                await record_event(self.db_path, run_id, "tool_denied", f"{tool_name}: {decision.reason}")
+                return state
+            if decision.decision == "confirm" and not approved:
+                reflection = append_reflection(
+                    state,
+                    ReflectionDecision("gate_blocked", 0.95, "high", "ask_owner", shape, f"Approval required for {tool_name}."),
+                )
+                state["pending_approval"] = {"action": tool_name, "details": str(args)[:500]}
+                state["final_response"] = f"Approval required before {tool_name}."
+                state["current_step"] = int(state.get("current_step") or 0) + 1
+                state["graph_status"] = "waiting_approval"
+                await record_event(self.db_path, run_id, "metacognition", f"{reflection.failure_code}:{reflection.reflection_move}")
+                await record_event(self.db_path, run_id, "approval_required", tool_name)
+                return state
         if tool_name == "memory.write":
             content = str(args.get("content") or "").strip()
             if content:

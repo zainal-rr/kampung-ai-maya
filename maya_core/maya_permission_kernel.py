@@ -5,6 +5,8 @@ from typing import Any, Mapping
 
 from maya_core.maya_tool_registry import MayaToolRegistry, default_maya_tool_registry
 from maya_core.permission_policy import action_permission, hard_no_private_exposure_text
+from maya_core.provenance import ProvenanceContext, make_provenance
+from maya_core.reversibility_predicates import can_relax_reversibility_friction
 from maya_core.tool_sandbox_policy import sandbox_decision, stricter_decision
 from maya_core.untrusted_input_boundary import untrusted_action_decision
 
@@ -47,11 +49,20 @@ class MayaPermissionKernel:
         *,
         action_type: str = "",
         args: Mapping[str, Any] | None = None,
+        provenance: ProvenanceContext | Mapping[str, Any] | None = None,
+        field_provenance: Mapping[str, Any] | None = None,
+        browser_context: Mapping[str, Any] | None = None,
         untrusted_influence: bool = False,
         injection_detected: bool = False,
     ) -> PermissionDecision:
         spec = self.registry.get(tool_name)
+        payload_args = dict(args or {})
         payload = _args_text(args)
+        effective_provenance = provenance or make_provenance(
+            "unknown" if untrusted_influence or injection_detected else "maya_internal",
+            untrusted_influence=bool(untrusted_influence),
+            injection_detected=bool(injection_detected),
+        )
         if not spec:
             base = PermissionDecision(
                 "confirm",
@@ -73,10 +84,24 @@ class MayaPermissionKernel:
             side_effect_level=spec.side_effect_level,
         )
         decision = stricter_decision(decision, sandbox.required_decision)
+        reversibility = can_relax_reversibility_friction(
+            tool_name,
+            payload_args,
+            provenance=effective_provenance,
+            browser_context=browser_context,
+            field_provenance=field_provenance,
+        )
+        if not reversibility.allowed:
+            decision = stricter_decision(decision, "confirm")
         if decision == "deny":
             reason = hard_no_private_exposure_text()
         elif decision == "confirm":
-            reason = sandbox.reason if sandbox.required_decision == "confirm" else "approval required before tool execution"
+            if sandbox.required_decision == "confirm":
+                reason = sandbox.reason
+            elif not reversibility.allowed:
+                reason = f"approval required before tool execution: {reversibility.reason}"
+            else:
+                reason = "approval required before tool execution"
         else:
             reason = "allowed by tool registry and permission policy"
         base = PermissionDecision(

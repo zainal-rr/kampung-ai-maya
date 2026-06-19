@@ -38,12 +38,15 @@ def main() -> None:
     _require(screen.risk_class == READ_ONLY, f"screen risk wrong: {screen.risk_class}")
 
     browser = kernel.check("browser.click", args={"target": "Search"})
-    _require(browser.decision == "allow", f"safe browser click should be allowed, got {browser}")
+    _require(browser.decision == "confirm", f"browser click should remain gated until read-only split, got {browser}")
     _require(browser.risk_class == BROWSER_AUTOMATION, f"browser risk wrong: {browser.risk_class}")
 
     document = kernel.check("docx.create", args={"topic": "school robotics workshop"})
     _require(document.decision == "allow", f"local doc creation should be allowed, got {document}")
     _require(document.risk_class == FILE_WRITE, f"document risk wrong: {document.risk_class}")
+
+    pptx = kernel.check("pptx.create", args={"topic": "school robotics workshop"})
+    _require(pptx.decision == "confirm", f"high-cost pptx creation should remain gated in v1, got {pptx}")
 
     repo = kernel.check("repo.apply_patch", args={"repo_path": "."})
     _require(repo.decision == "confirm", f"repo write should require confirmation, got {repo}")

@@ -21,6 +21,7 @@ from maya_harness.harness_store import (
     upsert_run,
 )
 from maya_core.maya_permission_kernel import MayaPermissionKernel
+from maya_core.provenance import make_provenance, provenance_from_source_channel
 from maya_core.untrusted_input_boundary import assess_untrusted_content
 
 MessageHandler = Callable[[str, str, str, str], str | Awaitable[str]]
@@ -100,6 +101,9 @@ class MayaHarnessSDK:
         *,
         action_type: str = "follow_up",
         args: Mapping[str, Any] | None = None,
+        provenance: Mapping[str, Any] | None = None,
+        field_provenance: Mapping[str, Any] | None = None,
+        browser_context: Mapping[str, Any] | None = None,
         channel: str = "imac",
         run_id: str | None = None,
     ) -> MayaSDKResult:
@@ -112,10 +116,25 @@ class MayaHarnessSDK:
         if untrusted_influence and not injection_detected:
             source = str(untrusted_context.get("source") or untrusted_context.get("source_kind") or "unknown")
             injection_detected = _payload_injection_detected(payload, source=source)
+        effective_provenance = provenance
+        if effective_provenance is None:
+            if untrusted_influence or injection_detected:
+                source = str(untrusted_context.get("source") or untrusted_context.get("source_kind") or "unknown")
+                effective_provenance = make_provenance(
+                    source,
+                    source_id=str(untrusted_context.get("source_id") or ""),
+                    untrusted_influence=True,
+                    injection_detected=injection_detected,
+                )
+            else:
+                effective_provenance = provenance_from_source_channel(channel)
         permission = self.permission_kernel.check(
             tool_name,
             action_type=action_type,
             args=payload,
+            provenance=effective_provenance,
+            field_provenance=field_provenance,
+            browser_context=browser_context,
             untrusted_influence=untrusted_influence,
             injection_detected=injection_detected,
         )
@@ -135,8 +154,8 @@ class MayaHarnessSDK:
                 "requires_approval",
                 actual_run_id,
                 thread_id,
-                "Approval required before tool execution.",
-                {"approval": approval.data},
+                permission.reason,
+                {"approval": approval.data, "permission_reason": permission.reason},
             )
         await record_event(self.db_path, actual_run_id, "tool_requested", details)
         if not self.tool_executor:

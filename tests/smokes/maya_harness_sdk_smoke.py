@@ -46,14 +46,28 @@ async def main() -> None:
         message = await sdk.send_message("maya:telegram", "hello", channel="telegram")
         _require(message.message.startswith("handled telegram maya:telegram"), "message handler not called")
 
+        trusted_artifact_path = workspace_artifact_path(tmp)
         tool = await sdk.call_tool(
             "maya:telegram",
             "file.create",
             action_type="create_file",
-            args={"path": str(artifact_path)},
+            args={"path": str(trusted_artifact_path)},
+            field_provenance={"path": "maya_derived"},
             channel="telegram",
         )
         _require(tool.status == "completed", "allowed tool did not complete")
+
+        forged = await sdk.call_tool(
+            "maya:telegram",
+            "file.create",
+            action_type="create_file",
+            args={"path": str(trusted_artifact_path), "path_source": "maya_derived"},
+            field_provenance={"path": "email"},
+            channel="telegram",
+        )
+        _require(forged.status == "requires_approval", "forged planner source label did not require approval")
+        _require("path must be Maya-derived" in forged.data["permission_reason"], "forged approval reason lost predicate reason")
+        await sdk.resume_thread("maya:telegram", channel="telegram", approval_result="approved")
 
         approval = await sdk.call_tool(
             "maya:telegram",
@@ -65,7 +79,7 @@ async def main() -> None:
         _require(approval.status == "requires_approval", "dangerous tool did not require approval")
         paused = await get_run(db_path, start.run_id)
         _require(paused and paused["status"] == "paused", "approval did not pause run")
-        _require(await _approval_count(db_path, start.run_id) == 1, "approval row missing")
+        _require(await _approval_count(db_path, start.run_id) == 2, "approval rows missing")
 
         await sdk.resume_thread("maya:telegram", channel="telegram", approval_result="approved")
         resumed = await get_run(db_path, start.run_id)
@@ -105,6 +119,13 @@ async def main() -> None:
         ):
             _require(expected in event_names, f"{expected} event missing")
     print("maya_harness_sdk_smoke: ok")
+
+
+def workspace_artifact_path(seed: str) -> Path:
+    from maya_core.workspace_paths import workspace_dir
+
+    suffix = Path(seed).name.replace("/", "_")
+    return workspace_dir("artifacts") / f"sdk-{suffix}.txt"
 
 
 async def _approval_count(db_path: str, run_id: str) -> int:
