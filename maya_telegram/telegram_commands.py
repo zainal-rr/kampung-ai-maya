@@ -14,6 +14,7 @@ from maya_memory.canonical_memory_pin import set_canonical_memory_pin
 from maya_memory.memory_control import cleanup_stale_memory, forget_memory, memory_sources_text
 from maya_core.provider_readiness import provider_readiness_text
 from maya_core.provenance import make_provenance
+from maya_core.reliability_scorecard import format_reliability_scorecard
 from maya_core.route_tracker import last_route_text
 from maya_core.screen_session import activate_screen_sight, deactivate_screen_sight, screen_sight_status, toggle_screen_sight
 from maya_core.session_compactor import inspect_session_context
@@ -69,6 +70,7 @@ def bot_commands() -> list[BotCommand]:
         BotCommand("join", "Send Maya into a Google Meet"),
         BotCommand("leave", "Remove Maya from the current Meet"),
         BotCommand("meetstatus", "Show Maya Meet status"),
+        BotCommand("reliability", "Show reliability scorecard and incidents"),
         BotCommand("complex", "Route this Telegram request to Maya's complex lane"),
     ]
 
@@ -144,6 +146,8 @@ async def command_to_text(db_path: str, parsed: ParsedCommand) -> str:
         return await _leave_text(db_path, parsed.args)
     if name == "meetstatus":
         return await _meet_status_text(db_path, parsed.args)
+    if name == "reliability":
+        return "Reliability:\n" + format_reliability_scorecard()
     if name == "artisan":
         return await _artisan_text(db_path, parsed.args)
     if name == "newtopic":

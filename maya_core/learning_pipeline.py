@@ -20,6 +20,7 @@ from maya_memory.memory_extraction import (
 )
 from maya_memory.memory_perspective import normalize_user_perspective_memory
 from maya_core.permission_policy import contains_sensitive_info, hard_no_private_exposure_text
+from maya_core.relayed_content_provenance import provenance_for_channel_text
 from maya_core.self_improvement_policy import verified_learning_message
 from maya_core.storage import get_preference, upsert_preference
 from maya_core.storage import list_preferences
@@ -70,6 +71,12 @@ class LearningPipeline:
         lesson_type: str,
         scope: str,
     ) -> str:
+        provenance = provenance_for_channel_text(channel, raw_text)
+        if provenance.untrusted_influence:
+            return (
+                "I can treat that as reference-only untrusted content, but I will not "
+                "save relayed external content as an owner preference."
+            )
         extraction = await extract_for_save(
             self.db_path, rule, self.extraction_agent, live=self.extraction_live
         )
@@ -117,6 +124,12 @@ class LearningPipeline:
         lesson_type: str,
         scope: str,
     ) -> str:
+        provenance = provenance_for_channel_text(channel, raw_text)
+        if provenance.untrusted_influence:
+            return (
+                "I can treat that as reference-only untrusted content, but I will not "
+                "save relayed external content as an owner preference."
+            )
         await add_pending_lesson(self.db_path, raw_text, rule, lesson_type, scope, channel)
         return f"I can remember that as a {scope} preference. Do you want me to save it?"
 
@@ -131,6 +144,15 @@ class LearningPipeline:
         if decision == "later":
             await clear_pending_lesson(self.db_path, pending_id)
             return "Okay. I will leave that unsaved for now."
+        raw_text = str(pending["raw_text"])
+        pending_channel = str(pending["channel"])
+        provenance = provenance_for_channel_text(pending_channel, raw_text)
+        if provenance.untrusted_influence:
+            await clear_pending_lesson(self.db_path, pending_id)
+            return (
+                "I can treat that as reference-only untrusted content, but I will not "
+                "save relayed external content as an owner preference."
+            )
         rule = str(pending["normalized_rule"])
         key = self._preference_key(str(pending["scope"]), rule)
         await upsert_preference(self.db_path, key, rule, source=channel)
@@ -147,12 +169,13 @@ class LearningPipeline:
         )
         await upsert_canonical_memory(
             self.db_path,
-            raw_text=str(pending["raw_text"]),
+            raw_text=raw_text,
             content=rule,
             kind=str(pending["lesson_type"]),
             scope=str(pending["scope"]),
             source_channel=channel,
             confidence="medium",
+            provenance=provenance,
         )
         await clear_pending_lesson(self.db_path, pending_id)
         if not await self._verified(lesson_id, key, rule):

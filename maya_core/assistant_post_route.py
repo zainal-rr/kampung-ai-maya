@@ -3,6 +3,7 @@ from __future__ import annotations
 import logging
 
 from maya_core.curated_memory import add_curated_memory
+from maya_core.relayed_content_provenance import provenance_for_channel_text
 
 
 def route_metadata(input_type: str, lane: str, reason: str, cost_recorded: bool) -> tuple[str, str, bool]:
@@ -27,6 +28,11 @@ async def maybe_curate_memory(db_path: str, text: str, channel: str) -> None:
     ):
         return
     try:
-        await add_curated_memory(db_path, text, source=channel)
+        await add_curated_memory(
+            db_path,
+            text,
+            source=channel,
+            provenance=provenance_for_channel_text(channel, text),
+        )
     except Exception:
         logging.exception("Curated memory write failed on channel %s", channel)

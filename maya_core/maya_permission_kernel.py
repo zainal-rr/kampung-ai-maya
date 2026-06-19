@@ -4,7 +4,7 @@ from dataclasses import dataclass
 from typing import Any, Mapping
 
 from maya_core.maya_tool_registry import MayaToolRegistry, default_maya_tool_registry
-from maya_core.permission_policy import hard_no_private_exposure_text
+from maya_core.permission_policy import action_permission, hard_no_private_exposure_text
 from maya_core.tool_sandbox_policy import sandbox_decision, stricter_decision
 from maya_core.untrusted_input_boundary import untrusted_action_decision
 
@@ -66,6 +66,7 @@ class MayaPermissionKernel:
             return self._apply_untrusted_boundary(base, untrusted_influence, injection_detected)
         effective_action = action_type or spec.permission_scope
         decision = spec.permission(payload)
+        decision = stricter_decision(decision, action_permission(effective_action, payload))
         sandbox = sandbox_decision(
             tool_name,
             action_type=effective_action,

@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 
 from maya_harness.live_reliability_soak import SoakDay, load_soak, soak_summary
+from maya_core.reliability_incidents import format_incident_report, load_incidents
 
 
 @dataclass(frozen=True)
@@ -84,6 +85,10 @@ def format_reliability_scorecard(days: list[SoakDay] | None = None) -> str:
         f"10) route accuracy: {_pct(card.route_accuracy)}",
         f"11) uptime: {_pct(card.uptime_percent)}",
     ]
+    if days is None:
+        lines.extend(["", format_incident_report(load_incidents())])
+    else:
+        lines.extend(["", "Operational incident ledger:", "No incidents observed. This means no incidents were recorded; detection coverage may still be incomplete."])
     return "\n".join(lines)
 
 

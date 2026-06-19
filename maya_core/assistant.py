@@ -154,6 +154,7 @@ class KampungAssistant:
             await save_history_message(self.db_path, user_id, "user", clean_text, channel)
             await save_history_message(self.db_path, user_id, "assistant", response, channel)
             return response
+        bypass_pre_model_routes = channel == "telegram" and is_rewrite_followup(clean_text) and bool(rewrite_context)
         await compact_if_needed(self.db_path, user_id=user_id)
         memory_context = await build_assistant_memory_context(
             db_path=self.db_path,
@@ -171,7 +172,7 @@ class KampungAssistant:
         early_safety_response = None
         learning_response = None
         context_response = None
-        if pre_route_allowed:
+        if pre_route_allowed and not bypass_pre_model_routes:
             try:
                 early_safety_response = safety_action_reply(clean_text)
             except Exception:
@@ -191,13 +192,13 @@ class KampungAssistant:
         harness_response = None
         vision_response = None
         screen_response = None
-        if pre_route_allowed and learning_response is None and context_response is None:
+        if pre_route_allowed and not bypass_pre_model_routes and learning_response is None and context_response is None:
             try:
                 harness_response = await self.harness.handle(clean_text, channel)
             except Exception:
                 logging.exception("Harness router failed on channel %s", channel)
                 harness_response = None
-        if pre_route_allowed and learning_response is None and context_response is None and harness_response is None:
+        if pre_route_allowed and not bypass_pre_model_routes and learning_response is None and context_response is None and harness_response is None:
             try:
                 command_response = await self.commands.handle(clean_text, channel)
             except Exception:
@@ -209,7 +210,7 @@ class KampungAssistant:
                     self.commands.last_cost_recorded = False
                 else:
                     command_response = None
-        if pre_route_allowed and learning_response is None and context_response is None and harness_response is None and command_response is None:
+        if pre_route_allowed and not bypass_pre_model_routes and learning_response is None and context_response is None and harness_response is None and command_response is None:
             try:
                 vision_response = await self.vision_responder.handle(clean_text, channel)
             except Exception:

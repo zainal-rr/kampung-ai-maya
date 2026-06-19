@@ -39,7 +39,7 @@ async def main() -> None:
         _require(await command_to_text(db_path, parsed) == "open imac", "openImac did not map")
         visible = [item.command for item in bot_commands()]
         _require(
-            visible == ["help", "status", "imac", "see", "screen", "project", "memory", "join", "leave", "meetstatus", "complex"],
+            visible == ["help", "status", "imac", "see", "screen", "project", "memory", "join", "leave", "meetstatus", "reliability", "complex"],
             "visible commands not reduced",
         )
         _require(await command_to_text(db_path, parse_command("/imac off")) == "close imac", "imac off did not map")
@@ -135,6 +135,10 @@ async def main() -> None:
         meet_status = await command_to_text(db_path, parse_command("/meetstatus"))
         _require(meet_status.startswith("Meet status:"), meet_status)
         _require(TelegramChannel._is_direct_command_reply(meet_status), "/meetstatus should be direct")
+        reliability = await command_to_text(db_path, parse_command("/reliability"))
+        _require("30-day reliability scorecard" in reliability, "/reliability did not return scorecard")
+        _require("Operational incident ledger" in reliability, "/reliability did not include incident ledger")
+        _require(TelegramChannel._is_direct_command_reply(reliability), "/reliability should be direct")
         selfheal = await command_to_text(db_path, parse_command("/selfheal"))
         _require("Self heal check:" in selfheal, "selfheal did not run")
         selfheal_dryrun = await command_to_text(db_path, parse_command("/selfheal dryrun"))

@@ -23,6 +23,7 @@ from maya_core.assistant_confirmation_helpers import resolve_pending_confirmatio
 from maya_core.assistant_memory_commands import handle_memory_forget, handle_memory_lookup
 from maya_core.assistant_schedule_commands import handle_reminder_command, handle_summary_task_command
 from maya_core.assistant_skill_creation import handle_explicit_skill_scaffold_approval, handle_skill_creation_request
+from maya_core.assistant_skill_helpers import queue_skill_scaffold
 from maya_core.artisan_apply import apply_latest_artisan_repo_changes
 from maya_core.artisan_runner import latest_artisan_summary_text, latest_artisan_transcript_text
 from maya_documents.artifact_review_store import resolve_review_activity_text
@@ -37,6 +38,7 @@ from maya_memory.memory_service import MemoryService
 from maya_core.permission_policy import contains_sensitive_info, hard_no_private_exposure_text, is_private_exposure
 from maya_core.presentation_command_helpers import handle_presentation_command
 from maya_core.project_actions import ProjectActionRouter
+from maya_core.relayed_content_provenance import relayed_untrusted_source_kind
 from maya_core.routine_commands import RoutineCommandRouter
 from maya_core.safety_action_commands import safety_action_reply
 from maya_core.self_heal_commands import handle_self_heal_status
@@ -100,6 +102,8 @@ class AssistantCommandRouter:
             self._handle_voice_session_command,
             self._handle_review_resolution,
             self._handle_everyday_commands,
+            self._handle_memory_forget,
+            self._handle_memory_lookup,
             self._handle_skill_creation,
             self._handle_document_actions,
             self._handle_imac_workflows,
@@ -119,8 +123,6 @@ class AssistantCommandRouter:
             self._handle_skill_proposals,
             self._handle_skill_lifecycle,
             self._handle_self_heal_status,
-            self._handle_memory_forget,
-            self._handle_memory_lookup,
             self._handle_unsupported_action,
         ):
             result = await handler(clean_text, channel)
@@ -208,6 +210,8 @@ class AssistantCommandRouter:
         return await handle_explicit_skill_scaffold_approval(self.db_path, text)
 
     async def _handle_unsupported_action(self, text: str, channel: str) -> str | None:
+        if relayed_untrusted_source_kind(text):
+            return None
         subject = unsupported_action_subject(text)
         if subject is None:
             return None

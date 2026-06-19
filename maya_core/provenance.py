@@ -10,6 +10,7 @@ MEETING_OWNER_SOURCES = frozenset({"owner_voice_meeting"})
 TRUSTED_INTERNAL_SOURCES = frozenset({"maya_internal"})
 UNTRUSTED_SOURCE_KINDS = frozenset({
     "browser_page",
+    "email",
     "screen_ocr",
     "office_document",
     "meeting_transcript",
@@ -32,6 +33,8 @@ SOURCE_CHANNEL_MAP = {
     "browser": "browser_page",
     "web": "browser_page",
     "page": "browser_page",
+    "email": "email",
+    "inbox": "email",
     "screen": "screen_ocr",
     "document": "office_document",
     "office": "office_document",

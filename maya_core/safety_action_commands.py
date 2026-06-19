@@ -2,7 +2,12 @@ from __future__ import annotations
 
 import re
 
-from maya_core.permission_policy import contains_sensitive_info, hard_no_private_exposure_text, is_private_exposure
+from maya_core.permission_policy import (
+    contains_sensitive_info,
+    contains_sensitive_phrase_cue,
+    hard_no_private_exposure_text,
+    is_private_exposure,
+)
 from maya_travel.travel_booking_safety import travel_booking_boundary_reply
 
 
@@ -45,13 +50,15 @@ def _looks_like_private_exposure(text: str) -> bool:
         return False
     if re.search(r"\b(publish|push|share|expose|make public)\b.*\bsecrets?\b", text):
         return True
-    if not contains_sensitive_info(text):
+    if not (contains_sensitive_info(text) or contains_sensitive_phrase_cue(text)):
         return False
     exposure_verbs = (
         "send",
         "share",
         "show",
         "tell",
+        "read",
+        "read out",
         "reveal",
         "give",
         "copy",
@@ -81,7 +88,7 @@ def _looks_like_sensitive_data_use(text: str) -> bool:
             "password is",
         )
     )
-    if not contains_sensitive_info(text) and not phrase_cue:
+    if not contains_sensitive_info(text) and not contains_sensitive_phrase_cue(text) and not phrase_cue:
         return False
     if _looks_like_safe_sensitive_guidance(text):
         return False

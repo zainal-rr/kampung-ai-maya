@@ -3,6 +3,7 @@ from __future__ import annotations
 import aiosqlite
 
 from maya_core.provenance import provenance_from_source_channel
+from maya_core.relayed_content_provenance import provenance_for_channel_text
 from maya_documents.artifact_sessions import init_artifact_sessions_db
 from maya_memory.canonical_memory import init_canonical_memory_db
 from maya_memory.memory_audit import init_memory_audit_db
@@ -174,7 +175,10 @@ async def save_history_message(
     injection_detected: bool = False,
 ) -> None:
     source_name = (source or channel or "unknown").strip() or "unknown"
-    provenance = provenance_from_source_channel(source_name)
+    if role == "user":
+        provenance = provenance_for_channel_text(source_name, content)
+    else:
+        provenance = provenance_from_source_channel(source_name)
     row_untrusted = bool(untrusted_influence or provenance.untrusted_influence)
     row_injection = bool(injection_detected or provenance.injection_detected)
     async with aiosqlite.connect(db_path) as db:

@@ -34,6 +34,7 @@ DIRECT_COMMAND_PREFIXES = (
     "Meet join:",
     "Meet leave:",
     "Meet status:",
+    "Reliability:",
     "I can see now.",
     "I stopped seeing.",
     "I can see your screen now.",

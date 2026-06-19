@@ -6,6 +6,11 @@ import os
 from typing import Any
 
 from maya_browser.browser_driver import browser_bridge_preflight, ensure_engine_bridge_started
+from maya_core.reliability_incidents import (
+    record_browser_bridge_preflight_status,
+    safe_resolve_incident,
+    safe_resolve_open_incidents,
+)
 
 
 def _float_env(name: str, default: float) -> float:
@@ -24,6 +29,7 @@ class BrowserBridgeMonitor:
         self.ping_timeout_seconds = max(0.2, _float_env("MAYA_BROWSER_BRIDGE_PING_TIMEOUT_SECONDS", 2.5))
         self.last_status: dict[str, Any] = {}
         self._last_reason = ""
+        self._active_incident_id = ""
 
     async def run(self) -> None:
         logger = logging.getLogger("maya.browser.bridge")
@@ -36,6 +42,23 @@ class BrowserBridgeMonitor:
             )
             self.last_status = dict(status)
             reason = str(status.get("reason_code") or "")
+            if status.get("ready"):
+                if self._active_incident_id:
+                    await asyncio.to_thread(safe_resolve_incident, self._active_incident_id, recovery_status="recovered")
+                    self._active_incident_id = ""
+                await asyncio.to_thread(
+                    safe_resolve_open_incidents,
+                    subsystem="browser_bridge",
+                    reason_codes=("bridge_no_client", "bridge_stale_ping", "bridge_preflight_failed"),
+                    recovery_status="recovered",
+                    source_of_truth_checked=True,
+                    source_of_truth_result=reason or "ready",
+                    user_visible_message="Browser bridge is ready.",
+                )
+            else:
+                incident = await asyncio.to_thread(record_browser_bridge_preflight_status, status)
+                if incident is not None:
+                    self._active_incident_id = incident.incident_id
             if reason and reason != self._last_reason:
                 logger.info(
                     "browser bridge status: reason=%s connected=%s owner=%s pid=%s",

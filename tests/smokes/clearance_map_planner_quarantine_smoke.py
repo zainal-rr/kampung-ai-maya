@@ -18,7 +18,12 @@ del _w4_Path, _w4_root, _w4_sys
 
 import asyncio
 
-from maya_core.clearance_map import LaneClearance, disclosure_gate_confirmed_for_answer_lanes, validate_clearance_map
+from maya_core.clearance_map import (
+    CLEARANCE_MAP,
+    LaneClearance,
+    disclosure_gate_confirmed_for_answer_lanes,
+    validate_clearance_map,
+)
 from maya_core.maya_permission_kernel import MayaPermissionKernel
 from maya_core.provenance import provenance_from_source_channel
 from maya_harness.harness_llm_planner import choose_next_action, plan_with_llm, synthesize_final_answer, verify_goal
@@ -34,6 +39,30 @@ def _require(condition: bool, message: str) -> None:
 def _clearance_map_checks() -> None:
     _require(not validate_clearance_map(), f"default map has issues: {validate_clearance_map()}")
     _require(disclosure_gate_confirmed_for_answer_lanes(), "answer/disclosure lanes are not confirmed gated")
+    lanes = {lane.lane_id: lane for lane in CLEARANCE_MAP}
+    router_rows = {
+        "telegram.router",
+        "telegram.memory_write",
+        "telegram.rewrite_candidate",
+        "telegram.skill_scaffold",
+        "telegram.document_route",
+        "telegram.private_disclosure_guard",
+    }
+    _require(router_rows <= set(lanes), f"missing router clearance rows: {sorted(router_rows - set(lanes))}")
+    for lane_id in router_rows:
+        lane = lanes[lane_id]
+        _require(lane.sees_raw_untrusted_content, f"{lane_id} must declare relayed/untrusted input exposure")
+        _require(not lane.can_authorize_effects, f"{lane_id} must not authorize its own effects")
+        _require(lane.kernel_gated_effects, f"{lane_id} effects must be W7/provenance/kernel gated")
+        _require(lane.disclosure_gated, f"{lane_id} disclosure must be gated")
+    _require(
+        lanes["telegram.memory_write"].can_execute_effects,
+        "memory route persistence must be represented as an effect surface",
+    )
+    _require(
+        lanes["telegram.private_disclosure_guard"].can_disclose_private_data,
+        "private disclosure guard must declare disclosure-bearing surface",
+    )
 
     bad_effect = (
         LaneClearance(

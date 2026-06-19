@@ -3,6 +3,7 @@ from __future__ import annotations
 import json
 import re
 
+from maya_core.relayed_content_provenance import relayed_untrusted_source_kind
 from maya_core.storage import get_preference, upsert_preference
 
 REWRITE_KEY_PREFIX = "telegram_last_rewrite_candidate"
@@ -56,6 +57,8 @@ async def latest_rewrite_candidate(db_path: str, channel: str) -> str:
 
 async def remember_rewrite_candidate(db_path: str, channel: str, user_text: str, assistant_text: str) -> None:
     if channel != "telegram" or not is_rewritable_reply(assistant_text):
+        return
+    if relayed_untrusted_source_kind(user_text):
         return
     payload = {
         "user_text": user_text[:400],

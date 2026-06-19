@@ -57,6 +57,17 @@ SENSITIVE_MARKERS = (
     "seed phrase",
     "recovery phrase",
 )
+PRIVATE_DATA_PHRASE_CUES = (
+    "private notes",
+    "saved notes",
+    "medical notes",
+    "medical records",
+    "health records",
+    "private medical",
+    "bank details",
+    "saved passwords",
+    "personal notes",
+)
 SECRET_PATTERNS = (
     re.compile(r"sk-[A-Za-z0-9_-]{20,}"),
     re.compile(r"xai-[A-Za-z0-9_-]{20,}", re.IGNORECASE),
@@ -76,8 +87,10 @@ EXPOSURE_STARTERS = (
     "show",
     "tell me",
     "send",
+    "email",
     "share",
     "reveal",
+    "read out",
     "export",
     "upload",
     "publish",
@@ -151,6 +164,8 @@ def contains_sensitive_phrase_cue(text: str) -> bool:
         cue in lowered
         for cue in (
             "my password is",
+            "my password",
+            "the password",
             "password is",
             "my passcode is",
             "api key",
@@ -158,13 +173,14 @@ def contains_sensitive_phrase_cue(text: str) -> bool:
             "access token",
             "bank account",
             "account number",
+            *PRIVATE_DATA_PHRASE_CUES,
         )
     )
 
 
 def is_private_exposure(text: str) -> bool:
     lowered = " ".join(text.lower().strip().split())
-    if not contains_sensitive_info(lowered):
+    if not (contains_sensitive_info(lowered) or contains_sensitive_phrase_cue(lowered)):
         return False
     if safe_sensitive_guidance(lowered):
         return False
