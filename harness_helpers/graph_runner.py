@@ -17,6 +17,14 @@ from maya_harness.harness_checkpoint_migration import snapshot_or_migrate
 from maya_harness.harness_execution import execute_with_ledger
 from maya_harness.harness_llm_planner import LlmCall, choose_next_action, plan_with_llm, synthesize_final_answer, verify_goal
 from maya_harness.harness_observation_store import record_observation
+from maya_harness.metacognition import (
+    ReflectionDecision,
+    action_shape,
+    append_reflection,
+    classify_tool_result,
+    should_block_repeated_action,
+    should_stop_for_no_progress,
+)
 from maya_harness.planner_facts import append_planner_fact
 from maya_harness.harness_store import create_approval, finish_run, record_artifact, record_event, upsert_run
 from maya_harness.harness_tools import HarnessTools
@@ -252,6 +260,17 @@ class HarnessGraphRunner:
             state["graph_status"] = "waiting_user"
         if result.status == "skipped":
             state["last_error"] = "No harness tool handled this request."
+        shape = _planned_action_shape(state)
+        decision = append_reflection(
+            state,
+            classify_tool_result(
+                status=result.status,
+                message=result.message,
+                requires_approval=result.requires_approval,
+                args_shape=shape,
+            ),
+        )
+        await record_event(self.db_path, state["run_id"], "metacognition", f"{decision.failure_code}:{decision.reflection_move}")
         await record_event(self.db_path, state["run_id"], "execute", result.status)
         return state
 
@@ -272,6 +291,20 @@ class HarnessGraphRunner:
             return state
         tool_name = str(action.get("tool") or "").replace("_", ".", 1) if "." not in str(action.get("tool") or "") else str(action.get("tool"))
         args = dict(action.get("args") or {})
+        repeated = should_block_repeated_action(state, tool_name, args)
+        if repeated is not None:
+            append_reflection(state, repeated)
+            state["final_response"] = (
+                "I stopped because the same action shape already failed twice. "
+                "I do not want to loop or pretend it worked."
+            )
+            state["current_step"] = int(state.get("current_step") or 0) + 1
+            state["last_successful_step"] = "metacognition_stop"
+            state["keep_open"] = False
+            state["metacognition_stop_reason"] = repeated.failure_code
+            await record_event(self.db_path, run_id, "metacognition_stop", repeated.rationale)
+            return state
+        shape = action_shape(tool_name, args)
         decision = self.permission_kernel.check(
             tool_name,
             args=args,
@@ -279,18 +312,28 @@ class HarnessGraphRunner:
             injection_detected=bool(state.get("injection_detected")),
         )
         if decision.decision == "deny":
+            reflection = append_reflection(
+                state,
+                ReflectionDecision("gate_blocked", 0.95, "high", "stop_honestly", shape, decision.reason),
+            )
             state["final_response"] = decision.reason
             state["current_step"] = int(state.get("current_step") or 0) + 1
             state["last_successful_step"] = "tool_denied"
             state["keep_open"] = False
             state["planned_action"] = {"done": True, "answer": decision.reason}
+            await record_event(self.db_path, run_id, "metacognition", f"{reflection.failure_code}:{reflection.reflection_move}")
             await record_event(self.db_path, run_id, "tool_denied", f"{tool_name}: {decision.reason}")
             return state
         if decision.decision == "confirm" and not approved:
+            reflection = append_reflection(
+                state,
+                ReflectionDecision("gate_blocked", 0.95, "high", "ask_owner", shape, f"Approval required for {tool_name}."),
+            )
             state["pending_approval"] = {"action": tool_name, "details": str(args)[:500]}
             state["final_response"] = f"Approval required before {tool_name}."
             state["current_step"] = int(state.get("current_step") or 0) + 1
             state["graph_status"] = "waiting_approval"
+            await record_event(self.db_path, run_id, "metacognition", f"{reflection.failure_code}:{reflection.reflection_move}")
             await record_event(self.db_path, run_id, "approval_required", tool_name)
             return state
         if tool_name == "memory.write":
@@ -307,24 +350,46 @@ class HarnessGraphRunner:
                     confidence="medium",
                 )
                 state["final_response"] = f"Recorded memory {memory_id}."
+                reflection = append_reflection(
+                    state,
+                    ReflectionDecision("progressed", 0.75, "medium", "continue_same_plan", shape, "Memory write completed."),
+                )
             else:
                 state["final_response"] = "Planner asked to write memory without content; skipped."
+                reflection = append_reflection(
+                    state,
+                    ReflectionDecision("bad_args", 0.9, "high", "retry_same_step", shape, "memory.write had no content."),
+                )
             state["current_step"] = int(state.get("current_step") or 0) + 1
             state["last_successful_step"] = tool_name
+            await record_event(self.db_path, run_id, "metacognition", f"{reflection.failure_code}:{reflection.reflection_move}")
             await record_event(self.db_path, run_id, "execute", f"agentic {tool_name}")
             return state
         if tool_name == "telegram.send_file":
             path = str(args.get("path") or "").strip()
             if path and Path(path).exists():
                 state["final_response"] = f"Approved. I prepared the file for Telegram.\n[file:{path}]"
+                reflection = append_reflection(
+                    state,
+                    ReflectionDecision("progressed", 0.75, "medium", "continue_same_plan", shape, "File was prepared for Telegram."),
+                )
             elif path:
                 state["final_response"] = f"I could not send the file because it no longer exists: {path}"
+                reflection = append_reflection(
+                    state,
+                    ReflectionDecision("qa_failed", 0.9, "high", "repair_output", shape, "Requested file no longer exists."),
+                )
             else:
                 state["final_response"] = "I could not send the file because no file path was provided."
+                reflection = append_reflection(
+                    state,
+                    ReflectionDecision("bad_args", 0.9, "high", "retry_same_step", shape, "telegram.send_file had no path."),
+                )
             state["current_step"] = int(state.get("current_step") or 0) + 1
             state["last_successful_step"] = tool_name
             state["keep_open"] = False
             state["goal_satisfied"] = True
+            await record_event(self.db_path, run_id, "metacognition", f"{reflection.failure_code}:{reflection.reflection_move}")
             await record_event(self.db_path, run_id, "execute", f"agentic {tool_name}")
             return state
         workflow = _AGENTIC_TOOL_WORKFLOWS.get(tool_name)
@@ -343,13 +408,27 @@ class HarnessGraphRunner:
                 state["user_text"] = instruction
             await record_event(self.db_path, run_id, "agentic_remap", f"{tool_name} -> {workflow}")
             return None
+        reflection = append_reflection(
+            state,
+            ReflectionDecision("wrong_tool", 0.9, "high", "choose_different_tool", shape, f"{tool_name} is not mapped."),
+        )
+        await record_event(self.db_path, run_id, "metacognition", f"{reflection.failure_code}:{reflection.reflection_move}")
         await record_event(self.db_path, run_id, "tool_unmapped", tool_name)
         return None
 
     async def _observe(self, state: HarnessState) -> HarnessState:
         state["graph_status"] = "observing"
         note = state.get("final_response", "")[:400]
-        state["observations"] = [*state.get("observations", []), note]
+        previous = [*state.get("observations", [])]
+        state["observations"] = [*previous, note]
+        if note and previous and note == previous[-1]:
+            decision = append_reflection(
+                state,
+                ReflectionDecision("no_progress", 0.75, "medium", "choose_different_tool", _planned_action_shape(state), "Latest result repeated the previous observation."),
+            )
+            await record_event(self.db_path, state["run_id"], "metacognition", f"{decision.failure_code}:{decision.reflection_move}")
+        elif note:
+            state["no_progress_count"] = 0
         await record_event(self.db_path, state["run_id"], "observe", note)
         return state
 
@@ -366,6 +445,19 @@ class HarnessGraphRunner:
             # Without a planner the loop has no way to know it is unfinished,
             # so treat the goal as satisfied and keep single-pass behavior.
             state["goal_satisfied"] = True
+        if (
+            bool(state.get("agentic_loop"))
+            and self.planner_llm is not None
+            and not state.get("goal_satisfied")
+            and should_stop_for_no_progress(state)
+        ):
+            state["metacognition_stop_reason"] = "no_progress"
+            state["final_response"] = (
+                "I stopped because multiple steps made no progress. "
+                "I do not want to keep looping or claim success without evidence."
+            )
+            state["keep_open"] = False
+            await record_event(self.db_path, state["run_id"], "metacognition_stop", "no_progress")
         await record_event(self.db_path, state["run_id"], "verify", "passed" if ok else "failed")
         return state
 
@@ -421,6 +513,8 @@ class HarnessGraphRunner:
     def _after_verify(state: HarnessState) -> Literal["continue", "finish", "fail"]:
         if state.get("last_error"):
             return "fail"
+        if state.get("metacognition_stop_reason"):
+            return "finish"
         if not state.get("agentic_loop"):
             return "finish"
         if state.get("keep_open") or state.get("pending_approval"):
@@ -493,6 +587,14 @@ def _agentic_budget_exhausted(state: HarnessState) -> bool:
         return False
     budget = int(state.get("max_steps") or MAX_STEPS)
     return int(state.get("current_step") or 0) >= budget
+
+
+def _planned_action_shape(state: HarnessState) -> str:
+    action = dict(state.get("planned_action") or {})
+    if action.get("tool"):
+        tool_name = str(action.get("tool") or "").replace("_", ".", 1) if "." not in str(action.get("tool") or "") else str(action.get("tool"))
+        return action_shape(tool_name, dict(action.get("args") or {}))
+    return action_shape(str(state.get("workflow_type") or "general"), {})
 
 
 def _budget_exhausted_message(state: HarnessState) -> str:

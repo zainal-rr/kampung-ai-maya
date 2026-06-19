@@ -8,6 +8,8 @@ class HarnessState(TypedDict, total=False):
     schema_version: int
     thread_id: str
     channel: str
+    source_channel: str
+    provenance: list[str]
     user_text: str
     goal: str
     workflow_type: str
@@ -44,6 +46,10 @@ class HarnessState(TypedDict, total=False):
     max_steps: int
     planned_action: dict
     forced_synthesis: bool
+    metacognition: list[dict]
+    failed_action_shapes: dict[str, int]
+    no_progress_count: int
+    metacognition_stop_reason: str
 
 
 def initial_harness_state(
@@ -61,6 +67,8 @@ def initial_harness_state(
         "schema_version": 1,
         "thread_id": thread_id,
         "channel": channel,
+        "source_channel": channel,
+        "provenance": [channel],
         "user_text": user_text,
         "goal": goal or user_text,
         "workflow_type": workflow_type,
