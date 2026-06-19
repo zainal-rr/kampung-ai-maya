@@ -95,6 +95,7 @@ CHECKS: tuple[CheckSpec, ...] = (
     CheckSpec("memory time audit", ("tests/smokes/memory_time_audit_smoke.py",)),
     CheckSpec("context window canaries", ("tests/smokes/context_window_canaries_smoke.py",)),
     CheckSpec("memory relayed content provenance", ("tests/smokes/memory_relayed_content_provenance_smoke.py",)),
+    CheckSpec("memory integrity provenance and resurrection", ("tests/smokes/memory_integrity_smoke.py",)),
     CheckSpec("memory recall eval", ("tests/evals/memory_recall_eval.py",)),
     CheckSpec("memory recall compare", ("tests/evals/memory_recall_eval_compare.py",), tier="extended", timeout=240),
     CheckSpec("runtime config", ("tests/smokes/runtime_config_smoke.py",)),
