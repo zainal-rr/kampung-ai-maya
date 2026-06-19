@@ -75,6 +75,7 @@ CHECKS: tuple[CheckSpec, ...] = (
     CheckSpec("word travel destination", ("tests/smokes/word_travel_destination_smoke.py",)),
     CheckSpec("untrusted input boundary", ("tests/smokes/untrusted_input_boundary_smoke.py",)),
     CheckSpec("security reliability matrix", ("tests/smokes/security_reliability_matrix_smoke.py",)),
+    CheckSpec("honesty under attack", ("tests/smokes/honesty_under_attack_smoke.py",)),
     CheckSpec("W7 provenance authorization", ("tests/smokes/w7_provenance_authorization_smoke.py",)),
     CheckSpec("clearance map planner quarantine", ("tests/smokes/clearance_map_planner_quarantine_smoke.py",)),
     CheckSpec("router clearance conformance", ("tests/smokes/router_clearance_conformance_smoke.py",)),
