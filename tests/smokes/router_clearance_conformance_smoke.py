@@ -59,7 +59,22 @@ def _registry_shape_checks() -> None:
         "routes.commands_inner",
         "routes.commands_segment",
         "routes.learning_segment",
+        "routes.policy_inner",
+        "routes.policy_segment",
+        "routes.fast_telegram_sight",
+        "routes.fast_telegram_default",
+        "routes.fast_telegram_normal",
         "routes.fast_telegram_segment",
+        "routes.fast_imac",
+        "routes.complex_plan_explicit",
+        "routes.complex_plan_imac",
+        "routes.complex_explicit",
+        "routes.complex_imac",
+        "routes.artisan",
+        "routes.steward",
+        "routes.source_imac",
+        "routes.source_telegram",
+        "routes.pulse",
         "assistant_commands._handle_memory_forget",
         "assistant_commands._handle_context_window",
         "assistant_commands._handle_preference_listing",
@@ -89,8 +104,40 @@ def _registry_shape_checks() -> None:
             _require(surface.conformance_test_id, f"{key} missing conformance id")
     _require(surfaces["assistant.learning"].gate_placement == "gate_at_callsite", "peer call must be callsite-marked")
     _require(surfaces["learning.handle"].gate_placement == "gate_internal", "learning handler gate should be internal")
+    _dual_path_checks(surfaces)
     _require(surfaces["assistant_commands._handle_context_window"].classification == "disclosure", "context row must be disclosure")
     _require(surfaces["assistant_commands._handle_memory_forget"].classification == "effect", "forget row must be effect")
+
+
+def _dual_path_checks(surfaces: dict[str, RouteSurface]) -> None:
+    """Shared peers must have callsite rows plus an internal handler row.
+
+    This is the exact failure mode that used to hide above AssistantCommandRouter:
+    a handler can be reachable through two orchestrators. If its gate is internal,
+    both paths inherit it; if the gate is at the callsite, every callsite must be
+    represented separately.
+    """
+    pairs = {
+        "learning": ("assistant.learning", "routes.learning_segment", "learning.handle"),
+        "commands": ("assistant.commands", "routes.commands_inner", "routes.commands_segment", "assistant_commands.handle"),
+        "policy": ("routes.policy_inner", "routes.policy_segment", "policy.reply"),
+    }
+    for label, ids in pairs.items():
+        missing = [surface_id for surface_id in ids if surface_id not in surfaces]
+        _require(not missing, f"{label} dual-path coverage missing {missing}")
+    _require(surfaces["learning.handle"].gate_placement == "gate_internal", "learning dual path must rely on internal gate")
+    _require(surfaces["assistant_commands.handle"].gate_placement == "gate_internal", "commands dual path must rely on internal gate")
+    _require(surfaces["policy.reply"].gate_placement == "gate_internal", "policy dual path must rely on internal gate")
+    for surface_id in (
+        "assistant.learning",
+        "routes.learning_segment",
+        "assistant.commands",
+        "routes.commands_inner",
+        "routes.commands_segment",
+        "routes.policy_inner",
+        "routes.policy_segment",
+    ):
+        _require(surfaces[surface_id].gate_placement == "gate_at_callsite", f"{surface_id} must be callsite-marked")
 
 
 def _source_ratchet_checks() -> None:
