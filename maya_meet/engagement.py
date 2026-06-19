@@ -9,6 +9,14 @@ GREETING_WORDS = frozenset({"hey", "hi", "hello", "okay", "ok", "yo"})
 REFERENCE_START_RE = re.compile(r"^(?:is|was|were|has|had|will|looks|sounds|seems|appears)\b", re.IGNORECASE)
 WORD_RE = re.compile(r"[a-z]+(?:'[a-z]+)?|\d+", re.IGNORECASE)
 STRIP_LEADING_RE = re.compile(r"^[\s,.:;!?-]+")
+CLOSE_HOLD_RE = re.compile(
+    r"\b("
+    r"thank\s+you\s+maya|thanks\s+maya|that'?s\s+all\s+maya|"
+    r"maya\s+you\s+can\s+stop|maya\s+stop\s+listening|"
+    r"you\s+can\s+stop\s+listening|we'?re\s+done\s+maya"
+    r")\b",
+    re.IGNORECASE,
+)
 
 
 @dataclass(frozen=True)
@@ -21,6 +29,43 @@ class MeetAddressDecision:
     @property
     def addressed(self) -> bool:
         return self.status == "addressed"
+
+
+@dataclass
+class MeetConversationHold:
+    idle_seconds: float = 180.0
+    opened_at: float | None = None
+    last_activity_at: float | None = None
+    close_reason: str = ""
+
+    def active(self, now: float) -> bool:
+        if self.last_activity_at is None:
+            return False
+        if now - self.last_activity_at > self.idle_seconds:
+            self.close("idle_timeout")
+            return False
+        return True
+
+    def open(self, now: float) -> None:
+        if self.opened_at is None:
+            self.opened_at = now
+        self.last_activity_at = now
+        self.close_reason = ""
+
+    def refresh(self, now: float) -> None:
+        if self.opened_at is None:
+            self.opened_at = now
+        self.last_activity_at = now
+        self.close_reason = ""
+
+    def close(self, reason: str) -> None:
+        self.opened_at = None
+        self.last_activity_at = None
+        self.close_reason = str(reason or "closed")
+
+
+def is_hold_close_phrase(text: str) -> bool:
+    return bool(CLOSE_HOLD_RE.search(str(text or "")))
 
 
 def meet_address_decision(text: str) -> MeetAddressDecision:

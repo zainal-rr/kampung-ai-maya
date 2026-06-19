@@ -12,7 +12,13 @@ from maya_core.provenance import provenance_from_source_channel
 from maya_meet.approval import TelegramSender, request_meeting_owner_approval
 from maya_meet.actions import MeetingActionRunner, meeting_action_class
 from maya_meet.audio_wake import RecallAudioWakeState, timestamp_from_recall_payload
-from maya_meet.engagement import decision_from_audio_wake, meet_address_decision, strip_maya_address
+from maya_meet.engagement import (
+    MeetConversationHold,
+    decision_from_audio_wake,
+    is_hold_close_phrase,
+    meet_address_decision,
+    strip_maya_address,
+)
 from maya_meet.output_media import MeetOutputQueue
 from maya_meet.policy import meeting_turn_decision
 from maya_voice.voice import VoiceNode
@@ -48,6 +54,8 @@ class MeetM1Responder:
         approval_sender: TelegramSender | None = None,
         m2_enabled: bool = False,
         provenance_resolver=None,
+        hold_enabled: bool = False,
+        hold_idle_seconds: float = 180.0,
     ):
         self.db_path = db_path
         self.output_queue = output_queue
@@ -58,6 +66,8 @@ class MeetM1Responder:
         self.approval_sender = approval_sender
         self.m2_enabled = bool(m2_enabled)
         self.provenance_resolver = provenance_resolver
+        self.hold_enabled = bool(hold_enabled)
+        self.hold_state = MeetConversationHold(idle_seconds=hold_idle_seconds)
         self.transcript_lines: deque[str] = deque(maxlen=60)
         self.meeting_context_lines: deque[str] = deque(maxlen=40)
         self.own_output_markers: deque[tuple[float, str]] = deque(maxlen=16)
@@ -73,6 +83,10 @@ class MeetM1Responder:
                 self.audio_wake_state.suppress_for(2.0)
             return {"status": "ignored", "reason_code": "maya_self_output_echo"}
         self.transcript_lines.append(text)
+        now = time.time()
+        if self.hold_enabled and is_hold_close_phrase(text):
+            self.hold_state.close("close_phrase")
+            return {"status": "ignored", "reason_code": "conversation_hold_closed"}
         address = meet_address_decision(text)
         acoustic_match = None
         if not address.addressed and self.audio_wake_state is not None:
@@ -83,15 +97,22 @@ class MeetM1Responder:
                     confidence=acoustic_match.confidence,
                     delay_seconds=acoustic_match.delay_seconds,
                 )
+        hold_continuation = False
+        if self.hold_enabled and not address.addressed and self.hold_state.active(now):
+            hold_continuation = True
         prompt_text = address.remainder if address.addressed else text
         action_class = meeting_action_class(prompt_text)
         content_class = _meeting_content_class(text, action_class)
-        if not address.addressed:
+        if not address.addressed and not hold_continuation:
             # Unaddressed meeting speech is context. Addressed prompts and action requests
             # are kept out so Maya does not summarize her instructions as meeting facts.
             if action_class == "answer" and content_class == "meeting_public":
                 self.meeting_context_lines.append(text)
-        policy_text = f"Maya, {prompt_text}" if address.reason_code == "audio_wake_matched_transcript" else text
+        policy_text = (
+            f"Maya, {prompt_text}"
+            if address.reason_code == "audio_wake_matched_transcript" or hold_continuation
+            else text
+        )
         provenance, voiceprint_verified = self._meeting_provenance(payload, text)
         decision = meeting_turn_decision(
             text=policy_text,
@@ -104,13 +125,21 @@ class MeetM1Responder:
         if decision.status == "ignored":
             return {
                 "status": "ignored",
-                "reason_code": address.reason_code if address.reason_code.startswith("not_addressed") else decision.reason_code,
+                "reason_code": (
+                    "conversation_hold_idle_timeout"
+                    if self.hold_enabled and not address.addressed and self.hold_state.close_reason == "idle_timeout"
+                    else address.reason_code if address.reason_code.startswith("not_addressed") else decision.reason_code
+                ),
                 "address_confidence": f"{address.confidence:.3f}",
             }
+        if self.hold_enabled and address.addressed:
+            self.hold_state.open(now)
+        elif self.hold_enabled and hold_continuation:
+            self.hold_state.refresh(now)
         self.logger.info(
             "meet address decision status=%s reason=%s confidence=%.3f acoustic_delay=%s text=%r",
-            address.status,
-            address.reason_code,
+            "hold_continuation" if hold_continuation else address.status,
+            "conversation_hold_continuation" if hold_continuation else address.reason_code,
             address.confidence,
             f"{acoustic_match.delay_seconds:.3f}" if acoustic_match and acoustic_match.matched else "",
             text[:160],
