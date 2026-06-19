@@ -81,6 +81,7 @@ CHECKS: tuple[CheckSpec, ...] = (
     CheckSpec("whole-loop harness", ("tests/smokes/whole_loop_harness_smoke.py",)),
     CheckSpec("Maya harness SDK", ("tests/smokes/maya_harness_sdk_smoke.py",)),
     CheckSpec("Meet artifact handoff", ("tests/smokes/meet_artifact_handoff_smoke.py",)),
+    CheckSpec("Meet synthetic feature coverage", ("tests/smokes/meet_synthetic_feature_smoke.py",)),
     CheckSpec("Meet M1 Recall foundation", ("tests/smokes/meet_m1_recall_foundation_smoke.py",)),
     CheckSpec("Meet join orchestrator", ("tests/smokes/meet_join_orchestrator_smoke.py",)),
     CheckSpec("Meet voiceprint policy", ("tests/smokes/meet_voiceprint_policy_smoke.py",)),

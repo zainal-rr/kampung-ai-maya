@@ -13,7 +13,6 @@ from pathlib import Path
 from typing import Any, Protocol
 
 import numpy as np
-from scipy.io.wavfile import write as write_wav
 
 DEFAULT_MODEL_PATH = Path.home() / "Desktop/Maya/artifacts/wakeword_models/maya_wake_scorer.pkl"
 
@@ -136,6 +135,10 @@ class LocalWakeAudioScorer:
         self._load()
         with tempfile.TemporaryDirectory() as tmp:
             path = Path(tmp) / "meet_wake_candidate.wav"
+            try:
+                from scipy.io.wavfile import write as write_wav
+            except ModuleNotFoundError as exc:
+                raise RuntimeError("scipy is required for local Meet audio wake scoring") from exc
             write_wav(path, 16000, audio.astype(np.int16, copy=False))
             from maya_core.wakeword_sample_scorer import clip_features
 
