@@ -41,9 +41,10 @@ snapshot, not a product claim.
   and Zainal is ready to admit Maya.
 - Provider-backed whole-loop sealed runs remain deferred until explicit approval
   and budget/time are available.
-- Optional Meet/audio checks that require unavailable local dependencies
-  (`scipy`, `torch`, live audio stack) should be recorded as dependency-blocked,
-  not interpreted as product failures.
+- The old torch-backed Meet live voiceprint scoring path is removed from the
+  current design. Remaining audio-wake probes that require optional local audio
+  dependencies should be recorded as dependency-blocked, not interpreted as
+  product failures.
 - Generated reports and eval logs, including `logs/evals/latest.json`, stay
   uncommitted unless explicitly requested.
 
