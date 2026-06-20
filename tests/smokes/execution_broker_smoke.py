@@ -16,6 +16,7 @@ import contextlib
 from pathlib import Path
 
 from maya_core.execution_broker import BrokerPolicyError, CommandSpec, broker_env, run_command, broker_argv, sandbox_profile
+from maya_core.execution_broker_read_policy import personal_data_read_denies
 
 ROOT = Path(__file__).resolve().parents[2]
 
@@ -258,16 +259,24 @@ def _personal_data_read_jail_checks(cwd: Path) -> None:
     log_probe = log_probe_dir / "probe.txt"
     log_probe.write_text("personal-log-data\n", "utf-8")
     desktop_probes: list[Path] = []
-    for folder, content in (
-        ("documents", "personal-document-data\n"),
-        ("artifacts", "personal-artifact-data\n"),
-        ("voiceprints", "personal-biometric-data\n"),
-    ):
-        target_dir = Path.home() / "Desktop" / "Maya" / folder
-        target_dir.mkdir(parents=True, exist_ok=True)
-        probe = target_dir / "w5-read-jail-smoke.txt"
-        probe.write_text(content, "utf-8")
-        desktop_probes.append(probe)
+    desktop_probe_roots = tuple(
+        Path.home() / "Desktop" / "Maya" / folder
+        for folder in ("documents", "artifacts", "voiceprints")
+    )
+    if os.getenv("MAYA_RUN_DESKTOP_PERSONAL_PROBES") == "1":
+        for target_dir, content in zip(
+            desktop_probe_roots,
+            ("personal-document-data\n", "personal-artifact-data\n", "personal-biometric-data\n"),
+            strict=True,
+        ):
+            target_dir.mkdir(parents=True, exist_ok=True)
+            probe = target_dir / "w5-read-jail-smoke.txt"
+            probe.write_text(content, "utf-8")
+            desktop_probes.append(probe)
+    else:
+        protected = set(personal_data_read_denies(()))
+        for root in desktop_probe_roots:
+            _require(root.expanduser().resolve(strict=False) in protected, f"Desktop/Maya root missing from protected roots: {root}")
     try:
         targets = [(log_probe, "logs"), *((path, f"Desktop/Maya {path.parent.name}") for path in desktop_probes)]
         for path, label in targets:

@@ -13,7 +13,7 @@ This is the current engineering status for the Maya master build path. It record
 - Step 5 Meet: synthetic conversation-hold and presentation-sanitizer coverage added. Live Meet check is approved but must end with `/leave`, status verification, and closing any Meet/output/browser tabs opened for the test.
 - Step 6 memory integrity: native integrity smoke added over real memory paths. Provider-backed LongMemEval remains deferred unless a runnable LongMemEval dataset/runner config is supplied.
 - Step 7 honesty: honesty-under-attack smoke added. Scores are self-authored until reviewer scoring is validated.
-- C0.2 capability baseline: current reversible-loop baseline reran after the secure agentic artifact fast path. Outcome counts: `13/30` success, `5/30` partial, `2/30` fail, `10/30` honest_stop. OpenClaw/Claw-SWE-Bench is not locally configured and is recorded as deferred.
+- C0.2 capability baseline: current reversible-loop baseline reran after the secure agentic artifact fast path and then again with the stricter artifact-content oracle. Content-validated outcome counts: `11/30` success, `6/30` partial, `3/30` fail, `10/30` honest_stop. The earlier existence-only `13/30` report is retired as a headline number. OpenClaw/Claw-SWE-Bench is not locally configured and is recorded as deferred.
 
 ## Implemented Evidence
 
@@ -47,13 +47,16 @@ This is the current engineering status for the Maya master build path. It record
 - C0/C0.1/C0.2 capability baseline proves:
   - the current reversible loop is measurable before building C1-C6;
   - answer-type scoring uses a semantic evaluator path rather than literal fragment matching;
+  - artifact scoring now validates content/state rather than mere file existence: local file bodies, `.docx` text, and `.xlsx` sheet text must contain non-trivial task-relevant content;
   - C0.1 made permission friction explicit instead of hiding it in `unknown`: reason counts were `budget_exhausted=5`, `tool_gap=5`, `permission_friction=3`, `planner_strategy=1`, `unknown=16`;
-  - C0.2 fixed the measured local artifact executor wall without loosening the permission kernel: reason counts became `budget_exhausted=0`, `tool_gap=3`, `permission_friction=3`, `planner_strategy=1`, `unknown=23`;
+  - C0.2 fixed the measured local artifact executor wall without loosening the permission kernel: the existence-only report had reason counts `budget_exhausted=0`, `tool_gap=3`, `permission_friction=3`, `planner_strategy=1`, `unknown=23`;
+  - the content-validated C0.2 rerun had reason counts `budget_exhausted=0`, `tool_gap=3`, `permission_friction=5`, `planner_strategy=1`, `unknown=21`;
   - the `unknown` bucket is successes and correct honest-stops only, not unattributed partial/fail cases;
-  - local artifact creation recovered from `0/9` success in C0.1 to `6/9` success in C0.2; every recovered artifact was created through `agentic_artifact_fast_path` after a kernel `allow`;
+  - local artifact creation recovered from `0/9` success in C0.1 to `5/9` content-validated success in C0.2; every content-valid recovered artifact was created through `agentic_artifact_fast_path` after a kernel `allow`;
+  - the retired existence-only C0.2 report showed `6/9` local-artifact success, but one project/folder-style case is no longer counted as artifact success under the content/state oracle;
   - docx/xlsx budget timeouts disappeared in C0.2; the remaining local-artifact misses are planner/tool-selection or permission-friction cases, not document executor timeouts;
   - browser-read tasks stopped honestly because the local browser bridge was unavailable in the run;
-  - residual permission friction is real but bounded: `3/30` cases paused at the permission kernel, now outside the recovered docx/xlsx/file-create fast path.
+  - residual permission friction is real but bounded: `5/30` content-validated cases paused at the permission kernel, now outside the recovered docx/xlsx/file-create fast path.
 
 ## Deferred Or Reviewer-Gated
 
@@ -75,8 +78,9 @@ This is the current engineering status for the Maya master build path. It record
   - numbers should not be presented externally until reviewer scoring is validated.
 - C0 capability follow-up:
   - generated report is intentionally left under `logs/evals/c0/` and uncommitted;
+  - the content-validated report supersedes the earlier C0.2 existence-only success headline;
   - C0.2 progress reporting and reason attribution are in place;
-  - before C1-C6, inspect the remaining `tool_gap=3`, `permission_friction=3`, and `planner_strategy=1` cases rather than rebuilding the loop broadly;
+  - before C1-C6, inspect the remaining `tool_gap=3`, `permission_friction=5`, and `planner_strategy=1` cases rather than rebuilding the loop broadly;
   - the previous document/file executor bottleneck is substantially cleared; the next measured bottleneck is planner/tool selection for folder/screen-style tasks and residual permission friction in multi-step flows.
 
 ## Reporting Caveats
