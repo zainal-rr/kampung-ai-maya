@@ -8,8 +8,11 @@ if str(_w4_root) not in _w4_sys.path:
 del _w4_Path, _w4_root, _w4_sys
 
 import asyncio
+import tempfile
 from dataclasses import replace
+from pathlib import Path
 
+from maya_documents.office_files import create_docx, create_xlsx
 from maya_core.c0_capability_baseline import (
     CapabilityOracle,
     CapabilityTask,
@@ -122,6 +125,93 @@ def _test_artifact_honest_stop_is_not_success() -> None:
     print("  artifact honest stop is a capability miss, not success: ok")
 
 
+def _test_artifact_content_oracle_checks_file_body() -> None:
+    async def run() -> None:
+        with tempfile.TemporaryDirectory(prefix="maya-c0-artifact-oracle-") as tmp:
+            path = Path(tmp) / "c0-field-note.txt"
+            path.write_text(
+                "- Reversible work stays contained.\n"
+                "- Local drafts should be easy to inspect.\n"
+                "- External effects stay gated.\n",
+                encoding="utf-8",
+            )
+            task = CapabilityTask(
+                "file_body",
+                "local_artifact",
+                "Create a local file notes/c0-field-note.txt with a three bullet note about keeping reversible work contained.",
+                CapabilityOracle("artifact", expected_artifact=True),
+            )
+            payload = {"state": {"final_response": f"Done.\n[file:{path}]"}, "events": (), "artifacts": ({"path": str(path)},), "timed_out": False}
+            outcome, status = await _score_outcome(task, payload, None)
+            _require(outcome == "success" and status == "deterministic_artifact_content_ok", f"file body should pass: {outcome}, {status}")
+
+            thin = Path(tmp) / "thin.txt"
+            thin.write_text("Done.", encoding="utf-8")
+            thin_payload = {"state": {"final_response": f"Done.\n[file:{thin}]"}, "events": (), "artifacts": ({"path": str(thin)},), "timed_out": False}
+            thin_outcome, thin_status = await _score_outcome(task, thin_payload, None)
+            _require(thin_outcome == "partial" and "content" in thin_status, f"thin file should not pass: {thin_outcome}, {thin_status}")
+
+    asyncio.run(run())
+    print("  artifact content oracle checks file body, not existence only: ok")
+
+
+def _test_artifact_content_oracle_checks_docx_and_xlsx_state() -> None:
+    async def run() -> None:
+        with tempfile.TemporaryDirectory(prefix="maya-c0-office-oracle-") as tmp:
+            root = Path(tmp)
+            docx = create_docx(
+                root / "capability-measurement.docx",
+                "Capability Measurement",
+                [("Summary", ["Measure current capability before building C1-C6 so the roadmap follows evidence."])],
+            )
+            doc_task = CapabilityTask(
+                "docx_body",
+                "local_artifact",
+                "Create a short Word document explaining why capability should be measured before C1-C6.",
+                CapabilityOracle("artifact", expected_artifact=True),
+            )
+            doc_payload = {"state": {"final_response": f"Done.\n[file:{docx}]"}, "events": (), "artifacts": ({"path": str(docx)},), "timed_out": False}
+            doc_outcome, doc_status = await _score_outcome(doc_task, doc_payload, None)
+            _require(doc_outcome == "success", f"docx content should pass: {doc_outcome}, {doc_status}")
+
+            xlsx = create_xlsx(
+                root / "c0-scores.xlsx",
+                "C0 Capability Scores",
+                ["Task", "Status", "Risk"],
+                [["success", "measured", "low"], ["partial", "review", "medium"], ["fail", "investigate", "high"]],
+            )
+            xlsx_task = CapabilityTask(
+                "xlsx_rows",
+                "local_artifact",
+                "Create a simple spreadsheet with columns Task, Status, Risk for three C0 baseline tasks.",
+                CapabilityOracle("artifact", expected_artifact=True),
+            )
+            xlsx_payload = {"state": {"final_response": f"Done.\n[file:{xlsx}]"}, "events": (), "artifacts": ({"path": str(xlsx)},), "timed_out": False}
+            xlsx_outcome, xlsx_status = await _score_outcome(xlsx_task, xlsx_payload, None)
+            _require(xlsx_outcome == "success", f"xlsx rows should pass: {xlsx_outcome}, {xlsx_status}")
+
+            wrong_kind_payload = {"state": {"final_response": f"Done.\n[file:{docx}]"}, "events": (), "artifacts": ({"path": str(docx)},), "timed_out": False}
+            wrong_outcome, wrong_status = await _score_outcome(xlsx_task, wrong_kind_payload, None)
+            _require(wrong_outcome == "partial" and "wrong_kind" in wrong_status, f"wrong office kind should not pass: {wrong_outcome}, {wrong_status}")
+
+    asyncio.run(run())
+    print("  artifact content oracle checks docx/xlsx state: ok")
+
+
+def _test_artifact_content_failure_is_verification_reason() -> None:
+    task = CapabilityTask("artifact_bad_content", "local_artifact", "Create a note.", CapabilityOracle("artifact", expected_artifact=True))
+    payload = {
+        "state": {"final_response": "Done.", "graph_status": "completed"},
+        "events": ({"event": "execute", "details": "agentic file.create"},),
+        "artifacts": (),
+        "timed_out": False,
+        "oracle_status": "deterministic_artifact_content_too_thin_or_mismatched",
+    }
+    reason, component = _trace_grounded_reason(task, payload, "partial")
+    _require(reason == "verification_failed" and component == "artifact_oracle", f"expected verification_failed: {reason}, {component}")
+    print("  artifact content miss is attributed to verification: ok")
+
+
 def _test_unallowed_semantic_honest_stop_becomes_fail() -> None:
     async def evaluator(answer: str, task: CapabilityTask, payload: dict) -> dict[str, str]:
         del answer, task, payload
@@ -211,6 +301,9 @@ def main() -> None:
     _test_deferred_report_shape()
     _test_semantic_oracle_is_not_literal_fragment()
     _test_artifact_honest_stop_is_not_success()
+    _test_artifact_content_oracle_checks_file_body()
+    _test_artifact_content_oracle_checks_docx_and_xlsx_state()
+    _test_artifact_content_failure_is_verification_reason()
     _test_unallowed_semantic_honest_stop_becomes_fail()
     _test_ambiguous_reason_becomes_unknown()
     _test_permission_pause_is_not_planner_strategy()

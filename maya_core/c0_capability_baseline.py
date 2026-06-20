@@ -4,7 +4,6 @@ import asyncio
 import importlib.util
 import json
 import os
-import re
 import shutil
 import tempfile
 import time
@@ -13,6 +12,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Literal
 
+from maya_core.c0_artifact_oracle import artifact_oracle_status
 from maya_core.c0_capability_manifest import build_maya_domain_capability_manifest
 from maya_core.c0_capability_models import (
     ALLOWED_REASON_CODES,
@@ -39,8 +39,6 @@ from maya_harness.harness_idempotency import init_action_ledger
 from maya_harness.harness_state import initial_harness_state
 from maya_harness.harness_store import init_harness_db, latest_events
 from maya_harness.harness_workflows import classify_workflow
-
-PathPattern = re.compile(r"(/[^\s\]]+\.(?:md|txt|docx|xlsx|pptx|html))")
 
 
 async def run_capability_baseline(
@@ -118,6 +116,7 @@ async def _run_task(
         "timed_out": timed_out,
     }
     outcome, oracle_status = await _score_outcome(task, payload, semantic_evaluator)
+    payload["oracle_status"] = oracle_status
     reason_code, component = _trace_grounded_reason(task, payload, outcome)
     return CapabilityTaskResult(
         task.task_id,
@@ -144,8 +143,11 @@ async def _score_outcome(
     final = str(payload["state"].get("final_response") or "")
     lowered = final.lower()
     if task.oracle.oracle_type == "artifact":
-        if _has_existing_artifact(payload):
-            return "success", "deterministic_artifact_exists"
+        artifact_status = artifact_oracle_status(task, payload)
+        if artifact_status == "ok":
+            return "success", "deterministic_artifact_content_ok"
+        if artifact_status:
+            return "partial", f"deterministic_artifact_{artifact_status}"
         if payload.get("timed_out"):
             return "fail", "deterministic_artifact_timeout"
         if _looks_like_honest_stop(lowered):
@@ -176,6 +178,11 @@ def _trace_grounded_reason(task: CapabilityTask, payload: dict[str, Any], outcom
     final = str(payload["state"].get("final_response") or "").lower()
     if str(payload["state"].get("graph_status") or "") == "error" or "provider/tool error" in final:
         return "provider_error", "provider"
+    oracle_status = str(payload.get("oracle_status") or "")
+    if oracle_status.startswith("deterministic_artifact_") and any(
+        marker in oracle_status for marker in ("content", "wrong_kind", "wrong_path", "too_thin")
+    ):
+        return "verification_failed", "artifact_oracle"
     permission_pause = False
     for event in payload.get("events") or ():
         name, details = str(event.get("event") or ""), str(event.get("details") or "")
@@ -254,14 +261,6 @@ def write_report(report: CapabilityReport, path: str | Path | None = None) -> di
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(json.dumps(payload, indent=2, sort_keys=True) + "\n", encoding="utf-8")
     return payload
-
-
-def _has_existing_artifact(payload: dict[str, Any]) -> bool:
-    for artifact in payload.get("artifacts") or ():
-        path = str(artifact.get("path") or "")
-        if path and Path(path).exists():
-            return True
-    return any(Path(match).expanduser().exists() for match in PathPattern.findall(str(payload["state"].get("final_response") or "")))
 
 
 def _looks_like_honest_stop(lowered: str) -> bool:
