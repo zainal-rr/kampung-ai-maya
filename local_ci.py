@@ -9,10 +9,11 @@ from dataclasses import dataclass
 from pathlib import Path
 
 from maya_core.code_health import collect_code_health, format_code_health
-from scored_eval_suite import DEFAULT_OUTPUT, format_eval_summary, run_eval_suite
+from scored_eval_suite import format_eval_summary, run_eval_suite
 
 
 ROOT = Path(__file__).resolve().parent
+LOCAL_CI_EVAL_OUTPUT = ROOT / "logs" / "evals" / "local_ci_latest.json"
 FAST_VOICE_TELEGRAM_REPLAY_LIMIT = 250
 # Fast CI uses representative canaries for expensive matrix checks. Full
 # matrix coverage stays in the additive --extended tier.
@@ -206,7 +207,7 @@ def _code_health_check(spec: CheckSpec) -> CheckResult:
 
 
 def _eval_check(spec: CheckSpec) -> CheckResult:
-    payload = run_eval_suite(DEFAULT_OUTPUT, set(spec.eval_categories) or None)
+    payload = run_eval_suite(LOCAL_CI_EVAL_OUTPUT, set(spec.eval_categories) or None)
     return CheckResult(spec.name, spec.tier, payload["failed"] == 0, format_eval_summary(payload), spec.required)
 
 

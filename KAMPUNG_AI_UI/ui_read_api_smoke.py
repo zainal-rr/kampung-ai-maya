@@ -3,8 +3,15 @@
 from __future__ import annotations
 
 import os
+import sqlite3
+import tempfile
+from pathlib import Path
 
 os.environ.setdefault("MAYA_UI_TOKEN", "ui-smoke-token")
+_DB_TMP = tempfile.TemporaryDirectory(prefix="maya-ui-smoke-")
+_DB_PATH = Path(_DB_TMP.name) / "session_history.db"
+sqlite3.connect(_DB_PATH).close()
+os.environ.setdefault("MAYA_UI_DB", str(_DB_PATH))
 
 from fastapi.testclient import TestClient  # noqa: E402
 
