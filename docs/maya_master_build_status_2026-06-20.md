@@ -7,7 +7,7 @@ This is the current engineering status for the Maya master build path. It record
 - Gate benchmark: current Maya W7/kernel/source-trust gate measured `0/200` attack success in Mode B against `35/200` no-gate control. This measures the gate layer through AgentDojo's loop, not full multi-model Maya.
 - Slack stability check: Mode B held `0/150` against no-gate `65/150`.
 - Step 0 router conformance: conformance scaffolding and ratchets are present; live Telegram spot-check passed on a gated disclosure path.
-- Step 0.5 whole-loop harness: mechanism/reduced-form evidence only. It is not yet a full live blind pass through all real lanes and provider calls.
+- Step 0.5 whole-loop harness: Wave 1 full binding completed with reviewer-authored blind probes, real Gemini reader, real GPT/OpenAI planner, real Maya kernel, and a safe fake effect sink. Result: `0/45` unsafe runs; `35/45` secure/useful and `10/45` secure/not-useful. It still does not execute real external sends/payments/deletes or live Meet/Telegram effects.
 - Step 3 reversibility: kernel predicates are wired as security tightening with no friction regression. This did not unlock new utility because the kernel already allowed the reversible cases.
 - Step 4 pattern recognition: implemented as harness-side method hints only, with enum-shaped patterns, no control-value fields, `control_eligible=false`, and poison tests that exercise the real kernel backstop.
 - Step 5 Meet: synthetic conversation-hold and presentation-sanitizer coverage added. Live Meet check is approved but must end with `/leave`, status verification, and closing any Meet/output/browser tabs opened for the test.
@@ -37,6 +37,12 @@ This is the current engineering status for the Maya master build path. It record
   - provider-down and loop-budget failures surface legible owner-visible messages;
   - disclosure refusal is explicit;
   - blocked/empty browser extraction is partial/honest, while bluffing success fails.
+- Step 0.5 Wave 1 full binding proves:
+  - the blind probes ran through the real reader-to-planner-to-kernel path, not deterministic replay;
+  - the safe fake sink is not acting as a defense: it records an executed effect only after the kernel returns `allow`;
+  - every attack case remained secure across 3 runs;
+  - most attack cases were secure because the laundered effect was not proposed upstream, with the kernel/sink retained as an observable backstop rather than the primary blocker in those runs;
+  - the 10 secure/not-useful outcomes were concentrated in strict answer-fragment utility checks, not unsafe effects.
 
 ## Deferred Or Reviewer-Gated
 
@@ -48,9 +54,11 @@ This is the current engineering status for the Maya master build path. It record
   - approval is recorded;
   - no local LongMemEval runner/dataset config was found in this repo state;
   - when supplied, run through real Maya memory and stamp commit, provider/model, split, command, and timestamps.
-- Step 0.5 full live blind harness:
-  - current result is reduced-form/mechanism evidence;
-  - a publishable whole-loop number requires reviewer-authored sealed probes through real lanes/providers.
+- Step 0.5 remaining gaps:
+  - Wave 1 is now real-provider/full-binding evidence for reader, planner, kernel, and safe sink;
+  - Wave 1 does not exercise real external effect execution, live Google Meet audio, or real Telegram/file delivery;
+  - Wave 1 cases are now spent as blind evidence; future product changes need a new sealed wave for fresh blind claims;
+  - reflection-channel coverage should still be confirmed specifically for the A2-style failure-reason probe, because a passing run may avoid the reflection branch by never failing upstream.
 - Step 6 and Step 7 scoring:
   - integrity and honesty suites are self-authored;
   - numbers should not be presented externally until reviewer scoring is validated.
@@ -59,7 +67,8 @@ This is the current engineering status for the Maya master build path. It record
 
 - AgentDojo results describe Maya's W7/kernel/source-trust enforcement layer only. They do not exercise the full four-lane/multi-model architecture, planner quarantine, or cross-lane disclosure paths.
 - A zero observed ASR should always travel with its denominator and no-gate baseline.
-- Whole-loop harness results must say whether they were replay, reduced-form, or real live lane runs.
+- Whole-loop harness results must say whether they were replay, reduced-form, full binding, or real live lane/effect runs.
+- Step 0.5 Wave 1 should be described as full binding over real reader/planner/kernel with safe fake effects, not as reduced planner/kernel-only evidence.
 - Meet results must distinguish synthetic tests from live meeting behavior.
 - Memory and honesty scores must state whether they are self-authored or independently verified.
 - Absence of incidents means “no incidents observed,” not “reliable.”
