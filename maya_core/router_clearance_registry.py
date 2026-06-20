@@ -64,6 +64,7 @@ vision|maya_core/vision_responder.py|maya_core.vision_responder|VisionResponder|
 policy|maya_core/response_policy.py|maya_core.response_policy|ResponsePolicy|gate0|reply,_normalize,is_topic_break,_topic_break_reply,_greeting_reply,_presence_reply,_malay_reply,_identity_reply,_powering_reply,_channel_role_reply,_capability_reply,_improvement_reply,_scope_reply,_goal_reply,_needs_reply
 model_lanes|maya_core/assistant_model_lanes.py|maya_core.assistant_model_lanes|ModelLanes|gate0|build_imac_fast_responder,build_harness_planner,should_use_artisan_path,artisan_lane,should_use_pulse_path,should_use_source_research_path,should_use_complex_path,should_use_plan_path,should_use_steward_path,complex_response,complex_plan_response,artisan_response,_artisan_build_brief,steward_response,post_implementation_review,pulse_response,source_research_response,_prompt
 telegram_commands|maya_telegram/telegram_commands.py|maya_telegram.telegram_commands|<module>|gate0|parse_command,bot_commands,command_to_text,_remember_text,_create_skill_text,_complex_text,_artisan_text,_screen_text,_screen_command_text,_imac_text,_memory_text,_weekly_text,_join_text,_leave_text,_meet_status_text
+telegram_reliability|maya_telegram/telegram_reliability_commands.py|maya_telegram.telegram_reliability_commands|<module>|gate0|reliability_text,_record_reliability_note,_reliability_note_parts,_append_reliability_note,_reliability_soak_path
 context_command|maya_core/assistant_context_helpers.py|maya_core.assistant_context_helpers|<module>|gate0|handle_context_command
 document_html|maya_documents/document_actions_html.py|maya_documents.document_actions_html|DocumentHtmlMixin|gateB|_create_markdown,_create_html,_html_draft,_html_fallback,_markdown_content
 document_word|maya_documents/document_actions_word.py|maya_documents.document_actions_word|DocumentWordMixin|gateB|_create_recent_questions_word,_create_word,_build_word_doc,_word_quality,_repair_word_doc,_edit_latest_document,_simple_word_edit
@@ -96,6 +97,7 @@ vision|both|guided sight permission and disclosure gate|gate_internal|RC-GB-VISI
 policy|disclosure|curated non-effect reply only|gate_internal|RC-G0-POLICY|policy responder route
 model_lanes|disclosure|model lanes cannot authorize effects|gate_at_callsite|RC-G0-MODEL|model responder route
 telegram_commands|both|direct command gates and destination policy|gate_internal|RC-G0-COMMAND|slash command conversion and direct command effects
+telegram_reliability|both|reliability scorecard disclosure and soak note write policy|gate_internal|RC-G0-COMMAND|Telegram reliability scorecard and note command
 context_command|disclosure|private disclosure policy|gate_internal|RC-G0-CONTEXT|direct context command path
 document_html|effect|document path and QA gates|gate_internal|RC-GB-DOC-MIXIN|HTML and Markdown artifact mixin
 document_word|effect|document path QA and edit gates|gate_internal|RC-GB-DOC-MIXIN|Word artifact mixin
@@ -195,6 +197,9 @@ telegram_commands._create_skill_text|inert|none|not_applicable|RC-G0-COMMAND|rew
 telegram_commands._complex_text|inert|none|not_applicable|RC-G0-COMMAND|rewrites complex route text only
 telegram_commands._screen_text|inert|none|not_applicable|RC-G0-COMMAND|rewrites screen route text only
 telegram_commands._imac_text|inert|none|not_applicable|RC-G0-COMMAND|rewrites iMac route text only
+telegram_reliability._reliability_note_parts|inert|none|not_applicable|RC-G0-COMMAND|reliability note parser only
+telegram_reliability._append_reliability_note|inert|none|not_applicable|RC-G0-COMMAND|reliability note formatting helper only
+telegram_reliability._reliability_soak_path|inert|none|not_applicable|RC-G0-COMMAND|reliability log path resolver only
 document_html._html_draft|disclosure|model prompt disclosure policy|gate_internal|RC-GB-DOC-MIXIN|draft generation prompt path
 document_html._html_fallback|disclosure|model prompt disclosure policy|gate_internal|RC-GB-DOC-MIXIN|fallback draft prompt path
 document_html._markdown_content|disclosure|document content disclosure policy|gate_internal|RC-GB-DOC-MIXIN|Markdown content helper

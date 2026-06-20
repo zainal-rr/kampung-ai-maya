@@ -22,6 +22,7 @@ from maya_core.route_tracker import record_route
 from maya_core.session_memory_store import init_session_memory_db, save_session_summary
 from maya_core.self_heal_store import init_self_heal_db
 from maya_core.storage import init_db, upsert_preference
+from maya_harness.live_reliability_soak import load_soak
 from maya_telegram.telegram_commands import bot_commands, command_to_text, parse_command, voice_enabled
 from maya_telegram.telegram_channel import TelegramChannel
 
@@ -139,6 +140,21 @@ async def main() -> None:
         _require("30-day reliability scorecard" in reliability, "/reliability did not return scorecard")
         _require("Operational incident ledger" in reliability, "/reliability did not include incident ledger")
         _require(TelegramChannel._is_direct_command_reply(reliability), "/reliability should be direct")
+        os.environ["MAYA_RELIABILITY_SOAK_PATH"] = str(Path(tmp) / "reliability_soak.json")
+        note_reply = await command_to_text(
+            db_path,
+            parse_command("/reliability note false_done Maya said file was ready but attachment was stale"),
+        )
+        _require("Note logged for today" in note_reply, "/reliability note did not log")
+        _require(TelegramChannel._is_direct_command_reply(note_reply), "/reliability note should be direct")
+        rows = load_soak(Path(os.environ["MAYA_RELIABILITY_SOAK_PATH"]))
+        _require(len(rows) == 1, "/reliability note did not create a soak row")
+        _require(rows[0].false_saved_claims == 1, "/reliability note false_done did not increment false_saved_claims")
+        _require("attachment was stale" in rows[0].notes, "/reliability note did not preserve note text")
+        correction_reply = await command_to_text(db_path, parse_command("/reliability note Maya chose the wrong route"))
+        _require("user_corrections" in correction_reply, "/reliability note default category should be user correction")
+        rows = load_soak(Path(os.environ["MAYA_RELIABILITY_SOAK_PATH"]))
+        _require(rows[0].user_corrections == 1, "/reliability note default did not increment user_corrections")
         selfheal = await command_to_text(db_path, parse_command("/selfheal"))
         _require("Self heal check:" in selfheal, "selfheal did not run")
         selfheal_dryrun = await command_to_text(db_path, parse_command("/selfheal dryrun"))
@@ -151,7 +167,55 @@ async def main() -> None:
         _require("Telegram turn" in turn, "turn command did not return audit state")
         _require(TelegramChannel._is_direct_command_reply(turn), "/turn should be direct")
         help_text = await command_to_text(db_path, parse_command("/help"))
-        _require("Maya commands:" in help_text and "/openimac" in help_text and "/delivery" in help_text and "/turn" in help_text, "help did not show full command map")
+        _require("Maya commands:" in help_text, "help did not show command map")
+        expected_help_commands = {
+            "help",
+            "status",
+            "imac",
+            "see",
+            "screen",
+            "project",
+            "memory",
+            "join",
+            "leave",
+            "meetstatus",
+            "reliability",
+            "complex",
+            "openimac",
+            "closeimac",
+            "remember",
+            "voice",
+            "tasks",
+            "routines",
+            "preferences",
+            "forget",
+            "memorycleanup",
+            "memorymigrate",
+            "memoryinspect",
+            "memorypin",
+            "memoryunpin",
+            "lessons",
+            "skills",
+            "createskill",
+            "proposals",
+            "cost",
+            "providers",
+            "route",
+            "delivery",
+            "lastdelivery",
+            "turn",
+            "lastturn",
+            "review",
+            "artifactreview",
+            "artifactqa",
+            "context",
+            "weekly",
+            "newtopic",
+            "selfheal",
+            "artisan",
+        }
+        missing = [f"/{command}" for command in sorted(expected_help_commands) if f"/{command}" not in help_text]
+        _require(not missing, f"help omitted command(s): {missing}")
         unknown = await command_to_text(db_path, parse_command("/Desktop"))
         _require("not in the command list" in unknown, "unknown command should be short")
         _require(TelegramChannel._is_direct_command_reply(unknown), "unknown command should be direct")
