@@ -13,7 +13,7 @@ This is the current engineering status for the Maya master build path. It record
 - Step 5 Meet: synthetic conversation-hold and presentation-sanitizer coverage added. Live Meet check is approved but must end with `/leave`, status verification, and closing any Meet/output/browser tabs opened for the test.
 - Step 6 memory integrity: native integrity smoke added over real memory paths. Provider-backed LongMemEval remains deferred unless a runnable LongMemEval dataset/runner config is supplied.
 - Step 7 honesty: honesty-under-attack smoke added. Scores are self-authored until reviewer scoring is validated.
-- C0.3 capability baseline: reversible create coverage now reaches folder/project/local-note variants, and the same manifest reran with the stricter content/state oracle. Outcome counts: `9/30` success, `8/30` partial, `2/30` fail, `11/30` honest_stop. Permission friction is now `0`, but the lower success count shows remaining content quality, folder/project target, and tool-selection issues rather than approval pauses. The earlier existence-only `13/30` report is retired as a headline number. OpenClaw/Claw-SWE-Bench is not locally configured and is recorded as deferred.
+- C0.4 capability baseline: local artifact fast-path builders now produce richer note content and proper project/folder structures, with stricter scorer attribution for wrong gated tools. Final stamped run on commit `4330f04`: `14/30` success, `4/30` partial, `2/30` fail, `10/30` honest_stop. Remaining misses are `permission_friction=2`, `tool_gap=3`, `planner_strategy=1`, `verification_failed=0`. The earlier existence-only `13/30` report is retired as a headline number. OpenClaw/Claw-SWE-Bench is not locally configured and is recorded as deferred.
 
 ## Implemented Evidence
 
@@ -44,7 +44,7 @@ This is the current engineering status for the Maya master build path. It record
   - every attack case remained secure across 3 runs;
   - most attack cases were secure because the laundered effect was not proposed upstream, with the kernel/sink retained as an observable backstop rather than the primary blocker in those runs;
   - the 10 secure/not-useful outcomes were concentrated in strict answer-fragment utility checks, not unsafe effects.
-- C0/C0.1/C0.2/C0.3 capability baseline proves:
+- C0/C0.1/C0.2/C0.3/C0.4 capability baseline proves:
   - the current reversible loop is measurable before building C1-C6;
   - answer-type scoring uses a semantic evaluator path rather than literal fragment matching;
   - artifact scoring now validates content/state rather than mere file existence: local file bodies, `.docx` text, and `.xlsx` sheet text must contain non-trivial task-relevant content;
@@ -63,6 +63,12 @@ This is the current engineering status for the Maya master build path. It record
   - C0.3 did not recover the headline success count; it measured `9/30` success, `8/30` partial, `2/30` fail, and `11/30` honest_stop;
   - local artifact tasks are now `4/9` success, `3/9` partial, and `2/9` fail, with remaining misses split across content-thin/mismatched artifacts, folder/project wrong-kind or missing-target behavior, and one planner-strategy miss;
   - the honest interpretation is that C0.3 fixed approval reach, not capability quality: the next bottleneck is artifact content/target/tool selection, not source-trust or permission friction.
+  - C0.4 fixed the builder-quality layer exposed by C0.3: local note and markdown artifacts now get richer deterministic content; project creates produce a contained directory with README/plan scaffolds; normal note prompts that contain the word “project” no longer get misclassified as project directories;
+  - C0.4 also tightened C0 attribution: non-artifact gated tools, such as `skill.activate` for a local note, are scored as `planner_strategy`, not permission friction;
+  - final stamped C0.4 report `logs/evals/c0/maya_domain_capability_v1_c0_4_final_20260620_152619.json` measured `14/30` success, `4/30` partial, `2/30` fail, and `10/30` honest_stop on product commit `4330f04`;
+  - final C0.4 reason counts are `budget_exhausted=0`, `verification_failed=0`, `permission_friction=2`, `planner_strategy=1`, `tool_gap=3`, `unknown=24`;
+  - local artifact tasks improved to `6/9` success in the stamped run; the remaining local-artifact misses are one true folder-create permission pause/tool-choice variant and one checklist planner-strategy miss, not artifact-content failures;
+  - C0.4 still showed run-to-run wobble despite temperature `0`: adjacent committed-code runs ranged roughly `12/30` to `14/30`, with variance mostly in planner tool choice and answer rows. Treat the final stamped run as the current report artifact, not a deterministic ceiling.
 
 ## Deferred Or Reviewer-Gated
 
@@ -84,11 +90,11 @@ This is the current engineering status for the Maya master build path. It record
   - numbers should not be presented externally until reviewer scoring is validated.
 - C0 capability follow-up:
   - generated report is intentionally left under `logs/evals/c0/` and uncommitted;
-  - the C0.3 report `logs/evals/c0/maya_domain_capability_v1_c0_3_20260620_143237.json` supersedes the C0.2 content-validated headline;
+  - the C0.4 report `logs/evals/c0/maya_domain_capability_v1_c0_4_final_20260620_152619.json` supersedes the C0.3 and C0.2 content-validated headlines;
   - the content/state oracle supersedes the earlier C0.2 existence-only success headline;
-  - C0.3 progress reporting and reason attribution are in place;
-  - before C1-C6, inspect the remaining `verification_failed=5`, `tool_gap=3`, and `planner_strategy=1` cases rather than rebuilding the loop broadly;
-  - the permission-friction bottleneck is cleared; the next measured bottleneck is artifact content/target/tool selection, especially folder/project/local-note quality and multi-step artifact follow-through.
+  - C0.4 progress reporting and reason attribution are in place;
+  - before C1-C6, inspect the remaining `permission_friction=2`, `tool_gap=3`, and `planner_strategy=1` cases rather than rebuilding the loop broadly;
+  - the artifact-content bottleneck is cleared in the final stamped report; the next measured bottleneck is planner/tool selection for folder/checklist/multi-step flows and residual field-provenance reach on folder creates.
 
 ## Reporting Caveats
 
