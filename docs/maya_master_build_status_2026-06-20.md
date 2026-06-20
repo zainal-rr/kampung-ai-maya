@@ -13,7 +13,7 @@ This is the current engineering status for the Maya master build path. It record
 - Step 5 Meet: synthetic conversation-hold and presentation-sanitizer coverage added. Live Meet check is approved but must end with `/leave`, status verification, and closing any Meet/output/browser tabs opened for the test.
 - Step 6 memory integrity: native integrity smoke added over real memory paths. Provider-backed LongMemEval remains deferred unless a runnable LongMemEval dataset/runner config is supplied.
 - Step 7 honesty: honesty-under-attack smoke added. Scores are self-authored until reviewer scoring is validated.
-- C0.1 capability baseline: current reversible-loop baseline reran after artifact field-provenance wiring and permission-friction scoring. Outcome counts: `6/30` success, `5/30` partial, `9/30` fail, `10/30` honest_stop. OpenClaw/Claw-SWE-Bench is not locally configured and is recorded as deferred.
+- C0.2 capability baseline: current reversible-loop baseline reran after the secure agentic artifact fast path. Outcome counts: `13/30` success, `5/30` partial, `2/30` fail, `10/30` honest_stop. OpenClaw/Claw-SWE-Bench is not locally configured and is recorded as deferred.
 
 ## Implemented Evidence
 
@@ -44,14 +44,16 @@ This is the current engineering status for the Maya master build path. It record
   - every attack case remained secure across 3 runs;
   - most attack cases were secure because the laundered effect was not proposed upstream, with the kernel/sink retained as an observable backstop rather than the primary blocker in those runs;
   - the 10 secure/not-useful outcomes were concentrated in strict answer-fragment utility checks, not unsafe effects.
-- C0/C0.1 capability baseline proves:
+- C0/C0.1/C0.2 capability baseline proves:
   - the current reversible loop is measurable before building C1-C6;
   - answer-type scoring uses a semantic evaluator path rather than literal fragment matching;
   - C0.1 made permission friction explicit instead of hiding it in `unknown`: reason counts were `budget_exhausted=5`, `tool_gap=5`, `permission_friction=3`, `planner_strategy=1`, `unknown=16`;
-  - the `unknown` bucket is now successes and correct honest-stops only, not unattributed partial/fail cases;
-  - artifact creation remains the weakest measured area, but the failure shape is now sharper: local file creation can pass the kernel and then fail at tool/remap execution, while docx/xlsx creation mostly times out;
+  - C0.2 fixed the measured local artifact executor wall without loosening the permission kernel: reason counts became `budget_exhausted=0`, `tool_gap=3`, `permission_friction=3`, `planner_strategy=1`, `unknown=23`;
+  - the `unknown` bucket is successes and correct honest-stops only, not unattributed partial/fail cases;
+  - local artifact creation recovered from `0/9` success in C0.1 to `6/9` success in C0.2; every recovered artifact was created through `agentic_artifact_fast_path` after a kernel `allow`;
+  - docx/xlsx budget timeouts disappeared in C0.2; the remaining local-artifact misses are planner/tool-selection or permission-friction cases, not document executor timeouts;
   - browser-read tasks stopped honestly because the local browser bridge was unavailable in the run;
-  - residual permission friction is real but bounded: `3/30` cases paused at the permission kernel, including local create paths where no trusted path provenance was available.
+  - residual permission friction is real but bounded: `3/30` cases paused at the permission kernel, now outside the recovered docx/xlsx/file-create fast path.
 
 ## Deferred Or Reviewer-Gated
 
@@ -73,9 +75,9 @@ This is the current engineering status for the Maya master build path. It record
   - numbers should not be presented externally until reviewer scoring is validated.
 - C0 capability follow-up:
   - generated report is intentionally left under `logs/evals/c0/` and uncommitted;
-  - C0.1 progress reporting and reason attribution are in place;
-  - before C1-C6, inspect the document/file executor remap gap and docx/xlsx timeout path surfaced by C0.1;
-  - the clearest measured capability bottleneck is reversible local artifact execution/tooling, not boundary security.
+  - C0.2 progress reporting and reason attribution are in place;
+  - before C1-C6, inspect the remaining `tool_gap=3`, `permission_friction=3`, and `planner_strategy=1` cases rather than rebuilding the loop broadly;
+  - the previous document/file executor bottleneck is substantially cleared; the next measured bottleneck is planner/tool selection for folder/screen-style tasks and residual permission friction in multi-step flows.
 
 ## Reporting Caveats
 
@@ -95,5 +97,6 @@ This is the current engineering status for the Maya master build path. It record
 - `./venv/bin/python tests/smokes/honesty_under_attack_smoke.py`
 - `./venv/bin/python tests/smokes/c0_capability_baseline_smoke.py`
 - `./venv/bin/python tests/smokes/reversibility_gate_wiring_smoke.py`
+- `./venv/bin/python tests/smokes/agentic_artifact_fast_path_smoke.py`
 - `./venv/bin/python scripts/run_c0_capability_baseline.py --planner openai-if-available --evaluator openai-if-available --out logs/evals/c0/<report>.json`
 - `./venv/bin/python local_ci.py`

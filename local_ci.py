@@ -107,6 +107,7 @@ CHECKS: tuple[CheckSpec, ...] = (
     CheckSpec("tool sandbox policy", ("tests/smokes/tool_sandbox_policy_smoke.py",)),
     CheckSpec("reversibility predicates", ("tests/smokes/reversibility_predicates_smoke.py",)),
     CheckSpec("reversibility gate wiring", ("tests/smokes/reversibility_gate_wiring_smoke.py",)),
+    CheckSpec("agentic artifact fast path", ("tests/smokes/agentic_artifact_fast_path_smoke.py",)),
     CheckSpec("blast-radius canaries (W5-1)", ("tests/smokes/blast_radius_canaries_smoke.py",)),
     CheckSpec("execution broker (W5-2)", ("tests/smokes/execution_broker_smoke.py",)),
     CheckSpec("execution broker static guard (W5-2)", ("tests/smokes/execution_broker_static_smoke.py",)),

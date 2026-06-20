@@ -11,11 +11,14 @@ import asyncio
 from maya_browser.browser_agent_state import task_type_for
 from maya_memory.canonical_memory import upsert_canonical_memory
 from maya_core.domain_knowledge import domain_knowledge_context
+from maya_documents.artifact_naming import named_artifact_path
+from maya_documents.office_files import create_docx, create_xlsx, spreadsheet_rows
 from maya_harness.harness_state import HarnessState
 from maya_harness.harness_artifact_store import record_structured_artifact
 from maya_harness.harness_checkpoint_migration import snapshot_or_migrate
 from maya_harness.harness_execution import execute_with_ledger
 from maya_harness.harness_llm_planner import LlmCall, choose_next_action, plan_with_llm, synthesize_final_answer, verify_goal
+from maya_harness.harness_models import local_artifact
 from maya_harness.harness_observation_store import record_observation
 from maya_harness.metacognition import (
     ReflectionDecision,
@@ -409,6 +412,15 @@ class HarnessGraphRunner:
             await record_event(self.db_path, run_id, "metacognition", f"{reflection.failure_code}:{reflection.reflection_move}")
             await record_event(self.db_path, run_id, "execute", f"agentic {tool_name}")
             return state
+        if tool_name in {"file.create", "docx.create", "xlsx.create"}:
+            return await _execute_agentic_artifact_fast_path(
+                self.db_path,
+                state,
+                tool_name,
+                args,
+                field_provenance,
+                shape,
+            )
         workflow = _AGENTIC_TOOL_WORKFLOWS.get(tool_name)
         if workflow:
             # Remap this pass to the matching workflow executor and fall through.
@@ -567,7 +579,178 @@ def _agentic_tool_instruction(tool_name: str, args: dict) -> str:
         topic = str(args.get("topic") or args.get("title") or args.get("content") or "").strip()
         if topic:
             return topic if topic.lower().startswith(("write ", "make ", "create ")) else f"write a Word document about {topic}"
+    if tool_name == "xlsx.create":
+        topic = str(args.get("topic") or args.get("title") or args.get("content") or "").strip()
+        if topic:
+            return topic if topic.lower().startswith(("make ", "create ")) else f"create a spreadsheet about {topic}"
     return " ".join(str(v) for v in args.values() if isinstance(v, str)).strip()
+
+
+async def _execute_agentic_artifact_fast_path(
+    db_path: str,
+    state: HarnessState,
+    tool_name: str,
+    args: Mapping[str, Any],
+    field_provenance: Mapping[str, str],
+    shape: str,
+) -> HarnessState:
+    run_id = state["run_id"]
+    path = _allowed_fast_artifact_path(args, field_provenance)
+    if path is None:
+        message = f"I could not create the local artifact because {tool_name} did not have a trusted Maya workspace path."
+        reflection = append_reflection(
+            state,
+            ReflectionDecision("bad_args", 0.9, "high", "retry_same_step", shape, message),
+        )
+        state["final_response"] = message
+        state["current_step"] = int(state.get("current_step") or 0) + 1
+        state["last_successful_step"] = "artifact_fast_path_blocked"
+        await record_event(db_path, run_id, "metacognition", f"{reflection.failure_code}:{reflection.reflection_move}")
+        await record_event(db_path, run_id, "agentic_artifact_fast_path", f"{tool_name}: blocked: untrusted or missing path")
+        await record_event(db_path, run_id, "execute", "artifact_fast_path_blocked")
+        return state
+
+    try:
+        if tool_name == "file.create":
+            await asyncio.to_thread(_write_fast_local_file, path, _artifact_body(args, state))
+            kind = _kind_for_fast_artifact(path, "note")
+            summary = "local file created by agentic artifact fast path"
+        elif tool_name == "docx.create":
+            topic = _artifact_topic(args, state)
+            await asyncio.to_thread(create_docx, path, _artifact_title(topic), _docx_sections(topic, args, state))
+            kind = "document"
+            summary = f"Word document draft: {_artifact_title(topic)}"
+        elif tool_name == "xlsx.create":
+            topic = _artifact_topic(args, state)
+            headers, rows = _xlsx_fast_rows(topic, args)
+            await asyncio.to_thread(create_xlsx, path, _artifact_title(topic), headers, rows)
+            kind = "spreadsheet"
+            summary = f"Spreadsheet draft: {_artifact_title(topic)}"
+        else:  # defensive; caller only uses the three tools above.
+            raise ValueError(f"unsupported fast artifact tool: {tool_name}")
+    except Exception as exc:  # noqa: BLE001 - report honestly into the agentic trace.
+        message = f"I could not create the local artifact: {type(exc).__name__}: {exc}"
+        reflection = append_reflection(
+            state,
+            ReflectionDecision("tool_error", 0.9, "high", "repair_output", shape, message),
+        )
+        state["final_response"] = message
+        state["current_step"] = int(state.get("current_step") or 0) + 1
+        state["last_successful_step"] = "artifact_fast_path_error"
+        await record_event(db_path, run_id, "metacognition", f"{reflection.failure_code}:{reflection.reflection_move}")
+        await record_event(db_path, run_id, "agentic_artifact_fast_path", f"{tool_name}: error: {type(exc).__name__}")
+        await record_event(db_path, run_id, "execute", "artifact_fast_path_error")
+        return state
+
+    artifact = local_artifact(kind, str(path), summary, "agentic_artifact_fast_path")
+    await record_structured_artifact(db_path, run_id, artifact)
+    state["final_response"] = f"Done. I created the local artifact at {path}.\n[file:{path}]"
+    state["artifacts"] = [*state.get("artifacts", []), str(path)]
+    state["current_step"] = int(state.get("current_step") or 0) + 1
+    state["last_successful_step"] = tool_name
+    state["next_suggested_step"] = "verify artifact"
+    state["keep_open"] = False
+    state["goal_satisfied"] = True
+    reflection = append_reflection(
+        state,
+        ReflectionDecision("progressed", 0.8, "medium", "continue_same_plan", shape, f"{tool_name} created {path}."),
+    )
+    await record_event(db_path, run_id, "metacognition", f"{reflection.failure_code}:{reflection.reflection_move}")
+    await record_event(db_path, run_id, "agentic_artifact_fast_path", f"{tool_name}: {path}")
+    await record_event(db_path, run_id, "execute", f"agentic {tool_name}")
+    return state
+
+
+def _allowed_fast_artifact_path(args: Mapping[str, Any], field_provenance: Mapping[str, str]) -> Path | None:
+    raw = str(args.get("path") or args.get("output_path") or args.get("destination_path") or "").strip()
+    if not raw:
+        return None
+    if not any(field_provenance.get(field) == "maya_derived" for field in ("path", "output_path", "destination_path")):
+        return None
+    decision = resolve_safe_path(raw, "write")
+    if not decision.allowed or not decision.resolved:
+        return None
+    if not is_workspace_path(decision.resolved):
+        return None
+    if decision.resolved.exists():
+        return None
+    return decision.resolved
+
+
+def _write_fast_local_file(path: Path, content: str) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(content, encoding="utf-8")
+
+
+def _artifact_topic(args: Mapping[str, Any], state: Mapping[str, Any]) -> str:
+    for key in ("topic", "title", "name", "filename", "file_name"):
+        value = str(args.get(key) or "").strip()
+        if value:
+            return value
+    for key in ("content", "body", "text"):
+        value = str(args.get(key) or "").strip()
+        if value:
+            return value[:180]
+    return str(state.get("goal") or state.get("last_user_instruction") or state.get("user_text") or "Maya local artifact").strip()
+
+
+def _artifact_title(topic: str) -> str:
+    title = " ".join(str(topic or "Maya Local Artifact").split()).strip()
+    if len(title) > 90:
+        title = title[:87].rstrip() + "..."
+    return title or "Maya Local Artifact"
+
+
+def _artifact_body(args: Mapping[str, Any], state: Mapping[str, Any]) -> str:
+    for key in ("content", "body", "text"):
+        value = str(args.get(key) or "").strip()
+        if value:
+            return value
+    topic = _artifact_topic(args, state)
+    return (
+        f"# {_artifact_title(topic)}\n\n"
+        "- Draft created by Maya.\n"
+        "- Review and edit this local artifact as needed.\n"
+        f"- Source task: {str(state.get('goal') or state.get('user_text') or topic)[:300]}\n"
+    )
+
+
+def _docx_sections(topic: str, args: Mapping[str, Any], state: Mapping[str, Any]) -> list[tuple[str, list[str]]]:
+    body = _artifact_body(args, state)
+    lines = [line.strip(" -*\t") for line in body.splitlines() if line.strip()]
+    if not lines:
+        lines = [f"Draft notes for {_artifact_title(topic)}.", "Review and expand as needed."]
+    return [
+        ("Summary", lines[:6]),
+        ("Next Steps", ["Review the draft.", "Add any missing specifics.", "Keep this as a local reversible artifact."]),
+    ]
+
+
+def _xlsx_fast_rows(topic: str, args: Mapping[str, Any]) -> tuple[list[str], list[list[str]]]:
+    headers = args.get("headers")
+    rows = args.get("rows")
+    if isinstance(headers, list) and all(isinstance(item, str) for item in headers):
+        safe_headers = [str(item)[:80] for item in headers[:12]]
+        if isinstance(rows, list):
+            safe_rows = [
+                [str(cell)[:240] for cell in row[: len(safe_headers)]]
+                for row in rows[:50]
+                if isinstance(row, list)
+            ]
+            if safe_headers and safe_rows:
+                return safe_headers, safe_rows
+    return spreadsheet_rows(topic)
+
+
+def _kind_for_fast_artifact(path: Path, fallback: str) -> str:
+    suffix = path.suffix.lower()
+    if suffix == ".docx":
+        return "document"
+    if suffix == ".xlsx":
+        return "spreadsheet"
+    if suffix in {".md", ".txt"}:
+        return "note"
+    return fallback
 
 
 def _trusted_agentic_artifact_args(
@@ -583,6 +766,11 @@ def _trusted_agentic_artifact_args(
     """
     normalized = dict(args)
     field_provenance: dict[str, str] = {}
+    if tool_name in {"file.create", "docx.create", "xlsx.create"} and not _has_path_control_value(normalized):
+        derived = _derive_agentic_artifact_path(state, tool_name, normalized)
+        if derived:
+            normalized["path"] = derived
+            field_provenance["path"] = "maya_derived"
     if tool_name == "file.create":
         for field in ("path", "output_path", "destination_path"):
             if field not in normalized:
@@ -602,6 +790,30 @@ def _trusted_agentic_artifact_args(
             if _owner_instruction_contains_value(state, value) and _safe_sheet_control_name(value):
                 field_provenance[field] = "owner_text"
     return normalized, field_provenance
+
+
+def _has_path_control_value(args: Mapping[str, Any]) -> bool:
+    return any(str(args.get(field) or "").strip() for field in ("path", "output_path", "destination_path"))
+
+
+def _derive_agentic_artifact_path(state: Mapping[str, Any], tool_name: str, args: Mapping[str, Any]) -> str:
+    if any(_truthy(args.get(field)) for field in ("recipient", "to", "send_to", "share_with", "upload_to", "delivery_target", "disclose_to")):
+        return ""
+    topic = _artifact_topic(args, state)
+    folder, suffix = {
+        "file.create": ("notes", "md"),
+        "docx.create": ("documents", "docx"),
+        "xlsx.create": ("spreadsheets", "xlsx"),
+    }.get(tool_name, ("artifacts", "txt"))
+    candidate = named_artifact_path(workspace_dir(folder), topic, suffix)
+    decision = resolve_safe_path(candidate, "write")
+    if not decision.allowed or not decision.resolved:
+        return ""
+    if not is_workspace_path(decision.resolved):
+        return ""
+    if decision.resolved.exists():
+        return ""
+    return str(decision.resolved)
 
 
 def _trusted_agentic_file_path(state: Mapping[str, Any], raw: Any) -> str:
@@ -656,6 +868,15 @@ def _safe_local_control_name(raw: Any) -> bool:
 def _safe_sheet_control_name(raw: Any) -> bool:
     text = str(raw or "").strip()
     return _safe_local_control_name(text) and not any(ch in text for ch in "[]:*?/\\")
+
+
+def _truthy(value: Any) -> bool:
+    if isinstance(value, bool):
+        return value
+    if value is None:
+        return False
+    text = str(value).strip().lower()
+    return bool(text) and text not in {"0", "false", "no", "none", "null"}
 
 
 def _forced_agentic_action(state: HarnessState) -> dict | None:
