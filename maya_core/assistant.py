@@ -126,6 +126,8 @@ class KampungAssistant:
                         await record_route(self.db_path, "command", "command", f"/{direct_command.name}", False)
                     await save_history_message(self.db_path, user_id, "user", clean_text, channel)
                     await save_history_message(self.db_path, user_id, "assistant", reply, channel)
+                    if direct_command.name == "error":
+                        await save_history_message(self.db_path, user_id, "user", "new topic", channel)
                     return reply
             except Exception:
                 logging.exception("Direct slash command failed on channel %s", channel)

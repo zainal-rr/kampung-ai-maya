@@ -9,19 +9,23 @@ del _w4_Path, _w4_root, _w4_sys
 
 
 import asyncio
+import json
 import os
 import tempfile
 from pathlib import Path
 from unittest.mock import patch
 
+from maya_core.assistant import KampungAssistant
 from maya_core.lesson_store import init_lesson_db
+from maya_core.reliability_incident_store import load_incidents
 from maya_documents.artifact_review_store import record_artifact_review
 from maya_core.routine_store import init_routine_db
 from maya_core.skill_store import init_skill_db
 from maya_core.route_tracker import record_route
 from maya_core.session_memory_store import init_session_memory_db, save_session_summary
 from maya_core.self_heal_store import init_self_heal_db
-from maya_core.storage import init_db, upsert_preference
+from maya_core.storage import get_history, init_db, save_history_message, upsert_preference
+from maya_core.topic_context import recent_topic_history
 from maya_harness.live_reliability_soak import load_soak
 from maya_telegram.telegram_commands import bot_commands, command_to_text, parse_command, voice_enabled
 from maya_telegram.telegram_channel import TelegramChannel
@@ -40,7 +44,7 @@ async def main() -> None:
         _require(await command_to_text(db_path, parsed) == "open imac", "openImac did not map")
         visible = [item.command for item in bot_commands()]
         _require(
-            visible == ["help", "status", "imac", "see", "screen", "project", "memory", "join", "leave", "meetstatus", "reliability", "complex"],
+            visible == ["help", "status", "imac", "see", "screen", "project", "memory", "join", "leave", "meetstatus", "reliability", "error", "complex"],
             "visible commands not reduced",
         )
         _require(await command_to_text(db_path, parse_command("/imac off")) == "close imac", "imac off did not map")
@@ -155,6 +159,27 @@ async def main() -> None:
         _require("user_corrections" in correction_reply, "/reliability note default category should be user correction")
         rows = load_soak(Path(os.environ["MAYA_RELIABILITY_SOAK_PATH"]))
         _require(rows[0].user_corrections == 1, "/reliability note default did not increment user_corrections")
+        os.environ["MAYA_ERROR_SNAPSHOT_PATH"] = str(Path(tmp) / "telegram_error_snapshots.json")
+        os.environ["MAYA_OPERATIONAL_INCIDENT_PATH"] = str(Path(tmp) / "operational_incidents.json")
+        error_reply = await command_to_text(
+            db_path,
+            parse_command("/error false_done Maya said file was ready but attachment was stale"),
+        )
+        _require("Failure recorded" in error_reply and "Fresh topic started" in error_reply, "/error did not record and reset")
+        _require(TelegramChannel._is_direct_command_reply(error_reply), "/error should be direct")
+        rows = load_soak(Path(os.environ["MAYA_RELIABILITY_SOAK_PATH"]))
+        _require(rows[0].false_saved_claims == 2, "/error false_done did not increment false_saved_claims")
+        snapshots = json.loads(Path(os.environ["MAYA_ERROR_SNAPSHOT_PATH"]).read_text("utf-8"))["snapshots"]
+        _require("attachment was stale" in snapshots[-1]["note"], "/error snapshot missed note")
+        incidents = load_incidents(Path(os.environ["MAYA_OPERATIONAL_INCIDENT_PATH"]))
+        _require(incidents and incidents[-1].reason_code == "artifact_missing_after_done", "/error did not record incident")
+        await save_history_message(db_path, 1, "user", "old broken thread", "telegram")
+        assistant = KampungAssistant(db_path)
+        assistant_reply = await assistant.handle_text("/error route Maya routed a simple task wrong", "telegram")
+        _require("Fresh topic started" in assistant_reply, "/error assistant path did not confirm fresh topic")
+        history = await get_history(db_path, 1, limit=6)
+        _require(history[-1]["role"] == "user" and history[-1]["content"] == "new topic", "/error did not insert topic boundary")
+        _require(recent_topic_history(history) == [], "/error topic boundary did not clear follow-up context")
         selfheal = await command_to_text(db_path, parse_command("/selfheal"))
         _require("Self heal check:" in selfheal, "selfheal did not run")
         selfheal_dryrun = await command_to_text(db_path, parse_command("/selfheal dryrun"))
@@ -180,6 +205,7 @@ async def main() -> None:
             "leave",
             "meetstatus",
             "reliability",
+            "error",
             "complex",
             "openimac",
             "closeimac",

@@ -64,24 +64,30 @@ def _record_reliability_note(args: str) -> str:
             "Reliability note: use /reliability note [category] <what happened>.\n"
             "Categories: correction, missed_reply, route, voice, memory, delivery, browser, cost, false_done."
         )
-    path = _reliability_soak_path()
-    today = date.today().isoformat()
-    existing = next((row for row in load_soak(path) if row.day == today), SoakDay(day=today))
-    field_name = RELIABILITY_NOTE_FIELDS[category]
-    updated = replace(
-        existing,
-        **{
-            field_name: getattr(existing, field_name) + 1,
-            "notes": _append_reliability_note(existing.notes, category, note),
-        },
-    )
-    record_soak_day(updated, path=path)
+    field_name = record_reliability_note(category, note)
     return (
         "Reliability:\n"
         "Note logged for today.\n"
         f"Category: {category} ({field_name})\n"
         f"Note: {note}"
     )
+
+
+def record_reliability_note(category: str, note: str) -> str:
+    normalized = category.lower().strip().replace("-", "_")
+    field_name = RELIABILITY_NOTE_FIELDS.get(normalized, "user_corrections")
+    path = _reliability_soak_path()
+    today = date.today().isoformat()
+    existing = next((row for row in load_soak(path) if row.day == today), SoakDay(day=today))
+    updated = replace(
+        existing,
+        **{
+            field_name: getattr(existing, field_name) + 1,
+            "notes": _append_reliability_note(existing.notes, normalized or "correction", note),
+        },
+    )
+    record_soak_day(updated, path=path)
+    return field_name
 
 
 def _reliability_note_parts(args: str) -> tuple[str, str]:

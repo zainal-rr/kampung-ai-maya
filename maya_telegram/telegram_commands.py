@@ -21,6 +21,7 @@ from maya_core.self_healing import self_heal_text
 from maya_core.self_heal_memory import handle_memory_self_heal_command
 from maya_telegram.telegram_status import command_help, status_text
 from maya_telegram.telegram_delivery_log import latest_telegram_delivery_text
+from maya_telegram.telegram_error_commands import error_text
 from maya_telegram.telegram_reliability_commands import reliability_text
 from maya_telegram.telegram_turn_log import latest_telegram_turn_text
 from maya_telegram.telegram_voice_state import voice_enabled, voice_text
@@ -61,6 +62,7 @@ def bot_commands() -> list[BotCommand]:
         BotCommand("leave", "Remove Maya from the current Meet"),
         BotCommand("meetstatus", "Show Maya Meet status"),
         BotCommand("reliability", "Show reliability scorecard and incidents"),
+        BotCommand("error", "Record a failure and start a fresh topic"),
         BotCommand("complex", "Route this Telegram request to Maya's complex lane"),
     ]
 
@@ -138,6 +140,8 @@ async def command_to_text(db_path: str, parsed: ParsedCommand) -> str:
         return await _meet_status_text(db_path, parsed.args)
     if name == "reliability":
         return reliability_text(parsed.args)
+    if name == "error":
+        return await error_text(db_path, parsed.args)
     if name == "artisan":
         return await _artisan_text(db_path, parsed.args)
     if name == "newtopic":
@@ -207,8 +211,7 @@ def _imac_text(args: str) -> str:
     mode = args.lower().strip()
     if mode in {"on", "open", "start", ""}:
         return "open imac"
-    if mode in {"off", "close", "stop"}:
-        return "close imac"
+    if mode in {"off", "close", "stop"}: return "close imac"
     return "Use /imac on or /imac off."
 
 
@@ -265,9 +268,7 @@ async def _leave_text(db_path: str, args: str) -> str:
         provenance=make_provenance("owner_text"),
         trigger="telegram",
     )
-    if result.status in {"stopped", "ended"}:
-        return "Meet leave: " + result.telegram_text()
-    if result.status == "stopping":
+    if result.status in {"stopped", "ended", "stopping"}:
         return "Meet leave: " + result.telegram_text()
     if result.reason_code == "meet_leave_no_session":
         return "Meet leave: no active Meet session recorded."

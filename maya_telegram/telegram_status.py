@@ -70,7 +70,8 @@ def command_help() -> str:
         "i) /leave [meet-url]: remove Maya from the current Meet\n"
         "j) /meetstatus [meet-url]: show Maya Meet status from source-of-truth\n"
         "k) /reliability: show the reliability scorecard and incident ledger\n"
-        "l) /complex question: use Maya's complex reasoning lane\n"
+        "l) /error [category] what failed: record evidence and start a fresh topic\n"
+        "m) /complex question: use Maya's complex reasoning lane\n"
         "2) Hidden slash commands that still work\n"
         "a) /openimac, /closeimac: aliases for /imac on and /imac off\n"
         "b) /remember note: save an owner-authored preference or lesson\n"
@@ -85,7 +86,7 @@ def command_help() -> str:
         "k) /context, /weekly [status|run], /newtopic, /selfheal [dryrun|force]\n"
         "l) /artisan [transcript|app|maker|apply]\n"
         "m) /reliability note [category] what happened: log today's reliability failure note\n"
-        "3) Reliability note categories\n"
+        "3) Reliability and error categories\n"
         "a) correction, missed_reply, route, voice, memory, delivery, browser, cost, false_done\n"
         "You can still talk normally: open project Kampung AI, show my tasks, remember my preference."
     )
