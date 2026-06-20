@@ -208,6 +208,8 @@ def _trace_grounded_reason(task: CapabilityTask, payload: dict[str, Any], outcom
     if permission_pause or str(payload["state"].get("graph_status") or "") == "waiting_approval":
         if task.oracle.oracle_type == "semantic_answer" and paused_tool == "browser.inspect" and "URL navigation is not free-routed" in paused_reason:
             return "planner_strategy", "planner"
+        if task.oracle.expected_artifact and paused_tool and paused_tool not in {"file.create", "docx.create", "xlsx.create"}:
+            return "planner_strategy", "planner"
         return "permission_friction", "permission_kernel"
     return ("memory_retrieval", "memory") if task.category == "memory" and outcome != "success" else ("unknown", "")
 

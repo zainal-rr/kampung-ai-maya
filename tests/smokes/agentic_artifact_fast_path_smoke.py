@@ -61,7 +61,8 @@ async def _test_allowed_file_create(workspace: Path) -> None:
     )
     created = Path(out["artifacts"][-1])
     _require(created.exists(), f"file not created: {created}")
-    _require(created.read_text(encoding="utf-8") == "fast path note", "file content mismatch")
+    content = created.read_text(encoding="utf-8")
+    _require("fast path note" in content and "local workspace artifact" in content, "file content should preserve prompt material inside richer draft")
     events = await latest_events(db_path, out["run_id"], limit=20)
     _require(any(event["event"] == "permission_decision" and ": allow:" in event["details"] for event in events), "kernel allow not recorded")
     _require(any(event["event"] == "agentic_artifact_fast_path" for event in events), "fast-path event missing")
@@ -108,6 +109,7 @@ async def _test_allowed_folder_and_project_create(workspace: Path) -> None:
     folder_path = Path(folder["artifacts"][-1])
     _require(folder_path.exists() and folder_path.is_dir(), f"folder not created: {folder_path}")
     _require(folder_path.parent.resolve(strict=False) == (workspace / "notes").resolve(strict=False), f"folder should stay in notes workspace: {folder_path}")
+    _require((folder_path / "README.md").exists(), "folder should include README content")
     folder_events = await latest_events(folder_db, folder["run_id"], limit=20)
     _require(any(event["event"] == "permission_decision" and "file.create: allow:" in event["details"] for event in folder_events), "folder create allow missing")
     _require(any(event["event"] == "agentic_artifact_fast_path" for event in folder_events), "folder fast path missing")
@@ -121,6 +123,18 @@ async def _test_allowed_folder_and_project_create(workspace: Path) -> None:
     project_path = Path(project["artifacts"][-1])
     _require(project_path.exists() and project_path.is_dir(), f"project folder not created: {project_path}")
     _require(project_path.parent.resolve(strict=False) == (workspace / "Projects").resolve(strict=False), f"project should stay in Projects workspace: {project_path}")
+    _require((project_path / "README.md").exists(), "project should include README")
+    _require((project_path / "notes" / "plan.md").exists(), "project should include plan scaffold")
+
+    docx_project, _docx_project_db = await _execute(
+        workspace,
+        "docx_project",
+        "Create a project called C0 Capability Scratch.",
+        {"tool": "docx.create", "args": {"topic": "C0 Capability Scratch project document"}},
+    )
+    docx_project_path = Path(docx_project["artifacts"][-1])
+    _require(docx_project_path.exists() and docx_project_path.is_dir(), f"project intent should normalize docx.create to directory: {docx_project_path}")
+    _require(docx_project_path.parent.resolve(strict=False) == (workspace / "Projects").resolve(strict=False), f"normalized project should stay in Projects workspace: {docx_project_path}")
 
 
 async def _test_owner_named_note_path_normalizes_to_markdown(workspace: Path) -> None:
@@ -133,6 +147,17 @@ async def _test_owner_named_note_path_normalizes_to_markdown(workspace: Path) ->
     created = Path(out["artifacts"][-1])
     _require(created.exists() and created.suffix == ".md", f"local note should normalize to markdown: {created}")
     _require(created.parent.resolve(strict=False) == (workspace / "notes").resolve(strict=False), f"local note should stay in notes workspace: {created}")
+    _require("C0 capability baseline" in created.read_text(encoding="utf-8"), "local note should include relevant content")
+
+    project_word_note, _project_word_db = await _execute(
+        workspace,
+        "project_word_note",
+        "Create a Markdown note about Maya's C0 capability project baseline with three short sections.",
+        {"tool": "file.create", "args": {"path": "maya_c0_capability_baseline.md", "kind": "project"}},
+    )
+    note_path = Path(project_word_note["artifacts"][-1])
+    _require(note_path.exists() and note_path.suffix == ".md", f"project word inside note prompt should not create directory: {note_path}")
+    _require(note_path.is_file(), "normal markdown note should stay a file even if planner forged kind=project")
 
 
 async def _test_forged_and_unsafe_paths_do_not_fast_path(workspace: Path) -> None:

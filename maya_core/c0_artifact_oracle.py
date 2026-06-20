@@ -63,12 +63,32 @@ def _directory_artifact_status(prompt: str, paths: list[Path]) -> str:
 
 
 def _directory_artifact_matches(prompt: str, path: Path) -> bool:
+    expected = _expected_directory_name(prompt)
+    if expected:
+        expected_key = _directory_key(expected)
+        haystack = _directory_key(f"{path.name} {path}")
+        return bool(expected_key and expected_key in haystack)
     tokens = _artifact_prompt_tokens(prompt)
     if not tokens:
         return True
     haystack = f"{path.name} {path}".lower().replace("-", "").replace("_", "")
     hits = sum(1 for token in tokens if token in haystack)
     return hits >= min(len(tokens), 2)
+
+
+def _expected_directory_name(prompt: str) -> str:
+    lowered = str(prompt or "").lower()
+    for pattern in (
+        r"\b(?:folder|directory|project)\s+(?:called|named|for)\s+([a-z0-9][a-z0-9 _-]{1,80})",
+    ):
+        match = re.search(pattern, lowered)
+        if match:
+            return match.group(1).strip()
+    return ""
+
+
+def _directory_key(value: str) -> str:
+    return "".join(re.findall(r"[a-z0-9]+", str(value or "").lower()))
 
 
 def _expected_artifact_suffix(prompt: str) -> str:

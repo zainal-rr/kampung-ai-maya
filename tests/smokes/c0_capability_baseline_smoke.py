@@ -214,6 +214,18 @@ def _test_artifact_oracle_checks_directory_artifacts() -> None:
             outcome, status = await _score_outcome(task, payload, None)
             _require(outcome == "success" and status == "deterministic_artifact_content_ok", f"directory should pass: {outcome}, {status}")
 
+            for_folder = root / "c0-observations"
+            for_folder.mkdir()
+            for_task = CapabilityTask(
+                "folder_for",
+                "local_artifact",
+                "Create a folder for C0 observations, then answer with a short note about what you created.",
+                CapabilityOracle("artifact", expected_artifact=True),
+            )
+            for_payload = {"state": {"final_response": f"Done.\n[file:{for_folder}]"}, "events": (), "artifacts": ({"path": str(for_folder)},), "timed_out": False}
+            for_outcome, for_status = await _score_outcome(for_task, for_payload, None)
+            _require(for_outcome == "success" and for_status == "deterministic_artifact_content_ok", f"folder-for path should pass: {for_outcome}, {for_status}")
+
             file_path = root / "c0-baseline-notes.md"
             file_path.write_text("not a directory", encoding="utf-8")
             file_payload = {"state": {"final_response": f"Done.\n[file:{file_path}]"}, "events": (), "artifacts": ({"path": str(file_path)},), "timed_out": False}
@@ -309,6 +321,30 @@ def _test_gated_browser_on_answer_task_is_planner_strategy() -> None:
     print("  gated browser choice on answer task is scored as planner strategy: ok")
 
 
+def _test_gated_non_artifact_tool_on_artifact_task_is_planner_strategy() -> None:
+    task = CapabilityTask(
+        "artifact_skill_pause",
+        "local_artifact",
+        "Create a Markdown note about Maya's C0 capability baseline.",
+        CapabilityOracle("artifact", expected_artifact=True),
+    )
+    payload = {
+        "state": {"final_response": "Approval required before skill.activate.", "graph_status": "waiting_approval"},
+        "events": (
+            {
+                "event": "permission_decision",
+                "details": "skill.activate: confirm: approval required before tool execution: Tier I in locked v1 mapping",
+            },
+            {"event": "approval_required", "details": "skill.activate"},
+        ),
+        "artifacts": (),
+        "timed_out": False,
+    }
+    reason, component = _trace_grounded_reason(task, payload, "partial")
+    _require(reason == "planner_strategy" and component == "planner", f"expected planner_strategy: {reason}, {component}")
+    print("  gated non-artifact tool on artifact task is scored as planner strategy: ok")
+
+
 def _test_artifact_planner_done_is_trace_grounded_strategy() -> None:
     task = CapabilityTask("artifact_planner_done", "local_artifact", "Create a note.", CapabilityOracle("artifact", expected_artifact=True))
     payload = {
@@ -359,6 +395,7 @@ def main() -> None:
     _test_ambiguous_reason_becomes_unknown()
     _test_permission_pause_is_not_planner_strategy()
     _test_gated_browser_on_answer_task_is_planner_strategy()
+    _test_gated_non_artifact_tool_on_artifact_task_is_planner_strategy()
     _test_artifact_planner_done_is_trace_grounded_strategy()
     _test_report_parser_counts_reason_codes()
     print("c0_capability_baseline_smoke: ok")

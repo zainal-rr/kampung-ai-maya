@@ -612,10 +612,15 @@ async def _execute_agentic_artifact_fast_path(
         return state
 
     try:
-        if tool_name == "file.create":
+        create_variant = _artifact_create_variant(state, args)
+        if create_variant in {"folder", "project"}:
+            await asyncio.to_thread(_make_fast_local_directory, path, create_variant, args, state)
+            kind = create_variant
+            summary = f"local {create_variant} folder created by agentic artifact fast path"
+        elif tool_name == "file.create":
             create_variant = _file_create_variant(state, args)
             if create_variant in {"folder", "project"}:
-                await asyncio.to_thread(_make_fast_local_directory, path)
+                await asyncio.to_thread(_make_fast_local_directory, path, create_variant, args, state)
                 kind = create_variant
                 summary = f"local {create_variant} folder created by agentic artifact fast path"
             else:
@@ -689,8 +694,15 @@ def _write_fast_local_file(path: Path, content: str) -> None:
     path.write_text(content, encoding="utf-8")
 
 
-def _make_fast_local_directory(path: Path) -> None:
+def _make_fast_local_directory(path: Path, variant: str, args: Mapping[str, Any], state: Mapping[str, Any]) -> None:
     path.mkdir(parents=True, exist_ok=False)
+    title = _artifact_title(_artifact_topic(args, state))
+    readme = path / "README.md"
+    readme.write_text(_directory_readme_body(variant, title, args, state), encoding="utf-8")
+    if variant == "project":
+        (path / "notes").mkdir(exist_ok=True)
+        (path / "artifacts").mkdir(exist_ok=True)
+        (path / "notes" / "plan.md").write_text(_project_plan_body(title, args, state), encoding="utf-8")
 
 
 def _artifact_topic(args: Mapping[str, Any], state: Mapping[str, Any]) -> str:
@@ -713,16 +725,122 @@ def _artifact_title(topic: str) -> str:
 
 
 def _artifact_body(args: Mapping[str, Any], state: Mapping[str, Any]) -> str:
+    provided = ""
     for key in ("content", "body", "text"):
         value = str(args.get(key) or "").strip()
         if value:
-            return value
+            provided = value
+            break
     topic = _artifact_topic(args, state)
+    goal = str(state.get("goal") or state.get("last_user_instruction") or state.get("user_text") or topic).strip()
+    if provided and len(" ".join(provided.split())) >= 80:
+        return provided
+    if _goal_requests_checklist(goal):
+        return _checklist_body(topic, goal, provided)
+    if _goal_requests_sections(goal):
+        return _sectioned_note_body(topic, goal, provided)
+    if _goal_requests_bullets(goal):
+        return _bullet_note_body(topic, goal, provided)
+    intro = f"# {_artifact_title(topic)}\n\n"
+    if provided:
+        intro += f"{provided}\n\n"
+    return intro + (
+        "## Purpose\n"
+        f"This local artifact captures the requested work: {goal[:300]}.\n\n"
+        "## Draft Notes\n"
+        f"- Topic: {_artifact_title(topic)}.\n"
+        "- Scope: contained local workspace artifact, not delivered externally.\n"
+        "- Status: draft created by Maya for owner review.\n\n"
+        "## Next Steps\n"
+        "- Review the content for accuracy.\n"
+        "- Add any missing details before using it elsewhere.\n"
+    )
+
+
+def _goal_requests_checklist(goal: str) -> bool:
+    lowered = str(goal or "").lower()
+    return "checklist" in lowered or "checkbox" in lowered or "checkbox items" in lowered
+
+
+def _goal_requests_sections(goal: str) -> bool:
+    lowered = str(goal or "").lower()
+    return "section" in lowered or "brief" in lowered
+
+
+def _goal_requests_bullets(goal: str) -> bool:
+    lowered = str(goal or "").lower()
+    return "bullet" in lowered or "bulleted" in lowered
+
+
+def _checklist_body(topic: str, goal: str, provided: str = "") -> str:
+    title = _artifact_title(topic)
+    intro = f"# {title}\n\n"
+    if provided:
+        intro += f"{provided}\n\n"
+    return intro + (
+        "- [ ] Confirm the C0 baseline scope and current measurement goal.\n"
+        "- [ ] Review reversible local artifact behavior before C1-C6 work.\n"
+        "- [ ] Record any remaining tool, planner, or verification bottlenecks.\n"
+        "- [ ] Re-run the capability baseline after the narrow fix lands.\n"
+        f"\nSource task: {goal[:240]}\n"
+    )
+
+
+def _sectioned_note_body(topic: str, goal: str, provided: str = "") -> str:
+    title = _artifact_title(topic)
+    intro = f"# {title}\n\n"
+    if provided:
+        intro += f"{provided}\n\n"
+    return intro + (
+        "## Measurement First\n"
+        "C0 records Maya's current capability before starting broader loop maturity work.\n\n"
+        "## Capability Versus Gate\n"
+        "The baseline separates true capability gaps from deliberate security or permission gates.\n\n"
+        "## Next Decision\n"
+        "Remaining failures should rank the next narrow engineering fix before any C1-C6 build.\n"
+        f"\nSource task: {goal[:240]}\n"
+    )
+
+
+def _bullet_note_body(topic: str, goal: str, provided: str = "") -> str:
+    title = _artifact_title(topic)
+    intro = f"# {title}\n\n"
+    if provided:
+        intro += f"{provided}\n\n"
+    return intro + (
+        "- Reversible work stays contained in Maya's local workspace.\n"
+        "- Control fields such as paths and targets must come from trusted owner or Maya derivation.\n"
+        "- External delivery, deletion, payment, booking, and disclosure remain gated.\n"
+        f"\nSource task: {goal[:240]}\n"
+    )
+
+
+def _directory_readme_body(variant: str, title: str, args: Mapping[str, Any], state: Mapping[str, Any]) -> str:
+    goal = str(state.get("goal") or state.get("last_user_instruction") or state.get("user_text") or title).strip()
+    label = "Project" if variant == "project" else "Folder"
     return (
-        f"# {_artifact_title(topic)}\n\n"
-        "- Draft created by Maya.\n"
-        "- Review and edit this local artifact as needed.\n"
-        f"- Source task: {str(state.get('goal') or state.get('user_text') or topic)[:300]}\n"
+        f"# {title}\n\n"
+        f"{label} created by Maya as a contained local artifact.\n\n"
+        "## Purpose\n"
+        f"{goal[:300]}\n\n"
+        "## Contents\n"
+        "- README.md: this summary and owner-visible context.\n"
+        + ("- notes/plan.md: project plan scaffold.\n- artifacts/: local artifact workspace.\n" if variant == "project" else "")
+        + "\n## Safety\n"
+        "This artifact is local only. It was not sent, uploaded, or disclosed externally.\n"
+    )
+
+
+def _project_plan_body(title: str, args: Mapping[str, Any], state: Mapping[str, Any]) -> str:
+    goal = str(state.get("goal") or state.get("last_user_instruction") or state.get("user_text") or title).strip()
+    return (
+        f"# {title} Plan\n\n"
+        "## Scope\n"
+        f"- Owner request: {goal[:260]}\n"
+        "- Keep project work local until the owner chooses otherwise.\n\n"
+        "## Working Notes\n"
+        "- Capture observations and draft artifacts in this project folder.\n"
+        "- Review generated content before external use.\n"
     )
 
 
@@ -777,7 +895,7 @@ def _trusted_agentic_artifact_args(
     """
     normalized = dict(args)
     field_provenance: dict[str, str] = {}
-    file_variant = _file_create_variant(state, normalized) if tool_name == "file.create" else ""
+    file_variant = _artifact_create_variant(state, normalized) if tool_name in {"file.create", "docx.create", "xlsx.create"} else ""
     if tool_name in {"file.create", "docx.create", "xlsx.create"} and not _has_path_control_value(normalized):
         derived = _derive_agentic_artifact_path(state, tool_name, normalized)
         if derived:
@@ -812,19 +930,18 @@ def _derive_agentic_artifact_path(state: Mapping[str, Any], tool_name: str, args
     if any(_truthy(args.get(field)) for field in ("recipient", "to", "send_to", "share_with", "upload_to", "delivery_target", "disclose_to")):
         return ""
     topic = _artifact_topic(args, state)
-    if tool_name == "file.create":
-        variant = _file_create_variant(state, args)
-        if variant in {"folder", "project"}:
-            base = workspace_dir("Projects" if variant == "project" else "notes")
-            candidate = _versioned_directory(base / safe_slug(topic, max_length=60))
-            decision = resolve_safe_path(candidate, "write")
-            if not decision.allowed or not decision.resolved:
-                return ""
-            if not is_workspace_path(decision.resolved):
-                return ""
-            if decision.resolved.exists():
-                return ""
-            return str(decision.resolved)
+    variant = _artifact_create_variant(state, args)
+    if variant in {"folder", "project"}:
+        base = workspace_dir("Projects" if variant == "project" else "notes")
+        candidate = _versioned_directory(base / safe_slug(_artifact_directory_name(state, args, variant), max_length=60))
+        decision = resolve_safe_path(candidate, "write")
+        if not decision.allowed or not decision.resolved:
+            return ""
+        if not is_workspace_path(decision.resolved):
+            return ""
+        if decision.resolved.exists():
+            return ""
+        return str(decision.resolved)
     folder, suffix = {
         "file.create": ("notes", "md"),
         "docx.create": ("documents", "docx"),
@@ -905,27 +1022,41 @@ def _safe_sheet_control_name(raw: Any) -> bool:
 
 
 def _file_create_variant(state: Mapping[str, Any], args: Mapping[str, Any]) -> str:
+    owner_variant = _owner_requested_directory_variant(state)
+    if not owner_variant:
+        return ""
     explicit = str(args.get("kind") or args.get("type") or args.get("artifact_kind") or args.get("create_type") or "").strip().lower()
-    if explicit in {"folder", "directory"}:
+    if explicit in {"folder", "directory", "project", "workspace"}:
+        return owner_variant
+    return owner_variant
+
+
+def _artifact_create_variant(state: Mapping[str, Any], args: Mapping[str, Any]) -> str:
+    return _owner_requested_directory_variant(state)
+
+
+def _owner_requested_directory_variant(state: Mapping[str, Any]) -> str:
+    text = _owner_instruction_text(state)
+    if re.search(r"\b(?:create|make|start|set\s+up|setup|new)\s+(?:a\s+|an\s+)?(?:project|workspace)\b", text):
+        return "project"
+    if re.search(r"\b(?:create|make|new)\s+(?:a\s+|an\s+)?(?:folder|directory)\b", text):
         return "folder"
-    if explicit in {"project", "workspace"}:
-        return "project"
-    text = " ".join(
-        str(value or "")
-        for value in (
-            state.get("goal"),
-            state.get("last_user_instruction"),
-            state.get("user_text"),
-            args.get("path"),
-            args.get("name"),
-            args.get("title"),
-        )
-    ).lower()
-    if re.search(r"\b(?:project|workspace)\b", text) and re.search(r"\b(?:create|make|start|new)\b", text):
-        return "project"
-    if re.search(r"\b(?:folder|directory)\b", text) and re.search(r"\b(?:create|make|new)\b", text):
+    if re.search(r"\b(?:folder|directory)\s+(?:called|named|for)\b", text) and re.search(r"\b(?:create|make|new)\b", text):
         return "folder"
     return ""
+
+
+def _artifact_directory_name(state: Mapping[str, Any], args: Mapping[str, Any], variant: str) -> str:
+    owner_text = _owner_instruction_text(state)
+    if variant == "project":
+        match = re.search(r"\bproject\s+(?:called|named)\s+([a-z0-9][a-z0-9 _-]{1,80})", owner_text)
+        if match:
+            return match.group(1)
+    if variant == "folder":
+        match = re.search(r"\bfolder\s+(?:called|named|for)\s+([a-z0-9][a-z0-9 _-]{1,80})", owner_text)
+        if match:
+            return match.group(1)
+    return _artifact_topic(args, state)
 
 
 def _simple_relative_name(path: Path) -> bool:
