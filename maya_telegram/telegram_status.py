@@ -13,6 +13,7 @@ from maya_core.route_tracker import last_route_text
 from maya_core.screen_session import screen_sight_status
 from maya_core.self_heal_store import latest_self_heal_report
 from maya_core.storage import get_preference
+from maya_telegram.telegram_command_registry import command_help_text
 from maya_telegram.telegram_voice_state import voice_enabled
 from maya_core.vision_session import guided_sight_status
 
@@ -56,37 +57,4 @@ async def _self_heal_status_line(db_path: str) -> str:
 
 
 def command_help() -> str:
-    return (
-        "Maya commands:\n"
-        "1) Registered menu commands\n"
-        "a) /help: show this command map\n"
-        "b) /status: show iMac, voice, sight, screen, project, cost, provider, route, self-heal, and permissions status\n"
-        "c) /imac on|off: switch iMac mode\n"
-        "d) /see: toggle camera guidance on or off\n"
-        "e) /screen [question]: toggle screen awareness, or ask about the current screen\n"
-        "f) /project [close]: show or close the active project\n"
-        "g) /memory [subcommand]: show or manage memory\n"
-        "h) /join meet-url: send Maya into a Google Meet\n"
-        "i) /leave [meet-url]: remove Maya from the current Meet\n"
-        "j) /meetstatus [meet-url]: show Maya Meet status from source-of-truth\n"
-        "k) /reliability: show the reliability scorecard and incident ledger\n"
-        "l) /error [category] what failed: record evidence and start a fresh topic\n"
-        "m) /complex question: use Maya's complex reasoning lane\n"
-        "2) Hidden slash commands that still work\n"
-        "a) /openimac, /closeimac: aliases for /imac on and /imac off\n"
-        "b) /remember note: save an owner-authored preference or lesson\n"
-        "c) /voice [on|off]: show or set Telegram Ara voice status\n"
-        "d) /tasks, /routines, /preferences: list stored work state\n"
-        "e) /forget target: forget a specific memory\n"
-        "f) /memorycleanup, /memorymigrate, /memoryinspect [target], /memorypin target, /memoryunpin target\n"
-        "g) /lessons, /skills, /createskill idea, /proposals\n"
-        "h) /cost, /providers, /route\n"
-        "i) /delivery, /lastdelivery, /turn, /lastturn\n"
-        "j) /review, /artifactreview, /artifactqa\n"
-        "k) /context, /weekly [status|run], /newtopic, /selfheal [dryrun|force]\n"
-        "l) /artisan [transcript|app|maker|apply]\n"
-        "m) /reliability note [category] what happened: log today's reliability failure note\n"
-        "3) Reliability and error categories\n"
-        "a) correction, missed_reply, route, voice, memory, delivery, browser, cost, false_done\n"
-        "You can still talk normally: open project Kampung AI, show my tasks, remember my preference."
-    )
+    return command_help_text()

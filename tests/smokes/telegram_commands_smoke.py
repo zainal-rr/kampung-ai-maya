@@ -27,6 +27,7 @@ from maya_core.self_heal_store import init_self_heal_db
 from maya_core.storage import get_history, init_db, save_history_message, upsert_preference
 from maya_core.topic_context import recent_topic_history
 from maya_harness.live_reliability_soak import load_soak
+from maya_telegram.telegram_command_registry import all_command_names, registered_command_specs
 from maya_telegram.telegram_commands import bot_commands, command_to_text, parse_command, voice_enabled
 from maya_telegram.telegram_channel import TelegramChannel
 
@@ -44,7 +45,7 @@ async def main() -> None:
         _require(await command_to_text(db_path, parsed) == "open imac", "openImac did not map")
         visible = [item.command for item in bot_commands()]
         _require(
-            visible == ["help", "status", "imac", "see", "screen", "project", "memory", "join", "leave", "meetstatus", "reliability", "error", "complex"],
+            visible == [spec.name for spec in registered_command_specs()],
             "visible commands not reduced",
         )
         _require(await command_to_text(db_path, parse_command("/imac off")) == "close imac", "imac off did not map")
@@ -188,60 +189,29 @@ async def main() -> None:
         delivery = await command_to_text(db_path, parse_command("/delivery"))
         _require("Telegram delivery" in delivery, "delivery command did not return audit state")
         _require(TelegramChannel._is_direct_command_reply(delivery), "/delivery should be direct")
+        last_delivery = await command_to_text(db_path, parse_command("/lastdelivery"))
+        _require("Telegram delivery" in last_delivery, "lastdelivery alias did not return audit state")
+        _require(TelegramChannel._is_direct_command_reply(last_delivery), "/lastdelivery should be direct")
         turn = await command_to_text(db_path, parse_command("/turn"))
         _require("Telegram turn" in turn, "turn command did not return audit state")
         _require(TelegramChannel._is_direct_command_reply(turn), "/turn should be direct")
+        last_turn = await command_to_text(db_path, parse_command("/lastturn"))
+        _require("Telegram turn" in last_turn, "lastturn alias did not return audit state")
+        _require(TelegramChannel._is_direct_command_reply(last_turn), "/lastturn should be direct")
+        artifact_review = await command_to_text(db_path, parse_command("/artifactreview"))
+        _require("Last artifact review:" in artifact_review, "artifactreview alias did not return artifact QA")
+        artifact_qa = await command_to_text(db_path, parse_command("/artifactqa"))
+        _require("Last artifact review:" in artifact_qa, "artifactqa alias did not return artifact QA")
+        memory_pin_alias = await command_to_text(db_path, parse_command("/memorypin smoke city"))
+        _require("Pinned 1 canonical memory" in memory_pin_alias, "memorypin alias did not run")
+        artisan_summary = await command_to_text(db_path, parse_command("/artisan"))
+        _require(TelegramChannel._is_direct_command_reply(artisan_summary), "/artisan should be direct")
         help_text = await command_to_text(db_path, parse_command("/help"))
         _require("Maya commands:" in help_text, "help did not show command map")
-        expected_help_commands = {
-            "help",
-            "status",
-            "imac",
-            "see",
-            "screen",
-            "project",
-            "memory",
-            "join",
-            "leave",
-            "meetstatus",
-            "reliability",
-            "error",
-            "complex",
-            "openimac",
-            "closeimac",
-            "remember",
-            "voice",
-            "tasks",
-            "routines",
-            "preferences",
-            "forget",
-            "memorycleanup",
-            "memorymigrate",
-            "memoryinspect",
-            "memorypin",
-            "memoryunpin",
-            "lessons",
-            "skills",
-            "createskill",
-            "proposals",
-            "cost",
-            "providers",
-            "route",
-            "delivery",
-            "lastdelivery",
-            "turn",
-            "lastturn",
-            "review",
-            "artifactreview",
-            "artifactqa",
-            "context",
-            "weekly",
-            "newtopic",
-            "selfheal",
-            "artisan",
-        }
-        missing = [f"/{command}" for command in sorted(expected_help_commands) if f"/{command}" not in help_text]
+        _require(TelegramChannel._is_direct_command_reply(help_text), "/help should be direct")
+        missing = [f"/{command}" for command in sorted(all_command_names()) if f"/{command}" not in help_text]
         _require(not missing, f"help omitted command(s): {missing}")
+        await _smoke_every_registered_command(db_path)
         unknown = await command_to_text(db_path, parse_command("/Desktop"))
         _require("not in the command list" in unknown, "unknown command should be short")
         _require(TelegramChannel._is_direct_command_reply(unknown), "unknown command should be direct")
@@ -264,6 +234,64 @@ async def _init(db_path: str) -> None:
 def _require(condition: bool, message: str) -> None:
     if not condition:
         raise AssertionError(message)
+
+
+async def _smoke_every_registered_command(db_path: str) -> None:
+    probes = {
+        "artisan": "/artisan",
+        "artifactqa": "/artifactqa",
+        "artifactreview": "/artifactreview",
+        "closeimac": "/closeimac",
+        "complex": "/complex smoke",
+        "context": "/context",
+        "cost": "/cost",
+        "createskill": "/createskill smoke skill",
+        "delivery": "/delivery",
+        "error": "/error route smoke failure",
+        "forget": "/forget smoke city",
+        "help": "/help",
+        "imac": "/imac off",
+        "join": "/join",
+        "lastdelivery": "/lastdelivery",
+        "lastturn": "/lastturn",
+        "leave": "/leave",
+        "lessons": "/lessons",
+        "memory": "/memory",
+        "memorycleanup": "/memorycleanup",
+        "memoryinspect": "/memoryinspect smoke city",
+        "memorymigrate": "/memorymigrate",
+        "memorypin": "/memorypin smoke city",
+        "memoryunpin": "/memoryunpin smoke city",
+        "meetstatus": "/meetstatus",
+        "newtopic": "/newtopic",
+        "openimac": "/openimac",
+        "preferences": "/preferences",
+        "project": "/project",
+        "proposals": "/proposals",
+        "providers": "/providers",
+        "reliability": "/reliability",
+        "remember": "/remember smoke preference",
+        "review": "/review",
+        "route": "/route",
+        "routines": "/routines",
+        "screen": "/screen explain this slide",
+        "see": "/see",
+        "selfheal": "/selfheal dryrun",
+        "skills": "/skills",
+        "status": "/status",
+        "tasks": "/tasks",
+        "turn": "/turn",
+        "voice": "/voice off",
+        "weekly": "/weekly status",
+    }
+    missing = sorted(set(all_command_names()) - set(probes))
+    extra = sorted(set(probes) - set(all_command_names()))
+    _require(not missing and not extra, f"command probe mismatch missing={missing} extra={extra}")
+    for name in all_command_names():
+        parsed = parse_command(probes[name])
+        _require(parsed and parsed.name == name, f"{name} probe did not parse")
+        reply = await command_to_text(db_path, parsed)
+        _require(reply and "not in the command list" not in reply, f"{name} returned unknown command: {reply!r}")
 
 
 class _FakeUpdate:

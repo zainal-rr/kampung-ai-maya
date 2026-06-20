@@ -19,6 +19,7 @@ from maya_core.screen_session import activate_screen_sight, deactivate_screen_si
 from maya_core.session_compactor import inspect_session_context
 from maya_core.self_healing import self_heal_text
 from maya_core.self_heal_memory import handle_memory_self_heal_command
+from maya_telegram.telegram_command_registry import registered_command_specs
 from maya_telegram.telegram_status import command_help, status_text
 from maya_telegram.telegram_delivery_log import latest_telegram_delivery_text
 from maya_telegram.telegram_error_commands import error_text
@@ -50,21 +51,7 @@ def parse_command(text: str) -> ParsedCommand | None:
 
 
 def bot_commands() -> list[BotCommand]:
-    return [
-        BotCommand("help", "Show Maya shortcuts"),
-        BotCommand("status", "Show Maya status"),
-        BotCommand("imac", "Turn iMac mode on or off"),
-        BotCommand("see", "Toggle camera guidance on or off"),
-        BotCommand("screen", "Turn screen awareness on or off"),
-        BotCommand("project", "Show or close active project"),
-        BotCommand("memory", "Show or manage memory"),
-        BotCommand("join", "Send Maya into a Google Meet"),
-        BotCommand("leave", "Remove Maya from the current Meet"),
-        BotCommand("meetstatus", "Show Maya Meet status"),
-        BotCommand("reliability", "Show reliability scorecard and incidents"),
-        BotCommand("error", "Record a failure and start a fresh topic"),
-        BotCommand("complex", "Route this Telegram request to Maya's complex lane"),
-    ]
+    return [BotCommand(spec.name, spec.summary) for spec in registered_command_specs()]
 
 
 async def command_to_text(db_path: str, parsed: ParsedCommand) -> str:
