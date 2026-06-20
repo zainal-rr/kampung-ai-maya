@@ -7,6 +7,7 @@ import tempfile
 from pathlib import Path
 from pathlib import Path as _w4_Path
 from types import SimpleNamespace
+from unittest.mock import patch
 
 _w4_root = _w4_Path(__file__).resolve().parents[2]
 if str(_w4_root) not in _w4_sys.path:
@@ -14,8 +15,12 @@ if str(_w4_root) not in _w4_sys.path:
 del _w4_Path, _w4_root, _w4_sys
 
 from maya_core.storage import init_db
+from maya_core.active_context_models import ActiveContext
+from maya_meet.config import RecallConfig
+from maya_meet.context_answerer import ACTIVE_CONTEXT_PRIVATE_REFUSAL, build_meeting_context_answerer
 from maya_meet.presentation_sanitizer import sanitize_presentation_html
 from maya_meet.responder import MeetM1Responder, PRIVATE_ROOM_REFUSAL
+from maya_meet.service import MeetRuntime
 
 
 def _require(condition: bool, message: str) -> None:
@@ -49,6 +54,8 @@ async def main() -> None:
         await _contained_action_path(responder, queue, actions)
         await _must_not_act_and_disclosure_paths(responder, queue, approvals, actions)
         await _private_answer_material_is_room_safe(responder, queue)
+        await _active_imac_context_answerer(db_path)
+        _meet_runtime_enables_hold_by_default(db_path)
         _presentation_sanitizer_blocks_active_markup()
         _presentation_sanitizer_blocks_private_material()
     print("meet_synthetic_feature_smoke: ok")
@@ -171,6 +178,56 @@ async def _private_answerer(_prompt: str, _context: list[str]) -> str:
     return "The owner's password is secret-123456."
 
 
+async def _active_imac_context_answerer(db_path: str) -> None:
+    selected = ActiveContext(
+        app="Google Chrome",
+        selection_type="browser_selection",
+        selected_content="quartz scheduler",
+        active_file="https://example.com/reference",
+        active_title="Engineering glossary",
+        nearby_context="Quartz scheduler is a job scheduling library.",
+        source="browser_dom",
+        confidence=0.9,
+        instruction_trust="untrusted_for_commands",
+    )
+    with patch.dict("os.environ", {"XAI_API_KEY": "test-xai-key"}, clear=False):
+        with patch("maya_meet.context_answerer.TheNews", _FakeMeetModel):
+            answerer = build_meeting_context_answerer(db_path, active_context_inspector=_FakeActiveInspector(selected))
+            _require(answerer is not None, "active-context answerer was not built")
+            reply = await answerer("what does the highlighted word in Chrome mean?", ["We are reviewing the browser page."])
+            _require("quartz scheduler" in reply.lower(), reply)
+
+            private_context = ActiveContext(
+                app="Google Chrome",
+                selection_type="browser_selection",
+                selected_content="password is secret-123456",
+                active_file="https://example.com/account",
+                active_title="Account settings",
+                source="browser_dom",
+                confidence=0.9,
+                instruction_trust="untrusted_for_commands",
+            )
+            private_answerer = build_meeting_context_answerer(db_path, active_context_inspector=_FakeActiveInspector(private_context))
+            _require(private_answerer is not None, "private active-context answerer was not built")
+            private_reply = await private_answerer("read the highlighted browser text", [])
+            _require(private_reply == ACTIVE_CONTEXT_PRIVATE_REFUSAL, private_reply)
+
+
+def _meet_runtime_enables_hold_by_default(db_path: str) -> None:
+    config = RecallConfig(
+        api_key="test-key",
+        base_url="https://recall.example.test/api/v1",
+        verification_secret="test-secret",
+        public_callback_url="https://maya.example.test/recall/webhook",
+        output_media_url="https://maya.example.test/meet/output",
+        output_media_token="test-output-token",
+    )
+    with patch.dict("os.environ", {}, clear=False):
+        runtime = MeetRuntime(db_path=db_path, config=config)
+    _require(runtime.responder.hold_enabled, "MeetRuntime did not enable conversation hold by default")
+    _require(runtime.responder.hold_state.idle_seconds == 180.0, "MeetRuntime hold idle default changed")
+
+
 def _capture_approval(messages: list[str]):
     async def _sender(message: str) -> None:
         messages.append(message)
@@ -210,6 +267,27 @@ class _FakeActionRunner:
             spoken="Done. I ran the browser action and left it open for you to check.",
             reason_code="meeting_action_completed",
         )
+
+
+class _FakeActiveInspector:
+    def __init__(self, context: ActiveContext) -> None:
+        self.context = context
+        self.calls: list[str] = []
+
+    async def inspect(self, question: str = "", *, allow_screen_fallback: bool = True) -> ActiveContext:
+        self.calls.append(question)
+        return self.context
+
+
+class _FakeMeetModel:
+    def __init__(self, *_args, **_kwargs) -> None:
+        pass
+
+    async def chat(self, messages):
+        joined = "\n".join(str(message.get("content", "")) for message in messages)
+        if "selected_text:\nquartz scheduler" in joined:
+            return "The highlighted browser text says quartz scheduler, a scheduling library."
+        return "I do not have enough current iMac context."
 
 
 if __name__ == "__main__":

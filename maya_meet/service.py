@@ -31,6 +31,8 @@ class MeetRuntime:
         output_port: int | None = None,
         assistant=None,
         m2_enabled: bool | None = None,
+        hold_enabled: bool | None = None,
+        hold_idle_seconds: float | None = None,
     ):
         self.db_path = db_path
         self.config = config or recall_config_from_env()
@@ -41,7 +43,9 @@ class MeetRuntime:
         self.output_port = output_port or int(os.getenv("MAYA_MEET_OUTPUT_PORT", "8789"))
         self.output_queue = MeetOutputQueue(token=self.config.output_media_token)
         self.audio_wake_state = RecallAudioWakeState.from_env()
-        self.m2_enabled = bool(m2_enabled) if m2_enabled is not None else os.getenv("MAYA_MEET_M2_ACTIONS", "0") == "1"
+        self.m2_enabled = bool(m2_enabled) if m2_enabled is not None else _env_enabled("MAYA_MEET_M2_ACTIONS", default=False)
+        self.hold_enabled = bool(hold_enabled) if hold_enabled is not None else _env_enabled("MAYA_MEET_HOLD", default=True)
+        self.hold_idle_seconds = hold_idle_seconds if hold_idle_seconds is not None else _env_float("MAYA_MEET_HOLD_IDLE_SECONDS", default=180.0)
         self.action_runner = MeetingActionRunner(db_path=db_path, assistant=assistant)
         self.responder = MeetM1Responder(
             db_path=db_path,
@@ -50,6 +54,8 @@ class MeetRuntime:
             audio_wake_state=self.audio_wake_state,
             action_runner=self.action_runner,
             m2_enabled=self.m2_enabled,
+            hold_enabled=self.hold_enabled,
+            hold_idle_seconds=self.hold_idle_seconds,
         )
         self.logger = logging.getLogger("maya.meet")
 
@@ -63,6 +69,8 @@ class MeetRuntime:
             audio_wake_state=self.audio_wake_state,
             action_runner=self.action_runner,
             m2_enabled=self.m2_enabled,
+            hold_enabled=self.hold_enabled,
+            hold_idle_seconds=self.hold_idle_seconds,
         )
         runner = web.AppRunner(app)
         await runner.setup()
@@ -90,6 +98,8 @@ def create_meet_app(
     audio_wake_state: RecallAudioWakeState | None = None,
     action_runner: MeetingActionRunner | None = None,
     m2_enabled: bool = False,
+    hold_enabled: bool = False,
+    hold_idle_seconds: float = 180.0,
 ) -> web.Application:
     app = web.Application()
     audio_wake_state = audio_wake_state or RecallAudioWakeState.from_env()
@@ -99,6 +109,8 @@ def create_meet_app(
         audio_wake_state=audio_wake_state,
         action_runner=action_runner,
         m2_enabled=m2_enabled,
+        hold_enabled=hold_enabled,
+        hold_idle_seconds=hold_idle_seconds,
     )
 
     async def recall_health(_request: web.Request) -> web.Response:
@@ -296,3 +308,17 @@ async def _request_json(request: web.Request) -> dict[str, Any]:
     except Exception:
         return {}
     return payload if isinstance(payload, dict) else {}
+
+
+def _env_enabled(name: str, *, default: bool = False) -> bool:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _env_float(name: str, *, default: float) -> float:
+    try:
+        return float(os.getenv(name, str(default)))
+    except (TypeError, ValueError):
+        return default
