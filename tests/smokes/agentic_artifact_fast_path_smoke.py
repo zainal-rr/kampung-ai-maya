@@ -98,6 +98,43 @@ async def _test_untrusted_body_with_maya_path_allows(workspace: Path) -> None:
     _require(created.exists() and created.suffix == ".docx", "untrusted body should not block Maya-derived local docx path")
 
 
+async def _test_allowed_folder_and_project_create(workspace: Path) -> None:
+    folder, folder_db = await _execute(
+        workspace,
+        "folder",
+        "Create a folder called C0 Baseline Notes.",
+        {"tool": "file.create", "args": {"path": "C0_Baseline_Notes", "kind": "folder"}},
+    )
+    folder_path = Path(folder["artifacts"][-1])
+    _require(folder_path.exists() and folder_path.is_dir(), f"folder not created: {folder_path}")
+    _require(folder_path.parent.resolve(strict=False) == (workspace / "notes").resolve(strict=False), f"folder should stay in notes workspace: {folder_path}")
+    folder_events = await latest_events(folder_db, folder["run_id"], limit=20)
+    _require(any(event["event"] == "permission_decision" and "file.create: allow:" in event["details"] for event in folder_events), "folder create allow missing")
+    _require(any(event["event"] == "agentic_artifact_fast_path" for event in folder_events), "folder fast path missing")
+
+    project, _project_db = await _execute(
+        workspace,
+        "project",
+        "Create a project called C0 Capability Scratch.",
+        {"tool": "file.create", "args": {"path": "C0_Capability_Scratch", "kind": "project"}},
+    )
+    project_path = Path(project["artifacts"][-1])
+    _require(project_path.exists() and project_path.is_dir(), f"project folder not created: {project_path}")
+    _require(project_path.parent.resolve(strict=False) == (workspace / "Projects").resolve(strict=False), f"project should stay in Projects workspace: {project_path}")
+
+
+async def _test_owner_named_note_path_normalizes_to_markdown(workspace: Path) -> None:
+    out, _db_path = await _execute(
+        workspace,
+        "local_note",
+        "Create a local note about the C0 capability baseline.",
+        {"tool": "file.create", "args": {"path": "C0 Capability Baseline", "content": "C0 capability baseline note with measured local artifact evidence."}},
+    )
+    created = Path(out["artifacts"][-1])
+    _require(created.exists() and created.suffix == ".md", f"local note should normalize to markdown: {created}")
+    _require(created.parent.resolve(strict=False) == (workspace / "notes").resolve(strict=False), f"local note should stay in notes workspace: {created}")
+
+
 async def _test_forged_and_unsafe_paths_do_not_fast_path(workspace: Path) -> None:
     forged, forged_db = await _execute(
         workspace,
@@ -137,6 +174,24 @@ async def _test_forged_and_unsafe_paths_do_not_fast_path(workspace: Path) -> Non
     _require(existing.get("pending_approval"), "existing target should pause before fast path")
     _require(existing_path.read_text(encoding="utf-8") == "existing", "existing target was overwritten")
 
+    forged_folder, forged_folder_db = await _execute(
+        workspace,
+        "forged_folder",
+        "Create a folder called C0 Baseline Notes.",
+        {
+            "tool": "file.create",
+            "args": {
+                "path": "Mallory Folder",
+                "kind": "folder",
+                "path_source": "maya_derived",
+            },
+        },
+    )
+    _require(forged_folder.get("pending_approval"), "forged folder name should pause before fast path")
+    _require(not (workspace / "notes" / "mallory-folder").exists(), "forged folder was created")
+    forged_folder_events = await latest_events(forged_folder_db, forged_folder["run_id"], limit=20)
+    _require(not any(event["event"] == "agentic_artifact_fast_path" for event in forged_folder_events), "forged folder entered fast path")
+
 
 async def _test_delivery_and_untrusted_sheet_do_not_fast_path(workspace: Path) -> None:
     delivery, _delivery_db = await _execute(
@@ -173,6 +228,8 @@ async def _run() -> None:
             await _test_allowed_file_create(workspace)
             await _test_allowed_docx_and_xlsx(workspace)
             await _test_untrusted_body_with_maya_path_allows(workspace)
+            await _test_allowed_folder_and_project_create(workspace)
+            await _test_owner_named_note_path_normalizes_to_markdown(workspace)
             await _test_forged_and_unsafe_paths_do_not_fast_path(workspace)
             await _test_delivery_and_untrusted_sheet_do_not_fast_path(workspace)
         finally:

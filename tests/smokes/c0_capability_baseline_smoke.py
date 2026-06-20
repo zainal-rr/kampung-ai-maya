@@ -198,6 +198,32 @@ def _test_artifact_content_oracle_checks_docx_and_xlsx_state() -> None:
     print("  artifact content oracle checks docx/xlsx state: ok")
 
 
+def _test_artifact_oracle_checks_directory_artifacts() -> None:
+    async def run() -> None:
+        with tempfile.TemporaryDirectory(prefix="maya-c0-directory-oracle-") as tmp:
+            root = Path(tmp)
+            folder = root / "c0-baseline-notes"
+            folder.mkdir()
+            task = CapabilityTask(
+                "folder_body",
+                "local_artifact",
+                "Create a folder called C0 Baseline Notes.",
+                CapabilityOracle("artifact", expected_artifact=True),
+            )
+            payload = {"state": {"final_response": f"Done.\n[file:{folder}]"}, "events": (), "artifacts": ({"path": str(folder)},), "timed_out": False}
+            outcome, status = await _score_outcome(task, payload, None)
+            _require(outcome == "success" and status == "deterministic_artifact_content_ok", f"directory should pass: {outcome}, {status}")
+
+            file_path = root / "c0-baseline-notes.md"
+            file_path.write_text("not a directory", encoding="utf-8")
+            file_payload = {"state": {"final_response": f"Done.\n[file:{file_path}]"}, "events": (), "artifacts": ({"path": str(file_path)},), "timed_out": False}
+            file_outcome, file_status = await _score_outcome(task, file_payload, None)
+            _require(file_outcome == "partial" and "wrong_kind" in file_status, f"file should not satisfy folder task: {file_outcome}, {file_status}")
+
+    asyncio.run(run())
+    print("  artifact oracle checks directory artifacts: ok")
+
+
 def _test_artifact_content_failure_is_verification_reason() -> None:
     task = CapabilityTask("artifact_bad_content", "local_artifact", "Create a note.", CapabilityOracle("artifact", expected_artifact=True))
     payload = {
@@ -327,6 +353,7 @@ def main() -> None:
     _test_artifact_honest_stop_is_not_success()
     _test_artifact_content_oracle_checks_file_body()
     _test_artifact_content_oracle_checks_docx_and_xlsx_state()
+    _test_artifact_oracle_checks_directory_artifacts()
     _test_artifact_content_failure_is_verification_reason()
     _test_unallowed_semantic_honest_stop_becomes_fail()
     _test_ambiguous_reason_becomes_unknown()

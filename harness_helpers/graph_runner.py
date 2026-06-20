@@ -7,12 +7,13 @@ from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langgraph.graph import END, START, StateGraph
 
 import asyncio
+import re
 
 from maya_browser.browser_agent_state import task_type_for
 from maya_memory.canonical_memory import upsert_canonical_memory
 from maya_core.domain_knowledge import domain_knowledge_context
 from maya_documents.artifact_naming import named_artifact_path
-from maya_documents.office_files import create_docx, create_xlsx, spreadsheet_rows
+from maya_documents.office_files import create_docx, create_xlsx, safe_slug, spreadsheet_rows
 from maya_harness.harness_state import HarnessState
 from maya_harness.harness_artifact_store import record_structured_artifact
 from maya_harness.harness_checkpoint_migration import snapshot_or_migrate
@@ -612,9 +613,15 @@ async def _execute_agentic_artifact_fast_path(
 
     try:
         if tool_name == "file.create":
-            await asyncio.to_thread(_write_fast_local_file, path, _artifact_body(args, state))
-            kind = _kind_for_fast_artifact(path, "note")
-            summary = "local file created by agentic artifact fast path"
+            create_variant = _file_create_variant(state, args)
+            if create_variant in {"folder", "project"}:
+                await asyncio.to_thread(_make_fast_local_directory, path)
+                kind = create_variant
+                summary = f"local {create_variant} folder created by agentic artifact fast path"
+            else:
+                await asyncio.to_thread(_write_fast_local_file, path, _artifact_body(args, state))
+                kind = _kind_for_fast_artifact(path, "note")
+                summary = "local file created by agentic artifact fast path"
         elif tool_name == "docx.create":
             topic = _artifact_topic(args, state)
             await asyncio.to_thread(create_docx, path, _artifact_title(topic), _docx_sections(topic, args, state))
@@ -680,6 +687,10 @@ def _allowed_fast_artifact_path(args: Mapping[str, Any], field_provenance: Mappi
 def _write_fast_local_file(path: Path, content: str) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     path.write_text(content, encoding="utf-8")
+
+
+def _make_fast_local_directory(path: Path) -> None:
+    path.mkdir(parents=True, exist_ok=False)
 
 
 def _artifact_topic(args: Mapping[str, Any], state: Mapping[str, Any]) -> str:
@@ -766,6 +777,7 @@ def _trusted_agentic_artifact_args(
     """
     normalized = dict(args)
     field_provenance: dict[str, str] = {}
+    file_variant = _file_create_variant(state, normalized) if tool_name == "file.create" else ""
     if tool_name in {"file.create", "docx.create", "xlsx.create"} and not _has_path_control_value(normalized):
         derived = _derive_agentic_artifact_path(state, tool_name, normalized)
         if derived:
@@ -775,7 +787,7 @@ def _trusted_agentic_artifact_args(
         for field in ("path", "output_path", "destination_path"):
             if field not in normalized:
                 continue
-            trusted = _trusted_agentic_file_path(state, normalized[field])
+            trusted = _trusted_agentic_file_path(state, normalized[field], file_variant)
             if trusted:
                 normalized[field] = trusted
                 field_provenance[field] = "maya_derived"
@@ -800,6 +812,19 @@ def _derive_agentic_artifact_path(state: Mapping[str, Any], tool_name: str, args
     if any(_truthy(args.get(field)) for field in ("recipient", "to", "send_to", "share_with", "upload_to", "delivery_target", "disclose_to")):
         return ""
     topic = _artifact_topic(args, state)
+    if tool_name == "file.create":
+        variant = _file_create_variant(state, args)
+        if variant in {"folder", "project"}:
+            base = workspace_dir("Projects" if variant == "project" else "notes")
+            candidate = _versioned_directory(base / safe_slug(topic, max_length=60))
+            decision = resolve_safe_path(candidate, "write")
+            if not decision.allowed or not decision.resolved:
+                return ""
+            if not is_workspace_path(decision.resolved):
+                return ""
+            if decision.resolved.exists():
+                return ""
+            return str(decision.resolved)
     folder, suffix = {
         "file.create": ("notes", "md"),
         "docx.create": ("documents", "docx"),
@@ -816,7 +841,7 @@ def _derive_agentic_artifact_path(state: Mapping[str, Any], tool_name: str, args
     return str(decision.resolved)
 
 
-def _trusted_agentic_file_path(state: Mapping[str, Any], raw: Any) -> str:
+def _trusted_agentic_file_path(state: Mapping[str, Any], raw: Any, variant: str = "") -> str:
     text = str(raw or "").strip().strip("\"'")
     if not text or "\x00" in text:
         return ""
@@ -824,7 +849,15 @@ def _trusted_agentic_file_path(state: Mapping[str, Any], raw: Any) -> str:
         return ""
     candidate = Path(text).expanduser()
     if not candidate.is_absolute():
-        candidate = workspace_dir("") / candidate
+        if _simple_relative_name(candidate):
+            if variant in {"folder", "project"}:
+                candidate = workspace_dir("Projects" if variant == "project" else "notes") / safe_slug(text, max_length=60)
+            elif not candidate.suffix:
+                candidate = workspace_dir("notes") / f"{safe_slug(text, max_length=60)}.md"
+            else:
+                candidate = workspace_dir("notes") / candidate
+        else:
+            candidate = workspace_dir("") / candidate
     decision = resolve_safe_path(candidate, "write")
     if not decision.allowed or not decision.resolved:
         return ""
@@ -843,12 +876,13 @@ def _owner_instruction_contains_path(state: Mapping[str, Any], raw: str) -> bool
     if needle in owner_text:
         return True
     name = Path(needle).name
-    return bool(name and name in owner_text)
+    return bool(name and (name in owner_text or _control_tokens_match_owner(name, owner_text)))
 
 
 def _owner_instruction_contains_value(state: Mapping[str, Any], raw: Any) -> bool:
     value = " ".join(str(raw or "").strip().split()).lower()
-    return bool(value and value in _owner_instruction_text(state))
+    owner_text = _owner_instruction_text(state)
+    return bool(value and (value in owner_text or _control_tokens_match_owner(value, owner_text)))
 
 
 def _owner_instruction_text(state: Mapping[str, Any]) -> str:
@@ -868,6 +902,54 @@ def _safe_local_control_name(raw: Any) -> bool:
 def _safe_sheet_control_name(raw: Any) -> bool:
     text = str(raw or "").strip()
     return _safe_local_control_name(text) and not any(ch in text for ch in "[]:*?/\\")
+
+
+def _file_create_variant(state: Mapping[str, Any], args: Mapping[str, Any]) -> str:
+    explicit = str(args.get("kind") or args.get("type") or args.get("artifact_kind") or args.get("create_type") or "").strip().lower()
+    if explicit in {"folder", "directory"}:
+        return "folder"
+    if explicit in {"project", "workspace"}:
+        return "project"
+    text = " ".join(
+        str(value or "")
+        for value in (
+            state.get("goal"),
+            state.get("last_user_instruction"),
+            state.get("user_text"),
+            args.get("path"),
+            args.get("name"),
+            args.get("title"),
+        )
+    ).lower()
+    if re.search(r"\b(?:project|workspace)\b", text) and re.search(r"\b(?:create|make|start|new)\b", text):
+        return "project"
+    if re.search(r"\b(?:folder|directory)\b", text) and re.search(r"\b(?:create|make|new)\b", text):
+        return "folder"
+    return ""
+
+
+def _simple_relative_name(path: Path) -> bool:
+    text = str(path)
+    return bool(text) and not path.is_absolute() and "/" not in text and "\\" not in text and text not in {".", ".."}
+
+
+def _versioned_directory(path: Path) -> Path:
+    if not path.exists():
+        return path
+    for index in range(2, 100):
+        candidate = path.with_name(f"{path.name}-v{index}")
+        if not candidate.exists():
+            return candidate
+    return path.with_name(f"{path.name}-v100")
+
+
+def _control_tokens_match_owner(raw: str, owner_text: str) -> bool:
+    tokens = [token for token in re.findall(r"[a-z0-9]+", str(raw).lower()) if token not in {"v1", "v2"}]
+    if not tokens:
+        return False
+    owner_tokens = set(re.findall(r"[a-z0-9]+", owner_text))
+    meaningful = [token for token in tokens if len(token) > 2 or token.startswith("c0")]
+    return bool(meaningful) and all(token in owner_tokens for token in meaningful)
 
 
 def _truthy(value: Any) -> bool:

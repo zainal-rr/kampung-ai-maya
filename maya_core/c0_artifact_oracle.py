@@ -15,7 +15,7 @@ def artifact_oracle_status(task: Any, payload: dict[str, Any]) -> str:
         return ""
     prompt = str(getattr(task, "prompt", "") or "")
     if _expects_directory_artifact(prompt):
-        return "wrong_kind_file_instead_of_directory"
+        return _directory_artifact_status(prompt, paths)
     expected_suffix = _expected_artifact_suffix(prompt)
     for path in paths:
         if not path.exists():
@@ -48,6 +48,27 @@ def _artifact_paths(payload: dict[str, Any]) -> list[Path]:
 def _expects_directory_artifact(prompt: str) -> bool:
     lowered = prompt.lower()
     return "create a folder" in lowered or "create a project" in lowered
+
+
+def _directory_artifact_status(prompt: str, paths: list[Path]) -> str:
+    for path in paths:
+        if not path.exists():
+            continue
+        if not path.is_dir():
+            return "wrong_kind_file_instead_of_directory"
+        if _directory_artifact_matches(prompt, path):
+            return "ok"
+        return "wrong_path_or_name"
+    return ""
+
+
+def _directory_artifact_matches(prompt: str, path: Path) -> bool:
+    tokens = _artifact_prompt_tokens(prompt)
+    if not tokens:
+        return True
+    haystack = f"{path.name} {path}".lower().replace("-", "").replace("_", "")
+    hits = sum(1 for token in tokens if token in haystack)
+    return hits >= min(len(tokens), 2)
 
 
 def _expected_artifact_suffix(prompt: str) -> str:
