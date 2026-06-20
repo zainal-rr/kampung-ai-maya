@@ -1,8 +1,8 @@
 {
-  "created_at": "2026-06-08T03:49:52Z",
-  "passed": 35,
+  "created_at": "2026-06-18T07:55:11Z",
+  "passed": 36,
   "failed": 0,
-  "total": 35,
+  "total": 36,
   "score": 100.0,
   "results": [
     {
@@ -18,6 +18,13 @@
       "passed": true,
       "returncode": 0,
       "output": "canonical_memory_smoke: ok"
+    },
+    {
+      "category": "memory",
+      "name": "nightly consolidation",
+      "passed": true,
+      "returncode": 0,
+      "output": "PASS nightly_consolidation_smoke: save, no-resurrect, links, decay report, zero-delta skip, audit"
     },
     {
       "category": "memory",

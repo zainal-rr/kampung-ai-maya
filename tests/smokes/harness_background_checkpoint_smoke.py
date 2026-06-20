@@ -1,0 +1,54 @@
+from __future__ import annotations
+# W4_TEST_ROOT_BOOTSTRAP
+import sys as _w4_sys
+from pathlib import Path as _w4_Path
+_w4_root = _w4_Path(__file__).resolve().parents[2]
+if str(_w4_root) not in _w4_sys.path:
+    _w4_sys.path.insert(0, str(_w4_root))
+del _w4_Path, _w4_root, _w4_sys
+
+
+import asyncio
+import tempfile
+from pathlib import Path
+
+import maya_harness.harness_tools as harness_tools
+from maya_harness.harness_graph import HarnessGraphRunner
+from maya_harness.harness_store import init_harness_db
+from maya_core.storage import init_db
+
+
+DELIVERIES = 0
+
+
+async def main() -> None:
+    global DELIVERIES
+    with tempfile.TemporaryDirectory(prefix="maya-bg-replay-") as tmp:
+        db_path = str(Path(tmp) / "smoke.db")
+        await init_db(db_path)
+        await init_harness_db(db_path)
+        original = harness_tools.HarnessTools._scheduled
+        harness_tools.HarnessTools._scheduled = _fake_scheduled
+        task = {"id": 7, "action_type": "scheduled_briefing", "channel": "telegram", "title": "Morning brief"}
+        try:
+            await HarnessGraphRunner(db_path).run_background_task(task)
+            await HarnessGraphRunner(db_path).run_background_task(task)
+            _require(DELIVERIES == 1, f"scheduled delivery repeated {DELIVERIES} times")
+        finally:
+            harness_tools.HarnessTools._scheduled = original
+    print("harness_background_checkpoint_smoke: ok")
+
+
+async def _fake_scheduled(self, text: str, channel: str) -> harness_tools.HarnessToolResult:
+    global DELIVERIES
+    DELIVERIES += 1
+    return harness_tools.HarnessToolResult("completed", f"Delivered {text}", next_step="scheduled")
+
+
+def _require(condition: bool, message: str) -> None:
+    if not condition:
+        raise AssertionError(message)
+
+
+if __name__ == "__main__":
+    asyncio.run(main())

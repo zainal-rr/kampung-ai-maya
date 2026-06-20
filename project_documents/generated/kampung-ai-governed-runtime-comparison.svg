@@ -1,0 +1,195 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1800" height="1200" viewBox="0 0 1800 1200" role="img" aria-labelledby="title desc">
+  <title id="title">Kampung AI governed runtime comparison</title>
+  <desc id="desc">An infographic comparing typical AI agents with Kampung AI's governed runtime around the agent.</desc>
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#fbfaf5"/>
+      <stop offset="55%" stop-color="#f3f0e7"/>
+      <stop offset="100%" stop-color="#eef3ee"/>
+    </linearGradient>
+    <linearGradient id="centerGlow" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#dce9db"/>
+      <stop offset="55%" stop-color="#f6edcf"/>
+      <stop offset="100%" stop-color="#dde7ef"/>
+    </linearGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="18" stdDeviation="18" flood-color="#233126" flood-opacity="0.16"/>
+    </filter>
+    <filter id="tinyShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="8" stdDeviation="8" flood-color="#1f2a24" flood-opacity="0.12"/>
+    </filter>
+    <style>
+      .title { font-family: "Avenir Next", "Inter", "Helvetica Neue", Arial, sans-serif; font-size: 48px; font-weight: 800; fill: #17211b; }
+      .subtitle { font-family: "Avenir Next", "Inter", "Helvetica Neue", Arial, sans-serif; font-size: 24px; font-weight: 500; fill: #48564d; }
+      .section { font-family: "Avenir Next", "Inter", "Helvetica Neue", Arial, sans-serif; font-size: 25px; font-weight: 800; fill: #17211b; }
+      .label { font-family: "Avenir Next", "Inter", "Helvetica Neue", Arial, sans-serif; font-size: 19px; font-weight: 800; fill: #17211b; }
+      .body { font-family: "Avenir Next", "Inter", "Helvetica Neue", Arial, sans-serif; font-size: 17px; font-weight: 500; fill: #455047; }
+      .small { font-family: "Avenir Next", "Inter", "Helvetica Neue", Arial, sans-serif; font-size: 15px; font-weight: 600; fill: #5c665e; }
+      .tiny { font-family: "Avenir Next", "Inter", "Helvetica Neue", Arial, sans-serif; font-size: 13px; font-weight: 700; fill: #657069; }
+      .pill { font-family: "Avenir Next", "Inter", "Helvetica Neue", Arial, sans-serif; font-size: 14px; font-weight: 800; fill: #ffffff; }
+      .mono { font-family: "SFMono-Regular", Consolas, Menlo, monospace; font-size: 14px; fill: #536157; }
+    </style>
+  </defs>
+
+  <rect width="1800" height="1200" fill="url(#bg)"/>
+  <circle cx="1560" cy="104" r="70" fill="#c49a45" opacity="0.13"/>
+  <circle cx="165" cy="1005" r="92" fill="#3f6f50" opacity="0.10"/>
+  <circle cx="1555" cy="1000" r="112" fill="#2b6cb0" opacity="0.09"/>
+
+  <text x="80" y="78" class="title">What makes Kampung AI different?</text>
+  <text x="80" y="122" class="subtitle">Not just another agent that can act. A governed runtime that controls authority, memory, artifacts, and proof.</text>
+
+  <rect x="80" y="165" width="1640" height="38" rx="19" fill="#17211b"/>
+  <text x="112" y="190" class="pill">Comparison lens</text>
+  <text x="295" y="190" class="pill" opacity="0.9">Most products optimize for task completion. Kampung AI optimizes for task completion plus accountability.</text>
+
+  <!-- Left column -->
+  <rect x="80" y="235" width="430" height="690" rx="22" fill="#ffffff" filter="url(#softShadow)"/>
+  <rect x="80" y="235" width="430" height="80" rx="22" fill="#e8ece9"/>
+  <text x="112" y="282" class="section">Typical AI agents</text>
+  <text x="112" y="307" class="small">Main promise: do the task</text>
+
+  <g transform="translate(112 350)">
+    <rect width="366" height="92" rx="14" fill="#f8f9f6" stroke="#d9ded8"/>
+    <circle cx="36" cy="46" r="24" fill="#2b6cb0"/>
+    <text x="27" y="52" class="pill">C</text>
+    <text x="76" y="36" class="label">ChatGPT Agent</text>
+    <text x="76" y="62" class="body">Hosted computer, web actions,</text>
+    <text x="76" y="84" class="body">research, slides, connectors.</text>
+  </g>
+
+  <g transform="translate(112 462)">
+    <rect width="366" height="92" rx="14" fill="#f8f9f6" stroke="#d9ded8"/>
+    <circle cx="36" cy="46" r="24" fill="#6f4f9a"/>
+    <text x="24" y="52" class="pill">Cl</text>
+    <text x="76" y="36" class="label">Claude agents</text>
+    <text x="76" y="62" class="body">Strong coding loop: read files,</text>
+    <text x="76" y="84" class="body">run commands, edit code.</text>
+  </g>
+
+  <g transform="translate(112 574)">
+    <rect width="366" height="92" rx="14" fill="#f8f9f6" stroke="#d9ded8"/>
+    <circle cx="36" cy="46" r="24" fill="#b85c38"/>
+    <text x="28" y="52" class="pill">L</text>
+    <text x="76" y="36" class="label">Lindy-style assistants</text>
+    <text x="76" y="62" class="body">Inbox, calendar, meetings,</text>
+    <text x="76" y="84" class="body">follow-ups, integrations.</text>
+  </g>
+
+  <g transform="translate(112 686)">
+    <rect width="366" height="92" rx="14" fill="#f8f9f6" stroke="#d9ded8"/>
+    <circle cx="36" cy="46" r="24" fill="#3f6f50"/>
+    <text x="27" y="52" class="pill">A</text>
+    <text x="76" y="36" class="label">Astra / Gemini Live</text>
+    <text x="76" y="62" class="body">Realtime multimodal presence:</text>
+    <text x="76" y="84" class="body">screen, camera, conversation.</text>
+  </g>
+
+  <rect x="112" y="820" width="366" height="72" rx="14" fill="#17211b"/>
+  <text x="137" y="850" class="pill">Common shape</text>
+  <text x="137" y="875" class="pill" opacity="0.86">Powerful agent experience around a model.</text>
+
+  <!-- Center column -->
+  <rect x="550" y="235" width="700" height="690" rx="22" fill="#ffffff" filter="url(#softShadow)"/>
+  <rect x="550" y="235" width="700" height="80" rx="22" fill="url(#centerGlow)"/>
+  <text x="590" y="282" class="section">Kampung AI's special layer</text>
+  <text x="590" y="307" class="small">The model is inside the runtime, not the runtime itself</text>
+
+  <circle cx="900" cy="580" r="232" fill="#f8f8f3" stroke="#d7decf" stroke-width="3"/>
+  <circle cx="900" cy="580" r="160" fill="#eef5ee" stroke="#adc4b0" stroke-width="3"/>
+  <circle cx="900" cy="580" r="86" fill="#17211b"/>
+  <text x="900" y="552" text-anchor="middle" class="pill" style="font-size:20px;">Agent model</text>
+  <text x="900" y="580" text-anchor="middle" class="pill" opacity="0.9">proposes</text>
+  <text x="900" y="608" text-anchor="middle" class="pill" opacity="0.9">actions</text>
+
+  <line x1="900" y1="420" x2="900" y2="494" stroke="#8aa98e" stroke-width="4" stroke-linecap="round"/>
+  <line x1="900" y1="666" x2="900" y2="740" stroke="#8aa98e" stroke-width="4" stroke-linecap="round"/>
+  <line x1="740" y1="580" x2="814" y2="580" stroke="#8aa98e" stroke-width="4" stroke-linecap="round"/>
+  <line x1="986" y1="580" x2="1060" y2="580" stroke="#8aa98e" stroke-width="4" stroke-linecap="round"/>
+
+  <g transform="translate(735 350)">
+    <rect width="330" height="88" rx="18" fill="#3f6f50" filter="url(#tinyShadow)"/>
+    <text x="165" y="34" text-anchor="middle" class="pill" style="font-size:18px;">Permission kernel</text>
+    <text x="165" y="60" text-anchor="middle" class="pill" opacity="0.86">allow / confirm / deny / block</text>
+  </g>
+
+  <g transform="translate(610 536)">
+    <rect width="260" height="88" rx="18" fill="#b85c38" filter="url(#tinyShadow)"/>
+    <text x="130" y="34" text-anchor="middle" class="pill" style="font-size:18px;">Untrusted input</text>
+    <text x="130" y="60" text-anchor="middle" class="pill" opacity="0.86">taint travels with content</text>
+  </g>
+
+  <g transform="translate(930 536)">
+    <rect width="260" height="88" rx="18" fill="#2b6cb0" filter="url(#tinyShadow)"/>
+    <text x="130" y="34" text-anchor="middle" class="pill" style="font-size:18px;">Canonical memory</text>
+    <text x="130" y="60" text-anchor="middle" class="pill" opacity="0.86">save / recall / forget</text>
+  </g>
+
+  <g transform="translate(735 722)">
+    <rect width="330" height="88" rx="18" fill="#c49a45" filter="url(#tinyShadow)"/>
+    <text x="165" y="34" text-anchor="middle" class="pill" style="font-size:18px;">Proof surface</text>
+    <text x="165" y="60" text-anchor="middle" class="pill" opacity="0.86">events, CI, evals, Maya Desk</text>
+  </g>
+
+  <g transform="translate(590 835)">
+    <rect width="620" height="56" rx="16" fill="#17211b"/>
+    <text x="310" y="35" text-anchor="middle" class="pill" style="font-size:18px;">Special point: accountable authority, not raw autonomy.</text>
+  </g>
+
+  <!-- Right column -->
+  <rect x="1290" y="235" width="430" height="690" rx="22" fill="#ffffff" filter="url(#softShadow)"/>
+  <rect x="1290" y="235" width="430" height="80" rx="22" fill="#e9eee7"/>
+  <text x="1322" y="282" class="section">What Kampung adds</text>
+  <text x="1322" y="307" class="small">Main promise: do it and prove it safely</text>
+
+  <g transform="translate(1322 345)">
+    <rect width="366" height="66" rx="14" fill="#f8f9f6" stroke="#d9ded8"/>
+    <text x="22" y="29" class="label">One runtime, many channels</text>
+    <text x="22" y="52" class="body">Telegram, iMac voice, browser, docs, Maker.</text>
+  </g>
+
+  <g transform="translate(1322 427)">
+    <rect width="366" height="66" rx="14" fill="#f8f9f6" stroke="#d9ded8"/>
+    <text x="22" y="29" class="label">Code-enforced authority</text>
+    <text x="22" y="52" class="body">Every side effect passes the kernel first.</text>
+  </g>
+
+  <g transform="translate(1322 509)">
+    <rect width="366" height="66" rx="14" fill="#f8f9f6" stroke="#d9ded8"/>
+    <text x="22" y="29" class="label">Prompt-injection boundary</text>
+    <text x="22" y="52" class="body">Read content cannot silently widen scope.</text>
+  </g>
+
+  <g transform="translate(1322 591)">
+    <rect width="366" height="66" rx="14" fill="#f8f9f6" stroke="#d9ded8"/>
+    <text x="22" y="29" class="label">Memory with forget-integrity</text>
+    <text x="22" y="52" class="body">Canaries test no leak-back over time.</text>
+  </g>
+
+  <g transform="translate(1322 673)">
+    <rect width="366" height="66" rx="14" fill="#f8f9f6" stroke="#d9ded8"/>
+    <text x="22" y="29" class="label">Real artifact quality gates</text>
+    <text x="22" y="52" class="body">Local files, QA, repair, honest failure.</text>
+  </g>
+
+  <g transform="translate(1322 755)">
+    <rect width="366" height="66" rx="14" fill="#f8f9f6" stroke="#d9ded8"/>
+    <text x="22" y="29" class="label">Local-first audit cockpit</text>
+    <text x="22" y="52" class="body">Routes, costs, failures, proof boundaries.</text>
+  </g>
+
+  <rect x="1322" y="842" width="366" height="50" rx="14" fill="#17211b"/>
+  <text x="1505" y="873" text-anchor="middle" class="pill">Runtime around the agent.</text>
+
+  <!-- Footer -->
+  <rect x="80" y="975" width="1640" height="145" rx="24" fill="#17211b" filter="url(#tinyShadow)"/>
+  <text x="120" y="1025" class="pill" style="font-size:24px;">Where Kampung AI is genuinely unusual</text>
+  <text x="120" y="1061" class="pill" opacity="0.9">It treats action, memory, browser reading, and file delivery as governed system events that can be audited and tested.</text>
+  <text x="120" y="1096" class="pill" style="font-size:20px;" opacity="0.92">Where others are stronger today: polished onboarding, cloud distribution, enterprise controls, integrations, and broad real-world usage data.</text>
+  <rect x="1335" y="1008" width="335" height="74" rx="18" fill="#f6edcf"/>
+  <text x="1502" y="1037" text-anchor="middle" class="label">Sharp takeaway</text>
+  <text x="1502" y="1062" text-anchor="middle" class="body">Kampung is not the biggest agent.</text>
+  <text x="1502" y="1084" text-anchor="middle" class="body">It is the most governance-led one.</text>
+
+  <text x="80" y="1162" class="mono">Generated from repo analysis: Kampung AI docs, proof/readiness, weakness status, and productization plan.</text>
+</svg>

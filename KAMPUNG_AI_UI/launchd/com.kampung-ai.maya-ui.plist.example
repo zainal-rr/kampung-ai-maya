@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN"
+  "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.kampung-ai.maya-ui</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/Users/zainalabidinjamal/projects/kampung-ai/KAMPUNG_AI_UI/start_ui.sh</string>
+  </array>
+  <key>EnvironmentVariables</key>
+  <dict>
+    <key>MAYA_UI_TOKEN</key>
+    <string>replace-with-private-token</string>
+    <key>MAYA_UI_PORT</key>
+    <string>8765</string>
+  </dict>
+  <key>WorkingDirectory</key>
+  <string>/Users/zainalabidinjamal/projects/kampung-ai</string>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/Users/zainalabidinjamal/projects/kampung-ai/logs/maya-ui.out.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/zainalabidinjamal/projects/kampung-ai/logs/maya-ui.err.log</string>
+</dict>
+</plist>

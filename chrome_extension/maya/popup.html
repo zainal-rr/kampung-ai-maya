@@ -1,0 +1,23 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <style>
+      body { font: 13px -apple-system, sans-serif; width: 260px; padding: 12px; }
+      h1 { font-size: 14px; margin: 0 0 8px; }
+      .ok { color: #188038; } .bad { color: #c5221f; }
+      input { width: 100%; box-sizing: border-box; margin: 6px 0; }
+      small { color: #666; }
+    </style>
+  </head>
+  <body>
+    <h1>Maya Browser Automation</h1>
+    <div>Bridge: <span id="state" class="bad">checking…</span></div>
+    <label><small>Bridge token (from logs/extension/maya_extension_token.txt)</small>
+      <input id="token" type="password" placeholder="paste token" />
+    </label>
+    <button id="save">Save & reconnect</button>
+    <p><small>Maya's tabs live in the “Maya” tab group. Badge: ON = connected, RUN = working.</small></p>
+    <script src="popup.js"></script>
+  </body>
+</html>

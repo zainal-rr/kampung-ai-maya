@@ -1,0 +1,40 @@
+# Core runtime (see dependency_manifest.json for the role of each dependency)
+aiosqlite
+python-dotenv
+python-telegram-bot
+langgraph
+langgraph-checkpoint-sqlite
+httpx
+websockets
+aiohttp
+requests
+PyYAML
+
+# Model providers
+google-genai
+openai
+anthropic
+
+# Office artifact builders
+python-docx
+openpyxl
+python-pptx
+Pillow
+
+# Sight / voice / wakeword
+numpy
+opencv-python
+scipy
+scikit-learn
+sounddevice
+soundfile
+openwakeword
+pynput
+
+# Browser QA
+playwright
+
+# macOS app build (optional)
+pyinstaller
+# macOS-only frameworks (AppKit/Foundation):
+pyobjc-framework-Cocoa; sys_platform == "darwin"

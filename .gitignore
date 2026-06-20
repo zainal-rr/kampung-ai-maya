@@ -5,10 +5,17 @@ venv/
 __pycache__/
 *.pyc
 .DS_Store
+.fuse_hidden*
 session_history.db
 *.db
+*.db-shm
+*.db-wal
 *.sqlite
+*.sqlite-shm
+*.sqlite-wal
 *.sqlite3
+*.sqlite3-shm
+*.sqlite3-wal
 logs/*
 !logs/demos/
 logs/demos/*
@@ -17,6 +24,9 @@ logs/demos/*
 !logs/evals/
 logs/evals/*
 !logs/evals/latest.json
+!logs/w5/
+logs/w5/*
+!logs/w5/command_callsite_inventory.txt
 distilled_memories.log
 omi_sync/
 mudra_sync/

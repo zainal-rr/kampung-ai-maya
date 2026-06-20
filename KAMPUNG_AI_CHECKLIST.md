@@ -30,9 +30,9 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Use Terminal as the short-term development host only.
     - [x] Plan a dedicated Kampung AI app/service identity for the long term.
     - [x] Add a `launchd` background-service path for the spare iMac.
-    - [x] Lock the calm default posture: routines on, Mudra/Omi adapters off until hardware day.
+    - [x] Lock the calm default posture: routines on, Omi adapter off until hardware day, and Mudra Link used only as external hotkey pass-through when configured.
     - [x] Keep the iMac voice loop off during pre-key testing so Telegram is the main live quality surface.
-    - [x] Add activation rules for Telegram work-location commands, external camera only, temporary hotkey voice, and future Mudra proximity.
+    - [x] Add activation rules for Telegram work-location commands, external camera only, and deliberate hotkey voice. Mudra Link may trigger voice only by emitting the same hotkey.
     - [x] Add a travel testing plan where Telegram is the main away surface and Splashtop is remote maintenance only.
 
 ## 🧠 Phase 2: The Shared Brain
@@ -43,7 +43,7 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Make Ara the default Maya voice identity on the iMac.
     - [x] Keep the iMac path optimized for fluid spoken interaction.
     - [x] Lock the voice agent budget rule: manual trigger starts it, 5 seconds of silence closes it, and it is never open all day.
-    - [x] Remove live voice wake activation from the roadmap. Mudra replaces wake later, hotkey is temporary.
+    - [x] Remove live voice wake activation from the roadmap. `Option + Space` is the current deliberate iMac voice trigger; Mudra Link Mouse Mode can press that same hotkey externally.
     - [x] Add a bounded Grok Voice Agent session manager with stub transport for pre-key testing.
     - [x] Track Grok Voice Agent route and active seconds for `/route` and `/cost`.
     - [x] Prepare the real xAI websocket adapter behind disabled `real` mode.
@@ -57,9 +57,14 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Prevent the real iMac voice-agent path from falling back to separate TTS after wake.
     - [x] Add iMac voice policy so short Malay/Manglish can stay on Grok while longer or style-sensitive Malay/Manglish routes to Gemini plus Ara.
     - [x] Add natural Ara thinking fillers for slower Malay/Manglish quality turns.
-    - [x] Record the long-work handoff rule: acknowledge by voice, idle or close paid speech-to-speech while background work runs, then reopen voice for follow-up or final delivery.
-    - [x] Decouple realtime voice from document, browser, coding, and memory worker tools so Grok voice records a handoff instead of doing long work itself.
-    - [x] Add parked voice-session state so Maya can keep short conversation alive while background agents work, without letting Grok execute the work.
+    - [x] Record the in-session work rule: longer voice requests start Maya's local work while the realtime voice session remains available.
+    - [x] Add `run_browser_skill` and `start_maya_work` as the clean realtime voice facade tools for local browser and work execution.
+    - [x] Add voice work state so Maya can report queued, running, completed, and failed iMac voice work without exposing internal tool lanes.
+    - [x] Make realtime voice tool execution nonblocking so browser and work tasks do not freeze speech input or interruption handling.
+    - [x] Ensure manual voice stop closes the mic session without cancelling running local work by default.
+    - [x] Add a generic transcript-level voice work supervisor for browser, document, spreadsheet, PowerPoint, Markdown, visual workflow, and project/code work.
+    - [x] Split long voice work into immediate spoken acknowledgement, background execution, and result delivery when ready.
+    - [x] Store short acknowledgement, result summary, and detected artifact path in voice work state.
     - [x] Live-test the real xAI websocket adapter after the xAI key arrives; pre-May-25 iMac test passed with Office artifact creation by voice.
 - [x] **2.2. The Mind (GPT-5.5)**
     - [x] Implement "Escalation Logic" for high-complexity strategy.
@@ -129,29 +134,30 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add a live Artisan 3D regression that proves Gemini brief plus the Artisan maker lane produces editable Blender source, exported STL, README, route/artifact records, and no physical print action.
 
 ## ⚡ Phase 3: The Neural Link (Mudra Link - Priority)
-*Goal: Bridge the neural band into the interaction loop.*
+*Goal: Use Mudra Link as a simple physical hotkey controller without making Maya depend on a direct Mudra runtime.*
 
-- [ ] **3.1. Mudra Gesture Dictionary**
-    - [ ] Map **Pinch** (Push-to-Talk).
-    - [ ] Map **Flick Up** (Wake/Ambient Voice).
-    - [x] Keep all gesture mappings disabled until the Mudra Link arrives.
-    - [x] Record raw Mudra events without triggering actions.
-    - [x] Prepare Mudra proximity activation when worn within one metre of the iMac.
+- [x] **3.1. Mudra Mouse-Mode Hotkey Mapping**
+    - [x] Use Mudra Link in Mouse Mode so Zainal can still navigate the iMac normally.
+    - [x] Configure **Twist** in the Mudra Link app to send `Option + Space`.
+    - [x] Configure **Double Twist** in the Mudra Link app to send `Option + Escape`.
+    - [x] Let Maya receive only the normal iMac hotkeys; do not add a Maya-side Mudra SDK listener, WebSocket bridge, BLE listener, or gesture runtime for v1.
+    - [x] Scrap the June 8 direct Mudra activation experiment.
 - [ ] **3.2. Local BLE Fallback**
-    - [ ] Direct BLE commands for system volume/sleep when offline.
+    - [x] Keep direct BLE/system-control ideas out of v1 unless Zainal explicitly reopens them.
 - [x] **3.3. Mudra Adapter Seam**
-    - [x] Add a clean event-file adapter for future Mudra integration.
-    - [x] Keep the adapter disabled by default until hardware arrives.
+    - [x] Keep the old event-file adapter only as a disabled research seam.
+    - [x] Keep the adapter disabled by default; current v1 uses Mudra Link app hotkey mapping only.
 - [ ] **3.4. Mudra Hardware Window**
-    - [ ] Order Mudra Link around May 20, 2026.
-    - [ ] Expect arrival and live integration window around June 3 to June 10, 2026.
-    - [ ] Keep Mudra adapter in staging mode until the real band is present.
+    - [x] Mudra Link received and paired on June 8, 2026.
+    - [x] Confirm Mouse Mode app-level mapping is the v1 direction.
+    - [x] Live-test Twist opens the Maya mic and Double Twist closes it through the existing hotkey channel.
+    - [x] Keep Mudra adapter disabled; June 8 direct activation attempt was scrapped.
 
 ## 🎙️ Phase 4: Ambient Memory (Omi Pendant - Priority)
 *Goal: Sync 24/7 capture into Maya's memory.*
 
 - [ ] **4.1. Tailscale Ingress**
-    - [ ] Configure auto-sync for Omi transcripts via Tailscale.
+    - [x] Configure auto-sync for Omi transcripts via Tailscale.
 - [x] **4.2. The Context Sieve**
     - [x] Implement filter node to strip silence/noise from ambient feeds.
     - [x] Store distilled Omi memories in the shared memory system.
@@ -161,7 +167,7 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Keep the Omi watcher optional until the hardware flow matters.
 - [ ] **4.4. Omi Hardware Window**
     - [ ] Order Omi band around May 20, 2026.
-    - [ ] Expect arrival and live integration window around June 3 to June 10, 2026.
+    - [ ] Expect arrival and live integration window around July 1, 2026.
     - [ ] Keep Omi adapter in staging mode until the real band and transcript flow are present.
 
 ## 🗣️ Phase 5: The Voice & OS Bridge
@@ -186,7 +192,7 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Send Telegram voice-note replies with `send_voice` when ffmpeg can convert Ara audio to Opus.
     - [x] Keep Telegram text-only before the xAI key rather than sending the wrong local fallback voice.
 - [ ] **5.4. Local iMac Voice Loop**
-    - [ ] Capture microphone speech on the iMac.
+    - [x] Capture microphone speech on the iMac.
     - [x] Resolve local speech inputs by device name instead of fixed changing macOS indexes.
     - [x] Prefer `Zainal’s Headphone` as the named speech input and keep `iMac Microphone` as fallback.
     - [x] Disable voice wake activation for live use so idle listening is not needed.
@@ -194,12 +200,12 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Keep Whisper only as an inactive fallback for one-shot transcription and offline debugging.
     - [x] Archive openWakeWord work as an experiment, not a future live trigger.
     - [x] Do not test openWakeWord for live voice activation unless Zainal explicitly reopens it later.
-    - [ ] Record Zainal-specific positive wake samples and negative background samples.
+    - [x] Record Zainal-specific positive wake samples and negative background samples.
     - [x] Archive old sample recorder experiment outside the live path.
     - [x] Archive old local scorer prototype outside the live path.
-    - [ ] Improve the scorer beyond the first 85 percent leave-one-out baseline before live use.
+    - [x] Improve the scorer beyond the first 85 percent leave-one-out baseline before live use.
     - [x] Add a two-stage wake probe: local candidate score first, tiny STT confirmation second.
-    - [ ] Confirm the two-stage wake path before connecting it to live Maya.
+    - [x] Confirm the two-stage wake path before connecting it to live Maya.
     - [x] Skip openWakeWord live hardening because voice wake activation is scrapped.
     - [x] Do not connect openWakeWord to Maya live path.
     - [x] Keep the iMac voice channel disabled while the wake detector is being redesigned.
@@ -207,11 +213,11 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add `Option + Escape` manual stop for the hotkey voice session.
     - [x] Keep microphone capture closed until the hotkey starts a voice session.
     - [x] Prove hotkey can trigger the Grok Voice Agent path.
-    - [ ] Do not continue natural voice testing on the `ffmpeg` file-capture hotkey loop.
+    - [x] Do not continue natural voice testing on the `ffmpeg` file-capture hotkey loop.
     - [x] Rebuild hotkey voice as realtime streaming before the next serious iMac voice test.
-    - [ ] Use Grok Voice Agent speech-to-speech for the long-term iMac conversation path.
-    - [ ] Escalate to GPT-5.5 only when needed.
-    - [ ] Speak replies locally through the iMac speakers with Ara.
+    - [x] Use Grok Voice Agent speech-to-speech for the long-term iMac conversation path.
+    - [x] Escalate to GPT-5.5 only when needed.
+    - [x] Speak replies locally through the iMac speakers with Ara.
     - [x] Set the wake window to 5 seconds so live voice does not stay open after silence.
     - [x] Let the iMac channel hand wake-session turns to the bounded Grok Voice Agent manager when enabled.
     - [x] Add durable iMac voice session transcript logging for user speech, Maya speech, tool calls, interruptions, and diagnostics.
@@ -251,7 +257,7 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Report honestly when vision is disabled, not in iMac work location, permission blocked, or privacy block closed.
     - [x] Add `vision_command_smoke.py` for command behavior.
     - [x] Add `vision_answer_probe.py` for Terminal end-to-end camera plus vision model checks.
-    - [ ] Confirm launchd or final app runtime can read Cisco frames.
+    - [x] Confirm launchd or final app runtime can read Cisco frames.
     - [x] Camera can detect presence.
 - [x] **6.2. Screen Sight**
     - [x] Add snapshot-based iMac screen capture through macOS `screencapture`.
@@ -285,14 +291,6 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Resolve app aliases like Chrome to Google Chrome before deciding whether an app is open.
     - [x] Return a clear closed-app answer when a named app is not in the macOS running app list.
     - [x] Add `screen_probe.py` for runtime Screen Recording permission checks.
-
-## 👟 Phase 7: Kinetic Anchor (DIY Shoes)
-*Goal: Physical presence security and gait analysis.*
-
-- [ ] **7.1. BLE Watchdog**
-    - [ ] Monitor Shoe MAC address for auto-wake/sleep.
-- [ ] **7.2. Gait Analysis**
-    - [ ] Gemini-powered performance coaching from IMU logs.
 
 ## 📈 Phase 8: Evolution
 - [x] **8.1. Memory Migration** - [COMPLETED 169 HIGH-VALUE CHUNKS]
@@ -328,8 +326,8 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Let Gemini 3.1 Flash summarize weekly raw logs and remove conversational noise.
     - [x] Let Gemini 3.5 Flash handle premium weekly synthesis when the week is dense, ambiguous, or needs stronger language quality.
     - [x] Let Claude review weekly memory candidates for overreach, false assumptions, vague preferences, and unsafe memory.
-    - [ ] Use GPT-5.5 only for high-value weekly memory shaping when the summary needs stricter judgement.
-    - [ ] Promote dry-run weekly facts into local preferences, lessons, and tasks after provider review is available.
+    - [x] Use GPT-5.5 only for high-value weekly memory shaping when the summary needs stricter judgement.
+    - [x] Promote dry-run weekly facts into local preferences, lessons, and tasks after provider review is available.
     - [x] Keep preferences separate from event memory.
     - [x] Retrieve relevant preferences, tasks, and long-term memory before replying.
     - [x] Filter operational/internal values like chat ids out of user-facing memory retrieval.
@@ -346,6 +344,47 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Block quantum advisory output from overriding `/complex`, coding-to-Artisan, current-news, vision, screen, commands, learning, safety, or permission routes.
     - [x] Add `quantum_advisory_smoke.py` and include it in launch rehearsal.
     - [ ] Test normal embeddings before any GCP tensor-network or PennyLane cloud path.
+- [ ] **8.5. M1: Google Meet Via Recall.ai**
+    - [x] Store the current Meet/Recall roadmap plan at `project_documents/roadmap/Maya_in_Google_Meet_via_Recall_Plan.md`.
+    - [x] Keep this after W5-3 and W7 provenance hardening. In a meeting, other people, shared screens, and chat become untrusted input sources.
+    - [ ] Confirm Recall.ai's current realtime audio input/output support, webhook shape, pricing, privacy, consent, and dashboard availability before live use.
+    - [x] Build M1 passive foundation: Recall bot lifecycle payload, verified webhook intake, direct-address engagement, `other_speaker` provenance, and no meeting-triggered tools.
+    - [x] Use Recall Meeting Bot + Output Media for the speaking teammate path; keep Google Meet Media API out of M1 because it is receive-only.
+    - [x] Add the disclosure boundary: other speakers can ask about meeting/public context, but owner-private memory/files/logs/docs are refused or sent owner-channel-only.
+    - [x] Add engine-supervised `ENABLE_MAYA_MEET=1` service with separate callback/output ports for cloudflared live proof.
+    - [x] Add Telegram `/join <Meet link>` as the owner-text trigger for a Recall-truthful Meet join orchestrator.
+    - [x] Add Telegram `/leave [Meet link]` so the owner can trigger Recall `leave_call` and reconcile the session to stopped/ended without manual Codex cleanup.
+    - [x] Replace quick-tunnel workflow with a `launchd`-supervised named tunnel plan for `maya-meet.labsoft.uk`; quick tunnels are emergency-only.
+    - [x] Make Meet join status Recall-sourced: DB status is a cache, stale `live` rows reconcile from Retrieve Bot/lifecycle webhooks, and `leave_call` is used for active bots.
+    - [x] Add canonical-URL in-flight locking so double `/join` sends cannot create duplicate bots.
+    - [x] Keep permanent public endpoints hardened: output requires token plus active session/opaque utterance id, and callback requires Recall signature/timestamp.
+    - [x] Protect the public Output Media surface: opaque utterance ids, token required, no request-supplied paths, no directory listing, and W5 personal-data paths unreachable.
+    - [x] Deduplicate Recall webhook retries by event/message id so transcript retries do not double-speak.
+    - [x] Live solo positive control: bot joins, verified transcript arrives, and Maya speaks back through Output Media before policy-gate tests count.
+    - [x] Live safety/teardown proof: private browser requests route to Telegram approval, room audio cannot approve, and `leave_call` reconciles the bot to ended/done instead of stale `live`.
+    - [x] Add semantic Meet artifact handoff: Meet Office artifacts receive only the current meeting transcript as source context, and raw wake/command text must not become artifact title/topic/filename.
+    - [ ] Prove Meet Office capability with artifact content inspection: Word, Excel, and PowerPoint must derive title/body/sheets/slides from the current meeting transcript without stale travel/old-artifact content.
+    - [ ] Run Codex synthetic Meet gate before Zainal's real-voice retest; synthetic voice proves plumbing, policy, and missing-code issues, not final human ASR/capability quality.
+    - [ ] Live honest-failure proof: wrong API key, invalid signature, stale timestamp, unreachable Output Media, and TTS/output failure report failure without false success.
+    - [x] Keep voiceprint authority out of this Meet slice: M2 Room Mode uses action containment plus Telegram owner approval, not speaker identity.
+    - [x] Treat Telegram `owner_text` as the possession-authenticated approval channel for risky meeting actions; room audio cannot approve.
+    - [ ] If voiceprint returns later, require a fresh owner-attribution mini-plan with possession-authenticated enrollment and measured real-audio false-accept/false-reject proof.
+    - [ ] Preserve D11 tool-first narration: Maya may use a bridge line only when a tool/action is genuinely in flight, and may claim completion only from verified tool facts.
+    - [ ] Treat this as a capstone integration, not a replacement for desk-tested voice. The core Maya brain, work phases, verified facts, browser/doc actions, W5 broker, and W7 boundary stay behind the seam.
+- [ ] **8.6. M2: Room Mode And Multi-Party Turn-Taking Proof**
+    - [x] Replace voiceprint authority with Room Mode: trusted-room speakers may trigger only explicitly allowlisted, contained, reversible Maya actions.
+    - [x] Default unknown, ambiguous, private, logged-in, destructive, external, or irreversible meeting actions to Telegram owner approval.
+    - [x] Reject room-audio approvals; only authenticated Telegram `owner_text` can approve a fingerprint-bound pending action.
+    - [x] Keep browser actions in the Maya Chrome group and Office actions inside Maya-owned artifact folders.
+    - [x] Keep owner-private disclosure separately gated; private data is not spoken into the room without possession-channel confirmation.
+    - [ ] Tune wake false positives in real meetings, since false wake can now trigger contained reversible actions.
+    - [ ] Validate barge-in across Recall audio and Maya's realtime model: stop Maya's speech when a person starts talking, without losing the new utterance.
+    - [ ] Use speaker attribution so Maya knows who spoke and does not treat two colleagues' handoff or cross-talk as a direct command.
+    - [ ] Prove Maya can stay quiet during normal human-to-human talk and answer only when invited or when the meeting role explicitly allows it.
+- [ ] **8.7. M3: Meeting Safety And Reliability Proof**
+    - [ ] Run live meeting scorecards for latency, false claims, wrong-speaker handling, unauthorized action attempts, interruption quality, and embarrassment-risk.
+    - [ ] Require structured confirmation before any action triggered by non-owner speech, shared-screen text, browser/page text, chat, or documents.
+    - [ ] Keep the v1 doctrine: no WhatsApp/FaceTime call mode, no Loopback-only call feature, and no claim that Maya can privately join or summarize calls.
 
 ## 📡 Phase 9: Channel Integration
 *Goal: Make every channel feel like one Maya.*
@@ -381,7 +420,7 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Force Malay or Manglish Telegram answers through Gemini before Ara speaks them.
     - [x] Keep Telegram voice as Ara voice notes instead of Grok Voice Agent sessions.
     - [x] Make Telegram Ara voice replies the locked default, with text-only fallback until the xAI key exists.
-    - [ ] Live-test Telegram Ara voice-note replies against the xAI API.
+    - [x] Live-test Telegram Ara voice-note replies against the xAI API.
 - [ ] **9.2. Shared Runtime Across Channels**
     - [x] Reuse the same routing and memory context path for iMac and Telegram.
     - [ ] Keep channel adapters thin so the brain stays centralized.
@@ -568,7 +607,7 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Make self-heal proposal-first with detect, isolate, smallest-patch direction, exact tests, and approval before code changes.
     - [x] Prevent self-heal from deploying or restarting Maya without approval.
     - [x] Add golden conversation evals for tone, memory, context, task capture, and command mapping.
-    - [x] Add hardware readiness smoke for Omi, Mudra, wake phrases, wake window, and permission boundary.
+    - [x] Add hardware readiness smoke for Omi, deliberate hotkeys, wake-window removal, and permission boundary.
 
 ## 🧱 Phase 13: Engineering Discipline
 *Goal: Keep Kampung AI easy for Zainal, Codex, and The Artisan to understand.*
@@ -615,6 +654,13 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Strengthen browser click verification with DOM text hash, modal markers, target presence, URL, and title.
     - [x] Store browser observations as structured harness evidence with URL, title, text hash, click/fill targets, screen status, confidence, and provenance.
     - [x] Add `browser_agent_maturity_smoke.py` for dynamic-page verification, cost gates, browser state, and sensitive-click pause behavior.
+    - [x] Add Maya Chrome extension bridge with token-gated localhost WebSocket, named Maya tab group, badge status, page text, screenshot, and tab cleanup.
+    - [x] Port browser click, fill, element, result-option, price-result, and ranked-result controls to the Maya Chrome extension path.
+    - [x] Add a browser driver selector that prefers the Maya Chrome extension when connected and falls back to AppleScript when it is not.
+    - [x] Add offline bridge smoke coverage for extension request correlation, token auth, page parsing, click/fill controls, screenshots, cleanup, error, and timeout paths.
+    - [x] Run live Maya Chrome extension reliability nights with the unpacked extension loaded; `night2` reached 95%, `night3-rerun` reached 91.7%, and `night4_extension_rerun` reached 96.7%, all with 10/10 safety stops and zero criticals.
+    - [x] Audit `night4_extension_rerun` browser evidence: 58 browser-opening steps used extension tabs and zero `open_url` steps escaped to AppleScript or ungrouped Chrome tabs.
+    - [x] Make live browser reliability runs use the Maya Chrome extension driver by default so proof tabs open under the `Maya` tab group; AppleScript runs must be explicitly marked as legacy baselines.
 - [x] **14.3. Office Work**
     - [x] Add general document creation v1 for Markdown, Word, and PowerPoint drafts.
     - [x] Put Markdown notes under `~/Desktop/Maya/notes`.
@@ -709,7 +755,7 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add the private skill library layout under `maya_skills/active`, `proposed`, `disabled`, `research_notes`, and `tests`.
     - [x] Add weekly no-key skill review summaries for usage, failures, stale skills, proposals, disabled skills, and new candidates.
     - [x] Add safe user-model storage with source, confidence, allowed categories, and hard sensitive-data blocks.
-    - [x] Add channel adapter contracts so Telegram, iMac voice, Omi, Mudra, and future channels translate input/output without owning personality, skills, safety, or routing.
+    - [x] Add channel adapter contracts so Telegram, iMac voice, Omi, and future true channels translate input/output without owning personality, skills, safety, or routing. Mudra Link v1 is not a channel; it only emits hotkeys.
     - [x] Add honest self-improvement language checks so Maya cannot claim learning, proposal updates, or active skill improvement without inspectable evidence.
 - [x] **15.8. Self-Heal Loop**
     - [x] Add self-heal stage logging for detected, isolated, proposed, closed, and future repair states.
@@ -719,11 +765,11 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Reject `/selfheal force` for the memory-only heal.
     - [x] Require rollback behavior, explicit retrieval pass criteria, and a post-heal core/profile target of 80 percent usage or less.
 - [x] **15.9. Hardware Preparation**
-    - [x] Record Mudra events without mapping gestures to actions.
+    - [x] Keep direct Mudra event recording disabled; Mudra Link v1 uses app-level hotkey mapping instead.
     - [x] Prepare Omi transcript metadata for future pendant ingestion.
-    - [x] Keep Mudra Link and Omi Pendant behavior disabled until hardware testing.
+    - [x] Keep Omi Pendant behavior disabled until hardware testing; Mudra Link behavior is handled by the vendor app, not Maya runtime.
 - [x] **15.10. Harness Tests**
-    - [x] Add harness store, graph, resume, browser, screen, Mudra, and Omi smoke tests.
+    - [x] Add harness store, graph, resume, browser, screen, disabled-Mudra-seam, and Omi smoke tests.
     - [x] Add harness artifact, grounding, detailed resume, skill learning loop, and self-heal loop smoke tests.
     - [x] Include new harness hardening tests in `may1_rehearsal.py`.
     - [x] Keep every `.py` file under 300 lines.
@@ -886,11 +932,13 @@ This document tracks the technical and operational roadmap for building the stan
 
 - [x] **19.3. Shared Artifact QA Contract**
     - [x] Add `ArtifactQualityResult` with artifact type, path, pass/fail state, summary, issues, warnings, draft model, review model, validation steps, repair flag, and delivery readiness.
+    - [x] Add structured QA issue metadata: rule id, severity (`blocker`, `warning`, `info`), rule class (`mechanical`, `open_world`, `semantic`), message, and evidence.
     - [x] Add local HTML validation for doctype, structure, inline CSS/JS, interactive controls, code-fence leakage, and common corrupted CSS/HTML markers.
     - [x] Add local Word validation for `.docx` openability, headings, content density, placeholder text, malformed markdown leakage, and generated summary.
     - [x] Add local Excel validation for `.xlsx` openability, populated cells, table-like rows, frozen panes, and formulas when formulas are implied.
     - [x] Add Claude artifact review helper that loads the relevant artifact quality skill and records Claude usage when a live key is present.
     - [x] Fail open with a warning when Claude is unavailable, while still enforcing local validation.
+    - [x] Add QA disagreement governance: open-world/semantic validator disagreements can use targeted Gemini arbitration, mechanical blockers remain validator-authoritative, and `/review` shows weekly disagreement activity with resolved items crossed out.
 
 - [x] **19.4. Word Quality Gate**
     - [x] Keep Gemini role-based drafting as the Word content source.
@@ -940,7 +988,7 @@ This document tracks the technical and operational roadmap for building the stan
         - [x] Strengthen router/WiFi technical guides with required admin password, SSID, WiFi password, WPA2/WPA3, firmware, and verification content.
         - [x] Repair proposal drafts before delivery when they contain empty Out of Scope labels, incomplete tiered frameworks, or raw markdown dividers.
         - [x] Replace one-pass Word repair with bounded internal Word QA retries before Maya delivers or reports a hard failure.
-        - [x] Raise default artifact QA retry cap to 10 attempts for Word/Excel and PowerPoint visual QA, while keeping environment overrides available.
+        - [x] Set default artifact QA retry cap to 3 attempts for Word/Excel and PowerPoint visual QA, while keeping environment overrides available and clamped.
         - [x] Add bounded internal Excel rebuild retries for travel-budget and generic spreadsheet creation before Maya delivers or reports a hard failure.
         - [x] Add a Word quality smoke test that builds real `.docx` files and validates multiple everyday scenarios.
         - [x] Add Word golden artifact smoke tests that inspect real `.docx` content for travel, router, and proposal scenarios.
@@ -1074,6 +1122,8 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add `/weekly run` to start a saved weekly-memory pass from Telegram.
     - [x] Load `.env` for weekly provider agents so launchd can see Gemini and Claude keys.
     - [x] Add a local weekly-memory durability guard that rejects transient global project facts, generated-artifact observations, trip-plan details, test facts, and sensitive data even if a provider approves them.
+    - [x] Add weekly-memory reviewer fallback so Claude review failures save a conservative summary, save zero unreviewed canonical facts, and audit the reviewer error instead of failing the whole launchd run.
+    - [x] Backfill the failed Sunday June 7, 2026 launchd weekly-memory run for `2026-W23` after adding the reviewer fallback.
     - [x] Run weekly memory manually with live providers and verify audit rows record provider calls, saved facts, rejected facts, and canonical memory IDs.
     - [x] Add a user-facing `/weekly` formatter that hides raw paths, JSON blobs, provider debug text, and canonical IDs while keeping `/weekly status` as the audit view.
     - [x] Verify one unattended launchd weekly memory run after the next scheduled Sunday 20:00 trigger.
@@ -1117,18 +1167,18 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add smoke coverage proving the June 8 regression checklist is present and does not falsely mark manual-live proof as complete.
     - [ ] Confirm iMac live voice uses the same architecture as Telegram memory, document creation, workflow desk, and weekly memory.
     - [ ] Verify native app continuity: open last document, open specific document, summarize document, and focus the correct app.
-    - [ ] Verify iMac voice long-work handoff: Grok voice acknowledges, parks or closes paid voice, and the normal Maya worker completes the task.
+    - [ ] Verify iMac voice long-work execution: Maya starts local browser/document work during the live voice session, keeps listening, and reports the result without internal wording.
     - [x] Disable `ENABLE_LOCAL_WAKE_SCORER` for live use.
     - [x] Keep local wake experiments separate from paid Grok and out of the live path.
     - [x] Add voice device intent policy: Sony or `Zainal’s Headphone` allows Maya wake.
     - [x] Block AirPods and iMac audio from local Maya wake.
-    - [x] Record Mudra within radius plus pinch as the future iMac-speaker wake path.
+    - [x] Replace Mudra proximity/pinch trigger ideas with Mouse Mode hotkey pass-through: Twist maps to `Option + Space`, Double Twist maps to `Option + Escape`.
     - [x] Add a no-Grok local voice integration smoke for wake acknowledgement.
     - [x] Add hotkey voice smoke for deliberate local trigger plus 5 second idle close.
     - [x] Add hotkey voice smoke for manual stop.
     - [x] Remove false-wake acceptance target because voice wake activation is removed.
     - [x] Remove wake detection acceptance target because voice wake activation is removed.
-    - [x] Do not connect local wake to Maya. Mudra is the future trigger.
+    - [x] Do not connect local wake to Maya. Mudra Link is only an external hotkey controller in v1.
     - [x] Do not use xAI STT confirmation for the current one-stage headphone path.
     - [x] Add `hardware_live_proof.py` so hardware/live readiness can be audited without pretending physical proof has happened.
     - [x] Add smoke coverage for hardware/live proof readiness and manual-live-required boundaries.
@@ -1317,9 +1367,9 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Record that the final 200-test run explicitly covered Telegram text chat, memory, safety, Word create/edit/send/review, Excel create/edit/review, PowerPoint create/edit/send/review, `/complex`, skills, browser-safe routing, current/news/research, Malay/Manglish, delivery audit, turn audit, and route/cost/provider inspection.
     - [x] Record that the report uses delivery-log verification only for Telegram Web bubble-capture misses, not as a substitute for failed Maya delivery.
     - [x] Record pre-May-25 iMac voice Office artifact creation as passed based on Zainal's live result.
-    - [x] Keep iMac long-work voice handoff as `manual-live-required`.
+    - [x] Keep iMac long-work in-session voice execution as `manual-live-required`.
     - [x] Keep iMac native app continuity as `manual-live-required`.
-    - [x] Keep Omi transcript sync and Mudra gesture/proximity as `manual-live-required`.
+    - [x] Keep Omi transcript sync as `manual-live-required`; Mudra v1 is hotkey pass-through and does not require a Maya-side gesture parser.
     - [x] Add smoke coverage for live evidence defaults and updates.
 
 - [x] **22.3. Maya Desk Live Proof Separation**
@@ -1338,6 +1388,7 @@ This document tracks the technical and operational roadmap for building the stan
 - [x] **22.5. 7-Day Reliability Soak**
     - [x] Add `live_reliability_soak.py` to track missed replies, wrong routes, voice timeouts, memory mistakes, file delivery failures, browser failures, cost spikes, and false saved claims.
     - [x] Add deterministic smoke coverage for clean and failing soak days.
+    - [x] Add conservative auto-recording from voice-session logs and controller uptime logs; subjective failures and corrections still require notes or explicit counters.
     - [x] Run a one-day Telegram Web stress pass across chat, memory, documents, audit, safety, workflow, current/news, browser-safe, skill, and meta prompts.
     - [x] Fix and prove the June 3 weak paths found by the stress pass: early safety gate, stale browser-workflow hijack, Artisan false-positive routing, unsupported-action false positives, Word transit-tip edit, Excel notes-column edit, Excel task-tracker creation, and PowerPoint topic/title QA.
     - [ ] Complete seven normal-use daily live soak records.
@@ -1346,9 +1397,9 @@ This document tracks the technical and operational roadmap for building the stan
 - [ ] **22.6. Hardware And Live Voice Proof**
     - [ ] Validate Omi real transcript sync.
     - [ ] Validate Omi privacy filtering and ambient memory behavior.
-    - [ ] Validate Mudra proximity event parsing with real hardware.
-    - [ ] Validate Mudra gesture events before mapping gestures to actions.
-    - [ ] Validate iMac live long-work voice handoff with paid voice parking and later state resume.
+    - [x] Validate the chosen Mudra v1 design: Mouse Mode remains active and gestures are mapped in the Mudra Link app to existing Maya hotkeys.
+    - [x] Live-test Twist and Double Twist against Maya's running hotkey channel.
+    - [ ] Validate iMac live long-work voice execution with in-session browser/document work, interruption, status recall, and later state resume.
 
 - [x] **22.7. 9-Path Proof Tooling**
     - [x] Add `reliability_scorecard.py` for a 30-day reliability scorecard.
@@ -1360,31 +1411,33 @@ This document tracks the technical and operational roadmap for building the stan
     - [ ] Record live browser benchmark outcomes before claiming browser-agent maturity.
 
 - [x] **22.8. Grok Voice Transcript Replay Proof**
-    - [x] Add `voice_transcript_policy.py` for deterministic long-work parking classification and transcript noise notes.
+    - [x] Add `voice_transcript_policy.py` for deterministic long-work classification and transcript noise notes.
     - [x] Add `voice_command_aliases.py` so spoken iMac commands like `show route`, `show status`, `weekly status`, `self heal dry run`, `this is complex...`, `remember...`, `forget...`, and `create skill...` can route without slash syntax.
     - [x] Add voice transcript cleanup for filler words, self-correction, background-noise markers, repeated starts, and dangling cut-off endings before voice intent routing.
-    - [x] Preserve the rule that Grok Voice Agent does not execute long document, browser, skill, coding, memory, or project work; it parks the request for Maya's normal worker lane.
+    - [x] Preserve the rule that xAI voice does not personally execute long document, browser, skill, coding, memory, or project work; it starts Maya's local tools through a clean voice facade.
     - [x] Add explicit travel price capture for spoken or typed flight, Airbnb, Booking.com, hotel, accommodation, and stay prices so budget workbooks can preserve those values.
-    - [x] Add `grok_voice_transcript_replay_500.py` and `grok_voice_replay_fakes.py` for isolated deterministic replay without live provider spend.
+    - [x] Wire visible browser travel selections into budget memory: choosing a Google Flights, Booking.com, or Airbnb priced option saves the selected provider/option/price into `maya_travel_plan`, and the one-sheet travel budget workbook consumes those values. Verified by `browser_task_step_smoke.py`.
+    - [x] Fix country-level travel Word QA so "Kazakhstan itinerary" can include in-country cities such as Almaty and Astana without being rejected as destination mismatches. Verified against the live-generated `kazakhstan-itinerary-v3.docx`, `document_species_smoke.py`, `word_quality_smoke.py`, and live Telegram turn 5743.
+    - [x] Add `tests/replays/grok_voice_transcript_replay_500.py` and `grok_voice_replay_fakes.py` for isolated deterministic replay without live provider spend.
     - [x] Run the 500-case replay. Result: 500 PASS, 0 FAIL. Evidence: `logs/live_tests/grok_voice_transcript_replay_500_2026-06-04.md`.
-    - [x] Confirm the replay covered voice-to-worker handoff, routing, memory, documents, `/complex`, safety gates, parked voice behavior, Grok-not-long-work policy, final response shape, live skills, skill creation/suggestion/approval, healing commands, travel budget price capture, slashless spoken commands, and noisy/cut-off transcripts.
-    - [x] Keep real paid iMac voice handoff live validation under 22.6; deterministic transcript replay is not physical microphone/websocket proof.
+    - [x] Confirm the replay covered the then-current voice-to-worker routing, memory, documents, `/complex`, safety gates, Grok-not-long-work policy, final response shape, live skills, skill creation/suggestion/approval, healing commands, travel budget price capture, slashless spoken commands, and noisy/cut-off transcripts.
+    - [x] Keep real iMac in-session voice work validation under 22.6; deterministic transcript replay is not physical microphone/websocket proof.
 
 - [x] **22.9. Phase 22 Readiness 700 Proof**
-    - [x] Add `phase22_readiness_700.py` as the consolidated software-readiness benchmark for June 8 preparation.
+    - [x] Add `tests/replays/phase22_readiness_700.py` as the consolidated software-readiness benchmark for June 8 preparation.
     - [x] Cover document quality: Word render/visual QA, Excel formulas/format/domain/usefulness checks, PowerPoint render/notes/dark-theme/aspect-ratio checks, and failed-quality boundaries.
     - [x] Cover browser/agent workflow: YouTube, flight search, Booking.com/Airbnb comparison, product/research prompts, safe form filling, source-aware routing, and stop-before-login/payment/upload/submit behavior.
     - [x] Cover `/complex`: plan, approval, checkpoint, rollback, trace, repair/report, and final-report expectations.
     - [x] Cover memory over time: canonical canaries, aged recall, forget/no-leak behavior, simulated 30-day scorecard, and saturation-safe proof boundaries.
     - [x] Cover Blender/Maker software path: deterministic maker templates, Blender export QA, mesh/dimension proof, no ready-to-print overclaim, and physical-print approval boundaries.
-    - [x] Cover voice readiness simulation: session open/close, handoff parked, worker started/completed, voice resume state, paid-session duration guard, and no long work in Grok voice.
+    - [x] Cover voice readiness simulation: session open/close, work started/completed, voice resume state, duration guard, and no long work executed directly by xAI voice.
     - [x] Cover multitasking simulation: Maya can keep short conversation state separate while a worker continues document/background work and appends relevant context.
     - [x] Run the 700-case readiness benchmark. Result: 700 PASS, 0 FAIL. Evidence: `logs/live_tests/phase22_readiness_700_2026-06-04.md`.
     - [x] Keep physical proof separate: this does not claim real iMac microphone/websocket/speaker, paid billing, Bambu print execution, Omi, Mudra, or real elapsed 30-day reliability.
 
 - [x] **22.10. Maya Voice Transcript Replay 700 Proof**
-    - [x] Add `maya_voice_transcript_replay_700.py` to send 700 noisy voice-style transcripts through `KampungAssistant.handle_text(..., input_type="voice")`.
-    - [x] Ensure long-work transcripts first park through the Grok handoff tool, then Maya's worker lane handles the request.
+    - [x] Add `tests/replays/maya_voice_transcript_replay_700.py` to send 700 noisy voice-style transcripts through `KampungAssistant.handle_text(..., input_type="voice")`.
+    - [x] Ensure long-work transcripts route into Maya's local work path instead of being answered as ordinary voice chat.
     - [x] Cover document creation, memory save/recall/forget, spoken routing commands, `/complex`, safety gates, skill request/approval, browser-safe routing, travel price capture, and daily conversation.
     - [x] Keep replay state isolated in a temporary DB and temporary skill/workspace folders so test memories and skill scaffolds do not pollute Maya's real memory.
     - [x] Run the 700-case Maya voice transcript replay. Result: 700 PASS, 0 FAIL. Evidence: `logs/live_tests/maya_voice_transcript_replay_700_2026-06-04.md`.
@@ -1396,16 +1449,16 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Update this checklist as the Phase 22 source of truth.
     - [x] Align Phase 22 progress language so the current operational estimate is 82 to 84 percent, not an overclaimed 88 percent.
     - [x] Improve Maya Desk with proof-boundary snapshot, operational score estimate, and pending physical/live proof sections.
-    - [x] Strengthen the June 8 iMac live-test checklist with voice, Telegram/browser, Office, memory, `/complex`, parked voice handoff, and evidence-capture prompts.
+    - [x] Strengthen the June 8 iMac live-test checklist with voice, Telegram/browser, Office, memory, `/complex`, in-session voice work, and evidence-capture prompts.
     - [x] Prepare browser benchmark evidence requirements with deterministic route/safety proof and live-run scoring placeholders.
     - [x] Run `/selfheal dryrun` equivalent locally. Result: no memory/files/cache/services changed; current core/profile 42%/82%; projected 42%/37%; latest document preserved.
     - [x] Run targeted Phase 22 smokes.
-    - [x] Rerun `phase22_readiness_700.py`. Result: 700 PASS, 0 FAIL.
-    - [x] Rerun `maya_voice_transcript_replay_700.py`. Result: 700 PASS, 0 FAIL.
-    - [x] Rerun `grok_voice_transcript_replay_500.py`. Result: 500 PASS, 0 FAIL.
+    - [x] Rerun `tests/replays/phase22_readiness_700.py`. Result: 700 PASS, 0 FAIL.
+    - [x] Rerun `tests/replays/maya_voice_transcript_replay_700.py`. Result: 700 PASS, 0 FAIL.
+    - [x] Rerun `tests/replays/grok_voice_transcript_replay_500.py`. Result: 500 PASS, 0 FAIL.
     - [x] Run `local_ci.py`.
     - [x] Run redaction check on the June 3 Telegram Web 200-test report.
-    - [x] Keep live-only work separate: iMac paid voice, live browser field sessions, Omi/Mudra, physical print, seven-day soak, and 30-day reliability remain pending until actual evidence exists.
+    - [x] Keep live-only work separate: iMac realtime voice, live browser field sessions, Omi/Mudra, physical print, seven-day soak, and 30-day reliability remain pending until actual evidence exists.
     - [x] Zainal explicitly approved pushing this Phase 22 state on June 4, 2026.
     - [x] Verify GitHub reports `zainal-rr/kampung-ai-maya` as `PRIVATE` before pushing.
     - [x] Push the verified Phase 22 closeout commit to the private GitHub remote.
@@ -1423,5 +1476,295 @@ This document tracks the technical and operational roadmap for building the stan
     - [x] Add `docs/proof_and_readiness.md` for scores, proof boundaries, and remaining validation.
     - [x] Update `README.md` with the architecture document map.
 
+## Phase 23: Reliability Sprint - Memory Time Audit And Self-Heal Execution
+
+*Goal: Strengthen the two highest-leverage non-live areas: memory over time and real checkpointed agentic self-heal execution. Browser field reliability is deferred to live/browser testing.*
+
+- [x] **23.1. Memory Time Audit**
+    - [x] Add append-only `memory_audit_events`.
+    - [x] Audit canonical writes as `canonical_write`.
+    - [x] Audit same-subject canonical updates as `canonical_update`.
+    - [x] Audit forget operations as `canonical_forget`.
+    - [x] Audit direct recall as `canonical_recall`.
+    - [x] Audit relevant prompt activation as `activation`.
+    - [x] Audit weekly provider candidates as `weekly_candidate`.
+    - [x] Audit weekly accepted facts as `weekly_save`.
+    - [x] Audit weekly rejected facts as `weekly_reject`.
+    - [x] Store redacted previews and content hashes instead of full sensitive content.
+    - [x] Surface recent audit rows in `/memory inspect`.
+    - [x] Surface recent audit rows in Maya Desk.
+
+- [x] **23.2. Memory Canaries And Leak Detection**
+    - [x] Add `memory_canaries`.
+    - [x] Seed deterministic active, forgotten, temporary-expired, project-active, and pinned canaries.
+    - [x] Add canary checks for forgotten leakage through active canonical memory.
+    - [x] Add canary checks for derived leaks through preferences, lessons, raw history, session search, compacted summaries, weekly summaries, and curated memory.
+    - [x] Verify temporary canaries do not become durable profile memory.
+    - [x] Add `leak_check` audit events.
+    - [x] Surface canary status in `/memory inspect`.
+    - [x] Surface canary status in Maya Desk.
+
+- [x] **23.3. Weekly Memory Anti-Drift Guard**
+    - [x] Prevent live weekly distillation from recreating canonical subjects already marked forgotten, expired, or superseded.
+    - [x] Audit weekly reviewer failure/rejection paths.
+    - [x] Keep canonical memory as the truth layer; audit remains evidence only.
+
+- [x] **23.4. Checkpointed Agentic Self-Heal**
+    - [x] Convert approved `/complex self-heal` from proposal-only into a durable checkpointed harness execution path.
+    - [x] Record `diagnose`, `snapshot`, `plan_patch`, `await_approval`, `apply_patch_isolated`, `verify`, `repair_once`, `final_report`, and `failed` states.
+    - [x] Require a snapshot before mutation.
+    - [x] Write memory rollback snapshots before memory-only self-heal actions.
+    - [x] Pause for second approval before isolated mutation.
+    - [x] Keep repo apply-back, restart, deploy, delete, broad cleanup, and destructive actions under separate explicit approval.
+    - [x] Let resume continue the same checkpointed run.
+    - [x] Let decline cancel cleanly.
+    - [x] Create repair reports when verification fails.
+
+- [x] **23.5. Automated Proof**
+    - [x] Add `memory_time_audit_smoke.py`.
+    - [x] Add `self_heal_execution_smoke.py`.
+    - [x] Update `complex_agentic_workflow_smoke.py` for checkpointed self-heal behavior.
+    - [x] Add new smokes to `local_ci.py`.
+    - [x] Run focused memory audit/canary smokes.
+    - [x] Run focused self-heal execution smokes.
+    - [x] Run full `local_ci.py` after this sprint's documentation and code changes. Result: 34 PASS, 0 blocking failures.
+
+- [x] **23.6. Memory Retrieval Upgrade**
+    - [x] Add `memory_recall_eval.py` with exact, paraphrase, Malay/Manglish, voice-noisy, temporal-old, forgotten, absent, and forget over/under-deletion cases.
+    - [x] Record recall eval reports under `logs/evals/` with hard floors for exact recall, forgotten leaks, false direct recalls, and forget safety.
+    - [x] Add `canonical_memory_fts.py` and wire SQLite FTS5/BM25 hybrid retrieval into canonical memory activation.
+    - [x] Use the `unicode61` tokenizer with no Porter stemming so Malay/Manglish recall is not degraded by English-only stemming.
+    - [x] Add env-gated structured memory extraction through `memory_extraction.py`, off by default and enabled only with `MEMORY_EXTRACTION_LIVE=1` plus `GOOGLE_API_KEY`.
+    - [x] Keep deterministic extraction as the no-key fallback and require provider output to pass schema, kind, scope, token-overlap, durability, and sensitivity validation.
+    - [x] Echo provider-shaped saves as `saved as subject -> value` so bad extraction is visible at write time.
+    - [x] Add `memory_watchdog.py` to seed/check canaries, detect audit silence after recent recalls, report stale curated rows, and exit nonzero on alerts.
+    - [x] Add `forget_registry.py` so every forgettable memory/index store has one registered cleanup path.
+    - [x] Preserve the existing `/forget` output format while moving execution into the registry.
+    - [x] Add `docs/memory_upgrade_plan.md` with baseline metrics, pin-ranking follow-up metrics, run commands, and embedding decision gates.
+    - [x] Measure the post-FTS5 baseline: exact recall@3 1.00, paraphrase recall@3 0.40, Malay/Manglish recall@3 0.71, forgotten leaks 0, absent false direct recalls 0.
+    - [x] Fix pinned-memory ranking so pinned facts guarantee inclusion without outranking unrelated lexical evidence.
+    - [x] Measure the pin-ranking fix: exact recall@1 1.00, Malay/Manglish recall@1 0.57, voice-noisy recall@1 0.83, temporal-old recall@1 1.00.
+    - [x] Keep embeddings out of the default path for now, but mark the embedding rerank gate as fired because paraphrase recall@3 remains 0.40.
+
+## Phase 24: Hardening Review, Document Species, Domain Knowledge, And Agentic Loop
+
+Full detail: `SESSION_CHANGE_REPORT.md`. Validation plan: `KAMPUNG_AI_VALIDATION_TEST_CHECKLIST.md`.
+
+- [x] **24.1. Security And Correctness Review Fixes**
+    - [x] Add closed-by-default Telegram sender allowlist (`TELEGRAM_ALLOWED_CHAT_IDS`) across all four handlers, with rejected senders logged.
+    - [x] Fix the dead context-command bug in `assistant.py` (result was unconditionally overwritten with None).
+    - [x] Stop harness start-marker hijacking of normal chat ("what type of pasta") with message-start `START_COMMAND_RE`.
+    - [x] Remove the canonical memory 80-row recall cliff and add a status index.
+    - [x] Block forgotten-memory resurrection by derived writers (`allow_resurrect=False` for weekly and Omi) with `canonical_write_blocked_forgotten` audit events; preserve pinned status on re-save.
+    - [x] Feed the permission kernel human-readable arg text, Luhn-validate card detection, and tighten bare token/secret markers.
+    - [x] `load_dotenv(override=False)`, fail-loud missing `GOOGLE_API_KEY`, init-once memory DB setup, `requirements.txt`.
+    - [x] Remove the live batch validator word-count false-pass (`local.passed` required).
+    - [x] Remove hardcoded `/Users/...` paths (`voice.py`, `sieve.py`, `demo_evidence.py`) and restore the Python 3.10 floor (`document_style.py`).
+- [x] **24.2. Document Species And Deck Visual Identity**
+    - [x] Word: workshop_plan, sop, investor_brief, strategy species; exact Day 1..N coverage and validation for 2-12 day itineraries.
+    - [x] Excel: `excel_species.py` schema archetypes (content calendar, operations/research/habit logs, inventory with formulas, CRM, project plan, schedule, dev tracker, financial model with gap and coverage-ratio formulas); money lanes guarded.
+    - [x] PPTX: teaching/review/pitch/issue arcs with distinct closings; shared `deck_species.py`; species accent palettes, layout rhythm offsets, and species-tinted backgrounds within dark/pastel families (`office_pptx_palette.py`); contrast bounds enforced.
+    - [x] Visual-asset trigger word-boundary fix plus plain/internal veto; legacy PPTX smokes repaired against current production behavior.
+    - [x] `document_species_smoke.py` with real prompt shapes, including saved-file color assertions.
+- [x] **24.3. Domain Knowledge Packs (Deterministic Retrieval)**
+    - [x] `domain_knowledge.py`: skill-file-driven routing (strong/weak triggers, phrase vetoes), lexical chunk scoring, whole-recipe retrieval under `recipes/`, token budget, silence-over-noise gate, mtime caching.
+    - [x] Wire into `skill_registry.build_prompt_context` with `domain:<skill_id>` usage logging; proposed packs stay inert until promoted.
+    - [x] Finance pack: `maya_skills/proposed/finance_credit_analysis.md` plus `docs/finance/` (3 concepts, 5 worked recipes with formulas and worked examples).
+    - [x] Verify the networking pack (`docs/networking/`) parses, routes, and passes the skill scaffold validator.
+    - [x] `skill_domain_smoke.py` including the real banking-case prompt.
+- [x] **24.4. Agentic Loop (Opt-In, Level 4 Scaffolding)**
+    - [x] verify→plan loop edge with `MAX_STEPS=8` budget; default single-pass behavior unchanged when `MAYA_AGENTIC_LOOP=0`.
+    - [x] `harness_llm_planner.py` (plan, choose_next_action, verify_goal) wired to the GPT lane with cost tracking (`gpt_harness_planner_calls`).
+    - [x] Executor consumes planner tool choices through the permission kernel: deny → honest refusal, sensitive → approval pause, `memory.write` inline, browser/screen/document remapped to workflow executors, unknown tools fall back safely.
+    - [x] Per-step domain knowledge retrieval with `domain_knowledge` trace events.
+    - [x] `harness_agentic_deep_smoke.py`: happy path, approval pause, permission deny — all deterministic.
+- [x] **24.5. Skill Hygiene**
+    - [x] Word-boundary matching for built-in skill keywords; checkout-guard and telegram-send collision keywords tuned ("loan book"/"Preference Share" no longer inject guard/send skills).
+    - [x] Move `maya_skills/active/fake.md` to `disabled/`; reject the miscaptured "Can you update that to 4 days" skill proposal.
+- [x] **24.6. Telegram Conversation Contract**
+    - [x] Greeting-only Telegram turns now answer warmly instead of returning the old empty-input fallback.
+    - [x] Expired pending artifact requests and expired active artifact sessions are cleaned before Telegram routing.
+    - [x] Short meta-followups such as "what do you mean" use only the immediate previous assistant reply instead of stale artifact context.
+    - [x] Normal model chat is blocked from claiming files, attachments, browser work, or memory writes without verified tool/delivery evidence.
+    - [x] Strong document/artifact requests that hit command-router failure return an honest document failure instead of falling through to normal chat.
+    - [x] `telegram_conversation_contract_smoke.py` pins the June 10 regressions.
+- [x] **24.7. Context Window Design Doctrine**
+    - [x] Add `docs/context_window_design_2026-06-12.md` as the agreed source of truth for Maya working memory.
+    - [x] State clearly that the context window is design-approved, stages 0-2 are built, and the master switch remains off by default.
+    - [x] Lock the five-layer separation: raw window, rolling summary, session search, canonical memory, and domain packs.
+    - [x] Record the rule that session continuity is not durable belief.
+    - [x] Require one future `assemble_context()` chokepoint instead of scattered prompt appends.
+    - [x] Require facts-only taint metadata and kernel-derived policy, not stored policy decisions.
+    - [x] Require forget watermark handling across raw window, rolling summary, session search, and context display.
+    - [x] Require rolling summaries to rebuild from raw turns, never summary-of-summary.
+    - [x] Require source pointers for rolling-summary claims.
+    - [x] Require salience gating by taint before any future canonical-memory candidate flow.
+    - [x] Require retrieval strengthening to be rank-only, bounded, and decaying.
+- [ ] **24.8. Context Window Implementation**
+    - [x] Stage 0: add C0-C7 canaries from `docs/context_window_design_2026-06-12.md` and keep them green before any live enablement.
+    - [x] Stage 1: add turn store, facts-only taint metadata, `assemble_recent_context()`, token-budgeted raw window, per-turn cap, and forget watermark. Keep `MAYA_CONTEXT_WINDOW=0` by default.
+    - [x] Stage 2: add rolling compaction, rebuild-on-forget, gist pointers, and taint inheritance.
+    - [ ] Stage 3: add `/context` view from the audit manifest: loaded turns, token usage, rolling summary, excluded counts, watermarked turns, and tainted turns.
+    - [ ] Stage 4: tune route-specific budgets using Phase 7 field data and `/cost`.
+    - [x] Validate remember → recall → forget → ask with `MAYA_CONTEXT_WINDOW=1` and confirm no leak in the canary smoke.
+    - [x] Validate tainted browser content five turns back still confirm-gates external sends until it ages out in the canary smoke.
+- [ ] **24.9. iMac Validation (owner)**
+    - [ ] Commit the working tree FIRST (two sessions of uncommitted work; no rollback point exists until this is done).
+    - [ ] Run `KAMPUNG_AI_VALIDATION_TEST_CHECKLIST.md` end to end on the iMac with live keys.
+    - [x] Live Telegram allowlist Phase 2 check: a second phone/account sent `/start`, `Hi`, and `Hello` at 2026-06-10 23:15 MYT; Maya stayed silent and `logs/launchd.stderr.log` recorded three `Rejected unauthorized Telegram chat ...` warnings.
+    - [x] Smoke/proof app-control boundary: `local_ci.py` now forces `MAYA_TEST_MODE=1` for child checks, and `OSBridge` treats `_smoke.py`, `test_*.py`, `local_ci.py`, and `scored_eval_suite.py` as no-op app-control entrypoints so Word, Excel, PowerPoint, Cursor, Chrome, and notifications cannot wake during log/security/memory proof runs.
+    - [x] Live Telegram Kazakhstan QA governance check: turn 5743 delivered `kazakhstan-itinerary-v3.docx` cleanly with Day 1 through Day 9 headings, `/review` turn 5744 showed Claude PASS, and `qa_disagreement_events` stayed empty for the known-good case.
+    - [x] Add D10 tool-seam fix for iMac voice: raw transcripts no longer start supervised work; xAI owns semantic intent and calls `start_maya_work` / `run_browser_skill` only when ready; local Python only guards empty/unsafe/mechanically impossible tool arguments. iMac soft-QA draft delivery for Word/Excel/PPTX remains in place.
+    - [ ] Live D10 retest on iMac voice: incomplete fragments do not start local work; corrected requests such as router config -> Meraki firewall config result in one xAI tool call with the full intended request; Maya must not repeat canned platform/config option lists; soft QA drafts still open.
+    - [ ] Promote `network_engineering` and `finance_credit_analysis` to `maya_skills/active/` after Phase 5 checks.
+    - [ ] Decide on the concurrent-session changes (cost-lane refactor, browser extension lane) and commit the working tree.
+    - [ ] One week of field use; collect the disappointment list to drive the next phase.
+    - [ ] Decide the wedge question before Phase 25 ends: open-source the governed spine, productize the SEA document agent, or keep Maya personal. This decision gates restructure, installer, and multi-user work.
+
+## W4: Package Boundary Restructure
+
+Goal: replace the flat root with package boundaries while preserving daily
+operator commands through real CLI wrappers. Do not use `git stash` during W4;
+dirty work must be committed as a checkpoint or explicitly discarded before
+Step 0.
+
+- [x] **W4.0. Clean Checkpoint And Baselines**
+    - [x] Start from the clean Phase 7 checkpoint on branch `w4/restructure`.
+    - [x] Save baseline `local_ci.py` output under `logs/w4/baseline_ci.txt`.
+    - [x] Generate `logs/w4/cli_wrapper_candidates.txt` from actual `__main__` files and documented `python X.py` references.
+    - [x] Generate `logs/w4/grandfather_baseline.txt` from current package-aware code-health violations; do not hand-code this list.
+    - [x] Confirm package-aware `code_health.py` excludes `tests/` and fixture scripts, reports grandfathered debt, and fails only new violations.
+- [x] **W4.1. Package Move Waves**
+    - [x] Wave 1: move smoke/replay/eval scripts into `tests/` and update `local_ci.py` paths.
+    - [x] Wave 2: move non-smoke leaves with temporary identity shims.
+    - [x] Wave 3: move clustered modules package-by-package.
+    - [x] Wave 4: move hubs in small supervised batches.
+    - [x] Wave 5: rewrite imports, remove identity shims, and convert allowlisted root commands into real CLI wrappers.
+    - [x] Wave 6: verify `kampung_ai_app` import and app-entry dynamic paths.
+- [x] **W4.2. Wrapper Proof**
+    - [x] Root wrappers execute package entrypoints with `runpy.run_module(..., run_name="__main__")` or `main()`, not plain `sys.modules` shims.
+    - [x] `./venv/bin/python browser_extension_bridge.py --status` still works from the repo root.
+    - [x] `./venv/bin/python local_ci.py`, `doctor.py`, `service_install.py`, `run_demo.py`, `weekly_memory.py`, and live reliability run wrappers still execute safe proof modes.
+- [x] **W4.3. Independent Reviews**
+    - [x] CLI wrapper reviewer: file/line evidence plus command results.
+    - [x] Import/de-shim reviewer: no stale bare imports or compatibility shim markers.
+    - [x] Code-health/root reviewer: package-aware health, grandfather baseline, root count, ratchet.
+    - [x] Docs/checklist reviewer: runbooks and checklist match moved paths and preserved commands. Historical handoff docs may still show old root smoke paths; `docs/w4_package_restructure_runbook.md` is the current command-path source of truth.
+    - [x] Browser/operational reviewer: browser bridge wrapper, app entrypoints, and service-install wrapper behavior. Runtime wrapper path passed; live Chrome extension client was disconnected during review and must be reconnected before browser live testing.
+- [x] **W4.4. Final Acceptance**
+    - [x] `./venv/bin/python local_ci.py` matches the W4 baseline pass set.
+    - [x] `./venv/bin/python code_health.py` passes with package-aware scanning.
+    - [x] No `W4 compatibility shim` markers remain outside intentional command wrappers.
+    - [x] Root contains only approved wrappers/entrypoints.
+    - [x] Final worktree is clean and committed.
+
+## W5-2: Command Containment And Blast-Radius Control
+
+Goal: route command-like child processes through one broker, use allowlist
+environment inheritance, add macOS sandbox enforcement where practical, and
+keep browser/GUI paths honest as governed surfaces rather than claimed OS
+containment.
+
+- [x] **W5-2.0. Inventory**
+    - [x] Generate `logs/w5/command_callsite_inventory.txt` with command/delete call-site categories and migration decisions.
+    - [x] Run an independent inventory reviewer and fold missed surfaces into the inventory.
+- [x] **W5-2.1. Execution Broker**
+    - [x] Add the W5-2 execution broker with sync/async command APIs, allowlist env, timeout handling, restricted PATH, optional network, and swappable `sandbox-exec` backend.
+    - [x] Document that `sandbox-exec` is deprecated and broker-internal, not a permanent platform guarantee.
+- [x] **W5-2.2. High-Risk Migration**
+    - [x] Route Artisan/Codex, git worktree/apply helpers, npx skill import, media conversion/playback helpers, diagnostics, generated-code Blender QA, and preview helpers through the broker where practical.
+    - [x] Keep interactive audio capture, GUI AppleScript/open, launchd service management, and persistent preview processes as explicit direct-call exceptions.
+- [x] **W5-2.3. Guardrails**
+    - [x] Add broker escape smokes for credential reads, `.env`, out-of-root writes, secret env inheritance, and network-denied profiles.
+    - [x] Add a static broker-bypass guard with explicit exception files and reasons.
+    - [x] Add reversible delete quarantine for future user-file deletes.
+- [x] **W5-2.4. Final Acceptance**
+    - [x] Run focused W5-2 smokes and existing W5-1 canaries.
+    - [x] Run `code_health.py` and `local_ci.py` with zero blocking failures.
+    - [x] Run post-implementation subagent reviews: execution broker, sandbox escape, browser/GUI.
+    - [x] Record honest residuals after W5-2: `read_roots` is credential-deny discovery, event cleanup exceptions rely on call-site wiring for Maya-owned paths, and GUI/browser surfaces remain governed rather than OS-contained.
+    - [x] Commit the W5-2 checkpoint.
+- [ ] **W5-2.5. Residual hardening debt**
+    - [x] Add W5-3 `read_policy` and personal-data read-deny hardening: brokered children are blocked from Maya's DB, DB backups, logs/transcripts, and `~/Desktop/Maya` artifacts unless a profile explicitly declares `personal_read_roots`.
+    - [x] Replace direct interactive `ffmpeg` audio-capture subprocess exceptions with broker-owned process startup for env scrub, timeout/process ownership, and audit.
+    - [ ] Keep full arbitrary home-directory read jail as future debt: the current macOS `sandbox-exec` backend needs broad read support for common tools, so W5-3 protects named personal roots rather than claiming perfect general read isolation.
+    - [ ] Track `media_capture` as an uncontained-read media profile when mic permissions require OS sandboxing disabled; ffmpeg arguments must stay fixed/config-derived, not untrusted-input-derived.
+    - [ ] Keep GUI/AppleScript/Office/Chrome as governed surfaces until a later containment design exists; W5 and W7 stay load-bearing together here.
+    - [x] Extend W7 provenance into direct realtime tool requests, memory recall, W2-B semantic recall, context summaries, and structured confirmations so untrusted/browser/screen/document-origin instructions cannot silently become trusted action requests.
+    - [x] Require owner-attributed confirmation: only `owner_voice` or authenticated owner-channel `owner_text` can approve a pending action; `other_speaker`, page/screen/document/memory/meeting, and `unknown` sources cannot approve.
+    - [x] Replace Meet owner-attribution dependency with Room Mode plus Telegram approval: Recall speaker labels are evidence only, room speech cannot approve, and risky actions route to authenticated `owner_text`.
+
+## W2-B: Confidence-Gated Paraphrase Recall
+
+Goal: improve daily-use memory recall without letting semantic search invent or
+override facts. Lexical/exact recall stays authoritative; embeddings may surface
+candidates only when lexical confidence is weak and the candidate still passes
+the direct-recall safety rules.
+
+- [x] **W2-B.0. Canaries first**
+    - [x] Add R4: save `my preferred airline is AirAsia`; ask `which carrier do I prefer?`; expect the airline fact via semantic surfacing.
+    - [x] Add R5: current lexical/canonical fact beats superseded or forgotten semantic temptations.
+    - [x] Confirm forgotten, expired, and superseded rows never enter the fallback candidate pool.
+- [x] **W2-B.1. Confidence-gated fallback**
+    - [x] Keep lexical direct fact recall as the primary path.
+    - [x] Trigger semantic surfacing only when direct lexical confidence is weak, not only when it is empty.
+    - [x] Reuse the existing embedding cache and `RERANK_CONFIDENCE` pattern; fail open to lexical behavior if embeddings fail.
+- [x] **W2-B.2. Arbitration and safety**
+    - [x] Vector-only evidence may propose a candidate, but must not become the final authority for direct recall.
+    - [x] Exact lexical/current canonical facts beat semantically related candidates.
+    - [x] Direct recall returns a clean miss rather than a plausible-but-wrong memory when confidence remains low.
+- [x] **W2-B.3. Verification**
+    - [x] Expanded eval coverage: 21 paraphrase, 9 Malay/Manglish, 10 conflict, 11 excluded, and 12 absent cases.
+    - [x] Threshold grid selected `30` as provisional/case-set-fitted; default-on candidate only, not a universal optimum.
+    - [x] Compare result: +5 net recall hits (required +3), no exact/conflict regression, no forgotten/excluded/absent leaks, p95 weak-path added latency 867.28 ms under the 1200 ms desk ceiling.
+    - [x] Run final code health and `local_ci.py` with zero blocking failures.
+    - [x] Record subagent review synthesis: measurement PASS WITH RISKS, memory safety PASS, arbitration/default-on PASS WITH RISKS; no blockers.
+    - [x] Commit the W2-B checkpoint.
+
+## CI Tiering: Fast Default, Extended Replay Gate
+
+Goal: keep the daily edit-loop proof fast and token-free without losing the
+large replay banks that catch subtle regressions.
+
+- [x] Refactor `local_ci.py` around additive tiers: fast by default, `--extended` adds heavy deterministic replays/evals, and `--live-providers` adds live provider checks only when explicitly requested.
+- [x] Move full scored eval suite, full artifact clarification/session matrices, full semantic Telegram 500, voice artifact 500, voice Telegram 10000, browser semantic scrape 500, memory recall compare, and deeper agentic/flight reliability checks into the extended tier.
+- [x] Keep representative fast canaries for each moved replay/matrix using fixed stratified subsets or explicit representative cases instead of first-N cases.
+- [x] Measure fast CI wall-clock after tiering. Current default result: 65 fast checks, 0 blocking failures, 95.66s.
+- [x] Print each CI check before it runs and report timeout failures explicitly so slow checks do not look like silent hangs.
+- [x] Add optional nightly extended CI launchd commands: `install-nightly-ci`, `restart-nightly-ci`, `status-nightly-ci`, and `uninstall-nightly-ci`.
+- [x] Record discipline: `local_ci.py` is the fast default gate; `local_ci.py --extended` is required before merge/release and intended for nightly CI.
+
+## Phase 25: Engine Sprint - Trust The Model With More Of The Loop
+
+Goal: close the "strong governance, weak loop" inversion. The permission kernel,
+approval gates, event traces, and budget already exist; this phase upgrades the
+reasoning that drives them. Gated on Phase 24.6 validation being green.
+
+- [ ] **25.1. Native Function Calling For The Planner**
+    - [ ] Replace JSON-in-prompt action selection with native tool calling on the GPT lane (the responses API already supports tools).
+    - [ ] Generate the tool schema list directly from `MayaToolRegistry` (`tool_schemas_for_llm` already exists; wire it to the provider format).
+    - [ ] Keep the JSON-parsing path as the provider-agnostic fallback so deterministic smokes stay fake-able.
+- [ ] **25.2. Honest Verification**
+    - [ ] Replace `verify_goal` default-YES-on-error with one retry, then a reflect pass (ask the model what is missing), then finish with an explicit "unverified" marker in the trace.
+    - [ ] Record verifier failures as trace events instead of only logging them.
+- [ ] **25.3. Richer Observation Feedback**
+    - [ ] Raise the per-observation truncation and add a compaction summary once observations exceed the prompt budget, so long runs keep early context.
+    - [ ] Feed tool outputs (not just final responses) into the observation stream.
+- [ ] **25.4. Every Registry Tool Reachable**
+    - [ ] Extend `_AGENTIC_TOOL_WORKFLOWS` and inline handlers until every `MayaToolRegistry` tool is executable by the planner: routers become tools, not the other way around.
+    - [ ] Keep the permission kernel in front of every call (deny → honest refusal, confirm → approval pause) — no bypass paths.
+- [ ] **25.5. Sandbox Rides Along (Not After)**
+    - [ ] Extend the Artisan isolated-worktree pattern to shell and file-writing tool execution inside the loop; host-mutating actions run in the isolated copy with apply-back approval.
+    - [ ] Do not raise autonomy on unsandboxed host execution.
+- [ ] **25.6. Budget Raise Last**
+    - [ ] Raise `MAX_STEPS` beyond 8 only after 25.2 verification is trustworthy in live runs, with per-run cost visibility in `/cost`.
+- [ ] **25.7. Integration Policy (MCP Decision)**
+    - [ ] Adopt CLI-first + markdown skills as the integration pattern (matches 2026 industry direction: CLI for execution, skills for procedure, MCP only for hosted multi-tool platforms with central auth needs).
+    - [ ] Keep `mcp.call` as the opportunistic escape hatch (Blender MCP stays); do not build first-class MCP plumbing without a concrete integration that has no good CLI.
+- [ ] **25.8. Exit Criteria**
+    - [ ] Deterministic smokes for retry/reflect verification and full tool reachability.
+    - [ ] One live multi-step run per lane (research, document, memory) completing with verified status and visible cost.
+    - [ ] Semantic classifier with keyword fallback scoped as the follow-on phase candidate, alongside the wedge decision outcome.
+
 ---
-*Updated June 8, 2026*
+*Updated June 10, 2026*

@@ -1,0 +1,57 @@
+# Finance Knowledge Base
+
+Truth layer for Maya's finance skill. Answers about financial statement
+analysis, valuation, investing, accounting, risk, personal-finance planning,
+budgeting, and forecasting must be grounded in a recipe or concept doc from
+this tree when one exists.
+
+Disciplines covered (mapped to the major professional bodies of knowledge):
+financial statement analysis and accounting (CPA/CFA), valuation and modeling
+(FMVA), investment and portfolio analysis (CFA), alternatives (CAIA), risk
+management (FRM), personal-finance and goal planning (CFP), and budgeting/
+forecasting (FP&A). Credit and institution analysis live under
+`recipes/analysis/`.
+
+## Rules
+
+1. Numbers are computed, never asserted. Every quantitative claim in an answer
+   must show its formula and inputs, exactly as the recipes do.
+2. Recipes are the worked units. Each recipe is retrieved whole: method without
+   its interpretation thresholds and limitations is not an answer.
+3. Honesty bar: content here is analyst-method knowledge, written carefully but
+   not a substitute for audited data or professional advice. Maya must say when
+   an answer leans on general model knowledge instead of a recipe, and must
+   note that the analysis is informational, not professional financial advice.
+4. No client-identifying data, account numbers, or credentials ever enter this
+   tree or any artifact built from it.
+
+## Mandatory recipe format
+
+Every file under `recipes/` follows this contract:
+
+- `## Intent` — the question this recipe answers.
+- `## Inputs Required` — the data needed, with placeholders in CAPS.
+- `## Method` — numbered steps with explicit formulas.
+- `## Worked Example` — a complete pass with realistic numbers.
+- `## Interpretation` — thresholds and what results mean.
+- `## Red Flags` — the patterns an experienced analyst would catch.
+- `## Limitations` — what this method cannot tell you.
+
+## Layout
+
+| Path | Use |
+| --- | --- |
+| `recipes/analysis/` | Statement & credit analysis: ratios, DuPont, cash-flow quality, liquidity gap, R&R quality, ROA reliability, survival playbook |
+| `recipes/valuation/` | DCF, comparable companies (FMVA/CFA) |
+| `recipes/investment/` | Portfolio metrics (Sharpe/alpha/beta), private-equity returns (CFA/CAIA) |
+| `recipes/accounting/` | Revenue recognition & accrual quality (CPA) |
+| `recipes/risk/` | Value at Risk, stress testing (FRM) |
+| `recipes/planning/` | Retirement & goal-based planning (CFP) |
+| `recipes/forecasting/` | Driver-based forecasting, budget variance, scenario analysis (FP&A) |
+| `concepts/` | Reference: financial statements, valuation principles, risk taxonomy, portfolio theory, credit classification, earnings quality, liquidity risk |
+
+## Verified bar
+
+A recipe is "verified" when its worked example has been recomputed in a
+spreadsheet and reviewed. Until then Maya may use it but should not present
+its outputs as independently verified.

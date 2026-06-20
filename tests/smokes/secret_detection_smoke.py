@@ -1,0 +1,43 @@
+from __future__ import annotations
+# W4_TEST_ROOT_BOOTSTRAP
+import sys as _w4_sys
+from pathlib import Path as _w4_Path
+_w4_root = _w4_Path(__file__).resolve().parents[2]
+if str(_w4_root) not in _w4_sys.path:
+    _w4_sys.path.insert(0, str(_w4_root))
+del _w4_Path, _w4_root, _w4_sys
+
+
+from maya_core.permission_policy import action_permission, contains_sensitive_info, is_private_exposure
+
+
+def main() -> None:
+    samples = [
+        "sk-abcdefghijklmnopqrstuvwxyz123456",
+        "xai-abcdefghijklmnopqrstuvwxyz123456",
+        "AIzaSyDUMMYDUMMYDUMMYDUMMYDUMMY12",
+        "AKIAABCDEFGHIJKLMNOP",
+        "ghp_abcdefghijklmnopqrstuvwxyz123456",
+        "-----BEGIN PRIVATE KEY-----",
+        "4111 1111 1111 1111",
+        "my otp code is 123456",
+    ]
+    for sample in samples:
+        _require(contains_sensitive_info(sample), f"missed secret pattern: {sample[:8]}")
+
+    _require(not contains_sensitive_info("write documentation about a password field"), "password docs over-blocked")
+    _require(not contains_sensitive_info("create a strong password policy"), "password policy over-blocked")
+    _require(is_private_exposure("show sk-abcdefghijklmnopqrstuvwxyz123456"), "exposure not blocked")
+    _require(action_permission("create_file", samples[0]) == "deny", "secret file write allowed")
+    _require(action_permission("send_message", samples[1]) == "deny", "secret send allowed")
+    _require(action_permission("browse_web", "router setup") == "allow", "safe browse blocked")
+    print("secret_detection_smoke: ok")
+
+
+def _require(condition: bool, message: str) -> None:
+    if not condition:
+        raise AssertionError(message)
+
+
+if __name__ == "__main__":
+    main()

@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Maya — Bento Atelier</title>
+<link href="https://api.fontshare.com/v2/css?f[]=satoshi@400,500,700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#f9fafb; --card:#ffffff; --line:rgba(148,163,184,.28);
+  --ink:#1c1c21; --ink2:#62626e; --ink3:#9b9ba6;
+  --accent:#be3455; --accent-soft:rgba(190,52,85,.08);
+  --mint:#0e9f6e; --mint-soft:rgba(14,159,110,.09);
+  --amber:#b45309; --amber-soft:rgba(180,83,9,.09);
+  --shadow:0 20px 40px -15px rgba(28,28,33,.06);
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font:400 14.5px/1.6 "Satoshi",sans-serif;min-height:100dvh}
+.mono{font-family:"JetBrains Mono",monospace}
+
+.shell{max-width:1400px;margin:0 auto;padding:28px 36px 48px}
+@media(max-width:768px){.shell{padding:16px}}
+
+/* header — asymmetric, left aligned */
+header{display:flex;align-items:flex-end;gap:22px;padding:10px 6px 26px}
+header .word h1{font-size:30px;font-weight:700;letter-spacing:-.035em;line-height:1}
+header .word p{color:var(--ink2);font-size:13.5px;margin-top:5px}
+header .word p b{color:var(--accent);font-weight:500}
+header .status{margin-left:auto;display:flex;align-items:center;gap:9px;font-size:12.5px;color:var(--ink2);background:var(--card);border:1px solid var(--line);border-radius:99px;padding:7px 16px;box-shadow:var(--shadow)}
+.pulse{width:8px;height:8px;border-radius:50%;background:var(--mint);animation:breathe 2.4s ease-in-out infinite}
+@keyframes breathe{0%,100%{opacity:.4;transform:scale(.8)}50%{opacity:1;transform:scale(1)}}
+
+/* bento grid — asymmetric 2fr 1fr, chat dominates */
+.bento{display:grid;grid-template-columns:2.1fr 1fr;gap:22px}
+@media(max-width:900px){.bento{grid-template-columns:1fr}}
+.col{display:flex;flex-direction:column;gap:22px;min-width:0}
+.tile{background:var(--card);border:1px solid var(--line);border-radius:2.2rem;box-shadow:var(--shadow);overflow:hidden}
+.tile-label{padding:13px 10px 0;font-size:12px;color:var(--ink3)}
+.tile-label b{color:var(--ink2);font-weight:500}
+
+/* ---- chat tile ---- */
+.chat{display:flex;flex-direction:column;height:660px}
+.chat-head{display:flex;align-items:center;gap:10px;padding:22px 28px 16px;border-bottom:1px solid var(--line)}
+.chat-head .t{font-weight:700;letter-spacing:-.02em;font-size:15.5px}
+.chat-head .lane{font-size:11.5px;color:var(--ink3);margin-left:auto}
+.chat-head .lane b{color:var(--mint);font-weight:500}
+.chat-body{flex:1;overflow-y:auto;padding:24px 28px;display:flex;flex-direction:column;gap:18px;scrollbar-width:thin}
+.bubble{max-width:78%;animation:rise .5s cubic-bezier(.16,1,.3,1) both}
+@keyframes rise{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:none}}
+.bubble .meta{font-size:11px;color:var(--ink3);margin-bottom:5px}
+.bubble.user{align-self:flex-end;text-align:right}
+.bubble.user .txt{background:var(--ink);color:#f4f4f6;border-radius:18px 18px 4px 18px;padding:11px 16px;font-size:14px;display:inline-block;text-align:left}
+.bubble.maya .txt{color:var(--ink);font-size:14.5px}
+.bubble.maya .meta b{color:var(--accent);font-weight:500}
+
+/* step pills — agentic plan as horizontal flow */
+.steps{display:flex;flex-wrap:wrap;gap:7px;margin-top:10px}
+.step{display:flex;align-items:center;gap:6px;font-size:11.5px;border:1px solid var(--line);border-radius:99px;padding:4px 11px;color:var(--ink2);background:var(--bg);animation:rise .5s both}
+.step:nth-child(2){animation-delay:.08s}.step:nth-child(3){animation-delay:.16s}.step:nth-child(4){animation-delay:.24s}.step:nth-child(5){animation-delay:.32s}
+.step .d{width:6px;height:6px;border-radius:50%;background:var(--mint)}
+.step.run .d{background:var(--amber);animation:breathe 1.4s infinite}
+.step.wait{opacity:.5}.step.wait .d{background:var(--ink3)}
+
+/* approval tile inside chat */
+.ask{border:1px solid rgba(180,83,9,.3);background:var(--amber-soft);border-radius:18px;padding:15px 18px;animation:pop .55s cubic-bezier(.2,1.4,.4,1) both}
+@keyframes pop{from{opacity:0;transform:scale(.94)}to{opacity:1;transform:none}}
+.ask .h{font-weight:700;font-size:13px;color:var(--amber);letter-spacing:-.01em}
+.ask p{font-size:13px;color:var(--ink2);margin:6px 0 12px}
+.ask code{font-family:"JetBrains Mono";font-size:11.5px;background:#fff;border:1px solid var(--line);padding:1px 6px;border-radius:6px;color:var(--ink)}
+.ask .acts{display:flex;gap:8px}
+.btn{font:500 12.5px "Satoshi";padding:8px 18px;border-radius:99px;border:1px solid var(--line);background:#fff;color:var(--ink2);cursor:pointer;transition:transform .12s,box-shadow .2s}
+.btn:active{transform:scale(.97)}
+.btn.yes{background:var(--ink);border-color:var(--ink);color:#fff;font-weight:700}
+.btn.yes:hover{box-shadow:0 8px 20px -8px rgba(28,28,33,.4)}
+
+/* artifact chip */
+.file{display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:16px;padding:12px 16px;background:var(--bg)}
+.file .ic{width:36px;height:36px;border-radius:11px;background:var(--mint-soft);color:var(--mint);display:grid;place-items:center;font-family:"JetBrains Mono";font-size:9.5px;font-weight:500}
+.file .nm{font-weight:700;font-size:13px;letter-spacing:-.01em}
+.file .st{font-size:11.5px;color:var(--ink3)}
+.file .st b{color:var(--mint);font-weight:500}
+.file a{margin-left:auto;font-size:12.5px;color:var(--accent);text-decoration:none;font-weight:500}
+
+/* composer with typewriter */
+.dock{padding:16px 28px 22px;border-top:1px solid var(--line)}
+.dock .box{display:flex;align-items:center;gap:12px;background:var(--bg);border:1px solid var(--line);border-radius:99px;padding:6px 8px 6px 20px;transition:box-shadow .25s}
+.dock .box:focus-within{box-shadow:0 0 0 3px var(--accent-soft);border-color:rgba(190,52,85,.4)}
+.dock input{flex:1;border:none;outline:none;background:none;font:400 14px "Satoshi";color:var(--ink)}
+.dock .go{width:38px;height:38px;border-radius:50%;border:none;background:var(--accent);color:#fff;cursor:pointer;display:grid;place-items:center;transition:transform .12s}
+.dock .go:active{transform:scale(.93)}
+
+/* ---- right column tiles ---- */
+.pad{padding:22px 26px 24px}
+.pad h4{font-size:13px;font-weight:700;letter-spacing:-.01em;display:flex;align-items:center;gap:8px}
+.pad h4 .sub{font-weight:400;color:var(--ink3);font-size:11.5px;margin-left:auto}
+
+/* intelligent list — auto-sorting threads */
+.live-list{margin-top:14px;position:relative}
+.live-item{display:flex;align-items:center;gap:11px;padding:10px 4px;border-top:1px solid var(--line);transition:transform .7s cubic-bezier(.3,1.2,.3,1),opacity .5s;background:var(--card)}
+.live-item:first-child{border-top:none}
+.live-item .d{width:8px;height:8px;border-radius:50%;flex:none}
+.live-item .nm{font-size:13px;font-weight:500;letter-spacing:-.01em}
+.live-item .ch{font-size:10.5px;color:var(--ink3);font-family:"JetBrains Mono"}
+.live-item .when{margin-left:auto;font-size:11px;color:var(--ink3);font-family:"JetBrains Mono"}
+
+/* cost ticker */
+.tick-wrap{margin-top:14px;overflow:hidden;border-radius:14px;border:1px solid var(--line);background:var(--bg)}
+.tick{display:flex;gap:0;width:max-content;animation:slide 26s linear infinite}
+.tick:hover{animation-play-state:paused}
+@keyframes slide{to{transform:translateX(-50%)}}
+.tk{padding:12px 18px;border-right:1px solid var(--line);min-width:128px}
+.tk .v{font-family:"JetBrains Mono";font-size:14.5px;font-weight:500}
+.tk .v.g{color:var(--mint)} .tk .v.a{color:var(--accent)}
+.tk .l{font-size:10.5px;color:var(--ink3);letter-spacing:.04em;text-transform:uppercase}
+
+/* memory canaries */
+.cnry{display:flex;align-items:center;gap:10px;padding:8px 4px;font-size:13px;color:var(--ink2);border-top:1px solid var(--line)}
+.cnry:first-of-type{border-top:none;margin-top:8px}
+.cnry .s{width:8px;height:8px;border-radius:50%;background:var(--mint)}
+.cnry .mono{margin-left:auto;font-size:10.5px;color:var(--ink3)}
+
+/* proof bars */
+.bar{margin-top:11px}
+.bar .t{display:flex;justify-content:space-between;font-size:12px;color:var(--ink2)}
+.bar .t b{font-family:"JetBrains Mono";font-weight:500;color:var(--ink)}
+.bar .rail{height:5px;border-radius:3px;background:var(--bg);margin-top:5px;overflow:hidden}
+.bar .rail i{display:block;height:100%;border-radius:3px;background:var(--ink);transform-origin:left;animation:grow 1.2s cubic-bezier(.16,1,.3,1) both}
+@keyframes grow{from{transform:scaleX(0)}}
+</style>
+</head>
+<body>
+<div class="shell">
+
+  <header>
+    <div class="word">
+      <h1>Selamat petang, Zainal.</h1>
+      <p>Maya is mid-run on <b>Penang trip budget</b> — one approval is waiting for you.</p>
+    </div>
+    <div class="status"><span class="pulse"></span>runtime healthy · local CI passing</div>
+  </header>
+
+  <div class="bento">
+
+    <!-- LEFT: chat dominates -->
+    <div class="col">
+      <div class="tile chat">
+        <div class="chat-head">
+          <div class="t">Penang trip budget</div>
+          <div class="lane mono">lane <b>gpt-complex</b> · step 3/8 · RM 0.0417</div>
+        </div>
+        <div class="chat-body">
+
+          <div class="bubble user">
+            <div class="meta">21:14</div>
+            <div class="txt">/complex build the Penang trip budget workbook with the flight I picked in Chrome just now, 3 pax, 4D3N</div>
+          </div>
+
+          <div class="bubble maya">
+            <div class="meta"><b>Maya</b> · plan reviewed by Claude steward</div>
+            <div class="txt">On it. I pulled MH1142 at RM 214.50 per pax from your browser capture and I am shaping the workbook with the financial-model species.</div>
+            <div class="steps">
+              <span class="step"><span class="d"></span>plan</span>
+              <span class="step"><span class="d"></span>read travel capture</span>
+              <span class="step run"><span class="d"></span>build workbook</span>
+              <span class="step wait"><span class="d"></span>verify formulas</span>
+              <span class="step wait"><span class="d"></span>deliver</span>
+            </div>
+          </div>
+
+          <div class="ask">
+            <div class="h">Approval — office.write</div>
+            <p>Create <code>penang_4d3n_budget.xlsx</code> in the Maya workspace. Side-effect: <code>local-file</code>, replay-safe. Snapshot taken, rollback armed.</p>
+            <div class="acts">
+              <button class="btn yes">Approve once</button>
+              <button class="btn">Approve for thread</button>
+              <button class="btn">Deny</button>
+            </div>
+          </div>
+
+          <div class="bubble maya">
+            <div class="meta"><b>Maya</b> · 21:15 · QA gates</div>
+            <div class="file">
+              <div class="ic">XLSX</div>
+              <div>
+                <div class="nm">penang_4d3n_budget.xlsx</div>
+                <div class="st">validation <b>pass</b> · formulas <b>pass</b> · Claude review <b>approved</b></div>
+              </div>
+              <a href="#">Open locally</a>
+            </div>
+          </div>
+
+          <div class="bubble maya">
+            <div class="meta"><b>Maya</b> · typing</div>
+            <div class="txt" id="typing"></div>
+          </div>
+
+        </div>
+        <div class="dock">
+          <div class="box">
+            <input id="composer" placeholder="" autocomplete="off">
+            <button class="go"><svg width="15" height="15" viewBox="0 0 16 16" fill="none"><path d="M2 8h11M9 3.5L13.5 8 9 12.5" stroke="#fff" stroke-width="1.7" stroke-linecap="round"/></svg></button>
+          </div>
+        </div>
+      </div>
+      <div class="tile-label"><b>Conversation</b> — every reply carries its harness trace and QA verdicts</div>
+    </div>
+
+    <!-- RIGHT: live bento tiles -->
+    <div class="col">
+
+      <div class="tile"><div class="pad">
+        <h4>Threads <span class="sub">auto-prioritised</span></h4>
+        <div class="live-list" id="livelist">
+          <div class="live-item"><span class="d" style="background:var(--amber)"></span><div><div class="nm">Penang trip budget</div><div class="ch">maya:telegram</div></div><span class="when">now</span></div>
+          <div class="live-item"><span class="d" style="background:var(--mint)"></span><div><div class="nm">Self-heal — route tracker</div><div class="ch">background</div></div><span class="when">21:02</span></div>
+          <div class="live-item"><span class="d" style="background:var(--mint)"></span><div><div class="nm">Network audit — IOS-XE</div><div class="ch">maya:imac</div></div><span class="when">18:47</span></div>
+          <div class="live-item"><span class="d" style="background:var(--ink3)"></span><div><div class="nm">Weekly memory distillation</div><div class="ch">scheduled · Sun 03:00</div></div><span class="when">—</span></div>
+        </div>
+      </div></div>
+      <div class="tile-label" style="margin-top:-12px"><b>Workflow desk</b> — busy threads float to the top</div>
+
+      <div class="tile"><div class="pad" style="padding-bottom:0">
+        <h4>Route &amp; cost <span class="sub">today</span></h4>
+      </div>
+        <div class="tick-wrap"><div class="tick">
+          <div class="tk"><div class="v g">RM 0.54</div><div class="l">spend today</div></div>
+          <div class="tk"><div class="v">38</div><div class="l">routes</div></div>
+          <div class="tk"><div class="v">5</div><div class="l">artifacts</div></div>
+          <div class="tk"><div class="v a">1</div><div class="l">approval open</div></div>
+          <div class="tk"><div class="v">2</div><div class="l">memory writes</div></div>
+          <div class="tk"><div class="v g">RM 0.54</div><div class="l">spend today</div></div>
+          <div class="tk"><div class="v">38</div><div class="l">routes</div></div>
+          <div class="tk"><div class="v">5</div><div class="l">artifacts</div></div>
+          <div class="tk"><div class="v a">1</div><div class="l">approval open</div></div>
+          <div class="tk"><div class="v">2</div><div class="l">memory writes</div></div>
+        </div></div>
+      <div style="height:18px"></div></div>
+      <div class="tile-label" style="margin-top:-12px"><b>Audit stream</b> — same numbers as /audit on Telegram</div>
+
+      <div class="tile"><div class="pad">
+        <h4>Memory canaries <span class="sub">last check 20:30</span></h4>
+        <div class="cnry"><span class="s"></span>forgotten facts — no leaks<span class="mono">8/8</span></div>
+        <div class="cnry"><span class="s"></span>temporary test memory — clean<span class="mono">ok</span></div>
+        <div class="cnry"><span class="s"></span>pinned memory — intact<span class="mono">ok</span></div>
+        <div class="cnry"><span class="s" style="background:var(--amber)"></span>weekly distillation — due Sunday<span class="mono">3d</span></div>
+      </div></div>
+      <div class="tile-label" style="margin-top:-12px"><b>Trust probes</b> — forget must stay forgotten</div>
+
+      <div class="tile"><div class="pad">
+        <h4>Proof surface</h4>
+        <div class="bar"><div class="t"><span>Telegram</span><b>92%</b></div><div class="rail"><i style="width:92%"></i></div></div>
+        <div class="bar"><div class="t"><span>Documents</span><b>90%</b></div><div class="rail"><i style="width:90%;animation-delay:.1s"></i></div></div>
+        <div class="bar"><div class="t"><span>Agentic loop</span><b>82%</b></div><div class="rail"><i style="width:82%;animation-delay:.2s"></i></div></div>
+        <div class="bar"><div class="t"><span>Overall</span><b>85%</b></div><div class="rail"><i style="width:85%;background:var(--accent);animation-delay:.3s"></i></div></div>
+      </div></div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+/* typewriter reply */
+const t = document.getElementById("typing");
+const msg = "Formulas verified — totals row reconciles at RM 2,847.20 for 3 pax. Want me to add the Langkawi ferry day-trip as a scenario column, or lock this version?";
+let i = 0;
+(function type(){ if(i <= msg.length){ t.textContent = msg.slice(0, i++); setTimeout(type, 16 + Math.random()*24);} })();
+
+/* composer placeholder cycle */
+const ph = ["Message Maya…","/complex compare 3 Penang hotels under RM 260","Update the workbook — add ferry day trip","/memory inspect"];
+const input = document.getElementById("composer");
+let pi=0, pc=0, dir=1;
+(function cycle(){
+  const cur = ph[pi]; pc += dir; input.placeholder = cur.slice(0,pc);
+  if(pc===cur.length && dir===1){dir=-1; return setTimeout(cycle, 2000);}
+  if(pc===0 && dir===-1){dir=1; pi=(pi+1)%ph.length;}
+  setTimeout(cycle, dir===1?40:13);
+})();
+
+/* intelligent list — periodic reorder with FLIP-ish animation */
+const list = document.getElementById("livelist");
+setInterval(()=>{
+  const items=[...list.children];
+  const firstTops=items.map(el=>el.getBoundingClientRect().top);
+  list.insertBefore(items[1], items[0]);
+  const moved=[...list.children];
+  moved.forEach((el,idx)=>{
+    const oldTop=firstTops[items.indexOf(el)];
+    const d=oldTop-el.getBoundingClientRect().top;
+    el.style.transition="none"; el.style.transform=`translateY(${d}px)`;
+    requestAnimationFrame(()=>{el.style.transition="transform .7s cubic-bezier(.3,1.2,.3,1)"; el.style.transform="";});
+  });
+},5200);
+</script>
+</body>
+</html>
