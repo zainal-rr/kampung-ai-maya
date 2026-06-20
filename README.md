@@ -14,6 +14,8 @@ This is not just a Telegram bot, a model router, or a LangGraph demo. The produc
 | `docs/public_architecture.md` | Public/investor-safe architecture narrative |
 | `docs/proof_and_readiness.md` | Deterministic proof, live-proof boundaries, current scores, and remaining validation |
 | `docs/maya_operating_doctrine.md` | Private doctrine copy kept under `docs/` for separation |
+| `docs/maya_honest_agent_writeup_2026-06-20.md` | Portfolio essay: Maya's measured security, honesty, memory integrity, and capability story |
+| `docs/maya_master_build_status_2026-06-20.md` | Current evidence ledger for Maya's gate benchmark, whole-loop harness, memory, honesty, Meet, and C0 capability results |
 
 ## Why Kampung AI Is Different
 
