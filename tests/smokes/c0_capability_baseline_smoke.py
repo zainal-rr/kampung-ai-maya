@@ -259,6 +259,30 @@ def _test_permission_pause_is_not_planner_strategy() -> None:
     print("  permission-kernel pause is scored as permission friction: ok")
 
 
+def _test_gated_browser_on_answer_task_is_planner_strategy() -> None:
+    task = CapabilityTask(
+        "answer_browser_pause",
+        "question_answer",
+        "Explain what an unknown bottleneck reason means in C0 scoring.",
+        CapabilityOracle("semantic_answer", rubric="Should answer from known scoring rules."),
+    )
+    payload = {
+        "state": {"final_response": "Approval required before browser.inspect.", "graph_status": "waiting_approval"},
+        "events": (
+            {
+                "event": "permission_decision",
+                "details": "browser.inspect: confirm: approval required before tool execution: URL navigation is not free-routed in v1",
+            },
+            {"event": "approval_required", "details": "browser.inspect"},
+        ),
+        "artifacts": (),
+        "timed_out": False,
+    }
+    reason, component = _trace_grounded_reason(task, payload, "fail")
+    _require(reason == "planner_strategy" and component == "planner", f"expected planner_strategy: {reason}, {component}")
+    print("  gated browser choice on answer task is scored as planner strategy: ok")
+
+
 def _test_artifact_planner_done_is_trace_grounded_strategy() -> None:
     task = CapabilityTask("artifact_planner_done", "local_artifact", "Create a note.", CapabilityOracle("artifact", expected_artifact=True))
     payload = {
@@ -307,6 +331,7 @@ def main() -> None:
     _test_unallowed_semantic_honest_stop_becomes_fail()
     _test_ambiguous_reason_becomes_unknown()
     _test_permission_pause_is_not_planner_strategy()
+    _test_gated_browser_on_answer_task_is_planner_strategy()
     _test_artifact_planner_done_is_trace_grounded_strategy()
     _test_report_parser_counts_reason_codes()
     print("c0_capability_baseline_smoke: ok")

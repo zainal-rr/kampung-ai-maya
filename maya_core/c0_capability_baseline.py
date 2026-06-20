@@ -184,12 +184,17 @@ def _trace_grounded_reason(task: CapabilityTask, payload: dict[str, Any], outcom
     ):
         return "verification_failed", "artifact_oracle"
     permission_pause = False
+    paused_tool = ""
+    paused_reason = ""
     for event in payload.get("events") or ():
         name, details = str(event.get("event") or ""), str(event.get("details") or "")
         if name == "permission_decision" and ": confirm:" in details:
             permission_pause = True
+            paused_tool = details.split(":", 1)[0].strip()
+            paused_reason = details
         if name == "approval_required":
             permission_pause = True
+            paused_tool = paused_tool or details.strip()
         if name == "tool_unmapped" or (name == "execute" and details == "skipped"):
             return "tool_gap", details or "tool"
         if name == "metacognition_stop" or "agentic budget" in final:
@@ -201,6 +206,8 @@ def _trace_grounded_reason(task: CapabilityTask, payload: dict[str, Any], outcom
         if name == "fail":
             return "provider_error" if "exception" in details.lower() else "unknown", "harness"
     if permission_pause or str(payload["state"].get("graph_status") or "") == "waiting_approval":
+        if task.oracle.oracle_type == "semantic_answer" and paused_tool == "browser.inspect" and "URL navigation is not free-routed" in paused_reason:
+            return "planner_strategy", "planner"
         return "permission_friction", "permission_kernel"
     return ("memory_retrieval", "memory") if task.category == "memory" and outcome != "success" else ("unknown", "")
 

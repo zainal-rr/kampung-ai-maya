@@ -50,13 +50,14 @@ This is the current engineering status for the Maya master build path. It record
   - artifact scoring now validates content/state rather than mere file existence: local file bodies, `.docx` text, and `.xlsx` sheet text must contain non-trivial task-relevant content;
   - C0.1 made permission friction explicit instead of hiding it in `unknown`: reason counts were `budget_exhausted=5`, `tool_gap=5`, `permission_friction=3`, `planner_strategy=1`, `unknown=16`;
   - C0.2 fixed the measured local artifact executor wall without loosening the permission kernel: the existence-only report had reason counts `budget_exhausted=0`, `tool_gap=3`, `permission_friction=3`, `planner_strategy=1`, `unknown=23`;
-  - the content-validated C0.2 rerun had reason counts `budget_exhausted=0`, `tool_gap=3`, `permission_friction=5`, `planner_strategy=1`, `unknown=21`;
+  - the content-validated C0.2 rerun initially reported `permission_friction=5`; after permission-pause triage, the corrected reason counts are `budget_exhausted=0`, `tool_gap=3`, `permission_friction=4`, `planner_strategy=2`, `unknown=21`;
   - the `unknown` bucket is successes and correct honest-stops only, not unattributed partial/fail cases;
   - local artifact creation recovered from `0/9` success in C0.1 to `5/9` content-validated success in C0.2; every content-valid recovered artifact was created through `agentic_artifact_fast_path` after a kernel `allow`;
   - the retired existence-only C0.2 report showed `6/9` local-artifact success, but one project/folder-style case is no longer counted as artifact success under the content/state oracle;
   - docx/xlsx budget timeouts disappeared in C0.2; the remaining local-artifact misses are planner/tool-selection or permission-friction cases, not document executor timeouts;
   - browser-read tasks stopped honestly because the local browser bridge was unavailable in the run;
-  - residual permission friction is real but bounded: `5/30` content-validated cases paused at the permission kernel, now outside the recovered docx/xlsx/file-create fast path.
+  - residual permission friction is real but bounded: `4/30` content-validated cases paused at the permission kernel, now outside the recovered docx/xlsx/file-create fast path;
+  - the fifth permission-pause case was a definition-style answer task where the planner chose gated `browser.inspect`; it is now ranked as `planner_strategy`, not a gate to loosen.
 
 ## Deferred Or Reviewer-Gated
 
@@ -80,8 +81,8 @@ This is the current engineering status for the Maya master build path. It record
   - generated report is intentionally left under `logs/evals/c0/` and uncommitted;
   - the content-validated report supersedes the earlier C0.2 existence-only success headline;
   - C0.2 progress reporting and reason attribution are in place;
-  - before C1-C6, inspect the remaining `tool_gap=3`, `permission_friction=5`, and `planner_strategy=1` cases rather than rebuilding the loop broadly;
-  - the previous document/file executor bottleneck is substantially cleared; the next measured bottleneck is planner/tool selection for folder/screen-style tasks and residual permission friction in multi-step flows.
+  - before C1-C6, inspect the remaining `tool_gap=3`, `permission_friction=4`, and `planner_strategy=2` cases rather than rebuilding the loop broadly;
+  - the previous document/file executor bottleneck is substantially cleared; the next measured bottleneck is target/tool derivation for folder/local-note flows, plus planner/tool selection for browser/screen-style tasks.
 
 ## Reporting Caveats
 
