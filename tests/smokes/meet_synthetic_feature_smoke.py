@@ -107,10 +107,17 @@ async def _conversation_hold_lifecycle(
     ignored = await responder.process_verified_event({"text": "what was the last point?"})
     _require(ignored["status"] == "ignored", str(ignored))
 
+    reopened_ok = await responder.process_verified_event({"text": "Maya, summarize the last point"})
+    _require(reopened_ok["status"] == "queued", str(reopened_ok))
+    closed_ok = await responder.process_verified_event({"text": "okay Maya"})
+    _require(closed_ok["reason_code"] == "conversation_hold_closed", str(closed_ok))
+    ignored_ok = await responder.process_verified_event({"text": "what did they just say?"})
+    _require(ignored_ok["status"] == "ignored", str(ignored_ok))
+
     reopened = await responder.process_verified_event({"text": "Maya, summarize the last point"})
     _require(reopened["status"] == "queued", str(reopened))
     await asyncio.sleep(0.07)
-    idle = await responder.process_verified_event({"text": "what did they just say?"})
+    idle = await responder.process_verified_event({"text": "is the review still active?"})
     _require(idle["status"] == "ignored", str(idle))
     _require(idle["reason_code"] == "conversation_hold_idle_timeout", str(idle))
 
@@ -192,10 +199,15 @@ async def _active_imac_context_answerer(db_path: str) -> None:
     )
     with patch.dict("os.environ", {"XAI_API_KEY": "test-xai-key"}, clear=False):
         with patch("maya_meet.context_answerer.TheNews", _FakeMeetModel):
-            answerer = build_meeting_context_answerer(db_path, active_context_inspector=_FakeActiveInspector(selected))
+            inspector = _FakeActiveInspector(selected)
+            answerer = build_meeting_context_answerer(db_path, active_context_inspector=inspector)
             _require(answerer is not None, "active-context answerer was not built")
+            casual_reply = await answerer("how should we think about this?", ["We are reviewing the launch plan."])
+            _require("useful frame" in casual_reply.lower(), casual_reply)
+            _require(not inspector.calls, "active context should not run for ordinary conversation")
             reply = await answerer("what does the highlighted word in Chrome mean?", ["We are reviewing the browser page."])
             _require("quartz scheduler" in reply.lower(), reply)
+            _require(inspector.calls, "active context should run for highlighted browser question")
 
             private_context = ActiveContext(
                 app="Google Chrome",
@@ -285,6 +297,10 @@ class _FakeMeetModel:
 
     async def chat(self, messages):
         joined = "\n".join(str(message.get("content", "")) for message in messages)
+        if "Answer only from the meeting transcript" in joined:
+            return "BAD: old meeting context only prompt"
+        if "how should we think about this" in joined:
+            return "A useful frame is to separate the decision, the risks, and the next owner."
         if "selected_text:\nquartz scheduler" in joined:
             return "The highlighted browser text says quartz scheduler, a scheduling library."
         return "I do not have enough current iMac context."

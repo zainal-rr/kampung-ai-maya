@@ -218,7 +218,7 @@ class MeetM1Responder:
                     return cleaned[:500]
             except Exception:
                 self.logger.exception("Meet context answerer failed")
-        return "I'm listening. I can answer from the meeting context, but actions stay off in this meeting mode."
+        return "I'm here. I can talk normally, answer from the meeting, or use your shared iMac context when you ask. Actions still need Telegram approval."
 
     def _summary_text(self) -> str:
         candidates = list(self.meeting_context_lines)

@@ -17,6 +17,7 @@ CLOSE_HOLD_RE = re.compile(
     r")\b",
     re.IGNORECASE,
 )
+STANDALONE_CLOSE_RE = re.compile(r"^\s*(?:ok|okay|done|all\s+good)\s+maya[\s.!?]*$", re.IGNORECASE)
 
 
 @dataclass(frozen=True)
@@ -65,7 +66,8 @@ class MeetConversationHold:
 
 
 def is_hold_close_phrase(text: str) -> bool:
-    return bool(CLOSE_HOLD_RE.search(str(text or "")))
+    value = str(text or "")
+    return bool(CLOSE_HOLD_RE.search(value) or STANDALONE_CLOSE_RE.search(value))
 
 
 def meet_address_decision(text: str) -> MeetAddressDecision:
