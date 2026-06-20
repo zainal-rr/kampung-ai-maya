@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Literal
+from typing import Any, Literal, Mapping
 
 from langgraph.checkpoint.sqlite.aio import AsyncSqliteSaver
 from langgraph.graph import END, START, StateGraph
@@ -31,6 +31,8 @@ from maya_harness.harness_store import create_approval, finish_run, record_artif
 from maya_harness.harness_tools import HarnessTools
 from maya_harness.harness_workflows import classify_workflow, next_step_for, plan_for, workflow_for_action
 from maya_core.maya_permission_kernel import MayaPermissionKernel
+from maya_core.safe_paths import resolve_safe_path
+from maya_core.workspace_paths import is_workspace_path, workspace_dir
 
 # Budget for the opt-in agentic loop: hard ceiling on execute passes per run.
 MAX_STEPS = 8
@@ -310,13 +312,21 @@ class HarnessGraphRunner:
             await record_event(self.db_path, run_id, "metacognition_stop", repeated.rationale)
             return state
         shape = action_shape(tool_name, args)
+        args, field_provenance = _trusted_agentic_artifact_args(state, tool_name, args)
         skip_permission_for_bad_args = tool_name == "memory.write" and not str(args.get("content") or "").strip()
         if not skip_permission_for_bad_args:
             decision = self.permission_kernel.check(
                 tool_name,
                 args=args,
+                field_provenance=field_provenance,
                 untrusted_influence=bool(state.get("untrusted_influence")),
                 injection_detected=bool(state.get("injection_detected")),
+            )
+            await record_event(
+                self.db_path,
+                run_id,
+                "permission_decision",
+                f"{tool_name}: {decision.decision}: {decision.reason}",
             )
             if decision.decision == "deny":
                 reflection = append_reflection(
@@ -548,11 +558,104 @@ def _agentic_tool_instruction(tool_name: str, args: dict) -> str:
         target = str(args.get("target") or args.get("label") or args.get("text") or "").strip()
         if target:
             return target if target.lower().startswith(("click ", "choose ", "select ", "press ")) else f"click {target}"
+    if tool_name == "file.create":
+        path = str(args.get("path") or args.get("output_path") or args.get("destination_path") or "").strip()
+        content = str(args.get("content") or args.get("body") or args.get("text") or "").strip()
+        if path and content:
+            return f"create file {path} with {content}"
     if tool_name == "docx.create":
         topic = str(args.get("topic") or args.get("title") or args.get("content") or "").strip()
         if topic:
             return topic if topic.lower().startswith(("write ", "make ", "create ")) else f"write a Word document about {topic}"
     return " ".join(str(v) for v in args.values() if isinstance(v, str)).strip()
+
+
+def _trusted_agentic_artifact_args(
+    state: Mapping[str, Any],
+    tool_name: str,
+    args: Mapping[str, Any],
+) -> tuple[dict[str, Any], dict[str, str]]:
+    """Attach field provenance from the harness-owned channel only.
+
+    Planner-supplied ``*_source`` fields are intentionally ignored. A field is
+    trusted only when the harness can independently derive/normalize it from
+    owner-visible state and Maya's safe-path policy.
+    """
+    normalized = dict(args)
+    field_provenance: dict[str, str] = {}
+    if tool_name == "file.create":
+        for field in ("path", "output_path", "destination_path"):
+            if field not in normalized:
+                continue
+            trusted = _trusted_agentic_file_path(state, normalized[field])
+            if trusted:
+                normalized[field] = trusted
+                field_provenance[field] = "maya_derived"
+    if tool_name in {"file.create", "docx.create", "xlsx.create"}:
+        for field in ("filename", "file_name", "name", "title"):
+            value = normalized.get(field)
+            if _owner_instruction_contains_value(state, value) and _safe_local_control_name(value):
+                field_provenance[field] = "maya_derived"
+    if tool_name == "xlsx.create":
+        for field in ("sheet_name", "tab_name", "worksheet_name"):
+            value = normalized.get(field)
+            if _owner_instruction_contains_value(state, value) and _safe_sheet_control_name(value):
+                field_provenance[field] = "owner_text"
+    return normalized, field_provenance
+
+
+def _trusted_agentic_file_path(state: Mapping[str, Any], raw: Any) -> str:
+    text = str(raw or "").strip().strip("\"'")
+    if not text or "\x00" in text:
+        return ""
+    if not _owner_instruction_contains_path(state, text):
+        return ""
+    candidate = Path(text).expanduser()
+    if not candidate.is_absolute():
+        candidate = workspace_dir("") / candidate
+    decision = resolve_safe_path(candidate, "write")
+    if not decision.allowed or not decision.resolved:
+        return ""
+    if not is_workspace_path(decision.resolved):
+        return ""
+    if decision.resolved.exists():
+        return ""
+    return str(decision.resolved)
+
+
+def _owner_instruction_contains_path(state: Mapping[str, Any], raw: str) -> bool:
+    needle = " ".join(str(raw or "").strip().strip("\"'").split()).lower()
+    if not needle:
+        return False
+    owner_text = _owner_instruction_text(state)
+    if needle in owner_text:
+        return True
+    name = Path(needle).name
+    return bool(name and name in owner_text)
+
+
+def _owner_instruction_contains_value(state: Mapping[str, Any], raw: Any) -> bool:
+    value = " ".join(str(raw or "").strip().split()).lower()
+    return bool(value and value in _owner_instruction_text(state))
+
+
+def _owner_instruction_text(state: Mapping[str, Any]) -> str:
+    parts = [
+        str(state.get("goal") or ""),
+        str(state.get("last_user_instruction") or ""),
+        str(state.get("user_text") or ""),
+    ]
+    return " ".join(" ".join(part.split()) for part in parts).lower()
+
+
+def _safe_local_control_name(raw: Any) -> bool:
+    text = str(raw or "").strip()
+    return bool(text) and "/" not in text and "\\" not in text and "\x00" not in text and len(text) <= 120
+
+
+def _safe_sheet_control_name(raw: Any) -> bool:
+    text = str(raw or "").strip()
+    return _safe_local_control_name(text) and not any(ch in text for ch in "[]:*?/\\")
 
 
 def _forced_agentic_action(state: HarnessState) -> dict | None:

@@ -96,6 +96,7 @@ def main() -> int:
             planner_llm=planner_llm,
             semantic_evaluator=evaluator,
             workspace_root=args.workspace_root or None,
+            progress=_progress,
         )
     )
     report = make_report(
@@ -116,6 +117,19 @@ def main() -> int:
 def _write_or_print(report, out: str) -> None:
     payload = write_report(report, out or None)
     print(json.dumps(payload, indent=2, sort_keys=True) + "\n")
+
+
+def _progress(phase, task, result, index: int, total: int) -> None:
+    if phase == "start":
+        print(f"[c0] {index}/{total} start {task.task_id} ({task.category})", file=sys.stderr, flush=True)
+        return
+    if result is not None:
+        print(
+            f"[c0] {index}/{total} finish {task.task_id} "
+            f"outcome={result.outcome} reason={result.reason_code} elapsed={result.elapsed_s}s",
+            file=sys.stderr,
+            flush=True,
+        )
 
 
 def _command() -> str:

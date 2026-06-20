@@ -51,13 +51,21 @@ def _test_dummy_manifest_runs_without_provider() -> None:
     async def run() -> None:
         manifest = build_maya_domain_capability_manifest()
         tiny = replace(manifest, tasks=manifest.tasks[-3:])
-        results, workspace = await run_capability_baseline(tiny, planner_llm=scripted_planner_llm(), semantic_evaluator=None)
+        progress = []
+        results, workspace = await run_capability_baseline(
+            tiny,
+            planner_llm=scripted_planner_llm(),
+            semantic_evaluator=None,
+            progress=lambda phase, task, result, index, total: progress.append((phase, task.task_id, bool(result), index, total)),
+        )
         _require(len(results) == 3, f"result count: {len(results)}")
         _require(workspace, "workspace stamp missing")
         _require(all(result.outcome in {"success", "partial", "fail", "honest_stop"} for result in results), f"bad outcomes: {results}")
+        _require([item[0] for item in progress].count("start") == 3, f"progress start events missing: {progress}")
+        _require([item[0] for item in progress].count("finish") == 3, f"progress finish events missing: {progress}")
 
     asyncio.run(run())
-    print("  dummy manifest runs without provider calls: ok")
+    print("  dummy manifest runs without provider calls and emits progress: ok")
 
 
 def _test_deferred_report_shape() -> None:
@@ -142,6 +150,25 @@ def _test_ambiguous_reason_becomes_unknown() -> None:
     print("  ambiguous trace attribution becomes unknown: ok")
 
 
+def _test_permission_pause_is_not_planner_strategy() -> None:
+    task = CapabilityTask("artifact_permission", "local_artifact", "Create a note.", CapabilityOracle("artifact", expected_artifact=True))
+    payload = {
+        "state": {"final_response": "Approval required before file.create.", "graph_status": "waiting_approval"},
+        "events": (
+            {
+                "event": "permission_decision",
+                "details": "file.create: confirm: approval required before tool execution: path must be Maya-derived before free-routing",
+            },
+            {"event": "approval_required", "details": "file.create"},
+        ),
+        "artifacts": (),
+        "timed_out": False,
+    }
+    reason, component = _trace_grounded_reason(task, payload, "partial")
+    _require(reason == "permission_friction" and component == "permission_kernel", f"expected permission_friction: {reason}, {component}")
+    print("  permission-kernel pause is scored as permission friction: ok")
+
+
 def _test_artifact_planner_done_is_trace_grounded_strategy() -> None:
     task = CapabilityTask("artifact_planner_done", "local_artifact", "Create a note.", CapabilityOracle("artifact", expected_artifact=True))
     payload = {
@@ -159,7 +186,7 @@ def _test_report_parser_counts_reason_codes() -> None:
     manifest = build_maya_domain_capability_manifest()
     results = (
         CapabilityTaskResult("a", "question_answer", "success", "unknown", "", "semantic_answer", "semantic:ok", "ok", "completed"),
-        CapabilityTaskResult("b", "local_artifact", "fail", "tool_gap", "tool", "artifact", "deterministic_artifact_missing", "no", "completed"),
+        CapabilityTaskResult("b", "local_artifact", "fail", "permission_friction", "permission_kernel", "artifact", "deterministic_artifact_missing", "no", "completed"),
     )
     report = make_report(
         status="complete",
@@ -173,7 +200,7 @@ def _test_report_parser_counts_reason_codes() -> None:
     )
     payload = write_report(report)
     _require(payload["counts"]["success"] == 1 and payload["counts"]["fail"] == 1, f"counts: {payload['counts']}")
-    _require(payload["reason_counts"]["tool_gap"] == 1, f"reason counts: {payload['reason_counts']}")
+    _require(payload["reason_counts"]["permission_friction"] == 1, f"reason counts: {payload['reason_counts']}")
     _require(payload["model_config"]["temperature"] == 0.0, "temperature stamp missing")
     print("  report parser validates counts and provenance stamp: ok")
 
@@ -186,6 +213,7 @@ def main() -> None:
     _test_artifact_honest_stop_is_not_success()
     _test_unallowed_semantic_honest_stop_becomes_fail()
     _test_ambiguous_reason_becomes_unknown()
+    _test_permission_pause_is_not_planner_strategy()
     _test_artifact_planner_done_is_trace_grounded_strategy()
     _test_report_parser_counts_reason_codes()
     print("c0_capability_baseline_smoke: ok")

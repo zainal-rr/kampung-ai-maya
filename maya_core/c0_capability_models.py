@@ -12,6 +12,7 @@ ReasonCode = Literal[
     "verification_failed",
     "memory_retrieval",
     "budget_exhausted",
+    "permission_friction",
     "provider_error",
     "unknown",
 ]
@@ -25,6 +26,7 @@ ALLOWED_REASON_CODES: tuple[ReasonCode, ...] = (
     "verification_failed",
     "memory_retrieval",
     "budget_exhausted",
+    "permission_friction",
     "provider_error",
     "unknown",
 )

@@ -11,7 +11,7 @@ import time
 from dataclasses import asdict
 from datetime import datetime, timezone
 from pathlib import Path
-from typing import Any, Literal
+from typing import Any, Callable, Literal
 
 from maya_core.c0_capability_manifest import build_maya_domain_capability_manifest
 from maya_core.c0_capability_models import (
@@ -49,6 +49,7 @@ async def run_capability_baseline(
     planner_llm: LlmCall | None,
     semantic_evaluator: SemanticEvaluator | None = None,
     workspace_root: str | Path | None = None,
+    progress: Callable[[str, CapabilityTask, CapabilityTaskResult | None, int, int], None] | None = None,
 ) -> tuple[tuple[CapabilityTaskResult, ...], str]:
     if planner_llm is None:
         raise ValueError("planner_llm is required for a real C0 baseline run")
@@ -61,7 +62,15 @@ async def run_capability_baseline(
     os.environ["MAYA_AGENTIC_LOOP"] = "1"
     reload_runtime_config()
     try:
-        results = [await _run_task(task, planner_llm, semantic_evaluator, workspace) for task in manifest.tasks]
+        results: list[CapabilityTaskResult] = []
+        total = len(manifest.tasks)
+        for index, task in enumerate(manifest.tasks, start=1):
+            if progress:
+                progress("start", task, None, index, total)
+            result = await _run_task(task, planner_llm, semantic_evaluator, workspace)
+            results.append(result)
+            if progress:
+                progress("finish", task, result, index, total)
         return tuple(results), str(workspace)
     finally:
         for key, value in previous.items():
@@ -167,8 +176,13 @@ def _trace_grounded_reason(task: CapabilityTask, payload: dict[str, Any], outcom
     final = str(payload["state"].get("final_response") or "").lower()
     if str(payload["state"].get("graph_status") or "") == "error" or "provider/tool error" in final:
         return "provider_error", "provider"
+    permission_pause = False
     for event in payload.get("events") or ():
         name, details = str(event.get("event") or ""), str(event.get("details") or "")
+        if name == "permission_decision" and ": confirm:" in details:
+            permission_pause = True
+        if name == "approval_required":
+            permission_pause = True
         if name == "tool_unmapped" or (name == "execute" and details == "skipped"):
             return "tool_gap", details or "tool"
         if name == "metacognition_stop" or "agentic budget" in final:
@@ -179,6 +193,8 @@ def _trace_grounded_reason(task: CapabilityTask, payload: dict[str, Any], outcom
             return "planner_strategy", "planner"
         if name == "fail":
             return "provider_error" if "exception" in details.lower() else "unknown", "harness"
+    if permission_pause or str(payload["state"].get("graph_status") or "") == "waiting_approval":
+        return "permission_friction", "permission_kernel"
     return ("memory_retrieval", "memory") if task.category == "memory" and outcome != "success" else ("unknown", "")
 
 
