@@ -153,7 +153,8 @@ def _validate_demo(demo: dict[str, Any], log_dir: Path) -> list[EvidenceIssue]:
     if any(not str(result.get("output", "")).strip() for result in demo.get("results", [])):
         issues.append(EvidenceIssue(name, "one or more commands lack captured output"))
     evidence = ROOT / str(demo.get("evidence_path", ""))
-    if not demo.get("artifacts") and not evidence.exists():
+    embedded_results = bool(demo.get("results"))
+    if not demo.get("artifacts") and not evidence.exists() and not embedded_results:
         issues.append(EvidenceIssue(name, "missing artifact or evidence path"))
     issues.extend(_secret_issues(evidence, name))
     json_log = ROOT / str(demo.get("json_log", ""))

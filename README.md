@@ -16,6 +16,7 @@ This is not just a Telegram bot, a model router, or a LangGraph demo. The produc
 | `docs/maya_operating_doctrine.md` | Private doctrine copy kept under `docs/` for separation |
 | `docs/maya_honest_agent_writeup_2026-06-20.md` | Portfolio essay: Maya's measured security, honesty, memory integrity, and capability story |
 | `docs/maya_master_build_status_2026-06-20.md` | Current evidence ledger for Maya's gate benchmark, whole-loop harness, memory, honesty, Meet, and C0 capability results |
+| `docs/maya_stability_floor_2026-06-20.md` | Local stability floor: deterministic checks, generated-log policy, and deferred live proof |
 
 ## Why Kampung AI Is Different
 
