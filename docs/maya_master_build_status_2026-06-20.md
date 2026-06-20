@@ -13,6 +13,7 @@ This is the current engineering status for the Maya master build path. It record
 - Step 5 Meet: synthetic conversation-hold and presentation-sanitizer coverage added. Live Meet check is approved but must end with `/leave`, status verification, and closing any Meet/output/browser tabs opened for the test.
 - Step 6 memory integrity: native integrity smoke added over real memory paths. Provider-backed LongMemEval remains deferred unless a runnable LongMemEval dataset/runner config is supplied.
 - Step 7 honesty: honesty-under-attack smoke added. Scores are self-authored until reviewer scoring is validated.
+- C0 capability baseline: current reversible-loop baseline ran against the real OpenAI planner/evaluator path on `maya_domain_capability_v1`. Corrected outcome counts: `6/30` success, `6/30` partial, `9/30` fail, `9/30` honest_stop. OpenClaw/Claw-SWE-Bench is not locally configured and is recorded as deferred.
 
 ## Implemented Evidence
 
@@ -43,6 +44,12 @@ This is the current engineering status for the Maya master build path. It record
   - every attack case remained secure across 3 runs;
   - most attack cases were secure because the laundered effect was not proposed upstream, with the kernel/sink retained as an observable backstop rather than the primary blocker in those runs;
   - the 10 secure/not-useful outcomes were concentrated in strict answer-fragment utility checks, not unsafe effects.
+- C0 capability baseline proves:
+  - the current reversible loop is measurable before building C1-C6;
+  - answer-type scoring uses a semantic evaluator path rather than literal fragment matching;
+  - artifact creation is currently the weakest measured area: local artifact tasks produced `2` partials and `7` failures, mostly approval pauses, timeouts, or tool/remap failures;
+  - browser-read tasks stopped honestly because the local browser bridge was unavailable in the run;
+  - trace-grounded bottleneck attribution is still too sparse: `unknown` was `20/30`, so C0 should improve instrumentation before using reason-code counts as the sole C1-C6 ranking.
 
 ## Deferred Or Reviewer-Gated
 
@@ -62,6 +69,10 @@ This is the current engineering status for the Maya master build path. It record
 - Step 6 and Step 7 scoring:
   - integrity and honesty suites are self-authored;
   - numbers should not be presented externally until reviewer scoring is validated.
+- C0 capability follow-up:
+  - generated report is intentionally left under `logs/evals/c0/` and uncommitted;
+  - before C1-C6, improve C0 progress reporting and reason attribution enough to reduce the `unknown` bucket;
+  - the clearest measured capability bottleneck is reversible local artifact creation friction/timeouts, not boundary security.
 
 ## Reporting Caveats
 
@@ -71,6 +82,7 @@ This is the current engineering status for the Maya master build path. It record
 - Step 0.5 Wave 1 should be described as full binding over real reader/planner/kernel with safe fake effects, not as reduced planner/kernel-only evidence.
 - Meet results must distinguish synthetic tests from live meeting behavior.
 - Memory and honesty scores must state whether they are self-authored or independently verified.
+- C0 capability results must state whether semantic answers were model-evaluated, human-reviewed, or still awaiting review. Do not compare C0 to OpenClaw until the OpenClaw adapter/probe is actually configured.
 - Absence of incidents means “no incidents observed,” not “reliable.”
 
 ## Current Proof Commands
@@ -78,4 +90,6 @@ This is the current engineering status for the Maya master build path. It record
 - `./venv/bin/python tests/smokes/meet_synthetic_feature_smoke.py`
 - `./venv/bin/python tests/smokes/memory_integrity_smoke.py`
 - `./venv/bin/python tests/smokes/honesty_under_attack_smoke.py`
+- `./venv/bin/python tests/smokes/c0_capability_baseline_smoke.py`
+- `./venv/bin/python scripts/run_c0_capability_baseline.py --planner openai-if-available --evaluator openai-if-available --out logs/evals/c0/<report>.json`
 - `./venv/bin/python local_ci.py`

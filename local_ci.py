@@ -81,6 +81,7 @@ CHECKS: tuple[CheckSpec, ...] = (
     CheckSpec("router clearance conformance", ("tests/smokes/router_clearance_conformance_smoke.py",)),
     CheckSpec("whole-loop harness", ("tests/smokes/whole_loop_harness_smoke.py",)),
     CheckSpec("Step 0.5 sealed wave binding", ("tests/smokes/step0_5_wave1_binding_smoke.py",)),
+    CheckSpec("C0 capability baseline", ("tests/smokes/c0_capability_baseline_smoke.py",)),
     CheckSpec("Maya harness SDK", ("tests/smokes/maya_harness_sdk_smoke.py",)),
     CheckSpec("Meet artifact handoff", ("tests/smokes/meet_artifact_handoff_smoke.py",)),
     CheckSpec("Meet synthetic feature coverage", ("tests/smokes/meet_synthetic_feature_smoke.py",)),
